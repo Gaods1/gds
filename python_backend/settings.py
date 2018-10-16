@@ -72,15 +72,28 @@ WSGI_APPLICATION = 'python_backend.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
-DATABASES = {
-    'default': {
+
+if os.environ.get('DATABASE_DEBUG'):
+    database_setting = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'patclub',
         'HOST': '127.0.0.1',
         'PORT': 3306,
         'USER': 'root',
-        'PASSWORD':'123456'
+        'PASSWORD': '123456'
     }
+else:
+    database_setting = {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'patclub',
+        'HOST': '127.0.0.1',
+        'PORT': 3306,
+        'USER': 'forcar',
+        'PASSWORD': 'l0092687dd'
+    }
+
+DATABASES = {
+    'default': database_setting
 }
 
 
