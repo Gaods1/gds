@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+import datetime
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -28,6 +29,31 @@ DEBUG = True
 ALLOWED_HOSTS = []
 
 
+# 用户系统
+AUTH_USER_MODEL = 'account.AccountInfo'
+
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
+
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.BasicAuthentication',
+    ),
+}
+
+JWT_AUTH = {
+'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=3000),
+}
+
+AUTHENTICATION_BACKENDS = {
+    'backends.AccountBackend',
+}
 # Application definition
 
 INSTALLED_APPS = [
@@ -37,6 +63,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'account',
+    'rest_framework',
+    'rest_framework_jwt'
 ]
 
 MIDDLEWARE = [
@@ -88,8 +117,8 @@ else:
         'NAME': 'patclub',
         'HOST': '127.0.0.1',
         'PORT': 3306,
-        'USER': 'forcar',
-        'PASSWORD': 'l0092687dd'
+        'USER': 'root',
+        'PASSWORD': '123456'
     }
 
 DATABASES = {
@@ -119,9 +148,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'zh-hans'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
