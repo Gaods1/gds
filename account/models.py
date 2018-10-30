@@ -14,7 +14,7 @@ class AccountDisableFuncinfo(models.Model):
     update_time = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'account_disable_funcinfo'
         unique_together = (('account', 'func_code'),)
 
@@ -50,7 +50,7 @@ class AccountInfo(AbstractBaseUser):
             return False
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'account_info'
 
 
@@ -66,7 +66,7 @@ class AccountRoleInfo(models.Model):
     update_time = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'account_role_info'
         unique_together = (('account', 'role_code', 'type'),)
 
@@ -87,7 +87,7 @@ class Deptinfo(models.Model):
     insert_time = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'deptinfo'
 
 
@@ -108,7 +108,7 @@ class FunctionInfo(models.Model):
     update_time = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'function_info'
 
 
@@ -124,7 +124,7 @@ class ParamInfo(models.Model):
     insert_time = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'param_info'
 
 
@@ -139,7 +139,7 @@ class RoleFuncInfo(models.Model):
     update_time = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'role_func_info'
         unique_together = (('role_code', 'func_code'),)
 
@@ -155,5 +155,5 @@ class RoleInfo(models.Model):
     update_time = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = True
+        managed = False
         db_table = 'role_info'
