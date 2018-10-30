@@ -50,7 +50,7 @@ class AccountInfo(AbstractBaseUser):
             return False
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'account_info'
 
 
