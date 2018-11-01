@@ -7,7 +7,7 @@ from misc.misc import gen_uuid32,check_md5_password, genearteMD5
 # 账号禁权表
 class AccountDisableFuncinfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    account = models.CharField(max_length=32, default=gen_uuid32())
+    account = models.CharField(max_length=32)
     func_code = models.CharField(max_length=64, blank=True, null=True)
     state = models.IntegerField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
@@ -37,13 +37,15 @@ class AccountInfoManager(BaseUserManager):
 
     def create_superuser(self, password, **extra_fields):
         extra_fields.setdefault('creater', extra_fields.get('account', None))
-        return self._create_user(password, **extra_fields)
+        user = self._create_user(password, **extra_fields)
+        role = RoleInfo.objects.create()
+        return user
 
 
 # 账号信息表
 class AccountInfo(AbstractBaseUser):
     serial = models.AutoField(primary_key=True)
-    account_code = models.CharField(unique=True, max_length=32, default=gen_uuid32())
+    account_code = models.CharField(unique=True, max_length=32, default=gen_uuid32)
     account = models.CharField(unique=True, max_length=32, blank=True, null=True)
     state = models.IntegerField(default=1)
     dept_code = models.CharField(max_length=32, blank=True, null=True)
@@ -174,10 +176,10 @@ class RoleFuncInfo(models.Model):
 # 角色表
 class RoleInfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    role_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
-    role_name = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    role_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
+    role_name = models.CharField(unique=True, max_length=64)
     role_memo = models.CharField(max_length=255, blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
+    state = models.IntegerField(default=1)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)

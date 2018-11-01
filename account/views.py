@@ -55,7 +55,6 @@ class RoleInfoViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         data = request.data
         data['creater'] = request.user.account
-        data['role_code'] = gen_uuid32()
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
