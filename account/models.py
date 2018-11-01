@@ -77,12 +77,6 @@ class AccountInfo(AbstractBaseUser):
                     return True
         return False
 
-    def save(self,*args,**kwargs):
-        self.account_code = gen_uuid32()
-        self.set_password(self.password)
-        super(AccountInfo,self).save(*args,**kwargs)
-
-
     class Meta:
         managed = True
         db_table = 'account_info'
