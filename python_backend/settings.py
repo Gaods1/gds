@@ -45,10 +45,15 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ),
+
+
 }
 
 JWT_AUTH = {
-'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=3000),
+    'JWT_RESPONSE_PAYLOAD_HANDLER':
+        'account.utils.jwt_response_payload_handler',
+
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=30000),
 }
 
 AUTHENTICATION_BACKENDS = {
