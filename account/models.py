@@ -31,14 +31,15 @@ class AccountInfoManager(BaseUserManager):
         if not account_name:
             raise ValueError('The given account must be set')
         account = self.model.normalize_username(account_name)
-        user = self.model(password=password, **extra_fields)
+        user = self.model(password=genearteMD5(password), **extra_fields)
         user.save(using=self._db)
         return user
 
     def create_superuser(self, password, **extra_fields):
         extra_fields.setdefault('creater', extra_fields.get('account', None))
         user = self._create_user(password, **extra_fields)
-        role = RoleInfo.objects.create()
+        role = RoleInfo.objects.create(role_name='系统管理员', role_memo = '系统管理员拥有最大权限', creater=user.account)
+        user_role = AccountRoleInfo.objects.create(account=user.account, role_code=role.role_code, creater=user.account)
         return user
 
 
@@ -89,11 +90,11 @@ class AccountRoleInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     account = models.CharField(max_length=32, blank=True, null=True)
     role_code = models.CharField(max_length=64, blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
+    state = models.IntegerField(default=1)
     type = models.IntegerField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
-    update_time = models.DateTimeField(blank=True, null=True)
+    insert_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
 
     class Meta:
         managed = True

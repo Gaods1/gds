@@ -46,7 +46,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.BasicAuthentication',
     ),
 
-
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
 }
 
 JWT_AUTH = {
@@ -70,7 +72,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'account',
     'rest_framework',
-    'rest_framework_jwt'
+    'rest_framework_jwt',
+    'django_filters',
 ]
 
 MIDDLEWARE = [

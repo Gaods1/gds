@@ -7,12 +7,22 @@ from rest_framework.response import Response
 from misc.misc import gen_uuid32, genearteMD5
 from account.models import RoleInfo
 from account.serializers import RoleInfoSerializer
+from rest_framework import filters
+import django_filters
 # Create your views here.
 
 
 class AccountViewSet(viewsets.ModelViewSet):
     queryset = AccountInfo.objects.all().order_by('serial')
     serializer_class = AccountInfoSerializer
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("account","user_name", "user_email", "dept_code", "insert_time")
+    filter_fields = ("state", "dept_code", "creater")
+    search_fields = ("account","user_name", "user_email")
 
     def create(self, request, *args, **kwargs):
         data =request.data
@@ -51,6 +61,15 @@ class AccountViewSet(viewsets.ModelViewSet):
 class RoleInfoViewSet(viewsets.ModelViewSet):
     queryset = RoleInfo.objects.all().order_by('serial')
     serializer_class = RoleInfoSerializer
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("role_name", "insert_time")
+    filter_fields = ("state", "creater")
+    search_fields = ("role_name",)
 
     def create(self, request, *args, **kwargs):
         data = request.data
