@@ -8,16 +8,19 @@ from misc.misc import gen_uuid32,check_md5_password, genearteMD5
 class AccountDisableFuncinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     account = models.CharField(max_length=32)
-    func_code = models.CharField(max_length=64, blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
+    func_code = models.CharField(max_length=64)
+    state = models.IntegerField(default=1)
     creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
-    update_time = models.DateTimeField(blank=True, null=True)
+    insert_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
 
     class Meta:
         managed = True
         db_table = 'account_disable_funcinfo'
         unique_together = (('account', 'func_code'),)
+
+    def __unicode__(self):
+        return '%s: %s' % (self.account, self.func_code)
 
 
 class AccountInfoManager(BaseUserManager):
@@ -47,7 +50,7 @@ class AccountInfoManager(BaseUserManager):
 class AccountInfo(AbstractBaseUser):
     serial = models.AutoField(primary_key=True)
     account_code = models.CharField(unique=True, max_length=32, default=gen_uuid32)
-    account = models.CharField(unique=True, max_length=32, blank=True, null=True)
+    account = models.CharField(unique=True, max_length=32,)
     state = models.IntegerField(default=1)
     dept_code = models.CharField(max_length=32, blank=True, null=True)
     account_memo = models.CharField(max_length=255, blank=True, null=True)
@@ -84,14 +87,17 @@ class AccountInfo(AbstractBaseUser):
         managed = True
         db_table = 'account_info'
 
+    def __unicode__(self):
+        return self.account
+
 
 # 账号角色授权表
 class AccountRoleInfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    account = models.CharField(max_length=32, blank=True, null=True)
-    role_code = models.CharField(max_length=64, blank=True, null=True)
+    account = models.CharField(max_length=32)
+    role_code = models.CharField(max_length=64)
     state = models.IntegerField(default=1)
-    type = models.IntegerField(blank=True, null=True)
+    type = models.IntegerField(default=1)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
@@ -100,6 +106,9 @@ class AccountRoleInfo(models.Model):
         managed = True
         db_table = 'account_role_info'
         unique_together = (('account', 'role_code', 'type'),)
+
+    def __unicode__(self):
+        return 'account:%s role_code:%s type:%s' % (self.account, self.role_code, self.type)
 
 
 # 机构部门表
@@ -125,22 +134,25 @@ class Deptinfo(models.Model):
 # 功能信息表
 class FunctionInfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    func_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    func_code = models.CharField(unique=True, max_length=64,default=gen_uuid32)
     func_name = models.CharField(max_length=64, blank=True, null=True)
     func_memo = models.CharField(max_length=255, blank=True, null=True)
     func_url = models.CharField(max_length=255, blank=True, null=True)
     add_param = models.CharField(max_length=255, blank=True, null=True)
-    item_type = models.IntegerField(blank=True, null=True)
+    item_type = models.IntegerField(default=0)
     pfunc_code = models.CharField(max_length=64, blank=True, null=True)
-    func_order = models.IntegerField(blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
+    func_order = models.IntegerField(default=0)
+    state = models.IntegerField(default=1)
     creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
-    update_time = models.DateTimeField(blank=True, null=True)
+    insert_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
 
     class Meta:
         managed = True
         db_table = 'function_info'
+
+    def __unicode__(self):
+        return self.func_name
 
 
 # 系统参数表
@@ -162,17 +174,20 @@ class ParamInfo(models.Model):
 # 角色功能关联表
 class RoleFuncInfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    role_code = models.CharField(max_length=64, blank=True, null=True)
-    func_code = models.CharField(max_length=64, blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
+    role_code = models.CharField(max_length=64,)
+    func_code = models.CharField(max_length=64,)
+    state = models.IntegerField(default=1)
     creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
-    update_time = models.DateTimeField(blank=True, null=True)
+    insert_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
 
     class Meta:
         managed = True
         db_table = 'role_func_info'
         unique_together = (('role_code', 'func_code'),)
+
+    def __unicode__(self):
+        return "role_code:%s func_code:%s"%(self.role_code, self.func_code)
 
 # 角色表
 class RoleInfo(models.Model):
@@ -188,3 +203,6 @@ class RoleInfo(models.Model):
     class Meta:
         managed = True
         db_table = 'role_info'
+
+    def __unicode__(self):
+        return self.role_name
