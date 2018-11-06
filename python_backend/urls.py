@@ -23,6 +23,9 @@ from account import views
 router = routers.DefaultRouter()
 router.register(r'accounts', views.AccountViewSet)
 router.register(r'roles',views.RoleInfoViewSet)
+router.register(r'dept',views.DeptinfoViewSet)
+router.register(r'param',views.ParamInfoViewSet)
+
 
 
 urlpatterns = [

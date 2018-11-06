@@ -199,7 +199,7 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False #改为False 解决插入数据库时间小于当前8个小时的问题
 
 
 # Static files (CSS, JavaScript, Images)

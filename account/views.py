@@ -5,8 +5,8 @@ from account.serializers import AccountInfoSerializer
 from rest_framework import status
 from rest_framework.response import Response
 from misc.misc import gen_uuid32, genearteMD5
-from account.models import RoleInfo
-from account.serializers import RoleInfoSerializer
+from account.models import RoleInfo,Deptinfo,ParamInfo
+from account.serializers import RoleInfoSerializer,DeptinfoSerializer,ParamInfoSerializer
 from rest_framework import filters
 import django_filters
 # Create your views here.
@@ -55,9 +55,8 @@ class AccountViewSet(viewsets.ModelViewSet):
 
 
 
-"""
-角色管理
-"""
+
+#角色管理
 class RoleInfoViewSet(viewsets.ModelViewSet):
     queryset = RoleInfo.objects.all().order_by('serial')
     serializer_class = RoleInfoSerializer
@@ -70,6 +69,43 @@ class RoleInfoViewSet(viewsets.ModelViewSet):
     ordering_fields = ("role_name", "insert_time")
     filter_fields = ("state", "creater")
     search_fields = ("role_name",)
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        data['creater'] = request.user.account
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
+
+
+# 部门管理
+class DeptinfoViewSet(viewsets.ModelViewSet):
+    queryset = Deptinfo.objects.all().order_by('serial')
+    serializer_class = DeptinfoSerializer
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("dept_name","insert_time")
+    filter_fields = ("state",)
+    search_fields = ("dept_name",)
+
+
+#参数配置管理
+class ParamInfoViewSet(viewsets.ModelViewSet):
+    queryset = ParamInfo.objects.all().order_by('serial')
+    serializer_class = ParamInfoSerializer
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("param_name", "insert_time")
+    filter_fields = ("param_code",)
+    search_fields = ("param_name",)
 
     def create(self, request, *args, **kwargs):
         data = request.data

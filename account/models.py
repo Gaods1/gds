@@ -105,8 +105,8 @@ class AccountRoleInfo(models.Model):
 # 机构部门表
 class Deptinfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    dept_code = models.CharField(unique=True, max_length=32, blank=True, null=True)
-    dept_name = models.CharField(max_length=64, blank=True, null=True)
+    dept_code = models.CharField(unique=True, max_length=32,default=gen_uuid32)
+    dept_name = models.CharField(unique=True,max_length=64,)
     pdept_code = models.CharField(max_length=32, blank=True, null=True)
     dept_level = models.IntegerField(blank=True, null=True)
     dept_memo = models.CharField(max_length=255, blank=True, null=True)
@@ -114,8 +114,8 @@ class Deptinfo(models.Model):
     manager = models.CharField(max_length=64, blank=True, null=True)
     manager_mobile = models.CharField(max_length=16, blank=True, null=True)
     addr = models.CharField(max_length=128, blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
+    state = models.IntegerField(default=1)
+    insert_time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = True
@@ -146,13 +146,13 @@ class FunctionInfo(models.Model):
 # 系统参数表
 class ParamInfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    param_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    param_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     pparam_code = models.CharField(max_length=64, blank=True, null=True)
-    param_name = models.CharField(max_length=64, blank=True, null=True)
+    param_name = models.CharField(unique=True,max_length=64)
     param_memo = models.CharField(max_length=255, blank=True, null=True)
     param_value = models.TextField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
+    insert_time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = True
