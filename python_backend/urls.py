@@ -23,6 +23,10 @@ from account import views
 router = routers.DefaultRouter()
 router.register(r'accounts', views.AccountViewSet)
 router.register(r'roles',views.RoleInfoViewSet)
+router.register(r'account_disable_func', views.AccountDisableFuncinfoViewSet)
+router.register(r'account_role', views.AccountRoleViewSet)
+router.register(r'functions', views.FunctionViewSet)
+router.register(r'role_func', views.RoleFuncViewSet)
 
 
 urlpatterns = [
