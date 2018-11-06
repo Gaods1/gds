@@ -175,37 +175,37 @@ class RoleFuncViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
 
-    # 部门管理
-    class DeptinfoViewSet(viewsets.ModelViewSet):
-        queryset = Deptinfo.objects.all().order_by('serial')
-        serializer_class = DeptinfoSerializer
-        filter_backends = (
-            filters.SearchFilter,
-            django_filters.rest_framework.DjangoFilterBackend,
-            filters.OrderingFilter,
-        )
-        ordering_fields = ("dept_name", "insert_time")
-        filter_fields = ("state",)
-        search_fields = ("dept_name",)
+# 部门管理
+class DeptinfoViewSet(viewsets.ModelViewSet):
+    queryset = Deptinfo.objects.all().order_by('serial')
+    serializer_class = DeptinfoSerializer
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("dept_name", "insert_time")
+    filter_fields = ("state",)
+    search_fields = ("dept_name",)
 
-    # 参数配置管理
-    class ParamInfoViewSet(viewsets.ModelViewSet):
-        queryset = ParamInfo.objects.all().order_by('serial')
-        serializer_class = ParamInfoSerializer
-        filter_backends = (
-            filters.SearchFilter,
-            django_filters.rest_framework.DjangoFilterBackend,
-            filters.OrderingFilter,
-        )
-        ordering_fields = ("param_name", "insert_time")
-        filter_fields = ("param_code",)
-        search_fields = ("param_name",)
+# 参数配置管理
+class ParamInfoViewSet(viewsets.ModelViewSet):
+    queryset = ParamInfo.objects.all().order_by('serial')
+    serializer_class = ParamInfoSerializer
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("param_name", "insert_time")
+    filter_fields = ("param_code",)
+    search_fields = ("param_name",)
 
-        def create(self, request, *args, **kwargs):
-            data = request.data
-            data['creater'] = request.user.account
-            serializer = self.get_serializer(data=data)
-            serializer.is_valid(raise_exception=True)
-            self.perform_create(serializer)
-            headers = self.get_success_headers(serializer.data)
-            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        data['creater'] = request.user.account
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
