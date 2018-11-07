@@ -66,16 +66,24 @@ class RoleFuncInfoSerializer(serializers.HyperlinkedModelSerializer):
         model = RoleFuncInfo
         fields = '__all__'
 
-#deptinfo serializer
+#机构部门序列化
 class DeptinfoSerializer(serializers.HyperlinkedModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     class Meta:
         model = Deptinfo
         fields = '__all__'
 
-#paraminfo serializer
+#系统参数序列化
 class ParamInfoSerializer(serializers.HyperlinkedModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     class Meta:
         model = ParamInfo
+        fields = '__all__'
+
+#区域表序列化
+class SystemDistrictSerializer(serializers.HyperlinkedModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+
+    class Meta:
+        model = SystemDistrict
         fields = '__all__'

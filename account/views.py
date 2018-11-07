@@ -209,3 +209,16 @@ class ParamInfoViewSet(viewsets.ModelViewSet):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+#区域表
+class SystemDistrictViewSet(viewsets.ModelViewSet):
+    queryset = SystemDistrict.objects.all().order_by('district_id')
+    serializer_class = SystemDistrictSerializer
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("district_id", "insert_time")
+    filter_fields = ("parent_id",)
+    search_fields = ("district_name",)

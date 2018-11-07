@@ -206,3 +206,22 @@ class RoleInfo(models.Model):
 
     def __unicode__(self):
         return self.role_name
+
+#区域表
+class SystemDistrict(models.Model):
+    district_id = models.AutoField(primary_key=True)
+    parent_id = models.IntegerField(default=0)
+    district_name = models.CharField(max_length=200)
+    short_name = models.CharField(max_length=200)
+    longitude = models.DecimalField(default=0.0000000, max_digits = 10,decimal_places = 7)
+    latitude = models.DecimalField(default=0.0000000, max_digits = 10,decimal_places = 7)
+    level = models.IntegerField()
+    sort = models.IntegerField()
+    is_deleted = models.IntegerField(default=0)
+    create_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(default='0000-00-00 00:00:00')
+
+    class Meta:
+        managed = True
+        db_table = 'system_district'
+

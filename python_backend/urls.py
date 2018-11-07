@@ -29,6 +29,7 @@ router.register(r'functions', views.FunctionViewSet)
 router.register(r'role_func', views.RoleFuncViewSet)
 router.register(r'dept',views.DeptinfoViewSet)
 router.register(r'param',views.ParamInfoViewSet)
+router.register(r'district',views.SystemDistrictViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
