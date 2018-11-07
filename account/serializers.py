@@ -2,14 +2,6 @@ from account.models import *
 from rest_framework import serializers
 
 
-# 角色序列
-class RoleInfoSerializer(serializers.HyperlinkedModelSerializer):
-    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
-    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
-    class Meta:
-        model = RoleInfo
-        fields = '__all__'
-
 
 # 账号禁权表
 class AccountDisableFuncinfoSerializer(serializers.HyperlinkedModelSerializer):
