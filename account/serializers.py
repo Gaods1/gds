@@ -170,7 +170,7 @@ class RoleFuncInfoSerializer(serializers.ModelSerializer):
 
 
 # 系统参数序列化
-class ParamInfoSerializer(serializers.HyperlinkedModelSerializer):
+class ParamInfoSerializer(serializers.ModelSerializer):
     pparam = serializers.CharField()
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
 
