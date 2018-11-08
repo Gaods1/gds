@@ -12,7 +12,7 @@ import django_filters
 
 # 用户管理
 class AccountViewSet(viewsets.ModelViewSet):
-    queryset = AccountInfo.objects.all().order_by('serial')
+    queryset = AccountInfo.objects.all().order_by('-serial')
     serializer_class = AccountInfoSerializer
     filter_backends = (
         filters.SearchFilter,
@@ -21,7 +21,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     )
     ordering_fields = ("account","user_name", "user_email", "dept_code", "insert_time")
     filter_fields = ("state", "dept_code", "creater", "account")
-    search_fields = ("account","user_name", "user_email")
+    search_fields = ("account","user_name", "user_email",)
 
     def create(self, request, *args, **kwargs):
         data =request.data
@@ -54,7 +54,7 @@ class AccountViewSet(viewsets.ModelViewSet):
 
 # 角色管理
 class RoleInfoViewSet(viewsets.ModelViewSet):
-    queryset = RoleInfo.objects.all().order_by('serial')
+    queryset = RoleInfo.objects.all().order_by('-serial')
     serializer_class = RoleInfoSerializer
     filter_backends = (
         filters.SearchFilter,
@@ -78,7 +78,7 @@ class RoleInfoViewSet(viewsets.ModelViewSet):
 
 # 账号禁权管理
 class AccountDisableFuncinfoViewSet(viewsets.ModelViewSet):
-    queryset = AccountDisableFuncinfo.objects.all().order_by('serial')
+    queryset = AccountDisableFuncinfo.objects.all().order_by('-serial')
     serializer_class = AccountDisableFuncinfoSerializer
 
     filter_backends = (
@@ -103,7 +103,7 @@ class AccountDisableFuncinfoViewSet(viewsets.ModelViewSet):
 
 # 账号角色授权管理
 class AccountRoleViewSet(viewsets.ModelViewSet):
-    queryset = AccountRoleInfo.objects.all().order_by('serial')
+    queryset = AccountRoleInfo.objects.all().order_by('-serial')
     serializer_class = AccountRoleInfoSerializer
 
     filter_backends = (
@@ -128,7 +128,7 @@ class AccountRoleViewSet(viewsets.ModelViewSet):
 
 # 功能点管理
 class FunctionViewSet(viewsets.ModelViewSet):
-    queryset = FunctionInfo.objects.all().order_by('serial')
+    queryset = FunctionInfo.objects.all().order_by('-serial')
     serializer_class = FunctionInfoSerializer
 
     filter_backends = (
@@ -153,7 +153,7 @@ class FunctionViewSet(viewsets.ModelViewSet):
 
 #  角色功能管理
 class RoleFuncViewSet(viewsets.ModelViewSet):
-    queryset = RoleFuncInfo.objects.all().order_by('serial')
+    queryset = RoleFuncInfo.objects.all().order_by('-serial')
     serializer_class = RoleFuncInfoSerializer
 
     filter_backends = (
@@ -177,7 +177,7 @@ class RoleFuncViewSet(viewsets.ModelViewSet):
 
 # 部门管理
 class DeptinfoViewSet(viewsets.ModelViewSet):
-    queryset = Deptinfo.objects.all().order_by('serial')
+    queryset = Deptinfo.objects.all().order_by('-serial')
     serializer_class = DeptinfoSerializer
     filter_backends = (
         filters.SearchFilter,
@@ -190,7 +190,7 @@ class DeptinfoViewSet(viewsets.ModelViewSet):
 
 # 参数配置管理
 class ParamInfoViewSet(viewsets.ModelViewSet):
-    queryset = ParamInfo.objects.all().order_by('serial')
+    queryset = ParamInfo.objects.all().order_by('-serial')
     serializer_class = ParamInfoSerializer
     filter_backends = (
         filters.SearchFilter,
@@ -212,7 +212,7 @@ class ParamInfoViewSet(viewsets.ModelViewSet):
 
 #区域表
 class SystemDistrictViewSet(viewsets.ModelViewSet):
-    queryset = SystemDistrict.objects.all().order_by('district_id')
+    queryset = SystemDistrict.objects.all().order_by('-district_id')
     serializer_class = SystemDistrictSerializer
     filter_backends = (
         filters.SearchFilter,
