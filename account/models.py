@@ -19,6 +19,11 @@ class SystemDistrict(models.Model):
     create_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(default='0000-00-00 00:00:00')
 
+    @property
+    def parent_district(self):
+        parent_district = SystemDistrict.objects.get(district_id=self.parent_id)
+        return parent_district.district_name
+
     class Meta:
         managed = True
         db_table = 'system_district'
@@ -38,6 +43,11 @@ class Deptinfo(models.Model):
     addr = models.CharField(max_length=128, blank=True, null=True)
     state = models.IntegerField(default=1)
     insert_time = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def region_name(self):
+        region_info = SystemDistrict.objects.get(district_id=self.region_code)
+        return region_info.district_name
 
     @property
     def pdept(self):
