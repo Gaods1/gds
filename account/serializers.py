@@ -4,16 +4,29 @@ from rest_framework import serializers
 
 # 区域表序列化
 class SystemDistrictSerializer(serializers.ModelSerializer):
-    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    create_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    parent_district = serializers.CharField(read_only=True)
 
     class Meta:
         model = SystemDistrict
-        fields = '__all__'
+        fields = ['district_id',
+                  'parent_id',
+                  'district_name',
+                  'parent_district',
+                  'short_name',
+                  'longitude',
+                  'latitude',
+                  'level',
+                  'sort',
+                  'is_deleted',
+                  'create_time',
+                  'update_time',]
 
 
 # 机构部门序列化
 class DeptinfoSerializer(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    region_name = serializers.CharField(read_only=True)
     pdept = serializers.CharField(read_only=True)
     cstate = serializers.CharField(read_only=True)
     class Meta:
@@ -21,6 +34,7 @@ class DeptinfoSerializer(serializers.ModelSerializer):
         fields = ['serial',
                   'dept_code',
                   'dept_name',
+                  'region_name',
                   'pdept_code',
                   'pdept',
                   'dept_level',
@@ -171,7 +185,7 @@ class RoleFuncInfoSerializer(serializers.ModelSerializer):
 
 # 系统参数序列化
 class ParamInfoSerializer(serializers.ModelSerializer):
-    pparam = serializers.CharField()
+    pparam = serializers.CharField(read_only=True)
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
 
     class Meta:
