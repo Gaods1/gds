@@ -26,7 +26,9 @@ class AccountViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         data =request.data
         data['creater'] = request.user.account
-        data['password'] = genearteMD5(data['password'])
+        password = data.get("password")
+        if password:
+            data['password'] = genearteMD5(password)
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)

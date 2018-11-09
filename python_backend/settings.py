@@ -33,7 +33,7 @@ ALLOWED_HOSTS = []
 AUTH_USER_MODEL = 'account.AccountInfo'
 
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': 'python_backend.pagenumber.MyPageNumberPagination',
     'PAGE_SIZE': 10,
 
     'DEFAULT_PERMISSION_CLASSES': (
