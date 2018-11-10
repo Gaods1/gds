@@ -214,7 +214,7 @@ class ParamInfoViewSet(viewsets.ModelViewSet):
 
 #区域表
 class SystemDistrictViewSet(viewsets.ModelViewSet):
-    queryset = SystemDistrict.objects.all().order_by('-district_id')
+    queryset = SystemDistrict.objects.all().order_by('district_id')
     serializer_class = SystemDistrictSerializer
     filter_backends = (
         filters.SearchFilter,
