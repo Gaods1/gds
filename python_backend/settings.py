@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_jwt',
     'django_filters',
+    'rest_framework_swagger',
     'corsheaders',# 跨域(以后删除)
 ]
 
