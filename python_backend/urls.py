@@ -38,7 +38,7 @@ schema_view = get_schema_view(title='Users API', renderer_classes=[OpenAPIRender
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('accounts/', include('rest_framework.urls', namespace='rest_framework')),
     path('api-token-auth/', obtain_jwt_token, name='auth-jwt-get'),
     path('docs/', schema_view, name="docs"),
     path('api/', include(router.urls))

@@ -1,4 +1,5 @@
 from django.db import models
+from misc.misc import gen_uuid32
 
 # Create your models here.
 
@@ -7,15 +8,15 @@ from django.db import models
 class IdentityAuthorizationInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     account_code = models.CharField(max_length=64, blank=True, null=True)
-    identity_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    identity_code = models.CharField(max_length=64, blank=True, null=True)
     iab_time = models.DateTimeField(blank=True, null=True)
     iae_time = models.DateTimeField(blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
+    state = models.IntegerField(default=1)
     creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
+    insert_time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'identity_authorization_info'
         unique_together = (('account_code', 'identity_code'),)
 
@@ -23,49 +24,49 @@ class IdentityAuthorizationInfo(models.Model):
 # 前端角色表
 class IdentityInfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    identity_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    identity_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     identity_name = models.CharField(unique=True, max_length=64, blank=True, null=True)
     identity_memo = models.CharField(max_length=255, blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
+    state = models.IntegerField(default=1)
     creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
-    update_time = models.DateTimeField(blank=True, null=True)
+    insert_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'identity_info'
 
 
 # 个人基本信息表
 class PersonalInfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    pcode = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    pcode = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     pname = models.CharField(max_length=64, blank=True, null=True)
-    psex = models.IntegerField(blank=True, null=True)
-    pid_type = models.IntegerField(blank=True, null=True)
-    pid = models.CharField(max_length=32, blank=True, null=True)
+    psex = models.IntegerField(default=0)
+    pid_type = models.IntegerField(default=1)
+    pid = models.CharField(max_length=32)
     pmobile = models.CharField(max_length=16, blank=True, null=True)
     ptel = models.CharField(max_length=16, blank=True, null=True)
     pemail = models.CharField(max_length=64, blank=True, null=True)
     peducation = models.CharField(max_length=8, blank=True, null=True)
     pabstract = models.TextField(blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
+    state = models.IntegerField(default=1)
     creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
-    account_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    insert_time = models.DateTimeField(auto_now_add=True)
+    account_code = models.CharField(max_length=64, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'personal_info'
 
 
 # 企业基本信息表
 class EnterpriseBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    ecode = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    ecode = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     ename = models.CharField(max_length=64, blank=True, null=True)
     eabbr = models.CharField(max_length=32, blank=True, null=True)
-    business_license = models.CharField(max_length=64, blank=True, null=True)
+    business_license = models.CharField(max_length=64,)
     eabstract = models.TextField(blank=True, null=True)
     homepage = models.CharField(max_length=128, blank=True, null=True)
     etel = models.CharField(max_length=16, blank=True, null=True)
@@ -73,15 +74,15 @@ class EnterpriseBaseinfo(models.Model):
     eemail = models.CharField(max_length=16, blank=True, null=True)
     addr = models.CharField(max_length=255, blank=True, null=True)
     zipcode = models.CharField(max_length=8, blank=True, null=True)
-    elevel = models.IntegerField(blank=True, null=True)
-    credi_tvalue = models.IntegerField(blank=True, null=True)
+    elevel = models.IntegerField(default=1)
+    credi_tvalue = models.IntegerField(default=0)
     state = models.IntegerField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True)
     account_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'enterprise_baseinfo'
 
 
@@ -96,14 +97,14 @@ class ExpertApplyHistory(models.Model):
     apply_type = models.IntegerField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'expert_apply_history'
 
 
 # 领域专家基本信息表
 class ExpertBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    expert_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    expert_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     pcode = models.CharField(max_length=64, blank=True, null=True)
     expert_name = models.CharField(max_length=64, blank=True, null=True)
     expert_tel = models.CharField(max_length=16, blank=True, null=True)
@@ -121,7 +122,7 @@ class ExpertBaseinfo(models.Model):
     expert_level = models.IntegerField(blank=True, null=True)
     credit_value = models.IntegerField(blank=True, null=True)
     expert_integral = models.IntegerField(blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
+    state = models.IntegerField(default=1)
     creater = models.CharField(max_length=32, blank=True, null=True)
     account_code = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True)

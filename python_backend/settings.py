@@ -26,7 +26,7 @@ SECRET_KEY = '0bjj=yvus#i%_cr)rh-o#r=7z@p6q1bdg(z(9n)qlzpz!)#nns'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # 用户系统
@@ -38,7 +38,7 @@ REST_FRAMEWORK = {
 
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-        'permissions.FuncPermission'
+        # 'permissions.FuncPermission'
     ),
 
     'DEFAULT_AUTHENTICATION_CLASSES': (

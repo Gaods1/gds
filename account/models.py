@@ -93,7 +93,7 @@ class AccountInfoManager(BaseUserManager):
 class AccountInfo(AbstractBaseUser):
     serial = models.AutoField(primary_key=True)
     account_code = models.CharField(unique=True, max_length=32, default=gen_uuid32)
-    account = models.CharField(unique=True, max_length=32,)
+    account = models.CharField(max_length=32, blank=True, null=True)
     state = models.IntegerField(default=1)
     dept_code = models.CharField(max_length=32, blank=True, null=True)
     account_memo = models.CharField(max_length=255, blank=True, null=True)
