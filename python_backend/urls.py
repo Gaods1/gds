@@ -20,6 +20,7 @@ from rest_framework import routers
 from account import views
 from rest_framework.schemas import get_schema_view
 from rest_framework_swagger.renderers import SwaggerUIRenderer, OpenAPIRenderer
+from django.views.generic import TemplateView
 
 
 router = routers.DefaultRouter()
@@ -37,6 +38,7 @@ router.register(r'district',views.SystemDistrictViewSet)
 schema_view = get_schema_view(title='Users API', renderer_classes=[OpenAPIRenderer, SwaggerUIRenderer])
 
 urlpatterns = [
+    re_path(r'^$',TemplateView.as_view(template_name='index.html')),
     path('admin/', admin.site.urls),
     path('accounts/', include('rest_framework.urls', namespace='rest_framework')),
     path('api-token-auth/', obtain_jwt_token, name='auth-jwt-get'),
