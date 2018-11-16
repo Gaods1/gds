@@ -75,25 +75,6 @@ class AccountInfoSerializer(serializers.ModelSerializer):
                   'update_time',]
 
 
-# 角色序列
-class RoleInfoSerializer(serializers.ModelSerializer):
-    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    cstate = serializers.CharField(read_only=True)
-
-    class Meta:
-        model = RoleInfo
-        fields = ['serial',
-                  'role_code',
-                  'role_name',
-                  'role_memo',
-                  'state',
-                  'cstate',
-                  'creater',
-                  'insert_time',
-                  'update_time']
-
-
 # 功能点序列
 class FunctionInfoSerializer(serializers.ModelSerializer):
     pfunc = serializers.CharField(read_only=True)
@@ -120,6 +101,27 @@ class FunctionInfoSerializer(serializers.ModelSerializer):
             'insert_time',
             'update_time'
         ]
+
+
+# 角色序列
+class RoleInfoSerializer(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    cstate = serializers.CharField(read_only=True)
+    func = FunctionInfoSerializer(many=True)
+
+    class Meta:
+        model = RoleInfo
+        fields = ['serial',
+                  'role_code',
+                  'role_name',
+                  'role_memo',
+                  'state',
+                  'cstate',
+                  'func',
+                  'creater',
+                  'insert_time',
+                  'update_time']
 
 
 # 账号禁权表

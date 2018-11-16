@@ -158,6 +158,12 @@ class RoleInfo(models.Model):
     def cstate(self):
         return state_map.get(self.state)
 
+    @property
+    def func(self):
+        func_code =[i.func_code for i in RoleFuncInfo.objects.filter(role_code=self.role_code)]
+        func = FunctionInfo.objects.filter(func_code__in=func_code)
+        return func
+
     class Meta:
         managed = True
         db_table = 'role_info'
