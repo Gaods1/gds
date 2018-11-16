@@ -29,6 +29,7 @@ DEBUG = True
 ALLOWED_HOSTS = ['*']
 
 
+
 # 用户系统
 AUTH_USER_MODEL = 'account.AccountInfo'
 
