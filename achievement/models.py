@@ -1,9 +1,41 @@
 from django.db import models
-
+from expert.models import ResultOwnereBaseinfo, ResultOwnerpBaseinfo # 成果/需求持有人（企业）基本信息表， 成果/需求持有人（个人）基本信息表
 
 # Create your models here.
 
-#成果基本信息表
+
+# 需求基本信息表 *
+class RequirementsInfo(models.Model):
+    serial = models.AutoField(primary_key=True)
+    req_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    req_name = models.CharField(max_length=64, blank=True, null=True)
+    req_form_type = models.IntegerField(blank=True, null=True)
+    r_abstract = models.TextField(blank=True, null=True)
+    use_type = models.IntegerField(blank=True, null=True)
+    cooperation_type = models.IntegerField(blank=True, null=True)
+    obtain_type = models.IntegerField(blank=True, null=True)
+    osource_name = models.CharField(max_length=64, blank=True, null=True)
+    obtain_source = models.CharField(max_length=255, blank=True, null=True)
+    entry_type = models.IntegerField(blank=True, null=True)
+    owner_type = models.IntegerField(blank=True, null=True)
+    owber_code = models.CharField(max_length=64, blank=True, null=True)
+    owner_abstract = models.CharField(max_length=255, blank=True, null=True)
+    rcoop_t_abstract = models.CharField(max_length=255, blank=True, null=True)
+    expiry_dateb = models.DateTimeField(blank=True, null=True)
+    expiry_datee = models.DateTimeField(blank=True, null=True)
+    original_data = models.CharField(max_length=255, blank=True, null=True)
+    show_state = models.IntegerField(blank=True, null=True)
+    sniff_state = models.IntegerField(blank=True, null=True)
+    sniff_time = models.DateTimeField(blank=True, null=True)
+    creater = models.CharField(max_length=32, blank=True, null=True)
+    insert_time = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'requirements_info'
+
+
+# 成果基本信息表 *
 class ResultsInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     r_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
@@ -31,15 +63,16 @@ class ResultsInfo(models.Model):
     account_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
     r_abstract_detail = models.TextField(blank=True, null=True)
     check_state = models.IntegerField(blank=True, null=True)
+
     class Meta:
         managed = False
         db_table = 'results_info'
 
 
-    # @property
-    # def Cooperation(self):
-    #     Cooperation = ResultsCooperationInfo.objects.get(rr_code=self.r_code)
-    #     return Cooperation
+    @property
+    def Cooperation(self):
+        Cooperation = ResultsCooperationTypeInfo.objects.get(rr_code=self.r_code)
+        return Cooperation
 
     @property
     def Owner(self):
@@ -53,7 +86,7 @@ class ResultsInfo(models.Model):
 
 
 # 成果合作方式信息表
-class ResultsCooperationInfo(models.Model):
+class ResultsCooperationTypeInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     r_type = models.IntegerField(blank=True, null=True)
     rr_code = models.CharField(max_length=64, blank=True, null=True)
@@ -67,7 +100,7 @@ class ResultsCooperationInfo(models.Model):
         db_table = 'results_cooperation_type_info'
 
 
-# 成果持有人信息表
+# 成果持有人信息表 *
 class ResultsOwnerInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     r_code = models.CharField(max_length=64, blank=True, null=True)
@@ -82,7 +115,8 @@ class ResultsOwnerInfo(models.Model):
         managed = False
         db_table = 'results_owner_info'
 
-# 成果/需求的检索关键字
+
+# 成果/需求的检索关键字 *
 class KeywordsInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     key_type = models.IntegerField(blank=True, null=True)
@@ -97,9 +131,7 @@ class KeywordsInfo(models.Model):
         db_table = 'keywords_info'
 
 
-
-
-#成果审核历史记录表
+# 成果审核历史记录表 *
 class ResultCheckHistory(models.Model):
     serial = models.AutoField(primary_key=True)
     apply_code = models.CharField(max_length=64, blank=True, null=True)
@@ -113,8 +145,7 @@ class ResultCheckHistory(models.Model):
         db_table = 'result_check_history'
 
 
-
-#成果评价信息表
+# 成果评价信息表 *
 class ResultsEaInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     r_code = models.CharField(max_length=64, blank=True, null=True)
@@ -130,11 +161,7 @@ class ResultsEaInfo(models.Model):
         db_table = 'results_ea_info'
 
 
-
-
-
-
-# 成果/需求审核申请表
+# 成果/需求审核申请表 *
 class RrApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
     a_code = models.CharField(max_length=64, blank=True, null=True)
@@ -148,26 +175,3 @@ class RrApplyHistory(models.Model):
     class Meta:
         managed = False
         db_table = 'rr_apply_history'
-
-
-
-class ResultOwnereBaseinfo(models.Model):
-    serial = models.AutoField(primary_key=True)
-    ecode = models.CharField(max_length=64, blank=True, null=True)
-    type = models.IntegerField(blank=True, null=True)
-    owner_name = models.CharField(max_length=64, blank=True, null=True)
-    owner_tel = models.CharField(max_length=16, blank=True, null=True)
-    owner_mobile = models.CharField(max_length=16, blank=True, null=True)
-    owner_email = models.CharField(max_length=16, blank=True, null=True)
-    owner_license = models.CharField(max_length=64, blank=True, null=True)
-    owner_abstract = models.TextField(blank=True, null=True)
-    homepage = models.CharField(max_length=128, blank=True, null=True)
-    creditvalue = models.IntegerField(blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
-    account_code = models.CharField(max_length=64, blank=True, null=True)
-    creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'result_ownere_baseinfo'

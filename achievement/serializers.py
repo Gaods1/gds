@@ -18,7 +18,8 @@ class ResultsCooperationInfoSerializer(serializers.ModelSerializer):
                   'update_time',
                   ]
 
-#成果持有人信息序列化
+
+# 成果持有人信息序列化
 class ResultsOwnerInfoSerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     class Meta:
@@ -33,6 +34,7 @@ class ResultsOwnerInfoSerializer(serializers.ModelSerializer):
                   'insert_time',
                   'update_time',
                   ]
+
 
 # 成果/需求的检索关键字
 class KeywordsInfoSerializer(serializers.ModelSerializer):
