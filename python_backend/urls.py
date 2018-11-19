@@ -29,5 +29,6 @@ urlpatterns = [
     path('docs/', schema_view, name="docs"),
     path('api-token-auth/', obtain_jwt_token, name='auth-jwt-get'),
     path('system/', include('account.urls')),
-    path('expert/', include('expert.urls'))
+    path('expert/', include('expert.urls')),
+    path('achievement/', include('achievement.urls')),
 ]
