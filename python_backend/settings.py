@@ -75,6 +75,9 @@ INSTALLED_APPS = [
     'account',
     'expert',
     'achievement',
+    'public_models',
+    'news',
+
     'rest_framework',
     'rest_framework_jwt',
     'django_filters',
