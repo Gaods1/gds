@@ -4,7 +4,7 @@ from misc.misc import gen_uuid32
 # Create your models here.
 
 
-# 身份授权信息表
+# 身份授权信息表(前端) *
 class IdentityAuthorizationInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     account_code = models.CharField(max_length=64, blank=True, null=True)
@@ -21,7 +21,7 @@ class IdentityAuthorizationInfo(models.Model):
         unique_together = (('account_code', 'identity_code'),)
 
 
-# 前端角色表
+# 前端角色表 *
 class IdentityInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     identity_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
@@ -37,7 +37,7 @@ class IdentityInfo(models.Model):
         db_table = 'identity_info'
 
 
-# 个人基本信息表
+# 个人基本信息表 *
 class PersonalInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     pcode = models.CharField(unique=True, max_length=64, default=gen_uuid32)
@@ -60,7 +60,7 @@ class PersonalInfo(models.Model):
         db_table = 'personal_info'
 
 
-# 企业基本信息表
+# 企业基本信息表 *
 class EnterpriseBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     ecode = models.CharField(unique=True, max_length=64, default=gen_uuid32)
@@ -88,7 +88,7 @@ class EnterpriseBaseinfo(models.Model):
         db_table = 'enterprise_baseinfo'
 
 
-# 领域专家审核申请表
+# 领域专家审核申请表 *
 class ExpertApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
     apply_code = models.CharField(max_length=64, blank=True, null=True)
@@ -103,7 +103,7 @@ class ExpertApplyHistory(models.Model):
         db_table = 'expert_apply_history'
 
 
-# 领域专家基本信息表
+# 领域专家基本信息表 *
 class ExpertBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     expert_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
@@ -134,7 +134,7 @@ class ExpertBaseinfo(models.Model):
         db_table = 'expert_baseinfo'
 
 
-# 领域专家审核历史记录表
+# 领域专家审核历史记录表 *
 class ExpertCheckHistory(models.Model):
     serial = models.AutoField(primary_key=True)
     apply_code = models.CharField(max_length=64, blank=True, null=True)
@@ -148,7 +148,7 @@ class ExpertCheckHistory(models.Model):
         db_table = 'expert_check_history'
 
 
-# 技术经纪人审核申请表
+# 技术经纪人审核申请表 *
 class BrokerApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
     apply_code = models.CharField(max_length=64, blank=True, null=True)
@@ -163,7 +163,7 @@ class BrokerApplyHistory(models.Model):
         db_table = 'broker_apply_history'
 
 
-# 技术经纪人基本信息表
+# 技术经纪人基本信息表 *
 class BrokerBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     broker_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
@@ -193,7 +193,7 @@ class BrokerBaseinfo(models.Model):
         db_table = 'broker_baseinfo'
 
 
-# 技术经纪人审核历史记录表
+# 技术经纪人审核历史记录表 *
 class BrokerCheckHistory(models.Model):
     serial = models.AutoField(primary_key=True)
     apply_code = models.CharField(max_length=64, blank=True, null=True)
@@ -207,7 +207,7 @@ class BrokerCheckHistory(models.Model):
         db_table = 'broker_check_history'
 
 
-# 采集员审核申请表
+# 采集员审核申请表 *
 class CollectorApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
     apply_code = models.CharField(max_length=64, blank=True, null=True)
@@ -222,7 +222,7 @@ class CollectorApplyHistory(models.Model):
         db_table = 'collector_apply_history'
 
 
-# 采集员基本信息表
+# 采集员基本信息表 *
 class CollectorBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     collector_code = models.CharField(max_length=64, blank=True, null=True)
@@ -249,7 +249,7 @@ class CollectorBaseinfo(models.Model):
         db_table = 'collector_baseinfo'
 
 
-# 采集员审核历史记录表
+# 采集员审核历史记录表 *
 class CollectorCheckHistory(models.Model):
     serial = models.AutoField(primary_key=True)
     apply_code = models.CharField(max_length=64, blank=True, null=True)
@@ -263,7 +263,7 @@ class CollectorCheckHistory(models.Model):
         db_table = 'collector_check_history'
 
 
-# 成果/需求持有人审核申请表
+# 成果/需求持有人审核申请表 *
 class OwnerApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
     apply_code = models.CharField(max_length=64, blank=True, null=True)
@@ -278,7 +278,7 @@ class OwnerApplyHistory(models.Model):
         db_table = 'owner_apply_history'
 
 
-# 成果/需求持有人（企业）审核申请表
+# 成果/需求持有人（企业）审核申请表 *
 class OwnereApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
     apply_code = models.CharField(max_length=64, blank=True, null=True)
@@ -292,7 +292,7 @@ class OwnereApplyHistory(models.Model):
         db_table = 'ownere_apply_history'
 
 
-# 成果/需求审核（企业）历史记录表
+# 成果/需求持有人审核（企业）历史记录表 *
 class OwnereCheckHistory(models.Model):
     serial = models.AutoField(primary_key=True)
     apply_code = models.CharField(max_length=64, blank=True, null=True)
@@ -306,7 +306,7 @@ class OwnereCheckHistory(models.Model):
         db_table = 'ownere_check_history'
 
 
-# 成果/需求审核历史记录表
+# 成果/需求持有人审核历史记录表 *
 class OwnerpCheckHistory(models.Model):
     serial = models.AutoField(primary_key=True)
     apply_code = models.CharField(max_length=64, blank=True, null=True)
@@ -320,7 +320,7 @@ class OwnerpCheckHistory(models.Model):
         db_table = 'ownerp_check_history'
 
 
-# 成果/需求持有人（企业角色申请表）
+# 成果/需求持有人（企业角色申请表）*
 class ResultOwnereBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     ecode = models.CharField(max_length=64, blank=True, null=True)
@@ -343,7 +343,7 @@ class ResultOwnereBaseinfo(models.Model):
         db_table = 'result_ownere_baseinfo'
 
 
-# 成果/需求持有人（个人）角色申请表（基本信息表)
+# 成果/需求持有人（个人）角色申请表（基本信息表) *
 class ResultOwnerpBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     pcode = models.CharField(max_length=64, blank=True, null=True)
@@ -369,23 +369,7 @@ class ResultOwnerpBaseinfo(models.Model):
         db_table = 'result_ownerp_baseinfo'
 
 
-
-# 成果持有人信息表
-class ResultsOwnerInfo(models.Model):
-    serial = models.AutoField(primary_key=True)
-    r_code = models.CharField(max_length=64, blank=True, null=True)
-    owner_type = models.IntegerField(blank=True, null=True)
-    owner_code = models.CharField(max_length=64, blank=True, null=True)
-    main_owner = models.IntegerField(blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'results_owner_info'
-
-
-# 技术团队基本信息表
+# 技术团队基本信息表 *
 class ProjectTeamBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     pt_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
@@ -407,7 +391,32 @@ class ProjectTeamBaseinfo(models.Model):
         db_table = 'project_team_baseinfo'
 
 
-# 技术团队审核申请表
+# 技术团队成员信息表 *
+class ProjectTeamMember(models.Model):
+    serial = models.AutoField(primary_key=True)
+    pt_code = models.CharField(max_length=64, blank=True, null=True)
+    ptm_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    ptmcaption = models.CharField(max_length=32, blank=True, null=True)
+    pcode = models.CharField(max_length=64, blank=True, null=True)
+    ptm_name = models.CharField(max_length=32, blank=True, null=True)
+    ptm_tel = models.CharField(max_length=16, blank=True, null=True)
+    ptm_mobile = models.CharField(max_length=16, blank=True, null=True)
+    ptm_email = models.CharField(max_length=16, blank=True, null=True)
+    ptm_idtype = models.CharField(max_length=32, blank=True, null=True)
+    ptm_id = models.CharField(max_length=32, blank=True, null=True)
+    ptm_education = models.CharField(max_length=8, blank=True, null=True)
+    ptm_abstract = models.TextField(blank=True, null=True)
+    ptm_leader = models.IntegerField(blank=True, null=True)
+    state = models.IntegerField(blank=True, null=True)
+    creater = models.CharField(max_length=32, blank=True, null=True)
+    insert_time = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'project_team_member'
+
+
+# 技术团队审核申请表 *
 class TeamApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
     apply_code = models.CharField(max_length=64, blank=True, null=True)
@@ -422,7 +431,7 @@ class TeamApplyHistory(models.Model):
         db_table = 'team_apply_history'
 
 
-# 技术团队审核历史记录表
+# 技术团队审核历史记录表 *
 class TeamCheckHistory(models.Model):
     serial = models.AutoField(primary_key=True)
     apply_code = models.CharField(max_length=64, blank=True, null=True)

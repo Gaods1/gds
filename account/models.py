@@ -5,7 +5,8 @@ from misc.misc import gen_uuid32,check_md5_password, genearteMD5
 from misc.para_info import state_map
 from public_models.models import SystemDistrict
 
-# 机构部门表
+
+# 机构部门表 *
 class Deptinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     dept_code = models.CharField(unique=True, max_length=32,default=gen_uuid32)
@@ -65,7 +66,7 @@ class AccountInfoManager(BaseUserManager):
         return user
 
 
-# 账号信息表
+# 账号信息表 *
 class AccountInfo(AbstractBaseUser):
     serial = models.AutoField(primary_key=True)
     account_code = models.CharField(unique=True, max_length=32, default=gen_uuid32)
@@ -119,7 +120,7 @@ class AccountInfo(AbstractBaseUser):
         return self.account
 
 
-# 角色表
+# 角色表 *
 class RoleInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     role_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
@@ -148,7 +149,7 @@ class RoleInfo(models.Model):
         return self.role_name
 
 
-# 功能信息表
+# 功能信息表 *
 class FunctionInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     func_code = models.CharField(unique=True, max_length=64,default=gen_uuid32)
@@ -181,7 +182,7 @@ class FunctionInfo(models.Model):
         return self.func_name
 
 
-# 账号禁权表
+# 账号禁权表 *
 class AccountDisableFuncinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     account = models.CharField(max_length=32)
@@ -209,7 +210,7 @@ class AccountDisableFuncinfo(models.Model):
         return '%s: %s' % (self.account, self.func_code)
 
 
-# 账号角色授权表
+# 账号角色授权表 *
 class AccountRoleInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     account = models.CharField(max_length=32)
@@ -238,7 +239,7 @@ class AccountRoleInfo(models.Model):
         return 'account:%s role:%s type:%s' % (self.account, self.role, self.type)
 
 
-# 角色功能关联表
+# 角色功能关联表 *
 class RoleFuncInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     role_code = models.CharField(max_length=64,)
@@ -271,7 +272,7 @@ class RoleFuncInfo(models.Model):
         return "role:%s func:%s"%(self.role, self.func)
 
 
-# 系统参数表
+# 系统参数表 *
 class ParamInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     param_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)

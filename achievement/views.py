@@ -22,6 +22,6 @@ class ProfileViewSet(viewsets.ReadOnlyModelViewSet):
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
-    ordering_fields = ("r_code","r_name", "cooperation_code", "state", "main_owner")
-    filter_fields = ("r_name", "cooperation_code", "state", "main_owner")
-    search_fields = ("r_name","main_owner")
+    # ordering_fields = ("r_code","r_name", "cooperation_code", "state", "main_owner")
+    # filter_fields = ("r_name", "cooperation_code", "state", "main_owner")
+    # search_fields = ("r_name","main_owner")

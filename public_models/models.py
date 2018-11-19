@@ -113,7 +113,7 @@ class DjangoContentType(models.Model):
 # *********************************************************************************************************************
 
 
-# 我的关注信息表（后台暂时不用）
+# 我的关注信息表（后台暂时不用）*
 class InterestInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     type = models.IntegerField(blank=True, null=True)
@@ -127,7 +127,7 @@ class InterestInfo(models.Model):
         unique_together = (('object_code', 'account_code'),)
 
 
-# 领域类型基本信息表（领域专家、经纪人、项目团队 共用）。分两层级别管理
+# 领域类型基本信息表（领域专家、经纪人、项目团队 共用）。分两层级别管理 *
 class MajorInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     mtype = models.IntegerField(blank=True, null=True)
@@ -146,7 +146,7 @@ class MajorInfo(models.Model):
         unique_together = (('mtype', 'mcode'),)
 
 
-# 领域类型使用状况信息表（领域专家、经纪人、项目团队、成果、需求共用）
+# 领域类型使用状况信息表（领域专家、经纪人、项目团队、成果、需求共用）*
 class MajorUserinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     mtype = models.IntegerField(blank=True, null=True)
@@ -159,8 +159,19 @@ class MajorUserinfo(models.Model):
         db_table = 'major_userinfo'
 
 
+# 附件文件类型表 *
+class AttachmentFileType(models.Model):
+    serial = models.AutoField(primary_key=True)
+    tcode = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    tname = models.CharField(max_length=32, blank=True, null=True)
+    tmemo = models.CharField(max_length=255, blank=True, null=True)
 
-# 附件信息表
+    class Meta:
+        managed = False
+        db_table = 'attachment_file_type'
+
+
+# 附件信息表 *
 class AttachmentFileinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     ecode = models.CharField(max_length=64, blank=True, null=True)
@@ -179,19 +190,7 @@ class AttachmentFileinfo(models.Model):
         unique_together = (('ecode', 'tcode', 'file_name'),)
 
 
-# 附件文件类型表
-class AttachmentFileType(models.Model):
-    serial = models.AutoField(primary_key=True)
-    tcode = models.CharField(unique=True, max_length=64, blank=True, null=True)
-    tname = models.CharField(max_length=32, blank=True, null=True)
-    tmemo = models.CharField(max_length=255, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'attachment_file_type'
-
-
-# 消息推送表
+# 消息推送表 *
 class Message(models.Model):
     serial = models.AutoField(primary_key=True)
     message_title = models.CharField(max_length=64, blank=True, null=True)
@@ -213,7 +212,7 @@ class Message(models.Model):
         db_table = 'message'
 
 
-# 区域表
+# 区域表 *
 class SystemDistrict(models.Model):
     district_id = models.AutoField(primary_key=True)
     parent_id = models.IntegerField(default=0)
@@ -235,3 +234,19 @@ class SystemDistrict(models.Model):
     class Meta:
         managed = True
         db_table = 'system_district'
+
+
+# 采集员-持有人代理协议表 *
+class AgreementInfo(models.Model):
+    serial = models.AutoField(primary_key=True)
+    agreement_code = models.CharField(max_length=64, default=True, null=True)
+    ccode = models.CharField(max_length=64, default=True, null=True)
+    rr_code = models.CharField(max_length=64, default=True, null=True)
+    type = models.IntegerField(max_length=10)
+    creater = models.CharField(max_length=32, blank=True, null=True)
+    insert_time = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'agreement_info'
+        unique_together = (('ccode', 'agreement_code', 'rr_code'),)

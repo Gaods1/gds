@@ -3,7 +3,7 @@ from django.db import models
 # Create your models here.
 
 
-# 新闻栏目信息
+# 新闻栏目信息 *
 class NewsGroupInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     group_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
@@ -17,7 +17,7 @@ class NewsGroupInfo(models.Model):
         db_table = 'news_group_info'
 
 
-# 新闻信息表
+# 新闻信息表 *
 class NewsInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     group_code = models.CharField(max_length=64, blank=True, null=True)
@@ -47,7 +47,7 @@ class NewsInfo(models.Model):
         db_table = 'news_info'
 
 
-# 政策栏目信息表
+# 政策栏目信息表 *
 class PolicyGroupInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     group_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
@@ -61,7 +61,7 @@ class PolicyGroupInfo(models.Model):
         db_table = 'policy_group_info'
 
 
-# 政策信息表
+# 政策信息表 *
 class PolicyInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     group_code = models.CharField(max_length=64, blank=True, null=True)
