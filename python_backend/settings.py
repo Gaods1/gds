@@ -83,7 +83,7 @@ INSTALLED_APPS = [
     'rest_framework_swagger',
     'corsheaders',# 跨域(以后删除)
     'projectmanagement',#项目管理
-
+    'consult',#征询管理
 ]
 
 MIDDLEWARE = [
