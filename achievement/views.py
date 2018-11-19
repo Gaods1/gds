@@ -14,7 +14,7 @@ from .serializers import *
 
 
 # 成果基本信息展示
-class ProfileViewSet(viewsets.ReadOnlyModelViewSet):
+class ProfileViewSet(viewsets.ModelViewSet):
     queryset = ResultsInfo.objects.all().order_by('-serial')
     serializer_class = ResultsInfoSerializer
     filter_backends = (

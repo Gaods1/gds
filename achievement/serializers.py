@@ -7,7 +7,7 @@ from .models import *
 class ResultsCooperationInfoSerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     class Meta:
-        model = ResultsCooperationInfo
+        model = ResultsCooperationTypeInfo
         fields = ['serial',
                   'r_type',
                   'rr_code',
@@ -54,7 +54,7 @@ class KeywordsInfoSerializer(serializers.ModelSerializer):
 # 成果信息表序列化
 class ResultsInfoSerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    # Cooperation = ResultsCooperationInfoSerializer(many=True)
+    Cooperation = ResultsCooperationInfoSerializer(many=True)
     Owner = ResultsOwnerInfoSerializer(many=True)
     Keywords = KeywordsInfoSerializer(many=True)
     class Meta:
@@ -86,7 +86,7 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
                   'r_abstract_detail',
                   'check_state',
                   'update_time',
-                  # 'Cooperation',
+                  'Cooperation',
                   'Owner',
                   'Keywords'
                   ]

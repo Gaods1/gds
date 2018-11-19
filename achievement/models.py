@@ -64,25 +64,29 @@ class ResultsInfo(models.Model):
     r_abstract_detail = models.TextField(blank=True, null=True)
     check_state = models.IntegerField(blank=True, null=True)
 
-    class Meta:
-        managed = False
-        db_table = 'results_info'
-
 
     @property
     def Cooperation(self):
-        Cooperation = ResultsCooperationTypeInfo.objects.get(rr_code=self.r_code)
+        Cooperation = ResultsCooperationTypeInfo.objects.filter(rr_code=self.r_code)
         return Cooperation
 
     @property
     def Owner(self):
-        Owner = ResultsOwnerInfo.objects.get(r_code=self.r_code)
+        Owner = ResultsOwnerInfo.objects.filter(r_code=self.r_code)
         return Owner
 
     @property
     def Keywords(self):
-        Keywords = KeywordsInfo.objects.get(object_code=self.r_code)
+        Keywords = KeywordsInfo.objects.filter(object_code=self.r_code)
         return Keywords
+
+    class Meta:
+        managed =False
+        db_table = 'results_info'
+
+    def __unicode__(self):
+        return self.Cooperation,self.Owner,self.Keywords
+
 
 
 # 成果合作方式信息表
