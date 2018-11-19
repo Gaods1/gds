@@ -28,7 +28,7 @@ class ResultsInfo(models.Model):
     sniff_time = models.DateTimeField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True)
-    accout_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    account_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
     r_abstract_detail = models.TextField(blank=True, null=True)
     check_state = models.IntegerField(blank=True, null=True)
     class Meta:
@@ -36,10 +36,10 @@ class ResultsInfo(models.Model):
         db_table = 'results_info'
 
 
-    @property
-    def Cooperation(self):
-        Cooperation = ResultsCooperationTypeInfo.objects.get(rr_code=self.r_code)
-        return Cooperation
+    # @property
+    # def Cooperation(self):
+    #     Cooperation = ResultsCooperationInfo.objects.get(rr_code=self.r_code)
+    #     return Cooperation
 
     @property
     def Owner(self):
@@ -53,11 +53,12 @@ class ResultsInfo(models.Model):
 
 
 # 成果合作方式信息表
-class ResultsCooperationTypeInfo(models.Model):
+class ResultsCooperationInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     r_type = models.IntegerField(blank=True, null=True)
     rr_code = models.CharField(max_length=64, blank=True, null=True)
     cooperation_code = models.CharField(max_length=64, blank=True, null=True)
+    cooperation_name = models.CharField(max_length=64, blank=True, null=True)
     state = models.IntegerField(blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True)
 
@@ -74,6 +75,7 @@ class ResultsOwnerInfo(models.Model):
     owner_code = models.CharField(max_length=64, blank=True, null=True)
     main_owner = models.IntegerField(blank=True, null=True)
     state = models.IntegerField(blank=True, null=True)
+    r_type = models.IntegerField(blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True)
 
     class Meta:
