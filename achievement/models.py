@@ -1,5 +1,5 @@
 from django.db import models
-
+from expert.models import ResultOwnereBaseinfo, ResultOwnerpBaseinfo # 成果/需求持有人（企业）基本信息表， 成果/需求持有人（个人）基本信息表
 
 # Create your models here.
 
