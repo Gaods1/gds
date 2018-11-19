@@ -2,8 +2,9 @@ from rest_framework import serializers
 from .models import *
 
 
+
 # 成果合作信息序列化
-class ResultsCooperationTypeInfoSerializer(serializers.ModelSerializer):
+class ResultsCooperationInfoSerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     class Meta:
         model = ResultsCooperationTypeInfo
@@ -11,6 +12,7 @@ class ResultsCooperationTypeInfoSerializer(serializers.ModelSerializer):
                   'r_type',
                   'rr_code',
                   'cooperation_code',
+                  'cooperation_name',
                   'state',
                   'insert_time',
                   'update_time',
@@ -28,6 +30,7 @@ class ResultsOwnerInfoSerializer(serializers.ModelSerializer):
                   'owner_code',
                   'main_owner',
                   'state',
+                  'r_type',
                   'insert_time',
                   'update_time',
                   ]
@@ -48,11 +51,10 @@ class KeywordsInfoSerializer(serializers.ModelSerializer):
                   'update_time',
                   ]
 
-
 # 成果信息表序列化
 class ResultsInfoSerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    Cooperation = ResultsCooperationTypeInfoSerializer(many=True)
+    Cooperation = ResultsCooperationInfoSerializer(many=True)
     Owner = ResultsOwnerInfoSerializer(many=True)
     Keywords = KeywordsInfoSerializer(many=True)
     class Meta:
@@ -80,10 +82,11 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
                   'sniff_time',
                   'creater',
                   'insert_time',
-                  'accout_code',
+                  'account_code',
                   'r_abstract_detail',
                   'check_state',
                   'update_time',
                   'Cooperation',
                   'Owner',
-                  'Keywords',]
+                  'Keywords'
+                  ]

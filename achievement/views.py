@@ -14,7 +14,7 @@ from .serializers import *
 
 
 # 成果基本信息展示
-class ProfileViewSet(viewsets.ReadOnlyModelViewSet):
+class ProfileViewSet(viewsets.ModelViewSet):
     queryset = ResultsInfo.objects.all().order_by('-serial')
     serializer_class = ResultsInfoSerializer
     filter_backends = (
@@ -22,6 +22,6 @@ class ProfileViewSet(viewsets.ReadOnlyModelViewSet):
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
-    # ordering_fields = ("r_code","r_name", "cooperation_code", "state", "main_owner")
-    # filter_fields = ("r_name", "cooperation_code", "state", "main_owner")
-    # search_fields = ("r_name","main_owner")
+    ordering_fields = ("r_code","r_name","osource_name")
+    filter_fields = ("r_name", "r_code","osource_name")
+    search_fields = ("r_name","osource_name")
