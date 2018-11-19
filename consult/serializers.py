@@ -6,6 +6,7 @@ class ConsultInfoSerializer(serializers.ModelSerializer):
     consult_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     consult_endtime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    rr = serializers.ListField()
     class Meta:
         model = ConsultInfo
         fields = ['serial',
@@ -17,7 +18,8 @@ class ConsultInfoSerializer(serializers.ModelSerializer):
                   'consult_endtime',
                   'consult_state',
                   'insert_time',
-                  'creater',]
+                  'creater',
+                  'rr',]
 
 #专家征询回复表序列化
 class ConsultReplyInfoSerializer(serializers.ModelSerializer):

@@ -1,5 +1,5 @@
 from django.db import models
-
+from achievement.models import RequirementsInfo,ResultsInfo
 
 
 class ConsultCheckinfo(models.Model):
@@ -11,6 +11,14 @@ class ConsultCheckinfo(models.Model):
     check_state = models.IntegerField(blank=True, null=True)
     check_memo = models.TextField(blank=True, null=True)
     checker = models.CharField(max_length=64, blank=True, null=True)
+
+    @property
+    def rr(self):
+        result_codes = [r.rrcode for r in ConsultRrinfo.objects.filter(consult_code=self.consult_code, rrtype=1)]
+        requirement_codes = [r.rrcode for r in ConsultRrinfo.objects.filter(consult_code=self.consult_code,rrtype=0)]
+        results = [r.r_name for r in  ResultsInfo.objects.filter(r_code__in=result_codes)]
+        requirements = [r.req_name for r in RequirementsInfo.objects.filter(req_code__in=requirement_codes)]
+        return results + requirements;
 
     class Meta:
         managed = False
