@@ -31,4 +31,5 @@ urlpatterns = [
     path('system/', include('account.urls')),
     path('expert/', include('expert.urls')),
     path('achievement/', include('achievement.urls')),
+    path('project/', include('projectmanagement.urls')),
 ]
