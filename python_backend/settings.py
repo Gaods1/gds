@@ -74,6 +74,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'account',
     'expert',
+    'public_models',
+    'news',
+
     'rest_framework',
     'rest_framework_jwt',
     'django_filters',
