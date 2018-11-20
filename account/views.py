@@ -11,7 +11,25 @@ import django_filters
 
 
 # 用户管理
+
 class AccountViewSet(viewsets.ModelViewSet):
+    """
+    参数说明（data）
+        {
+          "account_code": "string",       账号代码 系统自动生成
+          "account": "string",            账号 必填
+          "password": "string",           密码 必填（系统会自动做MD5加密）
+          "state": 0,                     状态 1、启用， 0、 禁用 （默认为1）
+          "dept_code": "string",          部门代码 可以为空
+          "dept": "string"                部门名称（仅在get时使用）
+          "account_memo": "string",       账号描述 选填
+          "user_name": "string",          姓名 选填
+          "account_id": "string",         证件号码 选填
+          "user_mobile": "string",        电话 选填（如果添加可用电话和密码登陆前台网站系统）
+          "user_email": "string",         邮箱 选填
+          "creater": "string"             创建者 系统自动创建
+        }
+    """
     queryset = AccountInfo.objects.all().order_by('-serial')
     serializer_class = AccountInfoSerializer
     filter_backends = (
@@ -36,12 +54,14 @@ class AccountViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     def update(self, request, *args, **kwargs):
+        instance = self.get_object()
         data = request.data
         password = data.get("password")
-        if password:
-            data["password"] = genearteMD5(password)
+        if password and password != instance.password:
+            data['password'] = genearteMD5(password)
+
         partial = kwargs.pop('partial', False)
-        instance = self.get_object()
+
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
