@@ -1,6 +1,7 @@
 from django.db import models
-from expert.models import ResultOwnereBaseinfo, ResultOwnerpBaseinfo # 成果/需求持有人（企业）基本信息表， 成果/需求持有人（个人）基本信息表
-
+from expert.models import ResultOwnereBaseinfo, ResultOwnerpBaseinfo# 成果/需求持有人（企业）基本信息表， 成果/需求持有人（个人）基本信息表
+from public_models.models import MajorUserinfo
+from public_models.models import Message
 # Create your models here.
 
 
@@ -54,7 +55,7 @@ class ResultsInfo(models.Model):
     expiry_datee = models.DateTimeField(blank=True, null=True)
     rexpiry_dateb = models.DateTimeField(blank=True, null=True)
     rexpiry_datee = models.DateTimeField(blank=True, null=True)
-    original_data = models.CharField(max_length=255, blank=True, null=True)
+    original_data= models.CharField(max_length=255, blank=True, null=True)
     show_state = models.IntegerField(blank=True, null=True)
     sniff_state = models.IntegerField(blank=True, null=True)
     sniff_time = models.DateTimeField(blank=True, null=True)
@@ -62,7 +63,7 @@ class ResultsInfo(models.Model):
     insert_time = models.DateTimeField(blank=True, null=True)
     account_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
     r_abstract_detail = models.TextField(blank=True, null=True)
-    check_state = models.IntegerField(blank=True, null=True)
+    #check_state = models.IntegerField(blank=True, null=True)
 
 
     @property
@@ -79,6 +80,10 @@ class ResultsInfo(models.Model):
     def Keywords(self):
         Keywords = KeywordsInfo.objects.filter(object_code=self.r_code)
         return Keywords
+    @property
+    def mcode(self):
+        mm = MajorUserinfo.objects.filter(user_type=self.use_type)
+        return mm.mcode
 
     class Meta:
         managed =False
