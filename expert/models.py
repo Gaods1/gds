@@ -1,6 +1,6 @@
 from django.db import models
 from misc.misc import gen_uuid32
-
+from public_models.models import PersonalInfo, EnterpriseBaseinfo
 # Create your models here.
 
 
@@ -35,57 +35,6 @@ class IdentityInfo(models.Model):
     class Meta:
         managed = True
         db_table = 'identity_info'
-
-
-# 个人基本信息表 *
-class PersonalInfo(models.Model):
-    serial = models.AutoField(primary_key=True)
-    pcode = models.CharField(unique=True, max_length=64, default=gen_uuid32)
-    pname = models.CharField(max_length=64, blank=True, null=True)
-    psex = models.IntegerField(default=0)
-    pid_type = models.IntegerField(default=1)
-    pid = models.CharField(max_length=32)
-    pmobile = models.CharField(max_length=16, blank=True, null=True)
-    ptel = models.CharField(max_length=16, blank=True, null=True)
-    pemail = models.CharField(max_length=64, blank=True, null=True)
-    peducation = models.CharField(max_length=8, blank=True, null=True)
-    pabstract = models.TextField(blank=True, null=True)
-    state = models.IntegerField(default=1)
-    creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(auto_now_add=True)
-    account_code = models.CharField(max_length=64, blank=True, null=True)
-
-    class Meta:
-        managed = True
-        db_table = 'personal_info'
-
-
-# 企业基本信息表 *
-class EnterpriseBaseinfo(models.Model):
-    serial = models.AutoField(primary_key=True)
-    ecode = models.CharField(unique=True, max_length=64, default=gen_uuid32)
-    ename = models.CharField(max_length=64, blank=True, null=True)
-    eabbr = models.CharField(max_length=32, blank=True, null=True)
-    business_license = models.CharField(max_length=64,)
-    eabstract = models.TextField(blank=True, null=True)
-    homepage = models.CharField(max_length=128, blank=True, null=True)
-    etel = models.CharField(max_length=16, blank=True, null=True)
-    emobile = models.CharField(max_length=16, blank=True, null=True)
-    eemail = models.CharField(max_length=16, blank=True, null=True)
-    addr = models.CharField(max_length=255, blank=True, null=True)
-    zipcode = models.CharField(max_length=8, blank=True, null=True)
-    elevel = models.IntegerField(default=1)
-    credi_tvalue = models.IntegerField(default=0)
-    state = models.IntegerField(blank=True, null=True)
-    creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
-    account_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
-    manager = models.CharField(max_length=16, blank=True, null=True)
-    manager_id = models.CharField(max_length=32, blank=True, null=True)
-
-    class Meta:
-        managed = True
-        db_table = 'enterprise_baseinfo'
 
 
 # 领域专家审核申请表 *
