@@ -21,9 +21,29 @@ class ConsultInfoSerializer(serializers.ModelSerializer):
                   'creater',
                   'rr',]
 
+
+
+#征询专家关系表序列化
+class ConsultExpertSerializer(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+
+    class Meta:
+        model = ConsultExpert
+        fields = ['serial',
+                  'ce_code',
+                  'expert_code',
+                  'consult_code',
+                  'insert_time',
+                  'creater',]
+
+
+
+
 #专家征询回复表序列化
 class ConsultReplyInfoSerializer(serializers.ModelSerializer):
     reply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    consult_memo = serializers.CharField(read_only=True)
+    expert_name = serializers.CharField(read_only=True)
     class Meta:
         model = ConsultReplyInfo
         fields = ['serial',
@@ -32,7 +52,11 @@ class ConsultReplyInfoSerializer(serializers.ModelSerializer):
                   'consult_code',
                   'reply_body',
                   'reply_time',
-                  'reply_state',]
+                  'reply_state',
+                  'consult_memo',
+                  'expert_name']
+
+
 
 
 
@@ -52,6 +76,7 @@ class ConsultCheckinfoSerializer(serializers.ModelSerializer):
 
 
 
+
 #专家征询回复审核表序列化
 class ConsultReplyCheckinfoSerializer(serializers.ModelSerializer):
     check_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
@@ -63,3 +88,19 @@ class ConsultReplyCheckinfoSerializer(serializers.ModelSerializer):
                   'check_state',
                   'check_memo',
                   'checker',]
+
+
+
+
+
+#征询和成果或需求关系序列化
+class ConsultRrinfoSerializer(serializers.ModelSerializer):
+    major_code = serializers.ListField()
+    class Meta:
+        model = ConsultRrinfo
+        fields = ['serial',
+                  'consult_code',
+                  'rrtype',
+                  'rrcode',
+                  'rrmain',
+                  'major_code',]
