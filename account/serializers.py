@@ -48,33 +48,6 @@ class DeptinfoSerializer(serializers.ModelSerializer):
                   'insert_time',]
 
 
-# 账号序列
-class AccountInfoSerializer(serializers.ModelSerializer):
-    dept = serializers.CharField(read_only=True)
-    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
-    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
-    cstate = serializers.CharField(read_only=True)
-
-    class Meta:
-        model = AccountInfo
-        fields = ['serial',
-                  'account_code',
-                  'account',
-                  'password',
-                  'state',
-                  'cstate',
-                  'dept_code',
-                  'dept',
-                  'account_memo',
-                  'user_name',
-                  'account_id',
-                  'user_mobile',
-                  'user_email',
-                  'creater',
-                  'insert_time',
-                  'update_time',]
-
-
 # 功能点序列
 class FunctionInfoSerializer(serializers.ModelSerializer):
     pfunc = serializers.CharField(read_only=True)
@@ -103,12 +76,42 @@ class FunctionInfoSerializer(serializers.ModelSerializer):
         ]
 
 
+# 账号序列
+class AccountInfoSerializer(serializers.ModelSerializer):
+    dept = serializers.CharField(read_only=True)
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
+    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
+    cstate = serializers.CharField(read_only=True)
+    func = serializers.DictField(read_only=True)
+
+    class Meta:
+        model = AccountInfo
+        fields = ['serial',
+                  'account_code',
+                  'account',
+                  'password',
+                  'state',
+                  'cstate',
+                  'dept_code',
+                  'dept',
+                  'func',
+                  'account_memo',
+                  'user_name',
+                  'account_id',
+                  'user_mobile',
+                  'user_email',
+                  'creater',
+                  'active',
+                  'insert_time',
+                  'update_time',]
+
+
 # 角色序列
 class RoleInfoSerializer(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     cstate = serializers.CharField(read_only=True)
-    func = FunctionInfoSerializer(many=True)
+    func = FunctionInfoSerializer(many=True, read_only=True)
 
     class Meta:
         model = RoleInfo

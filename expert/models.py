@@ -68,7 +68,6 @@ class ExpertBaseinfo(models.Model):
     expert_caption = models.CharField(max_length=32, blank=True, null=True)
     homepage = models.CharField(max_length=128, blank=True, null=True)
     expert_addr = models.CharField(max_length=255, blank=True, null=True)
-    expert_zipcode = models.CharField(max_length=8, blank=True, null=True)
     ecode = models.CharField(max_length=64, blank=True, null=True)
     expert_level = models.IntegerField(blank=True, null=True)
     credit_value = models.IntegerField(blank=True, null=True)
