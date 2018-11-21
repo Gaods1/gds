@@ -52,26 +52,27 @@ class RrApplyHistory(models.Model):
 
     @property
     def mcode(self):
-        Results = ResultsInfo.objects.filter(r_code=self.rr_code)
-        mm = [major_userinfo.mcode for major_userinfo in  MajorUserinfo.objects.filter(user_type=4,user_code=Results.r_code)]
+        # Results = ResultsInfo.objects.filter(r_code=self.rr_code)
+        mm = [major_userinfo.mcode for major_userinfo in
+              MajorUserinfo.objects.filter(user_type=4, user_code=self.rr_code)]
         return mm
 
     @property
     def Cooperation(self):
-        Results = ResultsInfo.objects.filter(r_code=self.rr_code)
-        Cooperation = ResultsCooperationTypeInfo.objects.filter(rr_code=Results.r_code)
+        #Results = ResultsInfo.objects.filter(r_code=self.rr_code)
+        Cooperation = ResultsCooperationTypeInfo.objects.filter(rr_code=self.rr_code)
         return Cooperation
 
     @property
     def Owner(self):
-        Results = ResultsInfo.objects.filter(r_code=self.rr_code)
-        Owner = ResultsOwnerInfo.objects.filter(r_code=Results.r_code)
+        #Results = ResultsInfo.objects.filter(r_code=self.rr_code)
+        Owner = ResultsOwnerInfo.objects.filter(r_code=self.rr_code)
         return Owner
 
     @property
     def Keywords(self):
-        Results = ResultsInfo.objects.filter(r_code=self.rr_code)
-        Keywords = KeywordsInfo.objects.filter(r_code=Results.r_code)
+        #Results = ResultsInfo.objects.filter(r_code=self.rr_code)
+        Keywords = KeywordsInfo.objects.filter(object_code=self.rr_code)
         return Keywords
 
 

@@ -9,7 +9,7 @@ from .models import *
 
 
 # 成果合作信息序列化
-class ResultsCooperationInfoSerializer(serializers.ModelSerializer):
+class ResultsCooperationTypeInfoSerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     class Meta:
         model = ResultsCooperationTypeInfo
@@ -93,7 +93,7 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
 class RrApplyHistorySerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     Results = ResultsInfoSerializer(many=True)
-    Cooperation = ResultsCooperationInfoSerializer(many=True)
+    Cooperation = ResultsCooperationTypeInfoSerializer(many=True)
     Owner = ResultsOwnerInfoSerializer(many=True)
     Keywords = KeywordsInfoSerializer(many=True)
     mcode = serializers.CharField(max_length=16, read_only=True)
