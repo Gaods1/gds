@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.db import transaction
 import requests
 import json
+from datetime import datetime
 
 from .models import *
 
@@ -58,10 +59,6 @@ class KeywordsInfoSerializer(serializers.ModelSerializer):
 # 成果信息表序列化
 class ResultsInfoSerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    Cooperation = ResultsCooperationInfoSerializer(many=True)
-    Owner = ResultsOwnerInfoSerializer(many=True)
-    Keywords = KeywordsInfoSerializer(many=True)
-    mcode = serializers.CharField(max_length=16,read_only=True)
     class Meta:
         model = ResultsInfo
         fields = ['serial',
@@ -89,86 +86,31 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
                   'insert_time',
                   'account_code',
                   'r_abstract_detail',
-                  #'check_state',
                   'update_time',
+                  ]
+
+# 成果申请表序列化
+class RrApplyHistorySerializer(serializers.ModelSerializer):
+    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    Results = ResultsInfoSerializer(many=True)
+    Cooperation = ResultsCooperationInfoSerializer(many=True)
+    Owner = ResultsOwnerInfoSerializer(many=True)
+    Keywords = KeywordsInfoSerializer(many=True)
+    mcode = serializers.CharField(max_length=16, read_only=True)
+    class Meta:
+        model = RrApplyHistory
+        fields = ['serial',
+                  'a_code',
+                  'rr_code',
+                  'account_code',
+                  'state',
+                  'apply_time',
+                  'apply_type',
+                  'type',
+                  'mcode',
+                  'Results',
                   'Cooperation',
                   'Owner',
                   'Keywords',
-                  'mcode',
+                  'update_time',
                   ]
-
-#成果审核历史记录表
-class ResultCheckHistorySerializer(serializers.ModelSerializer):
-    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    class Meta:
-        model = ResultCheckHistory
-        fields = '__all__'
-
-    def create(self, validated_data):
-        #建立事物机制
-        with transaction.atomic():
-            # 创建一个保存点
-            save_id = transaction.savepoint()
-
-            try:
-                ea = ResultsEaInfo.objects.get(r_code=validated_data['apply_code'])
-                ea.status = 11
-                ea.save()
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                raise serializers.ValidationError('成果评价信息表更新失败')
-
-            try:
-                rr = RrApplyHistory.objects.get(rr_code=validated_data['apply_code'])
-                rr.status = 11
-                rr.save()
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                raise serializers.ValidationError('成果申请表更新失败')
-
-            try:
-                ii = ResultsInfo.objects.get(r_code=validated_data['apply_code'])
-                ii.status = 1
-                ii.save()
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                raise serializers.ValidationError('成果基本信息表更新失败')
-
-            try:
-                history = ResultCheckHistory.objects.create(validated_data)
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                raise serializers.ValidationError('历史记录创建失败')
-
-            transaction.savepoint_commit(save_id)
-
-            # 发送短信
-            try:
-                ownerp = ResultOwnerpBaseinfo.objects.get(pcod=validated_data['apply_code'])
-                tel = ownerp.owner_mobile
-            except Exception as e:
-                return False
-            else:
-                url = 'http://120.77.58.203/sms/patclubmanage/send/verify/1/'+tel+'/'
-                body = {'type': '通过', 'name': ii.r_name}
-                response = requests.post(url, data=json.dumps(body))
-
-            # 推送表信息
-            try:
-                mm = Message.objects.create({
-                    'serial':'成果消息审核通知',
-                    'message_title':'成果消息审核通知',
-                    'message_content':'',
-                    'account_code':'',
-                    'state':0,
-                    'send_time':'',
-                    'read_time':'',
-                    'sender':'',
-                    
-                })
-
-            except Exception as e:
-                return False
-
-
-            return history

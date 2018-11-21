@@ -35,6 +35,50 @@ class RequirementsInfo(models.Model):
         managed = False
         db_table = 'requirements_info'
 
+# 成果/需求审核申请表 *
+class RrApplyHistory(models.Model):
+    serial = models.AutoField(primary_key=True)
+    a_code = models.CharField(max_length=64, blank=True, null=True)
+    rr_code = models.CharField(max_length=64, blank=True, null=True)
+    account_code = models.CharField(max_length=64, blank=True, null=True)
+    state = models.IntegerField(blank=True, null=True)
+    apply_time = models.DateTimeField(blank=True, null=True)
+    apply_type = models.IntegerField(blank=True, null=True)
+    type = models.IntegerField(blank=True, null=True)
+    @property
+    def Results(self):
+        Results = ResultsInfo.objects.filter(r_code=self.rr_code)
+        return Results
+
+    @property
+    def mcode(self):
+        Results = ResultsInfo.objects.filter(r_code=self.rr_code)
+        mm = [major_userinfo.mcode for major_userinfo in  MajorUserinfo.objects.filter(user_type=4,user_code=Results.r_code)]
+        return mm
+
+    @property
+    def Cooperation(self):
+        Results = ResultsInfo.objects.filter(r_code=self.rr_code)
+        Cooperation = ResultsCooperationTypeInfo.objects.filter(rr_code=Results.r_code)
+        return Cooperation
+
+    @property
+    def Owner(self):
+        Results = ResultsInfo.objects.filter(r_code=self.rr_code)
+        Owner = ResultsOwnerInfo.objects.filter(r_code=Results.r_code)
+        return Owner
+
+    @property
+    def Keywords(self):
+        Results = ResultsInfo.objects.filter(r_code=self.rr_code)
+        Keywords = KeywordsInfo.objects.filter(r_code=Results.r_code)
+        return Keywords
+
+
+    class Meta:
+        managed = False
+        db_table = 'rr_apply_history'
+
 
 # 成果基本信息表 *
 class ResultsInfo(models.Model):
@@ -63,34 +107,13 @@ class ResultsInfo(models.Model):
     insert_time = models.DateTimeField(blank=True, null=True)
     account_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
     r_abstract_detail = models.TextField(blank=True, null=True)
-    #check_state = models.IntegerField(blank=True, null=True)
 
-
-    @property
-    def Cooperation(self):
-        Cooperation = ResultsCooperationTypeInfo.objects.filter(rr_code=self.r_code)
-        return Cooperation
-
-    @property
-    def Owner(self):
-        Owner = ResultsOwnerInfo.objects.filter(r_code=self.r_code)
-        return Owner
-
-    @property
-    def Keywords(self):
-        Keywords = KeywordsInfo.objects.filter(object_code=self.r_code)
-        return Keywords
-    @property
-    def mcode(self):
-        mm = MajorUserinfo.objects.filter(user_type=self.use_type)
-        return mm.mcode
 
     class Meta:
         managed =False
         db_table = 'results_info'
 
-    def __unicode__(self):
-        return self.Cooperation,self.Owner,self.Keywords
+
 
 
 
@@ -170,17 +193,4 @@ class ResultsEaInfo(models.Model):
         db_table = 'results_ea_info'
 
 
-# 成果/需求审核申请表 *
-class RrApplyHistory(models.Model):
-    serial = models.AutoField(primary_key=True)
-    a_code = models.CharField(max_length=64, blank=True, null=True)
-    rr_code = models.CharField(max_length=64, blank=True, null=True)
-    account_code = models.CharField(max_length=64, blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
-    apply_time = models.DateTimeField(blank=True, null=True)
-    apply_type = models.IntegerField(blank=True, null=True)
-    type = models.IntegerField(blank=True, null=True)
 
-    class Meta:
-        managed = False
-        db_table = 'rr_apply_history'
