@@ -11,8 +11,8 @@ class Deptinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     dept_code = models.CharField(unique=True, max_length=32,default=gen_uuid32)
     dept_name = models.CharField(unique=True,max_length=64,)
-    pdept_code = models.CharField(max_length=32, blank=True, null=True)
-    dept_level = models.IntegerField(blank=True, null=True)
+    pdept_code = models.CharField(max_length=32, default="0")
+    dept_level = models.IntegerField(default=1)
     dept_memo = models.CharField(max_length=255, blank=True, null=True)
     region_code = models.CharField(max_length=32, blank=True, null=True)
     manager = models.CharField(max_length=64, blank=True, null=True)
@@ -28,7 +28,7 @@ class Deptinfo(models.Model):
 
     @property
     def pdept(self):
-        pdept = Deptinfo.objects.get(dept_code=self.pdept_code)
+        pdept = Deptinfo.objects.get(dept_code=self.pdept_code, state=1)
         return pdept.dept_name
 
     @property
@@ -81,11 +81,36 @@ class AccountInfo(AbstractBaseUser):
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
+    active = models.IntegerField(default=0) # 邮箱是否激活 0： 未激活 1：已激活
 
     @property
     def dept(self):
-        dept = Deptinfo.objects.get(dept_code=self.dept_code)
+        dept = Deptinfo.objects.get(dept_code=self.dept_code, state=1)
         return dept.dept_name
+
+    @property
+    def func(self):
+        role_code = [i.role_code for i in AccountRoleInfo.objects.filter(account=self.account, state=1)]
+
+        account_dis_func = [i.func for i in AccountDisableFuncinfo.objects.filter(account=self.account, state=1)]
+
+        func = []
+        for i in RoleInfo.objects.filter(role_code__in=role_code, state=1):
+            func += i.func
+        func = list(set(func))
+        for df in account_dis_func:
+            if df in func:
+                func.remove(df)
+        func.sort(key=lambda x: x.func_order)
+        func_dict = {}
+        for f in func:
+            if f.func_name in account_dis_func:
+                continue
+            pfunc = f.pfunc
+            if pfunc not in func_dict:
+                func_dict[pfunc] = []
+            func_dict[pfunc].append(f.func_name)
+        return func_dict
 
     @property
     def cstate(self):
@@ -137,8 +162,8 @@ class RoleInfo(models.Model):
 
     @property
     def func(self):
-        func_code =[i.func_code for i in RoleFuncInfo.objects.filter(role_code=self.role_code)]
-        func = FunctionInfo.objects.filter(func_code__in=func_code)
+        func_code =[i.func_code for i in RoleFuncInfo.objects.filter(role_code=self.role_code, state=1)]
+        func = FunctionInfo.objects.filter(func_code__in=func_code, state=1)
         return func
 
     class Meta:
@@ -194,7 +219,7 @@ class AccountDisableFuncinfo(models.Model):
 
     @property
     def func(self):
-        func = FunctionInfo.objects.get(func_code=self.func_code)
+        func = FunctionInfo.objects.get(func_code=self.func_code, state=1)
         return func.func_name
 
     @property
@@ -216,14 +241,14 @@ class AccountRoleInfo(models.Model):
     account = models.CharField(max_length=32)
     role_code = models.CharField(max_length=64)
     state = models.IntegerField(default=1)
-    type = models.IntegerField(default=1)
+    type = models.IntegerField(default=0)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
 
     @property
     def role(self):
-        role = RoleInfo.objects.get(role_code=self.role_code)
+        role = RoleInfo.objects.get(role_code=self.role_code, state=1)
         return role.role_name
 
     @property
@@ -251,12 +276,12 @@ class RoleFuncInfo(models.Model):
 
     @property
     def role(self):
-        role = RoleInfo.objects.get(role_code=self.role_code)
+        role = RoleInfo.objects.get(role_code=self.role_code, state=1)
         return role.role_name
 
     @property
     def func(self):
-        func = FunctionInfo.objects.get(func_code=self.func_code)
+        func = FunctionInfo.objects.get(func_code=self.func_code, state=1)
         return func.func_name
 
     @property
