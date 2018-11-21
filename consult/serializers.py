@@ -6,7 +6,7 @@ class ConsultInfoSerializer(serializers.ModelSerializer):
     consult_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     consult_endtime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    rr = serializers.ListField()
+    rr = serializers.ListField(required=False)
     class Meta:
         model = ConsultInfo
         fields = ['serial',
