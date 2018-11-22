@@ -65,7 +65,7 @@ class ExpertBaseinfo(models.Model):
     expert_id = models.CharField(max_length=32,blank=True, null=True)
     expert_abstract = models.TextField(blank=True, null=True)
     education = models.CharField(max_length=8, default="本科")    # 默认本科 中专，大专，本科， 研究生，硕士， 博士，MBA， EMBA
-    expert_city = models.IntegerField(max_length=20, blank=True, null=True)     # 专家所属城市
+    expert_city = models.IntegerField(blank=True, null=True)     # 专家所属城市
     expert_university = models.CharField(max_length=64, blank=True, null=True)  # 专家毕业院校
     expert_major = models.CharField(max_length=64, blank=True, null=True)   # 所属院系
     expert_caption = models.CharField(max_length=32, blank=True, null=True)     # 专家头衔
