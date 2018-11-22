@@ -87,9 +87,9 @@ class ConsultReplyInfo(models.Model):
 
     #检索征询名称
     @property
-    def consult_memo(self):
+    def consult_title(self):
         consult_info = ConsultInfo.objects.get(consult_code=self.consult_code)
-        return consult_info.consult_memo
+        return consult_info.consult_title
 
     #检索回复人昵称
     def user_name(self):

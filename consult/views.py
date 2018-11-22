@@ -3,6 +3,7 @@ from rest_framework import viewsets
 from consult.models import *
 from expert.models import ExpertBaseinfo
 from achievement.models import ResultsInfo,RequirementsInfo
+from account.models import AccountInfo
 from public_models.models import MajorUserinfo,Message
 from consult.serializers import *
 from rest_framework import status
@@ -12,7 +13,7 @@ import django_filters
 from misc.misc import gen_uuid32, genearteMD5
 from django.db import transaction
 import random,requests,time,json
-from django.http import HttpResponse
+from django.http import HttpResponse,JsonResponse
 
 
 # Create your views here.
@@ -36,7 +37,6 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                    审核通过:               生成短信记录
     注:需做事务处理
     '''
-
     def update(self, request, *args, **kwargs):
         data = request.data
         # consult_code = data.get('consult_code')
@@ -88,7 +88,7 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                     #组合生成短信消息发送列表
                     message_list = []
                     for expert_baseinfo in expert_baseinfos:
-                        message_obj = Message(message_title='征询',
+                        message_obj = Message(message_title='征询回复邀请',
                                               message_content='有征询信息'+ consult_info.consult_title+ '需要您的回复，请登陆平台到个人中心查看',
                                               account_code=expert_baseinfo.account_code,
                                               state=0,
@@ -161,6 +161,70 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
     ordering_fields = ("reply_time", "reply_state")
     filter_fields = ("reply_state", "consult_code", "serial", "reply_code")
     search_fields = ("reply_body")
+
+    '''
+    征询回复审核接口： 
+                   审核通过:生成审核记录
+                   审核未通过:生成审核记录 并短信通知审核未通过
+    注:需做事务处理
+    '''
+    def update(self, request, *args, **kwargs):
+        checkinfo_data = request.data
+        check_state = checkinfo_data.get('check_state')
+        reply_info = self.get_object()
+        try:
+            with transaction.atomic():
+                #1 生成征询回复记录
+                reply_checkinfo_data = {
+                    'reply_code': gen_uuid32(),
+                    'check_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                    'check_memo': checkinfo_data.get('check_memo'),
+                    'check_state': check_state,
+                    'checker': request.user.account
+                }
+                ConsultReplyCheckinfo.objects.create(**reply_checkinfo_data)
+
+                #2 更新征询回复表状态
+                reply_data = {}
+                reply_data['reply_state'] = check_state
+                serializer = self.get_serializer(reply_info, data=reply_data, partial=kwargs.pop('partial', False))
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+
+                #审核未通过 发送短信通知
+                if check_state == 4:
+                    account_info = AccountInfo.objects.get(account_code=reply_info.account_code)
+                    user_mobile = account_info.user_mobile
+                    sms_url = 'http://120.77.58.203:8808/sms/patclubmanage/send/replynopass/0/'+ user_mobile
+                    sms_data = {
+                        'name': reply_info.consult_title
+                    }
+                    headers = {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "Accept": "application/json"
+                    }
+                    requests.post(sms_url, data=sms_data, headers=headers)
+                    # response_data = requests.post(sms_url, data=sms_data, headers=headers)
+                    # message_response = json.loads(response_data)
+                    # 7 保存短信发送记录
+                    # if message_response['ret'] == 1:
+                    message_list = [Message(message_title='征询回复审核未通过',
+                                          message_content='您在'+reply_info.consult_title+'回复的内容审核未通过，请登陆平台查看修改',
+                                          account_code=reply_info.account_code,
+                                          state=0,
+                                          send_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                                          sender=request.user.account,
+                                          sms=1,
+                                          sms_state=1,
+                                          sms_phone=user_mobile,
+                                          email=0,
+                                          email_state=0,
+                                          email_account='')]
+                    Message.objects.bulk_create(message_list)
+        except Exception as e:
+            return HttpResponse("审核失败%s" % str(e))
+
+        return HttpResponse("审核成功")
 
 
 

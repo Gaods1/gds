@@ -43,7 +43,7 @@ class ConsultExpertSerializer(serializers.ModelSerializer):
 #专家征询回复表序列化
 class ConsultReplyInfoSerializer(serializers.ModelSerializer):
     reply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    consult_memo = serializers.CharField(read_only=True)
+    consult_title = serializers.CharField(read_only=True)
     user_name = serializers.CharField(read_only=True)
     class Meta:
         model = ConsultReplyInfo
@@ -55,7 +55,7 @@ class ConsultReplyInfoSerializer(serializers.ModelSerializer):
                   'reply_time',
                   'accept_time',
                   'reply_state',
-                  'consult_memo',
+                  'consult_title',
                   'user_name']
 
 
