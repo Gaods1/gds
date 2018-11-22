@@ -7,8 +7,8 @@ from public_models.models import PersonalInfo, EnterpriseBaseinfo
 # 身份授权信息表(前端) *
 class IdentityAuthorizationInfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    account_code = models.CharField(max_length=64, blank=True, null=True)
-    identity_code = models.CharField(max_length=64, blank=True, null=True)
+    account_code = models.CharField(max_length=64)
+    identity_code = models.CharField(max_length=64)
     iab_time = models.DateTimeField(blank=True, null=True)
     iae_time = models.DateTimeField(blank=True, null=True)
     state = models.IntegerField(default=1)
@@ -25,7 +25,7 @@ class IdentityAuthorizationInfo(models.Model):
 class IdentityInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     identity_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
-    identity_name = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    identity_name = models.CharField(unique=True, max_length=64)
     identity_memo = models.CharField(max_length=255, blank=True, null=True)
     state = models.IntegerField(default=1)
     creater = models.CharField(max_length=32, blank=True, null=True)
@@ -40,12 +40,12 @@ class IdentityInfo(models.Model):
 # 领域专家审核申请表 *
 class ExpertApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
-    apply_code = models.CharField(max_length=64, blank=True, null=True)
-    expert_code = models.CharField(max_length=64, blank=True, null=True)
-    account_code = models.CharField(max_length=64, blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
-    apply_time = models.DateTimeField(blank=True, null=True)
-    apply_type = models.IntegerField(blank=True, null=True)
+    apply_code = models.CharField(max_length=64)
+    expert_code = models.CharField(max_length=64)
+    account_code = models.CharField(max_length=64)
+    state = models.IntegerField(default=1)
+    apply_time = models.DateTimeField(auto_now_add=True)
+    apply_type = models.IntegerField(default=1)
 
     class Meta:
         managed = True
@@ -57,52 +57,55 @@ class ExpertBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     expert_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     pcode = models.CharField(max_length=64, blank=True, null=True)
-    expert_name = models.CharField(max_length=64, blank=True, null=True)
+    expert_name = models.CharField(max_length=64)
     expert_tel = models.CharField(max_length=16, blank=True, null=True)
     expert_mobile = models.CharField(max_length=16, blank=True, null=True)
     expert_email = models.CharField(max_length=16, blank=True, null=True)
-    expert_id_type = models.CharField(max_length=32, blank=True, null=True)
-    expert_id = models.CharField(max_length=32, blank=True, null=True)
+    expert_id_type = models.CharField(max_length=32, default=1) # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
+    expert_id = models.CharField(max_length=32,blank=True, null=True)
     expert_abstract = models.TextField(blank=True, null=True)
-    education = models.CharField(max_length=8, blank=True, null=True)
-    expert_caption = models.CharField(max_length=32, blank=True, null=True)
+    education = models.CharField(max_length=8, default="本科")    # 默认本科 中专，大专，本科， 研究生，硕士， 博士，MBA， EMBA
+    expert_city = models.IntegerField(blank=True, null=True)     # 专家所属城市
+    expert_university = models.CharField(max_length=64, blank=True, null=True)  # 专家毕业院校
+    expert_major = models.CharField(max_length=64, blank=True, null=True)   # 所属院系
+    expert_caption = models.CharField(max_length=32, blank=True, null=True)     # 专家头衔
     homepage = models.CharField(max_length=128, blank=True, null=True)
     expert_addr = models.CharField(max_length=255, blank=True, null=True)
     ecode = models.CharField(max_length=64, blank=True, null=True)
-    expert_level = models.IntegerField(blank=True, null=True)
-    credit_value = models.IntegerField(blank=True, null=True)
+    expert_level = models.IntegerField(default=1)
+    credit_value = models.IntegerField(default=0)
     expert_integral = models.IntegerField(blank=True, null=True)
-    state = models.IntegerField(default=1)
+    state = models.IntegerField(default=2) # 1 正常， 2 暂停 3 伪删除
     creater = models.CharField(max_length=32, blank=True, null=True)
     account_code = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'expert_baseinfo'
 
 
 # 领域专家审核历史记录表 *
 class ExpertCheckHistory(models.Model):
     serial = models.AutoField(primary_key=True)
-    apply_code = models.CharField(max_length=64, blank=True, null=True)
-    opinion = models.TextField(blank=True, null=True)
-    result = models.IntegerField(blank=True, null=True)
+    apply_code = models.CharField(max_length=64, blank=True, null=True)     # 与领域专家审核申请表关联字段
+    opinion = models.TextField(blank=True, null=True)   # 审核意见
+    result = models.IntegerField(blank=True, null=True) # 审核结果 0：未通过， 1： 通过
     check_time = models.DateTimeField(blank=True, null=True)
-    account = models.CharField(max_length=64, blank=True, null=True)
+    account = models.CharField(max_length=64, blank=True, null=True) # 审核人
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'expert_check_history'
 
 
 # 技术经纪人审核申请表 *
 class BrokerApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
-    apply_code = models.CharField(max_length=64, blank=True, null=True)
-    broker_code = models.CharField(max_length=64, blank=True, null=True)
-    account_code = models.CharField(max_length=64, blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
+    apply_code = models.CharField(max_length=64, default=gen_uuid32)
+    broker_code = models.CharField(max_length=64, blank=True, null=True) # 与技术经纪人基本信息表关联字段
+    account_code = models.CharField(max_length=64, blank=True, null=True) # 提交人，应该不会处理
+    state = models.IntegerField(blank=True, null=True)                  # 审核状态  1， 待审核  2， 通过   3， 未通过
     apply_time = models.DateTimeField(blank=True, null=True)
     apply_type = models.IntegerField(blank=True, null=True)
 
@@ -114,14 +117,16 @@ class BrokerApplyHistory(models.Model):
 # 技术经纪人基本信息表 *
 class BrokerBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    broker_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    broker_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     pcode = models.CharField(max_length=64, blank=True, null=True)
     broker_name = models.CharField(max_length=64, blank=True, null=True)
     broker_tel = models.CharField(max_length=16, blank=True, null=True)
     broker_mobile = models.CharField(max_length=16, blank=True, null=True)
     broker_email = models.CharField(max_length=16, blank=True, null=True)
-    broker_id_type = models.CharField(max_length=32, blank=True, null=True)
+    broker_id_type = models.CharField(max_length=32, default=1) # 技术经纪人证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
     broker_id = models.CharField(max_length=32, blank=True, null=True)
+    broker_graduate_school = models.CharField(max_length=255, blank=True, null=True) # 经纪人
+    broker_major = models.CharField(max_length=255) # 所属院系
     broker_abstract = models.TextField(blank=True, null=True)
     education = models.CharField(max_length=8, blank=True, null=True)
     broker_abbr = models.CharField(max_length=32, blank=True, null=True)
