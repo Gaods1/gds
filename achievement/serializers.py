@@ -59,6 +59,7 @@ class KeywordsInfoSerializer(serializers.ModelSerializer):
 # 成果信息表序列化
 class ResultsInfoSerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    mcode = serializers.CharField(max_length=16, read_only=True)
     class Meta:
         model = ResultsInfo
         fields = ['serial',
@@ -87,6 +88,7 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
                   'account_code',
                   'r_abstract_detail',
                   'update_time',
+                  'mcode',
                   ]
 
 # 成果申请表序列化

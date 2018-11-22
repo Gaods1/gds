@@ -49,11 +49,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 # 创建历史记录表
                 try:
                     history = ResultCheckHistory.objects.create({
+                        #'serial': data['serial'],
                         'apply_code': data['apply_code'],
                         'opinion': data['opinion'],
                         'result': data['result'],
                         'check_time': data['check_time'],
-                        'account': data['account'],
+                        'account': data['account']
                     })
                     del data['apply_code']
                     del data['opinion']
@@ -62,6 +63,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     del data['account']
 
                 except Exception as e:
+                    print(e)
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('成果审核历史记录创建失败')
 
