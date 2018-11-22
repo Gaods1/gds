@@ -1,4 +1,4 @@
 import requests
 import json
-def massege(url,body):
-    response = requests.post(url, data=json.dumps(body))
+def massege(url,body,headers):
+    response = requests.post(url, data=body,headers=headers)

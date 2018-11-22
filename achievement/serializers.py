@@ -94,10 +94,10 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
 # 成果申请表序列化
 class RrApplyHistorySerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    Results = ResultsInfoSerializer(many=True)
-    Cooperation = ResultsCooperationTypeInfoSerializer(many=True)
-    Owner = ResultsOwnerInfoSerializer(many=True)
-    Keywords = KeywordsInfoSerializer(many=True)
+    Results = ResultsInfoSerializer(many=True,read_only=True)
+    Cooperation = ResultsCooperationTypeInfoSerializer(many=True,read_only=True)
+    Owner = ResultsOwnerInfoSerializer(many=True,read_only=True)
+    Keywords = KeywordsInfoSerializer(many=True,read_only=True)
     mcode = serializers.CharField(max_length=16, read_only=True)
     class Meta:
         model = RrApplyHistory
