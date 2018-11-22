@@ -1,6 +1,7 @@
 from django.db import models
 from achievement.models import RequirementsInfo,ResultsInfo
 from expert.models import ExpertBaseinfo
+from account.models import AccountInfo
 from misc.misc import gen_uuid32
 import time
 
@@ -24,6 +25,7 @@ class ConsultInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     consult_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
     consulter = models.CharField(max_length=64, blank=True, null=True)
+    consult_title = models.CharField(max_length=64,blank=True,null=True)
     consult_memo = models.TextField(blank=True, null=True)
     consult_body = models.TextField(blank=True, null=True)
     consult_time = models.DateTimeField(blank=True, null=True)
@@ -75,23 +77,28 @@ class ConsultReplyCheckinfo(models.Model):
 class ConsultReplyInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     reply_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
-    expert_code = models.CharField(max_length=64, blank=True, null=True)
+    account_code = models.CharField(max_length=64, blank=True, null=True)
     consult_code = models.CharField(max_length=64, blank=True, null=True)
     reply_body = models.TextField(blank=True, null=True)
     reply_time = models.DateTimeField(blank=True, null=True)
     reply_state = models.IntegerField(blank=True, null=True)
+    accept_time = models.DateTimeField(blank=True,null=True)
     reply_time = models.DateTimeField(blank=True, null=True)
 
     #检索征询名称
     @property
-    def consult_memo(self):
+    def consult_title(self):
         consult_info = ConsultInfo.objects.get(consult_code=self.consult_code)
-        return consult_info.consult_memo
+        return consult_info.consult_title
 
-    #检索专家名称
-    def expert_name(self):
-        expert_baseinfo = ExpertBaseinfo.objects.get(expert_code=self.expert_code)
-        return expert_baseinfo.expert_name
+    #检索回复人昵称
+    def user_name(self):
+        try:
+            account_info = AccountInfo.objects.get(account_code=self.account_code)
+            user_name = account_info.user_name
+        except Exception as e:
+            user_name = ''
+        return user_name
 
     class Meta:
         managed = False
