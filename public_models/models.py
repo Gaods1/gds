@@ -128,7 +128,7 @@ class InterestInfo(models.Model):
         unique_together = (('object_code', 'account_code'),)
 
 
-# 领域类型基本信息表（领域专家、经纪人、项目团队 共用）。分两层级别管理 *
+# 领域类型基本信息表（领域专家、经纪人、项目团队、成果、需求共用）。分两层级别管理 *
 class MajorInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     mtype = models.IntegerField(blank=True, null=True)

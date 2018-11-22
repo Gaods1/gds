@@ -14,7 +14,7 @@ class Deptinfo(models.Model):
     pdept_code = models.CharField(max_length=32, default="0")
     dept_level = models.IntegerField(default=1)
     dept_memo = models.CharField(max_length=255, blank=True, null=True)
-    region_code = models.CharField(max_length=32, blank=True, null=True)
+    region_code = models.IntegerField(max_length=20, blank=True, null=True)
     manager = models.CharField(max_length=64, blank=True, null=True)
     manager_mobile = models.CharField(max_length=16, blank=True, null=True)
     addr = models.CharField(max_length=128, blank=True, null=True)
