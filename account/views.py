@@ -275,7 +275,7 @@ class AccountRoleViewSet(viewsets.ModelViewSet):
 
 # 功能点管理
 class FunctionViewSet(viewsets.ModelViewSet):
-    queryset = FunctionInfo.objects.all().order_by('-serial')
+    queryset = FunctionInfo.objects.exclude(pfunc_code=None).order_by('-serial')
     serializer_class = FunctionInfoSerializer
 
     filter_backends = (
@@ -285,7 +285,7 @@ class FunctionViewSet(viewsets.ModelViewSet):
     )
 
     ordering_fields = ("func_order", "insert_time", "func_code")
-    filter_fields = ("state", "creater", "item_type")
+    filter_fields = ("state", "creater", "item_type", "pfunc_code")
     search_fields = ("func_name", "func_code", "func_url")
 
     def create(self, request, *args, **kwargs):
