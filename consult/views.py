@@ -50,17 +50,6 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
     filter_fields = ("consult_state", "consult_code", "serial","consulter")
     search_fields = ("consult_memo")
 
-    def list(self,request,*args,**kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
     '''
     征询审核接口：一 审核通过 | 审核未通过:   生成审核记录(consult_checkinfo) 更新征询表状态(consult_info)  
                    审核通过:               随机选择领域专家生成征询和专家关系记录(consult_expert)  发送短信通知领域专家(短信接口) 
@@ -162,6 +151,37 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
 
         return HttpResponse("审核成功")
 
+
+#征询审核管理(专门针对审核列表添加)
+class ConsultNeedCheckViewSet(viewsets.ModelViewSet):
+    """
+    征询管理(检索 查询  排序)
+    ######################################################################################
+    参数说明（param， get时使用的参数）
+    page(integer):           【页数, 默认为1】
+    page_size（integer )     【每页显示的条目，默认为10】
+    search（string）         【模糊搜索  consult_memo】
+    consult_code(string)       【筛选字段 系统自动生成的征询编码，有数字和大写英文字母组成】
+    serial(number)           【筛选字段 为自增id】
+    consulter(string)          【筛选字段 征询人账号】
+    ordering(string)          【排序， 排序字段有"consult_time", "consult_endtime", "consult_state"】
+    ######################################################################################
+    审核用patch接口请求 提交json数据说明
+    {
+          "check_state": "number",  审核状态【必填1审核通过2审核不通过】
+          "check_memo": "string ",  审核描述【必填】
+    }
+    """
+    queryset = ConsultInfo.objects.filter(consult_state__in=[0,4]).order_by('-serial')
+    serializer_class = ConsultInfoSerializer
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("consult_time", "consult_endtime", "consult_state")
+    filter_fields = ("consult_code", "serial","consulter")
+    search_fields = ("consult_memo")
 
 
 #征询专家关系管理
