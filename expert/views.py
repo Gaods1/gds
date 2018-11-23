@@ -29,13 +29,16 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
         expert = data.pop('expert')
         apply_type = data['apply_type']
         apply_state = data['state']
-        if apply_type == 1:
-            if apply_state == 2:
-                serial = expert['serial']
 
+        # 当申请状态是新增和修改时
+        if apply_type in [1, 2]:
+            if apply_state == 2:
+                if expert['pcode']:
+                    PersonalInfo.objects.filter(pcode=expert['pcode'])
+                ExpertBaseinfo.objects.filter(expert_code=expert['expert_code']).update(state=1)
 
         # 历史记录表信息
-        history = {}
+        history = dict()
         history['opinion'] = data.pop('opinion')
         history['apply_code'] = instance.apply_code
         history['result'] = data['state']
