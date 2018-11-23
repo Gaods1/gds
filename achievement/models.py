@@ -42,20 +42,13 @@ class RrApplyHistory(models.Model):
     rr_code = models.CharField(max_length=64, blank=True, null=True)
     account_code = models.CharField(max_length=64, blank=True, null=True)
     state = models.IntegerField(blank=True, null=True)
-    apply_time = models.DateTimeField(blank=True, null=True)
+    apply_time = models.DateTimeField(blank=True, null=True,auto_now=True)
     apply_type = models.IntegerField(blank=True, null=True)
     type = models.IntegerField(blank=True, null=True)
     @property
     def Results(self):
         Results = ResultsInfo.objects.filter(r_code=self.rr_code)
         return Results
-
-    @property
-    def mcode(self):
-        # Results = ResultsInfo.objects.filter(r_code=self.rr_code)
-        mm = [major_userinfo.mcode for major_userinfo in
-              MajorUserinfo.objects.filter(user_type=4, user_code=self.rr_code)]
-        return mm
 
     @property
     def Cooperation(self):
@@ -132,7 +125,7 @@ class ResultsCooperationTypeInfo(models.Model):
     cooperation_code = models.CharField(max_length=64, blank=True, null=True)
     cooperation_name = models.CharField(max_length=64, blank=True, null=True)
     state = models.IntegerField(blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
+    insert_time = models.DateTimeField(blank=True, null=True,auto_now=True)
 
     class Meta:
         managed = False
@@ -148,7 +141,7 @@ class ResultsOwnerInfo(models.Model):
     main_owner = models.IntegerField(blank=True, null=True)
     state = models.IntegerField(blank=True, null=True)
     r_type = models.IntegerField(blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
+    insert_time = models.DateTimeField(blank=True, null=True,auto_now_add=True)
 
     class Meta:
         managed = False
@@ -162,7 +155,7 @@ class KeywordsInfo(models.Model):
     object_code = models.CharField(max_length=64)
     key_info = models.CharField(max_length=64, blank=True, null=True)
     state = models.IntegerField(blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
+    insert_time = models.DateTimeField(blank=True, null=True,auto_now_add=True)
     creater = models.CharField(max_length=64, blank=True, null=True)
 
     class Meta:

@@ -10,7 +10,7 @@ from .models import *
 
 # 成果合作信息序列化
 class ResultsCooperationTypeInfoSerializer(serializers.ModelSerializer):
-    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    #update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     class Meta:
         model = ResultsCooperationTypeInfo
         fields = ['serial',
@@ -20,13 +20,12 @@ class ResultsCooperationTypeInfoSerializer(serializers.ModelSerializer):
                   'cooperation_name',
                   'state',
                   'insert_time',
-                  'update_time',
                   ]
 
 
 # 成果持有人信息序列化
 class ResultsOwnerInfoSerializer(serializers.ModelSerializer):
-    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     class Meta:
         model = ResultsOwnerInfo
         fields = ['serial',
@@ -37,7 +36,6 @@ class ResultsOwnerInfoSerializer(serializers.ModelSerializer):
                   'state',
                   'r_type',
                   'insert_time',
-                  'update_time',
                   ]
 
 
@@ -93,12 +91,11 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
 
 # 成果申请表序列化
 class RrApplyHistorySerializer(serializers.ModelSerializer):
-    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     Results = ResultsInfoSerializer(many=True,read_only=True)
     Cooperation = ResultsCooperationTypeInfoSerializer(many=True,read_only=True)
     Owner = ResultsOwnerInfoSerializer(many=True,read_only=True)
     Keywords = KeywordsInfoSerializer(many=True,read_only=True)
-    mcode = serializers.CharField(max_length=16, read_only=True)
     class Meta:
         model = RrApplyHistory
         fields = ['serial',
@@ -109,10 +106,9 @@ class RrApplyHistorySerializer(serializers.ModelSerializer):
                   'apply_time',
                   'apply_type',
                   'type',
-                  'mcode',
                   'Results',
                   'Cooperation',
                   'Owner',
                   'Keywords',
-                  'update_time',
+                  'apply_time',
                   ]

@@ -13,19 +13,37 @@ import django_filters
 import threading
 import requests
 import json
-
-
-
+import time
 
 from .serializers import *
 from .models import *
 from .utils import massege
+
 
 # Create your views here.
 
 
 # 成果
 class ProfileViewSet(viewsets.ModelViewSet):
+    """
+    成果审核展示
+    #######################################################
+    参数说明（param， get时使用的参数）
+    page(integer):           【页数, 默认为1】
+    page_size（integer )     【每页显示的条目，默认为10】
+    search（string）         【模糊搜索】
+    rr_code(string)          【筛选字段 申请编号】
+    a_code(string)              【筛选字段 成果编号】
+    account_code(string)           【筛选字段 申请人】
+    ordering(string)          【排序， 排序字段有"account_code","a_code", "rr_code"】
+    #######################################################
+    1审核 参数说明（put时请求体参数 state,state=2 为审核通过,state=3 为审核不通过）
+    2 put 请求体中将历史记录表的必填字段需携带
+    {
+        state(int):2|3
+        opinion（text）:审核意见,
+    }
+    """
     queryset = RrApplyHistory.objects.all().order_by('-serial')
     serializer_class = RrApplyHistorySerializer
     filter_backends = (
@@ -33,7 +51,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
-    ordering_fields = ("rr_code","a_code","type","account_code")
+    ordering_fields = ("account_code","a_code","rr_code")
     filter_fields = ("account_code", "rr_code","a_code")
     search_fields = ("rr_code","account_code","a_code")
 
@@ -50,21 +68,21 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 try:
                     history = ResultCheckHistory.objects.create(
                         # 'serial': data['serial'],
-                        apply_code=data['apply_code'],
+                        apply_code=instance.a_code,
                         opinion=data['opinion'],
-                        result=data['result'],
-                        check_time=data['check_time'],
-                        account=data['account']
+                        result=2,
+                        check_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                        account=instance.account_code
                     )
-                    del data['apply_code']
+                    #del data['apply_code']
                     del data['opinion']
-                    del data['result']
-                    del data['check_time']
-                    del data['account']
+                    #del data['result']
+                    #del data['check_time']
+                    #del data['account']
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('成果审核历史记录创建失败')
+                    return HttpResponse('成果审核历史记录创建失败%s' % str(e))
 
                 # 更新成果合作方式表
 
@@ -76,6 +94,13 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('更新成果合作方式失败')
+
+                # 更新检索关键字表
+                try:
+                    Keywords = KeywordsInfo.objects.filter(object_code=instance.rr_code).update(state=1)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('更新检索关键字失败')
 
                 # 更新成果持有人表
 
@@ -97,7 +122,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
                         tel = ownerp.owner_mobile
                         url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
-                        body = {'type': '通过', 'name': ownerp.owner_name}
+                        body = {'type': '成果', 'name': ownerp.owner_name}
                         headers = {
                             "Content-Type": "application/x-www-form-urlencoded",
                             "Accept": "application/json"
@@ -117,7 +142,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
                         tel = ownere.owner_mobile
                         url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
-                        body = {'type': '通过', 'name': ownere.owner_name}
+                        body = {'type': '成果', 'name': ownere.owner_name}
                         headers = {
                             "Content-Type": "application/x-www-form-urlencoded",
                             "Accept": "application/json"
@@ -130,28 +155,44 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新个人或者企业表失败')
+                    return HttpResponse('更新个人或者企业表失败%s' % str(e))
 
                 # 创建推送表
                 try:
                     mm = Message.objects.create(**{
                         'message_title': '成果消息审核通知',
                         'message_content': history.opinion,
-                        'account_code': owner.main_owner,
+                        'account_code': owner.owner_code,
                         'state': 0,
-                        'send_time': datetime.now(),
-                        'read_time': datetime.now(),
-                        'sender': request.user.account_code,
-                        # 'sms': '',
-                        # 'sms_state': '',
-                        # 'sms_phone': '',
-                        # 'email': '',
-                        # 'email_state': '',
-                        # 'email_account': ''
+                        'send_time':time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                        'sender':request.user.account,
+                        'sms': 1,
+                        'sms_state': 1,
+                        'sms_phone': tel,
+                        'email': 1,
+                        'email_state': 1,
+                        'email_account': ''
 
                     })
 
                 except Exception as e:
+                    return HttpResponse('推送表创建失败')
+
+                #transaction.savepoint_commit(save_id)
+
+                try:
+                    partial = kwargs.pop('partial', False)
+                    serializer = self.get_serializer(instance, data=data, partial=partial)
+                    serializer.is_valid(raise_exception=True)
+                    self.perform_update(serializer)
+
+                    if getattr(instance, '_prefetched_objects_cache', None):
+                        # If 'prefetch_related' has been applied to a queryset, we need to
+                        # forcibly invalidate the prefetch cache on the instance.
+                        instance._prefetched_objects_cache = {}
+
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
                     return HttpResponse('推送表创建失败')
 
                 transaction.savepoint_commit(save_id)
@@ -162,18 +203,19 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 save_id = transaction.savepoint()
                 # 创建历史记录表
                 try:
-                    history = ResultCheckHistory.objects.create(**{
-                        'apply_code': data['apply_code'],
-                        'opinion': data['opinion'],
-                        'result': data['result'],
-                        'check_time': data['check_time'],
-                        'account': data['account'],
-                    })
-                    del data['apply_code']
+                    history = ResultCheckHistory.objects.create(
+                        # 'serial': data['serial'],
+                        apply_code=instance.a_code,
+                        opinion=data['opinion'],
+                        result=3,
+                        check_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                        account=instance.account_code
+                    )
+                    #del data['apply_code']
                     del data['opinion']
-                    del data['result']
-                    del data['check_time']
-                    del data['account']
+                    #del data['result']
+                    #del data['check_time']
+                    #del data['account']
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
@@ -188,6 +230,13 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('更新成果合作方式失败')
+
+                # 更新检索关键字表
+                try:
+                    Keywords = KeywordsInfo.objects.filter(object_code=instance.rr_code).update(state=0)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('更新检索关键字失败')
 
                 # 更新成果持有人表
 
@@ -243,19 +292,18 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
                 # 创建推送表
                 try:
-                    mm = Message.objects.create({
+                    mm = Message.objects.create(**{
                         'message_title': '成果消息审核通知',
                         'message_content': history.opinion,
-                        'account_code': owner.main_owner,
+                        'account_code': owner.owner_code,
                         'state': 0,
-                        'send_time': datetime.now(),
-                        'read_time': datetime.now(),
-                        'sender': request.user.account_code,
-                        'sms': '',
-                        'sms_state': '',
-                        'sms_phone': '',
-                        'email': '',
-                        'email_state': '',
+                        'send_time':time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                        'sender':request.user.account,
+                        'sms': 1,
+                        'sms_state': 1,
+                        'sms_phone': tel,
+                        'email': 1,
+                        'email_state': 1,
                         'email_account': ''
 
                     })
@@ -264,16 +312,23 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('推送表创建失败')
 
-                transaction.savepoint_commit(save_id)
-        partial = kwargs.pop('partial', False)
-        serializer = self.get_serializer(instance, data=data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+                #transaction.savepoint_commit(save_id)
+                try:
+                    partial = kwargs.pop('partial', False)
+                    serializer = self.get_serializer(instance, data=data, partial=partial)
+                    serializer.is_valid(raise_exception=True)
+                    self.perform_update(serializer)
 
-        if getattr(instance, '_prefetched_objects_cache', None):
-            # If 'prefetch_related' has been applied to a queryset, we need to
-            # forcibly invalidate the prefetch cache on the instance.
-            instance._prefetched_objects_cache = {}
+                    if getattr(instance, '_prefetched_objects_cache', None):
+                        # If 'prefetch_related' has been applied to a queryset, we need to
+                        # forcibly invalidate the prefetch cache on the instance.
+                        instance._prefetched_objects_cache = {}
+
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('推送表创建失败')
+
+                transaction.savepoint_commit(save_id)
 
         return Response(serializer.data)
 
