@@ -11,7 +11,7 @@ router.register(r'functions', FunctionViewSet)
 router.register(r'role_func', RoleFuncViewSet)
 router.register(r'dept', DeptinfoViewSet)   # 部门机构管理
 router.register(r'param', ParamInfoViewSet) # 系统参数
-# router.register(r'district', SystemDistrictViewSet)
+router.register(r'district', SystemDistrictViewSet) # 区域代理
 
 
 urlpatterns = [

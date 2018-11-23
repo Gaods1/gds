@@ -46,11 +46,12 @@ class ExpertBaseInfoSerializers(serializers.ModelSerializer):
 class ExpertApplySerializers(serializers.ModelSerializer):
     apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     expert = ExpertBaseInfoSerializers(read_only=True)
-    opinion = serializers.CharField()
+    opinion = serializers.CharField(read_only=True)
 
     class Meta:
         model = ExpertApplyHistory
-        fields = ['apply_code',
+        fields = ['serial',
+                  'apply_code',
                   'expert_code',
                   'expert',
                   'account_code',

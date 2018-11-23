@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from account.models import *
 from account.serializers import *
-from rest_framework import status
+from rest_framework import status, permissions
 from rest_framework.response import Response
 from misc.misc import gen_uuid32, genearteMD5
 from rest_framework import filters
@@ -277,6 +277,7 @@ class AccountRoleViewSet(viewsets.ModelViewSet):
 class FunctionViewSet(viewsets.ModelViewSet):
     queryset = FunctionInfo.objects.exclude(pfunc_code=None).order_by('-serial')
     serializer_class = FunctionInfoSerializer
+    permission_classes = (permissions.IsAuthenticated,)
 
     filter_backends = (
         filters.SearchFilter,
@@ -405,6 +406,7 @@ class ParamInfoViewSet(viewsets.ModelViewSet):
 
 #区域表
 class SystemDistrictViewSet(viewsets.ModelViewSet):
+    permission_classes = (permissions.IsAuthenticated,)
     queryset = SystemDistrict.objects.all().order_by('district_id')
     serializer_class = SystemDistrictSerializer
     filter_backends = (

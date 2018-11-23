@@ -32,5 +32,5 @@ urlpatterns = [
     path('certified/', include('expert.urls')),
     path('achievement/', include('achievement.urls')),
     path('project/', include('projectmanagement.urls')),
-    path('consult/', include('consult.urls'))
+    path('consult/', include('consult.urls')),
 ]

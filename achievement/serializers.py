@@ -8,9 +8,9 @@ from .models import *
 
 
 
-# 成果合作信息序列化
+# 成果/需求合作信息序列化
 class ResultsCooperationTypeInfoSerializer(serializers.ModelSerializer):
-    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    #update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     class Meta:
         model = ResultsCooperationTypeInfo
         fields = ['serial',
@@ -20,13 +20,12 @@ class ResultsCooperationTypeInfoSerializer(serializers.ModelSerializer):
                   'cooperation_name',
                   'state',
                   'insert_time',
-                  'update_time',
                   ]
 
 
-# 成果持有人信息序列化
+# 成果/需求持有人信息序列化
 class ResultsOwnerInfoSerializer(serializers.ModelSerializer):
-    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     class Meta:
         model = ResultsOwnerInfo
         fields = ['serial',
@@ -37,7 +36,6 @@ class ResultsOwnerInfoSerializer(serializers.ModelSerializer):
                   'state',
                   'r_type',
                   'insert_time',
-                  'update_time',
                   ]
 
 
@@ -91,14 +89,48 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
                   'mcode',
                   ]
 
-# 成果申请表序列化
-class RrApplyHistorySerializer(serializers.ModelSerializer):
+# 需求信息表序列化
+class RequirementsInfoSerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    mcode = serializers.CharField(max_length=16, read_only=True)
+    class Meta:
+        model = RequirementsInfo
+        fields = [
+            'serial',
+            'req_code',
+            'req_name',
+            'req_form_type',
+            'r_abstract',
+            'use_type',
+            'cooperation_type',
+            'obtain_type',
+            'osource_name',
+            'obtain_source',
+            'entry_type',
+            'owner_type',
+            'owber_code',
+            'owner_abstract',
+            'rcoop_t_abstract',
+            'expiry_dateb',
+            'expiry_datee',
+            'original_data',
+            'show_state',
+            'sniff_state',
+            'sniff_time',
+            'creater',
+            'insert_time',
+            'mcode'
+        ]
+
+
+# 成果/需求申请表序列化
+class RrApplyHistorySerializer(serializers.ModelSerializer):
+    apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     Results = ResultsInfoSerializer(many=True,read_only=True)
+    Requirements = ResultsInfoSerializer(many=True,read_only=True)
     Cooperation = ResultsCooperationTypeInfoSerializer(many=True,read_only=True)
     Owner = ResultsOwnerInfoSerializer(many=True,read_only=True)
     Keywords = KeywordsInfoSerializer(many=True,read_only=True)
-    mcode = serializers.CharField(max_length=16, read_only=True)
     class Meta:
         model = RrApplyHistory
         fields = ['serial',
@@ -109,10 +141,10 @@ class RrApplyHistorySerializer(serializers.ModelSerializer):
                   'apply_time',
                   'apply_type',
                   'type',
-                  'mcode',
                   'Results',
+                  'Requirements',
                   'Cooperation',
                   'Owner',
                   'Keywords',
-                  'update_time',
+                  'apply_time',
                   ]
