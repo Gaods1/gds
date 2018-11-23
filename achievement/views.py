@@ -40,21 +40,22 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         data = request.data
-        status = data['status']
-        if status==11:
+        state = data['state']
+        if state == 2:
             # 建立事物机制
             with transaction.atomic():
                 # 创建一个保存点
                 save_id = transaction.savepoint()
                 # 创建历史记录表
                 try:
-                    history = ResultCheckHistory.objects.create({
-                        'apply_code': data['apply_code'],
-                        'opinion': data['opinion'],
-                        'result': data['result'],
-                        'check_time': data['check_time'],
-                        'account': data['account'],
-                    })
+                    history = ResultCheckHistory.objects.create(
+                        # 'serial': data['serial'],
+                        apply_code=data['apply_code'],
+                        opinion=data['opinion'],
+                        result=data['result'],
+                        check_time=data['check_time'],
+                        account=data['account']
+                    )
                     del data['apply_code']
                     del data['opinion']
                     del data['result']
@@ -68,53 +69,64 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 # 更新成果合作方式表
 
                 try:
-                    cooperation = ResultsCooperationTypeInfo.objects.filter(rr_code=instance.rr_code)
-                    cooperation.status = 1
-                    cooperation.save()
+                    cooperation = ResultsCooperationTypeInfo.objects.filter(rr_code=instance.rr_code).update(state=1)
+                    # transaction.savepoint_commit(save_id)
+                    # cooperation.state = 1
+                    # cooperation.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('更新成果合作方式失败')
 
-
                 # 更新成果持有人表
 
                 try:
-                    owner = ResultsOwnerInfo.objects.filter(r_code=instance.rr_code)
-                    owner.status = 1
-                    owner.save()
+                    owner = ResultsOwnerInfo.objects.filter(r_code=instance.rr_code).update(state=1)
+                    # owner.state = 1
+                    # owner.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('更新成果持有人表失败')
 
                 try:
                     # 更新持有人个人并发送短信
-                    if owner.owner_type == 1:
-                        ownerp = ResultOwnerpBaseinfo.objects.filter(owner_code=owner.owner_code)
-                        ownerp.status = 11
+                    owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
+                    if owner.state == 1:
+                        ownerp = ResultOwnerpBaseinfo.objects.get(owner_code=owner.owner_code)
+                        ownerp.state = 2
                         ownerp.save()
 
                         tel = ownerp.owner_mobile
-                        url = 'http://120.77.58.203/sms/patclubmanage/send/verify/1/' + tel
-                        body = {'type': '通过', 'name': ownerp.owner_name, 'reason': history.opinion}
+                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
+                        body = {'type': '通过', 'name': ownerp.owner_name}
+                        headers = {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "Accept": "application/json"
+                        }
 
                         # 多线程发送短信
-                        t1 = threading.Thread(target=massege,args=(url,body))
+                        t1 = threading.Thread(target=massege,args=(url,body,headers))
                         t1.start()
+                        #response = requests.post(url, data=body, headers=headers)
 
 
                     else:
                         # 更新持有人企业并发送短信
-                        ownere = ResultOwnereBaseinfo.objects.filter(owner_code=owner.owner_code)
-                        ownere.status = 11
+                        ownere = ResultOwnereBaseinfo.objects.get(owner_code=owner.owner_code)
+                        ownere.state = 2
                         ownere.save()
 
                         tel = ownere.owner_mobile
-                        url = 'http://120.77.58.203/sms/patclubmanage/send/verify/1/' + tel
-                        body = {'type': '通过', 'name': ownere.owner_name, 'reason': history.opinion}
+                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
+                        body = {'type': '通过', 'name': ownere.owner_name}
+                        headers = {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "Accept": "application/json"
+                        }
 
                         # 多线程发送短信
-                        t1 = threading.Thread(target=massege, args=(url, body))
+                        t1 = threading.Thread(target=massege, args=(url,body,headers))
                         t1.start()
+                        #response = requests.post(url, data=body, headers=headers)
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
@@ -122,20 +134,20 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
                 # 创建推送表
                 try:
-                    mm = Message.objects.create({
+                    mm = Message.objects.create(**{
                         'message_title': '成果消息审核通知',
                         'message_content': history.opinion,
                         'account_code': owner.main_owner,
                         'state': 0,
                         'send_time': datetime.now(),
                         'read_time': datetime.now(),
-                        'sender':request.user.user_name,
-                        'sms': '',
-                        'sms_state': '',
-                        'sms_phone': '',
-                        'email': '',
-                        'email_state': '',
-                        'email_account': ''
+                        'sender': request.user.account_code,
+                        # 'sms': '',
+                        # 'sms_state': '',
+                        # 'sms_phone': '',
+                        # 'email': '',
+                        # 'email_state': '',
+                        # 'email_account': ''
 
                     })
 
@@ -150,7 +162,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 save_id = transaction.savepoint()
                 # 创建历史记录表
                 try:
-                    history = ResultCheckHistory.objects.create({
+                    history = ResultCheckHistory.objects.create(**{
                         'apply_code': data['apply_code'],
                         'opinion': data['opinion'],
                         'result': data['result'],
@@ -170,8 +182,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 # 更新成果合作方式表
 
                 try:
-                    cooperation = ResultsCooperationTypeInfo.objects.filter(rr_code=instance.rr_code)
-                    cooperation.status = 0
+                    cooperation = ResultsCooperationTypeInfo.objects.get(rr_code=instance.rr_code)
+                    cooperation.state = 0
                     cooperation.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
@@ -180,8 +192,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 # 更新成果持有人表
 
                 try:
-                    owner = ResultsOwnerInfo.objects.filter(r_code=instance.rr_code)
-                    owner.status = 0
+                    owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
+                    owner.state = 0
                     owner.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
@@ -190,31 +202,39 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 try:
                     # 更新持有人个人并发送短信
                     if owner.owner_type == 1:
-                        ownerp = ResultOwnerpBaseinfo.objects.filter(owner_code=owner.owner_code)
-                        ownerp.status = 4
+                        ownerp = ResultOwnerpBaseinfo.objects.get(owner_code=owner.owner_code)
+                        ownerp.state = 3
                         ownerp.save()
 
                         tel = ownerp.owner_mobile
                         url = 'http://120.77.58.203/sms/patclubmanage/send/verify/0/' + tel
-                        body = {'type': '通过', 'name': ownerp.owner_name, 'reason': history.opinion}
+                        body = {'type': '成果', 'name': ownerp.owner_name}
+                        headers = {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "Accept": "application/json"
+                        }
 
                         # 多线程发送短信
-                        t1 = threading.Thread(target=massege, args=(url, body))
+                        t1 = threading.Thread(target=massege, args=(url, body,headers))
                         t1.start()
 
 
                     else:
                         # 更新持有人企业并发送短信
                         ownere = ResultOwnereBaseinfo.objects.filter(owner_code=owner.owner_code)
-                        ownere.status = 4
+                        ownere.state = 3
                         ownere.save()
 
                         tel = ownere.owner_mobile
-                        url = 'http://120.77.58.203/sms/patclubmanage/send/verify/1/' + tel
-                        body = {'type': '通过', 'name': ownere.owner_name, 'reason': history.opinion}
+                        url = 'http://120.77.58.203/sms/patclubmanage/send/verify/0/' + tel
+                        body = {'type': '成果', 'name': ownere.owner_name}
+                        headers = {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "Accept": "application/json"
+                        }
 
                         # 多线程发送短信
-                        t1 = threading.Thread(target=massege, args=(url, body))
+                        t1 = threading.Thread(target=massege, args=(url, body,headers))
                         t1.start()
 
                 except Exception as e:
@@ -230,7 +250,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         'state': 0,
                         'send_time': datetime.now(),
                         'read_time': datetime.now(),
-                        'sender': request.user.user_name,
+                        'sender': request.user.account_code,
                         'sms': '',
                         'sms_state': '',
                         'sms_phone': '',
@@ -241,6 +261,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     })
 
                 except Exception as e:
+                    transaction.savepoint_rollback(save_id)
                     return HttpResponse('推送表创建失败')
 
                 transaction.savepoint_commit(save_id)

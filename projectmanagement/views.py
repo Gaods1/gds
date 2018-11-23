@@ -40,7 +40,16 @@ class ProjectApplyHistoryViewSet(viewsets.ModelViewSet):
 
 
 class ProjectCheckHistoryViewSet(viewsets.ModelViewSet):
-    '''项目审核历史记录'''
+    '''
+    项目审核历史记录
+    请求参数
+    {
+      "apply_code": "string",//申请编号
+      "opinion": "string",//审核意见
+      "result": 0,//审核结果，0：不通过；1：通过
+      "account": "string" // 审核人 后台自动生成
+    }
+    '''
     queryset = ProjectCheckHistory.objects.all()
     serializer_class = ProjectCheckHistorySerializer
     filter_backends = (
@@ -53,8 +62,7 @@ class ProjectCheckHistoryViewSet(viewsets.ModelViewSet):
     search_fields = ("check_time")
 
     # 审核状态 0：不通过；1：通过  需要同时修改申请表的状态
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
+    def create(self, request, *args, **kwargs):
         data = request.data
 
         result = data.get("result")
@@ -67,6 +75,28 @@ class ProjectCheckHistoryViewSet(viewsets.ModelViewSet):
                 pa["state"] = 4
             pa.update()
 
+        data['account'] = request.user.account
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    # 该方法应该不会被执行到
+    def update(self, request, *args, **kwargs):
+        data = request.data
+        result = data.get("result")
+        apply_code = data.get("apply_code")
+        if result != None and apply_code != None:
+            pa = ProjectApplyHistory.objects.filter(apply_code=apply_code)
+            if result == 1:
+                pa["state"] = 11
+            else:
+                pa["state"] = 4
+            pa.update()
+
+        instance = self.get_object()
         partial = kwargs.pop('partial', False)
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)

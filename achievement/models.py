@@ -109,6 +109,12 @@ class ResultsInfo(models.Model):
     account_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
     r_abstract_detail = models.TextField(blank=True, null=True)
 
+    @property
+    def mcode(self):
+        # Results = ResultsInfo.objects.filter(r_code=self.rr_code)
+        mm = [major_userinfo.mcode for major_userinfo in
+              MajorUserinfo.objects.filter(user_type=4, user_code=self.r_code)]
+        return mm
 
     class Meta:
         managed =False
