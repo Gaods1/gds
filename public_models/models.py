@@ -131,15 +131,15 @@ class InterestInfo(models.Model):
 # 领域类型基本信息表（领域专家、经纪人、项目团队、成果、需求共用）。分两层级别管理 *
 class MajorInfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    mtype = models.IntegerField(blank=True, null=True)
-    mcode = models.CharField(unique=True, max_length=16, blank=True, null=True)
+    mtype = models.IntegerField(default=2)
+    mcode = models.CharField(unique=True, max_length=16, default=gen_uuid32)
     pmcode = models.CharField(max_length=16, blank=True, null=True)
     mname = models.CharField(max_length=64, blank=True, null=True)
     mabbr = models.CharField(max_length=32, blank=True, null=True)
     mlevel = models.IntegerField(blank=True, null=True)
     state = models.IntegerField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
+    insert_time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = False
@@ -151,7 +151,7 @@ class MajorInfo(models.Model):
 class MajorUserinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     mtype = models.IntegerField(blank=True, null=True)
-    user_type = models.IntegerField(blank=True, null=True)
+    user_type = models.IntegerField(blank=True, null=True)  # 类型使用者类型。1：领域专家；2：项目团队;3:经济人 4:成果;5：需求;6：成果企业持有人；7：需求企业持有人;8:成果个人持有人 9：需求个人持有人'
     user_code = models.CharField(max_length=64, blank=True, null=True)
     mcode = models.CharField(max_length=16, blank=True, null=True)
 
@@ -163,7 +163,7 @@ class MajorUserinfo(models.Model):
 # 附件文件类型表 *
 class AttachmentFileType(models.Model):
     serial = models.AutoField(primary_key=True)
-    tcode = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    tcode = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     tname = models.CharField(max_length=32, blank=True, null=True)
     tmemo = models.CharField(max_length=255, blank=True, null=True)
 
@@ -175,15 +175,15 @@ class AttachmentFileType(models.Model):
 # 附件信息表 *
 class AttachmentFileinfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    ecode = models.CharField(max_length=64, blank=True, null=True)
+    ecode = models.CharField(max_length=64, blank=True, null=True)      # 企业代码/领域专家代码/项目团队代码
     tcode = models.CharField(max_length=8, blank=True, null=True)
-    file_format = models.IntegerField(blank=True, null=True)
+    file_format = models.IntegerField(blank=True, null=True)            # 文件格式；0：文本；1：图片；2：音频；3：视频；  xx：其他格式请自行定义'
     file_name = models.CharField(max_length=64, blank=True, null=True)
-    add_id = models.CharField(max_length=64, blank=True, null=True)
+    add_id = models.CharField(max_length=64, blank=True, null=True)        # 附加信息。例如对于企业成员的图片信息需要填写EMCode 用来表示是哪个成员的信息'
     file_order = models.IntegerField(blank=True, null=True)
     state = models.IntegerField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
+    insert_time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = False
@@ -264,9 +264,9 @@ class PersonalInfo(models.Model):
     pmobile = models.CharField(max_length=16, blank=True, null=True)
     ptel = models.CharField(max_length=16, blank=True, null=True)
     pemail = models.CharField(max_length=64, blank=True, null=True)
-    peducation = models.CharField(max_length=8, blank=True, null=True)
+    peducation = models.CharField(max_length=8, default="本科")   # 学历信息；本:研:博:大专:中专：mba：emba：其他
     pabstract = models.TextField(blank=True, null=True)
-    state = models.IntegerField(default=1)
+    state = models.IntegerField(default=2)          # '状态；1：提交等待审核；2：审核通过；3：审核未通过；4：暂停；5：伪删除'
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
     account_code = models.CharField(max_length=64, blank=True, null=True)
@@ -292,11 +292,11 @@ class EnterpriseBaseinfo(models.Model):
     zipcode = models.CharField(max_length=8, blank=True, null=True)
     elevel = models.IntegerField(default=1)
     credi_tvalue = models.IntegerField(default=0)
-    state = models.IntegerField(blank=True, null=True)
+    state = models.IntegerField(blank=True, null=True)      # 企业信息状态。1：提交等待审核；2：审核通过；3：审核未通过；4：暂停；5：伪删除
     creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
+    insert_time = models.DateTimeField(auto_now_add=True)
     account_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
-    manager = models.CharField(max_length=16, blank=True, null=True)
+    manager_idtype = models.IntegerField(default=1)
     manager_id = models.CharField(max_length=32, blank=True, null=True)
 
     class Meta:
