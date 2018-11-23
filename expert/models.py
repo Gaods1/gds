@@ -42,7 +42,7 @@ class ExpertApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
     apply_code = models.CharField(max_length=64, default=gen_uuid32)
     expert_code = models.CharField(max_length=64)
-    account_code = models.CharField(max_length=64)
+    account_code = models.CharField(max_length=64, blank=True, null=True)
     state = models.IntegerField(default=1)
     apply_time = models.DateTimeField(auto_now_add=True)
     apply_type = models.IntegerField(default=1)
@@ -55,8 +55,11 @@ class ExpertApplyHistory(models.Model):
 
     @property
     def opinion(self):
-        history = ExpertCheckHistory.objects.filter(apply_code=self.apply_code)[0]
-        return history.opinion
+        history = ExpertCheckHistory.objects.filter(apply_code=self.apply_code)
+        opinion = None
+        if history:
+            opinion = history.order_by('-check_time')[0].opinion
+        return opinion
 
     class Meta:
         managed = True
