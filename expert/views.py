@@ -1,10 +1,10 @@
-from django.shortcuts import render
-from account.models import *
-from account.serializers import *
+from .models import *
+from .serializers import *
 from rest_framework import viewsets
 
 
-class TestViewSet(viewsets.ModelViewSet):
-    queryset = AccountInfo.objects.all().order_by('-serial')
-    serializer_class = AccountInfoSerializer
+# 领域专家视图
+class ExpertApplyViewSet(viewsets.ModelViewSet):
+    queryset = ExpertApplyHistory.objects.all().order_by('-serial')
+    serializer_class = ExpertApplySerializers
 # Create your views here.
