@@ -59,3 +59,51 @@ class ExpertApplySerializers(serializers.ModelSerializer):
                   'apply_time',
                   'opinion'
                   ]
+
+#技术团队基本信息表
+class TeamBaseinfoSerializers(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+
+    class Meta:
+        model = ProjectTeamBaseinfo
+        fields = [
+            'serial',
+            'pt_code',  # 团队代码
+            'pt_name',        # 团队名称
+            'pt_abbreviation',  # 团队简称
+            'pt_abstract',   # 团队简介 纯文本
+            'pt_homepage',    # 团队主页
+            'pt_type',     # 团队种类
+            'pt_city',  # 团队所属城市
+            'ecode',  #对于企业类型的项目团队，填写企业代码，其他类型团队，该字段无效
+            'pt_level',  # 业务能力的内部的评级。以星级表示，1-5 表示一星到五星，默认为一星
+            'credit_value',    # 信用值取值范围0-100，默认0
+            'pt_people_name',  # 姓名
+            'pt_people_tel',    # 手机号
+            'pt_people_id',  # 证件号码
+            'pt_people_type',     # 证件类型
+            'pt_describe',  # 证件描述
+            'pt_integral',     # 积分
+            'state',  # 信息状态。1：正常；2：暂停；3：伪删除
+            'account_code',    # 系统账号
+            'creater',   #录入者
+            'insert_time',  # 创建时间
+        ]
+
+
+# 技术团队审核申请表序列
+class TeamApplySerializers(serializers.ModelSerializer):
+    apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    team_baseinfo = TeamBaseinfoSerializers(read_only=True)
+
+    class Meta:
+        model = TeamApplyHistory
+        fields = ['serial',
+                  'apply_code',
+                  'team_code',
+                  'team_baseinfo',
+                  'account_code',
+                  'state',
+                  'apply_type',
+                  'apply_time'
+                  ]
