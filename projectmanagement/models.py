@@ -35,6 +35,11 @@ class ProjectInfo(models.Model):
         requirements = [r.req_name for r in RequirementsInfo.objects.filter(req_code__in=requirement_codes)]
         return results + requirements
 
+    @property
+    def apply(self):
+        apply = ProjectApplyHistory.objects.filter(project_code=self.project_code).order_by('-serial')[:1]
+        return apply
+
     class Meta:
         managed = False
         db_table = 'project_info'
