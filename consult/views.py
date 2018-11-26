@@ -48,7 +48,7 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
     )
     ordering_fields = ("consult_time", "consult_endtime", "consult_state")
     filter_fields = ("consult_state", "consult_code", "serial","consulter")
-    search_fields = ("consult_memo")
+    search_fields = ("consult_title", "consult_memo")
 
     '''
     征询审核接口：一 审核通过 | 审核未通过:   生成审核记录(consult_checkinfo) 更新征询表状态(consult_info)  
