@@ -181,7 +181,7 @@ class ConsultNeedCheckViewSet(viewsets.ModelViewSet):
     )
     ordering_fields = ("consult_time", "consult_endtime", "consult_state")
     filter_fields = ("consult_code", "serial","consulter")
-    search_fields = ("consult_memo")
+    search_fields = ("consult_title","consult_memo")
 
 
 #征询专家关系管理
