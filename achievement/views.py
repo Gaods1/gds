@@ -84,6 +84,13 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('成果审核历史记录创建失败%s' % str(e))
 
+                # 更新成果评价信息表
+                try:
+                    Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=2)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('更新成果评价信息失败%s' % str(e))
+
                 # 更新成果合作方式表
 
                 try:
@@ -112,24 +119,20 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('更新成果持有人表失败%s' % str(e))
 
-                # 更新成果评价信息表
-                try:
-                    Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=2)
-                except Exception as e:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新成果评价信息失败%s' % str(e))
+
 
                 try:
-                    # 更新持有人个人并发送短信
+                    # 更新个人信息并发送短信
                     owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
+                    Results = ResultsInfo.objects.get(r_code=instance.rr_code)
                     if owner.state == 1:
-                        ownerp = ResultOwnerpBaseinfo.objects.get(owner_code=owner.owner_code)
+                        ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                         ownerp.state = 2
                         ownerp.save()
 
-                        tel = ownerp.owner_mobile
+                        tel = ownerp.pmobile
                         url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
-                        body = {'type': '成果', 'name': ownerp.owner_name}
+                        body = {'type': '成果', 'name': Results.r_name}
                         headers = {
                             "Content-Type": "application/x-www-form-urlencoded",
                             "Accept": "application/json"
@@ -142,14 +145,14 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
 
                     else:
-                        # 更新持有人企业并发送短信
-                        ownere = ResultOwnereBaseinfo.objects.get(owner_code=owner.owner_code)
+                        # 更新企业信息并发送短信
+                        ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
                         ownere.state = 2
                         ownere.save()
 
-                        tel = ownere.owner_mobile
+                        tel = ownere.emobile
                         url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
-                        body = {'type': '成果', 'name': ownere.owner_name}
+                        body = {'type': '成果', 'name': Results.r_name}
                         headers = {
                             "Content-Type": "application/x-www-form-urlencoded",
                             "Accept": "application/json"
@@ -228,6 +231,13 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('成果审核历史记录创建失败%s' % str(e))
 
+                # 更新成果评价信息表
+                try:
+                    Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=3)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('更新成果评价信息失败%s' % str(e))
+
                 # 更新成果合作方式表
 
                 try:
@@ -255,50 +265,49 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('更新成果持有人表失败%s' % str(e))
 
-                # 更新成果评价信息表
-                try:
-                    Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=3)
-                except Exception as e:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新成果评价信息失败%s' % str(e))
+
 
                 try:
-                    # 更新持有人个人并发送短信
-                    if owner.owner_type == 1:
-                        ownerp = ResultOwnerpBaseinfo.objects.get(owner_code=owner.owner_code)
+                    # 更新个人信息并发送短信
+                    owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
+                    Results = ResultsInfo.objects.get(r_code=instance.rr_code)
+                    if owner.state == 1:
+                        ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                         ownerp.state = 3
                         ownerp.save()
 
-                        tel = ownerp.owner_mobile
-                        url = 'http://120.77.58.203/sms/patclubmanage/send/verify/0/' + tel
-                        body = {'type': '成果', 'name': ownerp.owner_name}
+                        tel = ownerp.pmobile
+                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
+                        body = {'type': '成果', 'name': Results.r_name}
                         headers = {
                             "Content-Type": "application/x-www-form-urlencoded",
                             "Accept": "application/json"
                         }
 
                         # 多线程发送短信
-                        t1 = threading.Thread(target=massege, args=(url, body,headers))
+                        t1 = threading.Thread(target=massege,args=(url,body,headers))
                         t1.start()
+                        #response = requests.post(url, data=body, headers=headers)
 
 
                     else:
-                        # 更新持有人企业并发送短信
-                        ownere = ResultOwnereBaseinfo.objects.filter(owner_code=owner.owner_code)
+                        # 更新企业信息并发送短信
+                        ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
                         ownere.state = 3
                         ownere.save()
 
-                        tel = ownere.owner_mobile
-                        url = 'http://120.77.58.203/sms/patclubmanage/send/verify/0/' + tel
-                        body = {'type': '成果', 'name': ownere.owner_name}
+                        tel = ownere.emobile
+                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
+                        body = {'type': '成果', 'name': Results.r_name}
                         headers = {
                             "Content-Type": "application/x-www-form-urlencoded",
                             "Accept": "application/json"
                         }
 
                         # 多线程发送短信
-                        t1 = threading.Thread(target=massege, args=(url, body,headers))
+                        t1 = threading.Thread(target=massege, args=(url,body,headers))
                         t1.start()
+                        #response = requests.post(url, data=body, headers=headers)
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
@@ -407,6 +416,13 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('需求审核历史记录创建失败%s' % str(e))
 
+                # 更新需求评价信息表
+                try:
+                    Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=2)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('更新需求评价信息失败%s' % str(e))
+
                 # 更新成果合作方式表
 
                 try:
@@ -435,24 +451,20 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('更新需求持有人表失败%s' % str(e))
 
-                # 更新需求评价信息表
-                try:
-                    Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=2)
-                except Exception as e:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新需求评价信息失败%s' % str(e))
+
 
                 try:
-                    # 更新需求持有人个人并发送短信
+                    # 更新个人信息并发送短信
                     owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
+                    Requirements = RequirementsInfo.objects.get(req_code=instance.rr_code)
                     if owner.state == 1:
-                        ownerp = ResultOwnerpBaseinfo.objects.get(owner_code=owner.owner_code)
+                        ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                         ownerp.state = 2
                         ownerp.save()
 
-                        tel = ownerp.owner_mobile
+                        tel = ownerp.pmobile
                         url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
-                        body = {'type': '需求', 'name': ownerp.owner_name}
+                        body = {'type': '需求', 'name': Requirements.req_name}
                         headers = {
                             "Content-Type": "application/x-www-form-urlencoded",
                             "Accept": "application/json"
@@ -465,14 +477,14 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
 
                     else:
-                        # 更新需求持有人企业并发送短信
-                        ownere = ResultOwnereBaseinfo.objects.get(owner_code=owner.owner_code)
+                        # 更新企业信息并发送短信
+                        ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
                         ownere.state = 2
                         ownere.save()
 
-                        tel = ownere.owner_mobile
+                        tel = ownere.emobile
                         url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
-                        body = {'type': '需求', 'name': ownere.owner_name}
+                        body = {'type': '需求', 'name': Requirements.req_name}
                         headers = {
                             "Content-Type": "application/x-www-form-urlencoded",
                             "Accept": "application/json"
@@ -482,6 +494,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         t1 = threading.Thread(target=massege, args=(url,body,headers))
                         t1.start()
                         #response = requests.post(url, data=body, headers=headers)
+
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
@@ -551,6 +564,13 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('需求审核历史记录创建失败%s' % str(e))
 
+                # 更新需求评价信息表
+                try:
+                    Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=3)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('更新需求评价信息失败%s' % str(e))
+
                 # 更新成果合作方式表
 
                 try:
@@ -578,50 +598,49 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('更新需求持有人表失败%s' % str(e))
 
-                # 更新需求评价信息表
-                try:
-                    Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=3)
-                except Exception as e:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新需求评价信息失败%s' % str(e))
+
 
                 try:
-                    # 更新持有人个人并发送短信
-                    if owner.owner_type == 1:
-                        ownerp = ResultOwnerpBaseinfo.objects.get(owner_code=owner.owner_code)
+                    # 更新个人信息并发送短信
+                    owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
+                    Requirements = RequirementsInfo.objects.get(req_code=instance.rr_code)
+                    if owner.state == 1:
+                        ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                         ownerp.state = 3
                         ownerp.save()
 
-                        tel = ownerp.owner_mobile
-                        url = 'http://120.77.58.203/sms/patclubmanage/send/verify/0/' + tel
-                        body = {'type': '需求', 'name': ownerp.owner_name}
+                        tel = ownerp.pmobile
+                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
+                        body = {'type': '需求', 'name': Requirements.req_name}
                         headers = {
                             "Content-Type": "application/x-www-form-urlencoded",
                             "Accept": "application/json"
                         }
 
                         # 多线程发送短信
-                        t1 = threading.Thread(target=massege, args=(url, body,headers))
+                        t1 = threading.Thread(target=massege,args=(url,body,headers))
                         t1.start()
+                        #response = requests.post(url, data=body, headers=headers)
 
 
                     else:
-                        # 更新持有人企业并发送短信
-                        ownere = ResultOwnereBaseinfo.objects.filter(owner_code=owner.owner_code)
+                        # 更新企业信息并发送短信
+                        ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
                         ownere.state = 3
                         ownere.save()
 
-                        tel = ownere.owner_mobile
-                        url = 'http://120.77.58.203/sms/patclubmanage/send/verify/0/' + tel
-                        body = {'type': '需求', 'name': ownere.owner_name}
+                        tel = ownere.emobile
+                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
+                        body = {'type': '需求', 'name': Requirements.req_name}
                         headers = {
                             "Content-Type": "application/x-www-form-urlencoded",
                             "Accept": "application/json"
                         }
 
                         # 多线程发送短信
-                        t1 = threading.Thread(target=massege, args=(url, body,headers))
+                        t1 = threading.Thread(target=massege, args=(url,body,headers))
                         t1.start()
+                        #response = requests.post(url, data=body, headers=headers)
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
