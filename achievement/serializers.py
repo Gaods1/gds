@@ -58,6 +58,7 @@ class KeywordsInfoSerializer(serializers.ModelSerializer):
 class ResultsInfoSerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     mcode = serializers.CharField(max_length=16, read_only=True)
+    fujian = serializers.CharField(max_length=64, read_only=True)
     class Meta:
         model = ResultsInfo
         fields = ['serial',
@@ -87,12 +88,14 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
                   'r_abstract_detail',
                   'update_time',
                   'mcode',
+                  'fujian'
                   ]
 
 # 需求信息表序列化
 class RequirementsInfoSerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     mcode = serializers.CharField(max_length=16, read_only=True)
+    fujian = serializers.CharField(max_length=64, read_only=True)
     class Meta:
         model = RequirementsInfo
         fields = [
@@ -119,7 +122,8 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
             'sniff_time',
             'creater',
             'insert_time',
-            'mcode'
+            'mcode',
+            'fujian',
         ]
 
 

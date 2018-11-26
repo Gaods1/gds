@@ -1,3 +1,4 @@
+import shutil
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.db import transaction
@@ -118,6 +119,28 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('更新成果持有人表失败%s' % str(e))
+
+                # 附件表上传正式文件夹
+                try:
+                    Results = ResultsInfo.objects.get(r_code=instance.rr_code)
+                    if Results.fujian:
+                        #dst_path  = 'uploads/results/{}/{}/1'.format(AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,
+                                                     #self.req_code)
+                        for i in Results.fujian:
+                            #i = 'http://120.77.58.203:8808/temp/uploads/results/{}/{}/1'
+                            b = i[:25]+i[30:]
+                            shutil.move(i, b)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('文件转换失败%s' % str(e))
+
+
+
+                    #files = os.listdir(src_path)
+
+                   #for file in files:
+                #file_path = os.path.join(src_path, file)
+                  #shutil.move(i, dst_path)
 
 
 
@@ -450,8 +473,19 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('更新需求持有人表失败%s' % str(e))
-
-
+                # 附件表上传正式文件夹
+                try:
+                    Requirements = RequirementsInfo.objects.get(req_code=instance.rr_code)
+                    # dst_path  = 'uploads/results/{}/{}/1'.format(AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,
+                    # self.req_code)
+                    if Requirements.fujian:
+                        for i in Requirements.fujian:
+                            # i = 'http://120.77.58.203:8808/temp/uploads/results/{}/{}/1'
+                            b = i[:25] + i[30:]
+                            shutil.move(i, b)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('文件转换失败%s' % str(e))
 
                 try:
                     # 更新个人信息并发送短信
