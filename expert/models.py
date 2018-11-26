@@ -438,6 +438,11 @@ class TeamApplyHistory(models.Model):
     apply_time = models.DateTimeField(auto_now_add=True)
     apply_type = models.IntegerField(blank=True, null=True)     # 申请类型：1：新增，2：修改，3：删除
 
+    @property
+    def team_baseinfo(self):
+        team_baseinfo = ProjectTeamBaseinfo.objects.get(pt_code=self.team_code)
+        return team_baseinfo
+
     class Meta:
         managed = False
         db_table = 'team_apply_history'

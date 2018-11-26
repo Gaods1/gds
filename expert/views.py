@@ -6,8 +6,13 @@ import django_filters
 from rest_framework.response import Response
 from django.db import transaction
 
+from django.db import transaction
+from django.http import JsonResponse
+import time,requests
+from account.models import AccountInfo
+from public_models.models import Message
 
-# 领域专家申请表视图
+# 领域专家视图
 class ExpertApplyViewSet(viewsets.ModelViewSet):
     queryset = ExpertApplyHistory.objects.all().order_by('-serial')
     serializer_class = ExpertApplySerializers
@@ -29,13 +34,16 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
         expert = data.pop('expert')
         apply_type = data['apply_type']
         apply_state = data['state']
-        if apply_type == 1:
-            if apply_state == 2:
-                serial = expert['serial']
 
+        # 当申请状态是新增和修改时
+        if apply_type in [1, 2]:
+            if apply_state == 2:
+                if expert['pcode']:
+                    PersonalInfo.objects.filter(pcode=expert['pcode'])
+                ExpertBaseinfo.objects.filter(expert_code=expert['expert_code']).update(state=1)
 
         # 历史记录表信息
-        history = {}
+        history = dict()
         history['opinion'] = data.pop('opinion')
         history['apply_code'] = instance.apply_code
         history['result'] = data['state']
@@ -53,3 +61,106 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 # Create your views here.
+
+
+
+#技术团队视图
+class TeamBaseinfoViewSet(viewsets.ModelViewSet):
+    queryset = ProjectTeamBaseinfo.objects.all().order_by('-serial')
+    serializer_class = TeamBaseinfoSerializers
+
+
+#技术团队申请视图
+class TeamApplyViewSet(viewsets.ModelViewSet):
+    queryset = TeamApplyHistory.objects.all().order_by('-serial')
+    serializer_class = TeamApplySerializers
+
+    '''
+    技术团队申请步骤:(涉及表:project_team_baseinfo   team_apply_history team_check_history account_info identity_authorization_info message)
+    流程:检索project_team_baseinfo  team_apply_history作为主表 
+         1 新增或更新或禁权team_apply_history 表状态
+         2 更新project_team_baseinfo 表状态
+         3 新增team_check_history 表记录
+         4 新增前台角色授权记录 identity_authorization_info
+         5 发送短信通知
+         6 保存短信记录 message
+    '''
+    def update(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                apply_team_baseinfo = self.get_object()
+                if apply_team_baseinfo.state == 1:
+                    return JsonResponse("审核已通过无需再审核")
+                check_state = request.data.get('state')
+                opinion = request.data.get('opinion')
+                # 1 (apply_type:新增或更新或禁权)team_apply_history表
+                TeamApplyHistory.objects.filter(serial=apply_team_baseinfo.serial).update(state=check_state)
+                if apply_team_baseinfo.apply_type == 1 or apply_team_baseinfo.apply_type ==2:
+                    if check_state == 2: #审核通过 baseinfo.state = 1
+                        baseinfo_state = 1
+                    elif check_state == 3: #审核未通过 baseinfo.state=2
+                        baseinfo_state = 2
+                else:
+                    if check_state == 2: #审核通过删除
+                        baseinfo_state = 3
+                    elif check_state == 3: #审核未通过 不允许删除
+                        baseinfo_state = apply_team_baseinfo.team_baseinfo.state
+
+                # 2 更新project_team_baseinfo表状态
+                ProjectTeamBaseinfo.objects.filter(serial=apply_team_baseinfo.team_baseinfo.serial).update(state=baseinfo_state)
+                # 3 新增tema_check_history表记录
+                team_checkinfo_data = {
+                    'apply_code': apply_team_baseinfo.apply_code,
+                    'opinion': opinion,
+                    'result': check_state,
+                    'check_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                    'account': request.user.account
+                }
+                TeamCheckHistory.objects.create(**team_checkinfo_data)
+                # 4 新增前台角色授权记录 identity_authorization_info
+                if check_state == 2:
+                    identity_authorization_data = {
+                        'account_code': apply_team_baseinfo.team_baseinfo.account_code,
+                        'identity_code':3,
+                        'state': 1,
+                        'insert_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                        'creater': request.user.account
+                    }
+                    IdentityAuthorizationInfo.objects.create(**identity_authorization_data)
+                # 5 发送短信通知
+                account_info = AccountInfo.objects.get(account_code=apply_team_baseinfo.team_baseinfo.account_code)
+                account_mobile = account_info.user_mobile
+                if check_state == 2:
+                    sms_url = 'http://120.77.58.203:8808/sms/patclubmanage/send/auth/1/' + account_mobile
+                else:
+                    sms_url = 'http://120.77.58.203:8808/sms/patclubmanage/send/auth/0/' + account_mobile
+                sms_data = {
+                    'name': '技术团队'
+                }
+                headers = {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                    "Accept": "application/json"
+                }
+                requests.post(sms_url, data=sms_data, headers=headers)
+                # 6 保存短信记录
+                if check_state == 2:
+                    message_content = "您认证的身份信息技术团队审核未通过。请登录平台查看。"
+                else:
+                    message_content = "您认证的身份信息技术团队审核已通过。修改身份信息需重新审核，请谨慎修改。"
+                message_data = {'message_title':'技术团队认证信息审核结果通知',
+                                        'message_content':message_content,
+                                        'account_code':apply_team_baseinfo.team_baseinfo.account_code,
+                                        'state': 0,
+                                        'send_time':time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                                        'sender':request.user.account,
+                                        'sms':1,
+                                        'sms_state':1,
+                                        'sms_phone':account_mobile,
+                                        'email':0,
+                                        'email_state':0,
+                                        'email_account':''}
+                Message.objects.create(**message_data)
+        except Exception as e:
+            return JsonResponse("审核失败")
+
+        return JsonResponse("审核成功")
