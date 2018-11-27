@@ -1,6 +1,7 @@
 from django.db import models
 from misc.misc import gen_uuid32
-from public_models.models import PersonalInfo, EnterpriseBaseinfo, SystemDistrict
+from public_models.models import *
+from .utils import get_file
 # Create your models here.
 
 
@@ -106,6 +107,22 @@ class ExpertBaseinfo(models.Model):
         e = EnterpriseBaseinfo.objects.get(ecode=self.ecode)
         return e.ename
 
+    @property
+    def head(self):
+        return get_file(self.expert_code, 'expertHead')
+
+    @property
+    def idfornt(self):
+        return get_file(self.expert_code, 'expertIdFront')
+
+    @property
+    def idback(self):
+        return get_file(self.expert_code, 'expertIdBack')
+
+    @property
+    def idphoto(self):
+        return get_file(self.expert_code, 'expertHandIDPhoto')
+
     class Meta:
         managed = True
         db_table = 'expert_baseinfo'
@@ -134,6 +151,10 @@ class BrokerApplyHistory(models.Model):
     state = models.IntegerField(blank=True, null=True)                  # 审核状态  1， 待审核  2， 通过   3， 未通过
     apply_time = models.DateTimeField(auto_now_add=True)
     apply_type = models.IntegerField(blank=True, null=True)
+
+    @property
+    def broker(self):
+        return BrokerBaseinfo.objects.get(broker_code=self.broker_code)
 
     class Meta:
         managed = False
