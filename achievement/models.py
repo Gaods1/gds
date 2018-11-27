@@ -3,7 +3,7 @@ import os
 from django.db import models
 from public_models.models import PersonalInfo, EnterpriseBaseinfo #个人基本信息或者企业基本信息
 from public_models.models import MajorUserinfo
-from public_models.models import Message # 推送消息表
+from public_models.models import Message,ParamInfo# 推送消息表以及系统参数表
 from public_models.models import AttachmentFileType,AttachmentFileinfo#附件表及附件类型表
 
 # Create your models here.
@@ -82,11 +82,11 @@ class RequirementsInfo(models.Model):
     def fujian(self):
         # 拼接url地址
 
-        url1 = 'http://120.77.58.203:8808/temp/uploads/results/{}/{}/1'.format(AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,
+        url1 = 'http://120.77.58.203:8808/{}/{}/{}/1'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,
                                                      self.req_code)
-        url2 = 'http://120.77.58.203:8808/temp/uploads/results/{}/{}/2'.format(AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,
+        url2 = 'http://120.77.58.203:8808/{}/{}/{}/2'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,
                                                      self.req_code)
-        url3 = 'http://120.77.58.203:8808/temp/uploads/results/{}/{}/3'.format(AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,
+        url3 = 'http://120.77.58.203:8808/{}/{}/{}/3'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,
                                                      self.req_code)
         list = [url1, url2, url3]
 
@@ -137,9 +137,9 @@ class ResultsInfo(models.Model):
     def fujian(self):
         # 拼接url地址
 
-        url1 = 'http://120.77.58.203:8808/temp/uploads/results/{}/{}/1'.format(AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,self.r_code)
-        url2 = 'http://120.77.58.203:8808/temp/uploads/results/{}/{}/2'.format(AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,self.r_code)
-        url3 = 'http://120.77.58.203:8808/temp/uploads/results/{}/{}/3'.format(AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,self.r_code)
+        url1 = 'http://120.77.58.203:8808/{}/{}/{}/1'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='requirementGuidancePhoto').tcode,self.r_code)
+        url2 = 'http://120.77.58.203:8808/{}/{}/{}/2'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='requirementGuidancePhoto').tcode,self.r_code)
+        url3 = 'http://120.77.58.203:8808/{}/{}/{}/3'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='requirementGuidancePhoto').tcode,self.r_code)
         list = [url1,url2,url3]
 
         # 判断该路径下的文件夹是否为空
