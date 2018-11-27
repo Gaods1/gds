@@ -3,7 +3,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from misc.misc import gen_uuid32,check_md5_password, genearteMD5
 from misc.para_info import state_map
-from public_models.models import SystemDistrict
+from public_models.models import *
 
 
 # 机构部门表
@@ -297,25 +297,3 @@ class RoleFuncInfo(models.Model):
         return "role:%s func:%s"%(self.role, self.func)
 
 
-# 系统参数表
-class ParamInfo(models.Model):
-    serial = models.AutoField(primary_key=True)
-    param_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
-    pparam_code = models.CharField(max_length=64, blank=True, null=True)
-    param_name = models.CharField(unique=True,max_length=64)
-    param_memo = models.CharField(max_length=255, blank=True, null=True)
-    param_value = models.TextField(blank=True, null=True)
-    creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(auto_now_add=True)
-
-    @property
-    def pparam(self):
-        pparam = ParamInfo.objects.get(param_code=self.pparam_code)
-        return pparam.param_name
-
-    class Meta:
-        managed = True
-        db_table = 'param_info'
-
-    def __unicode__(self):
-        return self.param_name

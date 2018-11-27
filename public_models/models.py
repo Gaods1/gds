@@ -197,7 +197,7 @@ class Message(models.Model):
     message_title = models.CharField(max_length=64, blank=True, null=True)
     message_content = models.TextField(blank=True, null=True)
     account_code = models.CharField(max_length=32, blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
+    state = models.IntegerField(default=0)
     send_time = models.DateTimeField(blank=True, null=True)
     read_time = models.DateTimeField(blank=True, null=True)
     sender = models.CharField(max_length=32, blank=True, null=True)
@@ -302,3 +302,27 @@ class EnterpriseBaseinfo(models.Model):
     class Meta:
         managed = True
         db_table = 'enterprise_baseinfo'
+
+
+# 系统参数表
+class ParamInfo(models.Model):
+    serial = models.AutoField(primary_key=True)
+    param_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
+    pparam_code = models.CharField(max_length=64, blank=True, null=True)
+    param_name = models.CharField(unique=True,max_length=64)
+    param_memo = models.CharField(max_length=255, blank=True, null=True)
+    param_value = models.TextField(blank=True, null=True)
+    creater = models.CharField(max_length=32, blank=True, null=True)
+    insert_time = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def pparam(self):
+        pparam = ParamInfo.objects.get(param_code=self.pparam_code)
+        return pparam.param_name
+
+    class Meta:
+        managed = True
+        db_table = 'param_info'
+
+    def __unicode__(self):
+        return self.param_name
