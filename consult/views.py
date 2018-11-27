@@ -61,6 +61,8 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
         # consult_code = data.get('consult_code')
         check_state = data.get('check_state')
         consult_info = self.get_object()
+        if check_state !=1 and check_state !=2 :
+            return JsonResponse({'state':0,'msg':'请确认审核是否通过'})
         try:
             with transaction.atomic():
                 # 1 更新征询表状态(共通)
