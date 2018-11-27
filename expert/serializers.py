@@ -7,6 +7,10 @@ class ExpertBaseInfoSerializers(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     city = serializers.CharField(read_only=True)
     enterprise = serializers.CharField(read_only=True)
+    head = serializers.CharField(read_only=True)
+    idfornt = serializers.CharField(read_only=True)
+    idback = serializers.CharField(read_only=True)
+    idphoto = serializers.CharField(read_only=True)
 
     class Meta:
         model = ExpertBaseinfo
@@ -23,6 +27,11 @@ class ExpertBaseInfoSerializers(serializers.ModelSerializer):
             'expert_id_type',  # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
             'expert_id',    # 证件号码
             'expert_abstract',  # 简介
+
+            'head',     # 头像
+            'idfornt',  # 证件照正面
+            'idback',     # 证件照反面
+            'idphoto',  # 手持证件照
 
             'education',    # 默认本科 中专，大专，本科， 研究生，硕士， 博士，MBA， EMBA
             'expert_university',  # 专家毕业院校
