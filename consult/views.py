@@ -146,7 +146,7 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                     # requests.post(sms_url, data=sms_data, headers=headers)
                     sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
                     # 7 保存短信发送记录
-                    if sms_ret == 1:
+                    if int(sms_ret) == 1:
                         Message.objects.bulk_create(message_list)
         except Exception as e:
             fail_msg = "审核失败%s" % str(e)
@@ -280,7 +280,7 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
                     # requests.post(sms_url, data=sms_data, headers=headers)
                     sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
                     # 7 保存短信发送记录
-                    if sms_ret == 1:
+                    if int(sms_ret) == 1:
                         message_list = [Message(message_title='征询回复审核未通过',
                                               message_content='您在'+reply_info.consult_title+'回复的内容审核未通过，请登陆平台查看修改',
                                               account_code=reply_info.account_code,
