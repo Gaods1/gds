@@ -55,6 +55,16 @@ class ProjectApplyHistory(models.Model):
     apply_time = models.DateTimeField(blank=True, null=True)
     apply_type = models.IntegerField(blank=True, null=True)
 
+    @property
+    def project_name(self):
+        project = ProjectInfo.objects.get(project_code=self.project_code)
+        return project.project_name
+
+    @property
+    def project_from(self):
+        project = ProjectInfo.objects.get(project_code=self.project_code)
+        return project.project_from
+
     class Meta:
         managed = False
         db_table = 'project_apply_history'

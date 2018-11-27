@@ -26,7 +26,8 @@ class ProjectInfoSerializer(serializers.ModelSerializer):
 
 class ProjectApplyHistorySerializer(serializers.ModelSerializer):
     apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-
+    project_name = serializers.CharField(read_only=True);
+    project_from = serializers.CharField(read_only=True);
     class Meta:
         model = ProjectApplyHistory
         fields = [
@@ -36,7 +37,9 @@ class ProjectApplyHistorySerializer(serializers.ModelSerializer):
             'account_code',
             'state',
             'apply_time',
-            'apply_type'
+            'apply_type',
+            'project_name',
+            'project_from'
         ]
 
 
