@@ -232,7 +232,7 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
     )
     ordering_fields = ("reply_time", "reply_state")
     filter_fields = ("reply_state", "consult_code", "serial", "reply_code")
-    search_fields = ("reply_body")
+    search_fields = ("reply_body",)
 
     '''
     征询回复审核接口： 
@@ -244,6 +244,8 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
         checkinfo_data = request.data
         check_state = checkinfo_data.get('check_state')
         reply_info = self.get_object()
+        if check_state !=3 and check_state !=4 :
+            return JsonResponse({'state':0,'msg':'请确认审核是否通过'})
         try:
             with transaction.atomic():
                 #1 生成征询回复记录
