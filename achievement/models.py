@@ -1,7 +1,11 @@
+import os
+
 from django.db import models
 from public_models.models import PersonalInfo, EnterpriseBaseinfo #个人基本信息或者企业基本信息
 from public_models.models import MajorUserinfo
-from public_models.models import Message
+from public_models.models import Message,ParamInfo# 推送消息表以及系统参数表
+from public_models.models import AttachmentFileType,AttachmentFileinfo#附件表及附件类型表
+
 # Create your models here.
 
 # 成果/需求审核申请表 *
@@ -14,6 +18,7 @@ class RrApplyHistory(models.Model):
     apply_time = models.DateTimeField(blank=True, null=True,auto_now=True)
     apply_type = models.IntegerField(blank=True, null=True)
     type = models.IntegerField(blank=True, null=True)
+
     @property
     def Results(self):
         Results = ResultsInfo.objects.filter(r_code=self.rr_code)
@@ -74,6 +79,21 @@ class RequirementsInfo(models.Model):
     insert_time = models.DateTimeField(blank=True, null=True)
 
     @property
+    def fujian(self):
+        # 拼接url地址
+
+        url1 = 'http://120.77.58.203:8808/{}/{}/{}/1'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,
+                                                     self.req_code)
+        url2 = 'http://120.77.58.203:8808/{}/{}/{}/2'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,
+                                                     self.req_code)
+        url3 = 'http://120.77.58.203:8808/{}/{}/{}/3'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,
+                                                     self.req_code)
+        list = [url1, url2, url3]
+
+        # 判断该路径下的文件夹是否为空
+        list = [i for i in list if os.path.exists(i)]
+        return list
+    @property
     def mcode(self):
         # Results = ResultsInfo.objects.filter(r_code=self.rr_code)
         mm = [major_userinfo.mcode for major_userinfo in
@@ -113,6 +133,19 @@ class ResultsInfo(models.Model):
     account_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
     r_abstract_detail = models.TextField(blank=True, null=True)
 
+    @property
+    def fujian(self):
+        # 拼接url地址
+
+        url1 = 'http://120.77.58.203:8808/{}/{}/{}/1'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='requirementGuidancePhoto').tcode,self.r_code)
+        url2 = 'http://120.77.58.203:8808/{}/{}/{}/2'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='requirementGuidancePhoto').tcode,self.r_code)
+        url3 = 'http://120.77.58.203:8808/{}/{}/{}/3'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='requirementGuidancePhoto').tcode,self.r_code)
+        list = [url1,url2,url3]
+
+        # 判断该路径下的文件夹是否为空
+
+        list = [i for i in list if os.path.exists(i)]
+        return list
     @property
     def mcode(self):
         # Results = ResultsInfo.objects.filter(r_code=self.rr_code)

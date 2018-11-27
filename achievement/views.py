@@ -6,7 +6,6 @@ from rest_framework import viewsets
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import filters
-from rest_framework.generics import CreateAPIView
 
 from misc.misc import gen_uuid32, genearteMD5
 import django_filters
@@ -14,11 +13,11 @@ import threading
 import requests
 import json
 import time
+import shutil
 
 from .serializers import *
 from .models import *
 from .utils import massege
-
 
 # Create your views here.
 
@@ -67,23 +66,22 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 # 创建历史记录表
                 try:
                     history = ResultCheckHistory.objects.create(
-                        # 'serial': data['serial'],
                         apply_code=instance.a_code,
                         opinion=data['opinion'],
                         result=2,
                         check_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                         account=instance.account_code
                     )
-                    #del data['apply_code']
                     del data['opinion']
-                    #del data['result']
-                    #del data['check_time']
-                    #del data['account']
-
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('成果审核历史记录创建失败%s' % str(e))
-
+                # 更新成果信息表
+                try:
+                    Results = ResultsInfo.objects.filter(r_code=instance.rr_code).update(show_state=1)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('更新成果信息失败%s' % str(e))
                 # 更新成果评价信息表
                 try:
                     Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=2)
@@ -95,9 +93,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
                 try:
                     cooperation = ResultsCooperationTypeInfo.objects.filter(rr_code=instance.rr_code).update(state=1)
-                    # transaction.savepoint_commit(save_id)
-                    # cooperation.state = 1
-                    # cooperation.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('更新成果合作方式失败%s' % str(e))
@@ -113,13 +108,22 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
                 try:
                     owner = ResultsOwnerInfo.objects.filter(r_code=instance.rr_code).update(state=1)
-                    # owner.state = 1
-                    # owner.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('更新成果持有人表失败%s' % str(e))
 
-
+                # 附件表上传正式文件夹
+                try:
+                    Results = ResultsInfo.objects.get(r_code=instance.rr_code)
+                    if Results.fujian:
+                        for i in Results.fujian:
+                            #i = 'http://120.77.58.203:8808/{}/{}/{}/1'
+                            #b = i[:25]+i[30:]
+                            b = i.replace(ParamInfo.objects.get(param_code=0).param_value,ParamInfo.objects.get(param_code=1).param_value)
+                            shutil.move(i, b)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('文件转换失败%s' % str(e))
 
                 try:
                     # 更新个人信息并发送短信
@@ -161,7 +165,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         # 多线程发送短信
                         t1 = threading.Thread(target=massege, args=(url,body,headers))
                         t1.start()
-                        #response = requests.post(url, data=body, headers=headers)
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
@@ -188,8 +191,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     return HttpResponse('推送表创建失败')
 
-                #transaction.savepoint_commit(save_id)
-
                 try:
                     partial = kwargs.pop('partial', False)
                     serializer = self.get_serializer(instance, data=data, partial=partial)
@@ -214,22 +215,22 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 # 创建历史记录表
                 try:
                     history = ResultCheckHistory.objects.create(
-                        # 'serial': data['serial'],
                         apply_code=instance.a_code,
                         opinion=data['opinion'],
                         result=3,
                         check_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                         account=instance.account_code
                     )
-                    #del data['apply_code']
                     del data['opinion']
-                    #del data['result']
-                    #del data['check_time']
-                    #del data['account']
-
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('成果审核历史记录创建失败%s' % str(e))
+                # 更新成果信息表
+                try:
+                    Results = ResultsInfo.objects.filter(r_code=instance.rr_code).update(show_state=2)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('更新成果信息失败%s' % str(e))
 
                 # 更新成果评价信息表
                 try:
@@ -265,8 +266,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('更新成果持有人表失败%s' % str(e))
 
-
-
                 try:
                     # 更新个人信息并发送短信
                     owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
@@ -287,9 +286,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         # 多线程发送短信
                         t1 = threading.Thread(target=massege,args=(url,body,headers))
                         t1.start()
-                        #response = requests.post(url, data=body, headers=headers)
-
-
                     else:
                         # 更新企业信息并发送短信
                         ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
@@ -307,7 +303,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         # 多线程发送短信
                         t1 = threading.Thread(target=massege, args=(url,body,headers))
                         t1.start()
-                        #response = requests.post(url, data=body, headers=headers)
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
@@ -335,7 +330,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('推送表创建失败%s' % str(e))
 
-                #transaction.savepoint_commit(save_id)
                 try:
                     partial = kwargs.pop('partial', False)
                     serializer = self.get_serializer(instance, data=data, partial=partial)
@@ -399,23 +393,22 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 # 创建历史记录表
                 try:
                     history = ResultCheckHistory.objects.create(
-                        # 'serial': data['serial'],
                         apply_code=instance.a_code,
                         opinion=data['opinion'],
                         result=2,
                         check_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                         account=instance.account_code
                     )
-                    #del data['apply_code']
                     del data['opinion']
-                    #del data['result']
-                    #del data['check_time']
-                    #del data['account']
-
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('需求审核历史记录创建失败%s' % str(e))
-
+                # 更新需求信息表
+                try:
+                    Requirements = RequirementsInfo.objects.filter(req_code=instance.rr_code).update(show_state=1)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('更新需求信息失败%s' % str(e))
                 # 更新需求评价信息表
                 try:
                     Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=2)
@@ -427,9 +420,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
                 try:
                     cooperation = ResultsCooperationTypeInfo.objects.filter(rr_code=instance.rr_code).update(state=1)
-                    # transaction.savepoint_commit(save_id)
-                    # cooperation.state = 1
-                    # cooperation.save()
+
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('更新需求合作方式失败%s' % str(e))
@@ -445,13 +436,21 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
                 try:
                     owner = ResultsOwnerInfo.objects.filter(r_code=instance.rr_code).update(state=1)
-                    # owner.state = 1
-                    # owner.save()
+
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('更新需求持有人表失败%s' % str(e))
-
-
+                # 附件表上传正式文件夹
+                try:
+                    Requirements = RequirementsInfo.objects.get(req_code=instance.rr_code)
+                    if Requirements.fujian:
+                        for i in Requirements.fujian:
+                            # i = 'http://120.77.58.203:8808/{}/{}/{}/1'
+                            b = i.replace(ParamInfo.objects.get(param_code=0).param_value,ParamInfo.objects.get(param_code=1).param_value)
+                            shutil.move(i, b)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('文件转换失败%s' % str(e))
 
                 try:
                     # 更新个人信息并发送短信
@@ -473,9 +472,6 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         # 多线程发送短信
                         t1 = threading.Thread(target=massege,args=(url,body,headers))
                         t1.start()
-                        #response = requests.post(url, data=body, headers=headers)
-
-
                     else:
                         # 更新企业信息并发送短信
                         ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
@@ -493,8 +489,6 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         # 多线程发送短信
                         t1 = threading.Thread(target=massege, args=(url,body,headers))
                         t1.start()
-                        #response = requests.post(url, data=body, headers=headers)
-
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
@@ -520,9 +514,6 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
                 except Exception as e:
                     return HttpResponse('推送表创建失败%s' % str(e))
-
-                #transaction.savepoint_commit(save_id)
-
                 try:
                     partial = kwargs.pop('partial', False)
                     serializer = self.get_serializer(instance, data=data, partial=partial)
@@ -554,16 +545,16 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         check_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                         account=instance.account_code
                     )
-                    #del data['apply_code']
                     del data['opinion']
-                    #del data['result']
-                    #del data['check_time']
-                    #del data['account']
-
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('需求审核历史记录创建失败%s' % str(e))
-
+                # 更新需求信息表
+                try:
+                    Requirements = RequirementsInfo.objects.filter(req_code=instance.rr_code).update(show_state=2)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('更新需求信息失败%s' % str(e))
                 # 更新需求评价信息表
                 try:
                     Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=3)
@@ -620,9 +611,6 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         # 多线程发送短信
                         t1 = threading.Thread(target=massege,args=(url,body,headers))
                         t1.start()
-                        #response = requests.post(url, data=body, headers=headers)
-
-
                     else:
                         # 更新企业信息并发送短信
                         ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
@@ -640,7 +628,6 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         # 多线程发送短信
                         t1 = threading.Thread(target=massege, args=(url,body,headers))
                         t1.start()
-                        #response = requests.post(url, data=body, headers=headers)
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
@@ -668,7 +655,6 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('推送表创建失败%s' % str(e))
 
-                #transaction.savepoint_commit(save_id)
                 try:
                     partial = kwargs.pop('partial', False)
                     serializer = self.get_serializer(instance, data=data, partial=partial)

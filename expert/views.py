@@ -5,14 +5,16 @@ from rest_framework import filters
 import django_filters
 from rest_framework.response import Response
 from django.db import transaction
-
 from django.db import transaction
 from django.http import JsonResponse
 import time,requests
 from account.models import AccountInfo
 from public_models.models import Message
+from .utils import *
+import datetime, os
 
-# 领域专家视图
+
+# 领域专家申请视图
 class ExpertApplyViewSet(viewsets.ModelViewSet):
     queryset = ExpertApplyHistory.objects.all().order_by('-serial')
     serializer_class = ExpertApplySerializers
@@ -27,50 +29,96 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
     search_fields = ("account_code","apply_code", "user_email",)
 
     def update(self, request, *args, **kwargs):
-        data = request.data
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
+        try:
+            with transaction.atomic():
+                data = request.data
+                partial = kwargs.pop('partial', False)
 
-        expert = data.pop('expert')
-        apply_type = data['apply_type']
-        apply_state = data['state']
+                # 获取专家基本信息
+                expert = data.pop('expert')
+                # 获取审核意见
+                opinion = data.pop('opinion')
+                # 申请类型
+                apply_type = data['apply_type']
+                # 审核状态
+                apply_state = data['state']
 
-        # 当申请状态是新增和修改时
-        if apply_type in [1, 2]:
-            if apply_state == 2:
-                if expert['pcode']:
-                    PersonalInfo.objects.filter(pcode=expert['pcode'])
-                ExpertBaseinfo.objects.filter(expert_code=expert['expert_code']).update(state=1)
+                # 更新申请表
+                instance = self.get_object()
+                serializer = self.get_serializer(instance, data=data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+                # 当申请类型是新增和修改时
+                if apply_type in [1, 2]:
+                    # 审核通过时
+                    if apply_state == 2:
+                        # 更新或创建个人基本信息表和更新专家基本信息表
+                        pinfo = {
+                            'pname': expert['expert_name'],
+                            'pid_type':expert['expert_id_type'],
+                            'pid':expert['expert_id'],
+                            'pmobile':expert['expert_mobile'],
+                            'ptel': expert['expert_tel'],
+                            'pemail': expert['expert_email'],
+                            'peducation': expert['education'],
+                            'pabstract': expert['expert_abstract'],
+                            'state': 2,
+                            'creater': request.user.account,
+                            'account_code': expert['account_code']
+                        }
+                        pcode = update_or_crete_person(expert['pcode'], pinfo)
 
-        # 历史记录表信息
-        history = dict()
-        history['opinion'] = data.pop('opinion')
-        history['apply_code'] = instance.apply_code
-        history['result'] = data['state']
-        history['account'] = request.user.account
+                        # 更新专家基本信息表
+                        update_baseinfo(ExpertBaseinfo, data['expert_code'], {'state': 1, 'pcode': pcode})
 
-        serializer = self.get_serializer(instance, data=data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+                        # 给账号绑定角色
+                        IdentityAuthorizationInfo.objects.create(account_code=expert['account_code'],
+                                                                 identity_code=IdentityInfo.objects.get(identity_name='expert').identity_code,
+                                                                 iab_time=datetime.datetime.now(),
+                                                                 creater=request.user.account)
+                        # 移动相关附件
+                        for file in ['head', 'idfornt', 'idback', 'idphoto']:
+                            f_path = expert[file]
+                            if not f_path:
+                                continue
+                            new_path = f_path.replace(ParamInfo.objects.get(param_code=0).param_value,
+                                                      ParamInfo.objects.get(param_code=1).param_value)
+                            new_dir = '/'.join(new_path.split('/')[0:-1]) + '/'
+                            os.system('mkdir -p {}'.format(new_dir))
+                            os.system('mv {} {}'.format(f_path, new_dir))
 
-        if getattr(instance, '_prefetched_objects_cache', None):
-            # If 'prefetch_related' has been applied to a queryset, we need to
-            # forcibly invalidate the prefetch cache on the instance.
-            instance._prefetched_objects_cache = {}
+
+                    # 发送信息
+                    send_msg(expert['expert_mobile'], '领域专家', apply_state, expert['account_code'], request.user.account)
+                # 当申请状态为删除时
+                elif apply_type in [3]:
+                    pass
+
+                # 增加历史记录表信息
+                ExpertCheckHistory.objects.create(opinion=opinion,
+                                                  apply_code=instance.apply_code,
+                                                  request = data['state'],
+                                                  account=request.user.account)
+
+                if getattr(instance, '_prefetched_objects_cache', None):
+                    # If 'prefetch_related' has been applied to a queryset, we need to
+                    # forcibly invalidate the prefetch cache on the instance.
+                    instance._prefetched_objects_cache = {}
+        except Exception as e:
+            if e.args[0] == 1062:
+                e = '账号已有此身份'
+            return JsonResponse({"detail":"审核失败：%s" % str(e)})
 
         return Response(serializer.data)
 
-# Create your views here.
 
-
-
-#技术团队视图
+# 技术团队视图
 class TeamBaseinfoViewSet(viewsets.ModelViewSet):
     queryset = ProjectTeamBaseinfo.objects.all().order_by('-serial')
     serializer_class = TeamBaseinfoSerializers
 
 
-#技术团队申请视图
+# 技术团队申请视图
 class TeamApplyViewSet(viewsets.ModelViewSet):
     queryset = TeamApplyHistory.objects.all().order_by('-serial')
     serializer_class = TeamApplySerializers
