@@ -73,7 +73,7 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                 checkinfo_data = {
                     'consult_code':consult_info.consult_code,
                     'consult_pmemo':consult_info.consult_memo,
-                    'consult_pmody':consult_info.consult_body,
+                    'consult_pbody':consult_info.consult_body,
                     'check_memo':data.get('check_memo'),
                     'check_state':check_state,
                     'checker':request.user.account
@@ -141,15 +141,16 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                         "Content-Type": "application/x-www-form-urlencoded",
                         "Accept": "application/json"
                     }
-                    response_data = requests.post(sms_url, data=sms_data, headers=headers)
-                    message_response = json.loads(response_data.content)
+                    # requests.post(sms_url, data=sms_data, headers=headers)
+                    sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
                     # 7 保存短信发送记录
-                    # if message_response['ret'] == 1:
-                    Message.objects.bulk_create(message_list)
+                    if sms_ret == 1:
+                        Message.objects.bulk_create(message_list)
         except Exception as e:
-            return HttpResponse("审核失败%s" % str(e))
+            fail_msg = "审核失败%s" % str(e)
+            return JsonResponse({"state" : 0, "msg" : fail_msg})
 
-        return HttpResponse("审核成功")
+        return JsonResponse({"state":1,"msg":"审核成功"})
 
 
 #征询审核管理(专门针对审核列表添加)
@@ -272,28 +273,28 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
                         "Content-Type": "application/x-www-form-urlencoded",
                         "Accept": "application/json"
                     }
-                    requests.post(sms_url, data=sms_data, headers=headers)
-                    # response_data = requests.post(sms_url, data=sms_data, headers=headers)
-                    # message_response = json.loads(response_data)
+                    # requests.post(sms_url, data=sms_data, headers=headers)
+                    sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
                     # 7 保存短信发送记录
-                    # if message_response['ret'] == 1:
-                    message_list = [Message(message_title='征询回复审核未通过',
-                                          message_content='您在'+reply_info.consult_title+'回复的内容审核未通过，请登陆平台查看修改',
-                                          account_code=reply_info.account_code,
-                                          state=0,
-                                          send_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                                          sender=request.user.account,
-                                          sms=1,
-                                          sms_state=1,
-                                          sms_phone=user_mobile,
-                                          email=0,
-                                          email_state=0,
-                                          email_account='')]
-                    Message.objects.bulk_create(message_list)
+                    if sms_ret == 1:
+                        message_list = [Message(message_title='征询回复审核未通过',
+                                              message_content='您在'+reply_info.consult_title+'回复的内容审核未通过，请登陆平台查看修改',
+                                              account_code=reply_info.account_code,
+                                              state=0,
+                                              send_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                                              sender=request.user.account,
+                                              sms=1,
+                                              sms_state=1,
+                                              sms_phone=user_mobile,
+                                              email=0,
+                                              email_state=0,
+                                              email_account='')]
+                        Message.objects.bulk_create(message_list)
         except Exception as e:
-            return HttpResponse("审核失败%s" % str(e))
+            fail_msg = "审核失败%s" % str(e)
+            return JsonResponse({"state" : 0, "msg" : fail_msg})
 
-        return HttpResponse("审核成功")
+        return JsonResponse({"state" : 1, "msg" : "审核成功"})
 
 
 
