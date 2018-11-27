@@ -10,7 +10,7 @@ class ConsultCheckinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     consult_code = models.CharField(max_length=64, blank=True, null=True)
     consult_pmemo = models.TextField(blank=True, null=True)
-    consult_pmody = models.TextField(blank=True, null=True)
+    consult_pbody = models.TextField(blank=True, null=True)
     check_time = models.DateTimeField(blank=True, null=True,default=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     check_state = models.IntegerField(blank=True, null=True)
     check_memo = models.TextField(blank=True, null=True)

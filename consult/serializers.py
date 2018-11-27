@@ -70,7 +70,7 @@ class ConsultCheckinfoSerializer(serializers.ModelSerializer):
         fields = ['serial',
                   'consult_code',
                   'consult_pmemo',
-                  'consult_pmody',
+                  'consult_pbody',
                   'check_time',
                   'check_state',
                   'check_memo',
