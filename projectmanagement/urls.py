@@ -6,7 +6,8 @@ router = routers.DefaultRouter()
 router.register(r'project_info', ProjectInfoViewSet)
 
 # 项目审核
-router.register(r'project_apply_check', ProjectCheckViewSet)
+router.register(r'project_need_check', ProjectNeedCheckViewSet)
+
 # router.register(r'project_apply_history', ProjectApplyHistoryViewSet)
 # router.register(r'project_check_history', ProjectCheckHistoryViewSet)
 
