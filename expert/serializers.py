@@ -56,6 +56,7 @@ class ExpertApplySerializers(serializers.ModelSerializer):
     apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     expert = ExpertBaseInfoSerializers(read_only=True)
     opinion = serializers.CharField(read_only=True)
+    account = serializers.CharField(read_only=True)
 
     class Meta:
         model = ExpertApplyHistory
@@ -64,13 +65,185 @@ class ExpertApplySerializers(serializers.ModelSerializer):
                   'expert_code',
                   'expert',
                   'account_code',
+                  'account',
                   'state',
                   'apply_type',
                   'apply_time',
                   'opinion'
                   ]
 
-#技术团队基本信息表
+
+# 技术经纪人基本信息表
+class BrokerBaseInfoSerializers(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    city = serializers.CharField(read_only=True)
+    enterprise = serializers.CharField(read_only=True)
+    head = serializers.CharField(read_only=True)
+    idfornt = serializers.CharField(read_only=True)
+    idback = serializers.CharField(read_only=True)
+    idphoto = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = BrokerBaseinfo
+        fields = [
+            'serial',
+            'broker_code',
+            'pcode',        # 个人代码 （与个人基本信息表关联字段）
+            'broker_name',  # 姓名
+            'broker_tel',   # 电话
+            'broker_mobile',    # 手机
+            'broker_email',     # 邮箱
+            'broker_city',  # 所属城市代码
+            'city',         # 所属城市
+            'broker_id_type',  # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
+            'broker_id',    # 证件号码
+            'broker_abstract',  # 简介
+
+            'head',     # 头像
+            'idfornt',  # 证件照正面
+            'idback',     # 证件照反面
+            'idphoto',  # 手持证件照
+
+            'education',    # 默认本科 中专，大专，本科， 研究生，硕士， 博士，MBA， EMBA
+            'broker_graduate_school',  # 专家毕业院校
+            'broker_major',     # 所属院系
+            'broker_abbr',      # 昵称
+            'broker_caption',  # 头衔
+            'work_type',    # 工作方式， 1 全职， 2 兼职。
+            'broker_address',  # 通讯地址
+            'ecode',    # 归属企业代码
+            'enterprise',
+            'broker_level',     # 业务能力内部评级
+            'credit_value',     # 信用值
+            'broker_integral',  # 积分
+            'state',    # 1 正常， 2 暂停 3 伪删除
+            'creater',  # 创建者
+            'account_code',  # 关联账号
+            'insert_time',  # 创建时间
+        ]
+
+
+# 技术经纪人审核申请表序列
+class BrokerApplySerializers(serializers.ModelSerializer):
+    apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    broker = BrokerBaseInfoSerializers(read_only=True)
+    opinion = serializers.CharField(read_only=True)
+    account = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = BrokerApplyHistory
+        fields = ['serial',
+                  'apply_code',
+                  'broker_code',
+                  'broker',
+                  'account_code',
+                  'account',
+                  'state',
+                  'apply_type',
+                  'apply_time',
+                  'opinion'
+                  ]
+
+
+# 采集员基本信息表序列
+class CollectorBaseInfoSerializers(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    city = serializers.CharField(read_only=True)
+    head = serializers.CharField(read_only=True)
+    idfornt = serializers.CharField(read_only=True)
+    idback = serializers.CharField(read_only=True)
+    idphoto = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = CollectorBaseinfo
+        fields = [
+            'serial',
+            'collector_code',
+            'pcode',
+            'collector_name',
+            'collector_tel',
+            'collector_mobile',
+            'collector_email',
+            'collector_idtype',
+            'collector_city',
+            'city',
+            'collector_address',
+            'collector_major',
+            'collector_graduate_school',
+            'collector_id',
+            'collector_abstract',
+            'education',
+            'owner_zipcode',
+            'state',
+            'account_code',
+            'creater',
+            'insert_time',
+            'head',
+            'idfornt',  # 证件照正面
+            'idback',  # 证件照反面
+            'idphoto',  # 手持证件照
+        ]
+
+
+# 采集员审核申请序列
+class CollectorApplySerializers(serializers.ModelSerializer):
+    apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    collector = CollectorBaseInfoSerializers(read_only=True)
+    opinion = serializers.CharField(read_only=True)
+    account = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = CollectorApplyHistory
+        fields = ['serial',
+                  'apply_code',
+                  'collector_code',
+                  'collector',
+                  'account_code',
+                  'account',
+                  'state',
+                  'apply_type',
+                  'apply_time',
+                  'opinion'
+                  ]
+
+
+# 采集员基本信息表序列
+class ResultOwnerpSerializers(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    city = serializers.CharField(read_only=True)
+    head = serializers.CharField(read_only=True)
+    idfornt = serializers.CharField(read_only=True)
+    idback = serializers.CharField(read_only=True)
+    idphoto = serializers.CharField(read_only=True)
+    class Meta:
+        model = ResultOwnerpBaseinfo
+        fields = [
+            'serial',
+            'owner_code',
+            'pcode',
+            'type',
+            'owner_name',
+            'owner_tel',
+            'owner_mobile',
+            'owner_email',
+            'owner_idtype',
+            'owner_id',
+            'owner_abstract',
+            'education',
+            'owner_caption',
+            'owner_addr',
+            'owner_zipcode',
+            'state',
+            'account_code',
+            'creater',
+            'insert_time',
+            'owner_city',
+            'university',
+            'profession',
+        ]
+
+
+# 技术团队基本信息表
 class TeamBaseinfoSerializers(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
 

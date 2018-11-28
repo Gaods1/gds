@@ -2,6 +2,7 @@ from django.db import models
 from misc.misc import gen_uuid32
 from public_models.models import *
 from .utils import get_file
+from account.models import AccountInfo
 # Create your models here.
 
 
@@ -62,6 +63,10 @@ class ExpertApplyHistory(models.Model):
             opinion = history.order_by('-check_time')[0].opinion
         return opinion
 
+    @property
+    def account(self):
+        return AccountInfo.objects.get(account_code=self.account_code).user_name
+
     class Meta:
         managed = True
         db_table = 'expert_apply_history'
@@ -75,7 +80,7 @@ class ExpertBaseinfo(models.Model):
     expert_name = models.CharField(max_length=64)
     expert_tel = models.CharField(max_length=16, blank=True, null=True)
     expert_mobile = models.CharField(max_length=16, blank=True, null=True)
-    expert_email = models.CharField(max_length=16, blank=True, null=True)
+    expert_email = models.CharField(max_length=64, blank=True, null=True)
     expert_id_type = models.IntegerField(default=1)     # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
     expert_id = models.CharField(max_length=32, blank=True, null=True)
     expert_abstract = models.TextField(blank=True, null=True)
@@ -156,6 +161,18 @@ class BrokerApplyHistory(models.Model):
     def broker(self):
         return BrokerBaseinfo.objects.get(broker_code=self.broker_code)
 
+    @property
+    def opinion(self):
+        history = BrokerCheckHistory.objects.filter(apply_code=self.apply_code)
+        opinion = None
+        if history:
+            opinion = history.order_by('-check_time')[0].opinion
+        return opinion
+
+    @property
+    def account(self):
+        return AccountInfo.objects.get(account_code=self.account_code).user_name
+
     class Meta:
         managed = False
         db_table = 'broker_apply_history'
@@ -169,7 +186,7 @@ class BrokerBaseinfo(models.Model):
     broker_name = models.CharField(max_length=64, blank=True, null=True)
     broker_tel = models.CharField(max_length=16, blank=True, null=True)
     broker_mobile = models.CharField(max_length=16, blank=True, null=True)
-    broker_email = models.CharField(max_length=16, blank=True, null=True)
+    broker_email = models.CharField(max_length=64, blank=True, null=True)
     broker_id_type = models.IntegerField(default=1)     # 技术经纪人证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
     broker_id = models.CharField(max_length=32, blank=True, null=True)
 
@@ -191,6 +208,32 @@ class BrokerBaseinfo(models.Model):
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
     account_code = models.CharField(max_length=32, blank=True, null=True)   # 关联账号
+
+    @property
+    def city(self):
+        region_info = SystemDistrict.objects.get(district_id=self.broker_city)
+        return region_info.district_name
+
+    @property
+    def enterprise(self):
+        e = EnterpriseBaseinfo.objects.get(ecode=self.ecode)
+        return e.ename
+
+    @property
+    def head(self):
+        return get_file(self.broker_code, 'brokerHead')
+
+    @property
+    def idfornt(self):
+        return get_file(self.broker_code, 'brokerIdFront')
+
+    @property
+    def idback(self):
+        return get_file(self.broker_code, 'brokerIdBack')
+
+    @property
+    def idphoto(self):
+        return get_file(self.broker_code, 'brokerHandIDPhoto')
 
     class Meta:
         managed = False
@@ -221,6 +264,22 @@ class CollectorApplyHistory(models.Model):
     apply_time = models.DateTimeField(auto_now_add=True)
     apply_type = models.IntegerField(blank=True, null=True)     # 申请类型：1：新增，2:修改，3:删除
 
+    @property
+    def collector(self):
+        return CollectorBaseinfo.objects.get(collector_code=self.collector_code)
+
+    @property
+    def opinion(self):
+        history = CollectorCheckHistory.objects.filter(apply_code=self.apply_code)
+        opinion = None
+        if history:
+            opinion = history.order_by('-check_time')[0].opinion
+        return opinion
+
+    @property
+    def account(self):
+        return AccountInfo.objects.get(account_code=self.account_code).user_name
+
     class Meta:
         managed = False
         db_table = 'collector_apply_history'
@@ -234,7 +293,7 @@ class CollectorBaseinfo(models.Model):
     collector_name = models.CharField(max_length=64, blank=True, null=True)
     collector_tel = models.CharField(max_length=16, blank=True, null=True)
     collector_mobile = models.CharField(max_length=16, blank=True, null=True)
-    collector_email = models.CharField(max_length=16, blank=True, null=True)
+    collector_email = models.CharField(max_length=64, blank=True, null=True)
     collector_idtype = models.IntegerField(default=1)   # 采集员证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
     collector_id = models.CharField(max_length=32, blank=True, null=True)
 
@@ -250,6 +309,27 @@ class CollectorBaseinfo(models.Model):
     account_code = models.CharField(max_length=64, blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def city(self):
+        region_info = SystemDistrict.objects.get(district_id=self.collector_city)
+        return region_info.district_name
+
+    @property
+    def head(self):
+        return get_file(self.collector_code, 'collectorHead')
+
+    @property
+    def idfornt(self):
+        return get_file(self.collector_code, 'collectorIdFront')
+
+    @property
+    def idback(self):
+        return get_file(self.collector_code, 'collectorIdBack')
+
+    @property
+    def idphoto(self):
+        return get_file(self.collector_code, 'collectorHandIDPhoto')
 
     class Meta:
         managed = False
@@ -274,22 +354,121 @@ class CollectorCheckHistory(models.Model):
 class OwnerApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
     apply_code = models.CharField(max_length=64, blank=True, null=True)
-    pcode = models.CharField(max_length=64, blank=True, null=True)      # 与个人基本信息表关联字段
+    owner_code = models.CharField(max_length=64, blank=True, null=True)      # 持有人角色code
     account_code = models.CharField(max_length=64, blank=True, null=True)   # 提交人
     state = models.IntegerField(blank=True, null=True)      # 审核状态。 1：录入完毕，等待审核；2：审核通过，可以呈现；3：审核未通过；
     apply_time = models.DateTimeField(auto_now_add=True)
     apply_type = models.IntegerField(default=1)     # '申请类型：1：新增，2:修改，3:删除'
+
+    @property
+    def owner(self):
+        return ResultOwnerpBaseinfo.objects.get(owner_code=self.owner_code)
+
+    @property
+    def opinion(self):
+        history = CollectorCheckHistory.objects.filter(apply_code=self.apply_code)
+        opinion = None
+        if history:
+            opinion = history.order_by('-check_time')[0].opinion
+        return opinion
+
+    @property
+    def account(self):
+        return AccountInfo.objects.get(account_code=self.account_code).user_name
 
     class Meta:
         managed = False
         db_table = 'owner_apply_history'
 
 
+# 成果/需求持有人（个人）角色申请表（基本信息表) *
+class ResultOwnerpBaseinfo(models.Model):
+    serial = models.AutoField(primary_key=True)
+    owner_code = models.CharField(max_length=64, blank=True, null=True)
+    pcode = models.CharField(max_length=64, blank=True, null=True)              # 与个人基本信息表关联字段
+    type = models.IntegerField(blank=True, null=True)           # 申请类型      1： 成果持有人， 2： 需求持有人
+    owner_name = models.CharField(max_length=64, blank=True, null=True)
+    owner_tel = models.CharField(max_length=16, blank=True, null=True)
+    owner_mobile = models.CharField(max_length=16, blank=True, null=True)
+    owner_email = models.CharField(max_length=64, blank=True, null=True)
+    owner_idtype = models.IntegerField(default=1)       # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
+    owner_id = models.CharField(max_length=32, blank=True, null=True)           # 证件号码
+    owner_abstract = models.TextField(blank=True, null=True)
+    education = models.CharField(max_length=8, default="本科")           # 默认本科 中专，大专，本科， 研究生，硕士， 博士，MBA， EMBA
+    owner_caption = models.CharField(max_length=32, blank=True, null=True)
+    owner_addr = models.CharField(max_length=255, blank=True, null=True)
+    owner_zipcode = models.CharField(max_length=8, blank=True, null=True)
+    state = models.IntegerField(blank=True, null=True)                     # 持有人信息状态1：正常；2：暂停；3：伪删除
+    account_code = models.CharField(max_length=64, blank=True, null=True)
+    creater = models.CharField(max_length=32, blank=True, null=True)
+    insert_time = models.DateTimeField(auto_now_add=True)
+
+    owner_city = models.IntegerField(blank=True, null=True)     # 归属城市
+    university = models.CharField(max_length=64, blank=True, null=True)     # 毕业院校
+    profession = models.CharField(max_length=64, blank=True, null=True)     # 专业
+
+
+    @property
+    def city(self):
+        region_info = SystemDistrict.objects.get(district_id=self.owner_city)
+        return region_info.district_name
+
+    @property
+    def head(self):
+        if self.type == 1:
+            value = 'resultOwnerPerHead'
+        else:
+            value = 'requirementOwnerPerHead'
+        return get_file(self.owner_code, value)
+
+    @property
+    def idfornt(self):
+        if self.type == 1:
+            value = 'resultOwnerPerIdFront'
+        else:
+            value = 'requirementOwnerPerIdFront'
+        return get_file(self.owner_code, value)
+
+    @property
+    def idback(self):
+        if self.type == 1:
+            value = 'resultOwnerPerIdBack'
+        else:
+            value = 'requirementOwnerPerIdBack'
+        return get_file(self.owner_code, value)
+
+    @property
+    def idphoto(self):
+        if self.type == 1:
+            value = 'resultOwnerPerHandIdPhoto'
+        else:
+            value = 'requirementOwnerPerHandIdPhoto'
+        return get_file(self.owner_code, value)
+
+    class Meta:
+        managed = False
+        db_table = 'result_ownerp_baseinfo'
+
+
+# 成果/需求持有人审核历史记录表 *
+class OwnerpCheckHistory(models.Model):
+    serial = models.AutoField(primary_key=True)
+    apply_code = models.CharField(max_length=64, blank=True, null=True)
+    opinion = models.TextField(blank=True, null=True)
+    result = models.IntegerField(blank=True, null=True)     # 审核结果，3：不通过；2：通过
+    check_time = models.DateTimeField(auto_now_add=True)
+    account = models.CharField(max_length=64, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'ownerp_check_history'
+
+
 # 成果/需求持有人（企业）审核申请表 *
 class OwnereApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
     apply_code = models.CharField(max_length=64, blank=True, null=True)
-    ecode = models.CharField(max_length=64, blank=True, null=True)      # 持有人角色编号
+    owner_code = models.CharField(max_length=64, blank=True, null=True)      # 持有人角色编号
     state = models.IntegerField(blank=True, null=True)  # 审核状态。 1：录入完毕，等待审核；2：审核通过，可以呈现；3：审核未通过；
     apply_time = models.DateTimeField(auto_now_add=True)
     apply_type = models.IntegerField(blank=True, null=True)     # 申请类型：1：新增，2:修改，3:删除
@@ -313,20 +492,6 @@ class OwnereCheckHistory(models.Model):
         db_table = 'ownere_check_history'
 
 
-# 成果/需求持有人审核历史记录表 *
-class OwnerpCheckHistory(models.Model):
-    serial = models.AutoField(primary_key=True)
-    apply_code = models.CharField(max_length=64, blank=True, null=True)
-    opinion = models.TextField(blank=True, null=True)
-    result = models.IntegerField(blank=True, null=True)     # 审核结果，3：不通过；2：通过
-    check_time = models.DateTimeField(auto_now_add=True)
-    account = models.CharField(max_length=64, blank=True, null=True)
-
-    class Meta:
-        managed = False
-        db_table = 'ownerp_check_history'
-
-
 # 成果/需求持有人（企业角色申请表）*
 class ResultOwnereBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
@@ -336,7 +501,7 @@ class ResultOwnereBaseinfo(models.Model):
     owner_name = models.CharField(max_length=64, blank=True, null=True)
     owner_tel = models.CharField(max_length=16, blank=True, null=True)
     owner_mobile = models.CharField(max_length=16, blank=True, null=True)
-    owner_email = models.CharField(max_length=16, blank=True, null=True)
+    owner_email = models.CharField(max_length=64, blank=True, null=True)
     owner_license = models.CharField(max_length=64, blank=True, null=True)
     owner_abstract = models.TextField(blank=True, null=True)              # 企业简述
     homepage = models.CharField(max_length=128, blank=True, null=True)
@@ -356,37 +521,6 @@ class ResultOwnereBaseinfo(models.Model):
     class Meta:
         managed = False
         db_table = 'result_ownere_baseinfo'
-
-
-# 成果/需求持有人（个人）角色申请表（基本信息表) *
-class ResultOwnerpBaseinfo(models.Model):
-    serial = models.AutoField(primary_key=True)
-    owner_code = models.CharField(max_length=64, blank=True, null=True)
-    pcode = models.CharField(max_length=64, blank=True, null=True)              # 与个人基本信息表关联字段
-    type = models.IntegerField(blank=True, null=True)           # 申请类型      1： 成果持有人， 2： 需求持有人
-    owner_name = models.CharField(max_length=64, blank=True, null=True)
-    owner_tel = models.CharField(max_length=16, blank=True, null=True)
-    owner_mobile = models.CharField(max_length=16, blank=True, null=True)
-    owner_email = models.CharField(max_length=16, blank=True, null=True)
-    owner_idtype = models.IntegerField(default=1)       # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
-    owner_id = models.CharField(max_length=32, blank=True, null=True)           # 证件号码
-    owner_abstract = models.TextField(blank=True, null=True)
-    education = models.CharField(max_length=8, default="本科")           # 默认本科 中专，大专，本科， 研究生，硕士， 博士，MBA， EMBA
-    owner_caption = models.CharField(max_length=32, blank=True, null=True)
-    owner_addr = models.CharField(max_length=255, blank=True, null=True)
-    owner_zipcode = models.CharField(max_length=8, blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)                     # 持有人信息状态1：正常；2：暂停；3：伪删除
-    account_code = models.CharField(max_length=64, blank=True, null=True)
-    creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(auto_now_add=True)
-
-    owner_city = models.IntegerField(blank=True, null=True)     # 归属城市
-    university = models.CharField(max_length=64, blank=True, null=True)     # 毕业院校
-    profession = models.CharField(max_length=64, blank=True, null=True)     # 专业
-
-    class Meta:
-        managed = False
-        db_table = 'result_ownerp_baseinfo'
 
 
 # 技术团队基本信息表 *
@@ -434,7 +568,7 @@ class ProjectTeamMember(models.Model):
     ptm_name = models.CharField(max_length=32, blank=True, null=True)
     ptm_tel = models.CharField(max_length=16, blank=True, null=True)
     ptm_mobile = models.CharField(max_length=16, blank=True, null=True)
-    ptm_email = models.CharField(max_length=16, blank=True, null=True)
+    ptm_email = models.CharField(max_length=64, blank=True, null=True)
     ptm_idtype = models.IntegerField(default=1)
     ptm_id = models.CharField(max_length=32, blank=True, null=True)
     ptm_education = models.CharField(max_length=8, blank=True, null=True)
