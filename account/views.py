@@ -56,6 +56,23 @@ class AccountViewSet(viewsets.ModelViewSet):
     filter_fields = ("state", "dept_code", "creater", "account")
     search_fields = ("account","user_name", "user_email",)
 
+    def list(self, request, *args, **kwargs):
+        if 'admin' in request.query_params and request.query_params['admin'] == 'True':
+            q = AccountInfo.objects.exclude(account=None).order_by('-serial')
+        else:
+            q = self.get_queryset()
+        queryset = self.filter_queryset(q)
+
+        page = self.paginate_queryset(queryset)
+        if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
+             page = None
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.get_paginated_response(serializer.data)
+
     def create(self, request, *args, **kwargs):
         data =request.data
         data['creater'] = request.user.account
