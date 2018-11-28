@@ -2,27 +2,6 @@ from projectmanagement.models import *
 from rest_framework import serializers
 from achievement.serializers import RrApplyHistorySerializer
 
-# 项目表序列化
-class ProjectInfoSerializer(serializers.ModelSerializer):
-    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    from_code_info = RrApplyHistorySerializer(many=True)
-    class Meta:
-        model = ProjectInfo
-        fields = [
-            'pserial',
-            'project_code',
-            'project_name',
-            'project_start_time',
-            'project_from',
-            'from_code',
-            'last_time',
-            'project_desc',
-            'state',
-            'creater',
-            'insert_time',
-            'from_code_info',
-        ]
-
 
 class ProjectApplyHistorySerializer(serializers.ModelSerializer):
     apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
@@ -41,6 +20,32 @@ class ProjectApplyHistorySerializer(serializers.ModelSerializer):
             'project_name',
             'project_from'
         ]
+
+# 项目表序列化
+class ProjectInfoSerializer(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    from_code_info = RrApplyHistorySerializer(many=True)
+    apply = ProjectApplyHistorySerializer(read_only=True)
+    class Meta:
+        model = ProjectInfo
+        fields = [
+            'pserial',
+            'project_code',
+            'project_name',
+            'project_start_time',
+            'project_from',
+            'from_code',
+            'last_time',
+            'project_desc',
+            'state',
+            'check_state',
+            'creater',
+            'insert_time',
+            'from_code_info',
+            'apply',
+        ]
+
+
 
 
 class ProjectCheckHistorySerializer(serializers.ModelSerializer):

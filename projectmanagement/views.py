@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse,JsonResponse
 from django.shortcuts import render
 from rest_framework import viewsets
 from projectmanagement.models import *
@@ -15,7 +15,112 @@ from .serializers import *
 # Create your views here.
 
 class ProjectInfoViewSet(viewsets.ModelViewSet):
-    '''项目信息'''
+    '''项目信息
+
+    1 审核 参数说明（put时请求体参数 state,11：审核通过，可以呈现；4：审核未通过）
+    2 put 请求体中将历史记录表的必填字段需携带
+    {
+        state(int):11|4
+        opinion（text）:审核意见,
+    }
+    '''
+    queryset = ProjectInfo.objects.all().order_by('-pserial')
+    serializer_class = ProjectInfoSerializer
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("project_name", "project_start_time", "project_from", "last_time", "state")
+    filter_fields = ("project_code", "project_name", "project_start_time", "project_from", "last_time", "state")
+    search_fields = ("project_code", "project_name",)
+
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        data = request.data
+        check_state = data['check_state']
+        if check_state !=11 and check_state !=4 :
+            return JsonResponse({'state':0,'msg':'请确认审核是否通过'})
+
+        if check_state == 11:
+            result = 1
+        else:
+            result = 0
+
+        # 建立事物机制
+        with transaction.atomic():
+            # 创建一个保存点
+            save_id = transaction.savepoint()
+            # 创建历史记录表
+            try:
+                project = ProjectInfo.objects.get(project_code=data['project_code'])
+                project.check_state = check_state
+                project.save()
+
+                project_apply = ProjectApplyHistory.objects.get(apply_code=data['apply_code'])
+                project_apply.state = check_state;
+                project_apply.save()
+
+                # history = ProjectCheckHistory.objects.create(
+                #     # 'serial': data['serial'],
+                #     apply_code=data['apply_code'],
+                #     opinion=data['opinion'],
+                #     result=result,
+                #     check_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                #     account=request.user.account
+                # )
+                # del data['apply_code']
+                # del data['opinion']
+                # del data['result']
+                # del data['check_time']
+                # del data['account']
+
+                checkinfo_data = {
+                    'apply_code': data['apply_code'],
+                    'opinion': data['opinion'],
+                    'result': result,
+                    'check_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                    'account': request.user.account
+                }
+                ProjectCheckHistory.objects.create(**checkinfo_data)
+
+            except Exception as e:
+                # transaction.savepoint_rollback(save_id)
+                # return HttpResponse('项目审核历史记录创建失败%s' % str(e))
+                fail_msg = "审核失败%s" % str(e)
+                return JsonResponse({"state": 0, "msg": fail_msg})
+
+            # try:
+            #     # 更新审核状态
+            #     # partial = kwargs.pop('partial', False)
+            #     # serializer = self.get_serializer(instance, data=data, partial=kwargs.pop('partial', False))
+            #     # serializer = self.get_serializer(instance, data=data, partial=partial)
+            #     # serializer.is_valid(raise_exception=True)
+            #     # self.perform_update(serializer)
+            #
+            #     # if getattr(instance, '_prefetched_objects_cache', None):
+            #     #     # If 'prefetch_related' has been applied to a queryset, we need to
+            #     #     # forcibly invalidate the prefetch cache on the instance.
+            #     #     instance._prefetched_objects_cache = {}
+            #
+            # except Exception as e:
+            #     transaction.savepoint_rollback(save_id)
+            #     # return HttpResponse('项目申请表更新失败%s' % str(e))
+            #     fail_msg = "审核失败%s" % str(e)
+            #     return JsonResponse({"state": 0, "msg": fail_msg})
+
+            transaction.savepoint_commit(save_id)
+
+        return JsonResponse({"state": 1, "msg": "审核成功"})
+
+
+class ProjectNeedCheckViewSet(viewsets.ModelViewSet):
+    """
+    项目审核展示
+    """
+
     queryset = ProjectInfo.objects.all().order_by('-pserial')
     serializer_class = ProjectInfoSerializer
     filter_backends = (
@@ -29,127 +134,6 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
 
 
 
-class ProjectCheckViewSet(viewsets.ModelViewSet):
-    """
-    项目审核展示
-    #######################################################
-    参数说明（param， get时使用的参数）
-    page(integer)             【页数, 默认为1】
-    page_size（integer )      【每页显示的条目，默认为10】
-    search（string)            【模糊搜索】
-    apply_code(string)        【筛选字段 申请编号】
-    project_code(string)      【筛选字段 项目编号】
-    account_code(string)      【筛选字段 申请人】
-    apply_time(string)        【筛选字段 申请时间】
-    ordering(string)          【排序， 排序字段有"apply_code","apply_time", "state"】
-    #######################################################
-    1 审核 参数说明（put时请求体参数 state,11：审核通过，可以呈现；4：审核未通过）
-    2 put 请求体中将历史记录表的必填字段需携带
-    {
-        state(int):11|4
-        opinion（text）:审核意见,
-    }
-    """
-
-    queryset = ProjectApplyHistory.objects.all()
-    serializer_class = ProjectApplyHistorySerializer
-    filter_backends = (
-        filters.SearchFilter,
-        django_filters.rest_framework.DjangoFilterBackend,
-        filters.OrderingFilter,
-    )
-    ordering_fields = ("apply_code", "apply_time", "state")
-    filter_fields = ("project_code", "apply_code", "state")
-    search_fields = ("apply_code")
-
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        data = request.data
-        state = data['state']
-
-        if state == 11:
-            # 建立事物机制
-            with transaction.atomic():
-                # 创建一个保存点
-                save_id = transaction.savepoint()
-                # 创建历史记录表
-                try:
-                    history = ProjectCheckHistory.objects.create(
-                        # 'serial': data['serial'],
-                        apply_code=instance.apply_code,
-                        opinion=data['opinion'],
-                        result=1,
-                        check_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                        account=instance.account_code
-                    )
-                    # del data['apply_code']
-                    del data['opinion']
-                    # del data['result']
-                    # del data['check_time']
-                    # del data['account']
-
-                except Exception as e:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('项目审核历史记录创建失败%s' % str(e))
-
-                try:
-                    partial = kwargs.pop('partial', False)
-                    serializer = self.get_serializer(instance, data=data, partial=partial)
-                    serializer.is_valid(raise_exception=True)
-                    self.perform_update(serializer)
-
-                    if getattr(instance, '_prefetched_objects_cache', None):
-                        # If 'prefetch_related' has been applied to a queryset, we need to
-                        # forcibly invalidate the prefetch cache on the instance.
-                        instance._prefetched_objects_cache = {}
-
-                except Exception as e:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('项目申请表更新失败%s' % str(e))
-
-                transaction.savepoint_commit(save_id)
-        else:
-            # 建立事物机制
-            with transaction.atomic():
-                # 创建一个保存点
-                save_id = transaction.savepoint()
-                # 创建历史记录表
-                try:
-                    history = ProjectCheckHistory.objects.create(
-                        apply_code=instance.apply_code,
-                        opinion=data['opinion'],
-                        result=0,
-                        check_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                        account=instance.account_code
-                    )
-                    # del data['apply_code']
-                    del data['opinion']
-                    # del data['result']
-                    # del data['check_time']
-                    # del data['account']
-
-                except Exception as e:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('项目审核历史记录创建失败%s' % str(e))
-
-                try:
-                    partial = kwargs.pop('partial', False)
-                    serializer = self.get_serializer(instance, data=data, partial=partial)
-                    serializer.is_valid(raise_exception=True)
-                    self.perform_update(serializer)
-
-                    if getattr(instance, '_prefetched_objects_cache', None):
-                        # If 'prefetch_related' has been applied to a queryset, we need to
-                        # forcibly invalidate the prefetch cache on the instance.
-                        instance._prefetched_objects_cache = {}
-
-                except Exception as e:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('成果申请表更新失败%s' % str(e))
-
-                transaction.savepoint_commit(save_id)
-
-        return Response(serializer.data)
 
 """
 class ProjectApplyHistoryViewSet(viewsets.ModelViewSet):
