@@ -1,4 +1,5 @@
 import os
+import re
 
 from django.db import models
 from public_models.models import PersonalInfo, EnterpriseBaseinfo #个人基本信息或者企业基本信息
@@ -82,17 +83,17 @@ class RequirementsInfo(models.Model):
     def fujian(self):
         # 拼接url地址
 
-        url1 = 'http://120.77.58.203:8808/{}/{}/{}/1'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,
+        url = '/{}/{}/{}'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,
                                                      self.req_code)
-        url2 = 'http://120.77.58.203:8808/{}/{}/{}/2'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,
-                                                     self.req_code)
-        url3 = 'http://120.77.58.203:8808/{}/{}/{}/3'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,
-                                                     self.req_code)
-        list = [url1, url2, url3]
-
-        # 判断该路径下的文件夹是否为空
-        list = [i for i in list if os.path.exists(i)]
-        return list
+        list = os.listdir(url)
+        list1 = []
+        if len(list)!=0:
+            for i in list:
+                if i.endswith('pdf') or i.endswith('jpg'):
+                    i = re.findall(ParamInfo.objects.get(param_code=0).param_value+r"(.+)", i)
+                    i = ''.join(i)
+                    list1.append(i)
+        return list1
     @property
     def mcode(self):
         # Results = ResultsInfo.objects.filter(r_code=self.rr_code)
@@ -137,15 +138,20 @@ class ResultsInfo(models.Model):
     def fujian(self):
         # 拼接url地址
 
-        url1 = 'http://120.77.58.203:8808/{}/{}/{}/1'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='requirementGuidancePhoto').tcode,self.r_code)
-        url2 = 'http://120.77.58.203:8808/{}/{}/{}/2'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='requirementGuidancePhoto').tcode,self.r_code)
-        url3 = 'http://120.77.58.203:8808/{}/{}/{}/3'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='requirementGuidancePhoto').tcode,self.r_code)
-        list = [url1,url2,url3]
+        url = '/{}/{}/{}'.format(ParamInfo.objects.get(param_code=0).param_value,
+            AttachmentFileType.objects.get(
+            tname='requirementGuidancePhoto').tcode,self.r_code)
 
-        # 判断该路径下的文件夹是否为空
+        list = os.listdir(url)
+        list1 = []
+        if len(list) != 0:
+            for i in list:
+                if i.endswith('pdf') or i.endswith('jpg'):
+                    i = re.findall(ParamInfo.objects.get(param_code=0).param_value + r"(.+)", i)
+                    i = ''.join(i)
+                    list1.append(i)
+        return list1
 
-        list = [i for i in list if os.path.exists(i)]
-        return list
     @property
     def mcode(self):
         # Results = ResultsInfo.objects.filter(r_code=self.rr_code)
