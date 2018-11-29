@@ -57,8 +57,8 @@ class KeywordsInfoSerializer(serializers.ModelSerializer):
 # 成果信息表序列化
 class ResultsInfoSerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    mcode = serializers.CharField(max_length=16, read_only=True)
-    fujian = serializers.CharField(max_length=64, read_only=True)
+    mcode = serializers.ListField(max_length=16, read_only=True)
+    fujian = serializers.ListField(max_length=16, read_only=True)
     class Meta:
         model = ResultsInfo
         fields = ['serial',
@@ -94,8 +94,8 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
 # 需求信息表序列化
 class RequirementsInfoSerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    mcode = serializers.CharField(max_length=16, read_only=True)
-    fujian = serializers.CharField(max_length=64, read_only=True)
+    mcode = serializers.ListField(max_length=16, read_only=True)
+    fujian = serializers.ListField(max_length=16, read_only=True)
     class Meta:
         model = RequirementsInfo
         fields = [

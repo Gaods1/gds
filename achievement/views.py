@@ -189,16 +189,19 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         # forcibly invalidate the prefetch cache on the instance.
                         instance._prefetched_objects_cache = {}
 
-                    # 将临时路径换成正式路径
-                    url = '/{}/{}/{}'.format(
-                        ParamInfo.objects.get(param_code=0).param_value,
-                        AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode, instance.rr_code)
-                    list = os.listdir(url)
-                    for i in list:
-                        b = i.replace(ParamInfo.objects.get(param_code=0).param_value,
-                                      ParamInfo.objects.get(param_code=1).param_value)
+                    url = '/{}/{}/{}'.format(ParamInfo.objects.get(param_code=3).param_value,
+                            AttachmentFileType.objects.get(tname='publishResultAttach').tcode,
+                            instance.rr_code)
+                    if os.path.exists(url) and os.listdir(url):
+                        list = ResultsInfo.objects.get(r_code=instance.rr_code).fujian
+                        list += os.listdir(url)
+                        list = list(set(list))
 
-                        shutil.move(i, b)
+                        for i in list:
+                            b = i.replace(ParamInfo.objects.get(param_code=3).param_value,
+                                          ParamInfo.objects.get(param_code=4).param_value)
+
+                            shutil.move(i, b)
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
@@ -512,15 +515,19 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         # forcibly invalidate the prefetch cache on the instance.
                         instance._prefetched_objects_cache = {}
 
-                    url = '/{}/{}/{}'.format(ParamInfo.objects.get(param_code=0).param_value,
-                        AttachmentFileType.objects.get(tname='requirementGuidancePhoto').tcode,
+                    url = '/{}/{}/{}'.format(ParamInfo.objects.get(param_code=3).param_value,
+                        AttachmentFileType.objects.get(tname='publishRequirementAttach').tcode,
                         instance.rr_code)
-                    list = os.listdir(url)
-                    for i in list:
-                        b = i.replace(ParamInfo.objects.get(param_code=0).param_value,
-                                      ParamInfo.objects.get(param_code=1).param_value)
+                    if os.path.exists(url) and os.listdir(url):
+                        list = RequirementsInfo.objects.get(req_code=instance.rr_code).fujian
+                        list += os.listdir(url)
+                        list = list(set(list))
 
-                        shutil.move(i, b)
+                        for i in list:
+                            b = i.replace(ParamInfo.objects.get(param_code=3).param_value,
+                                          ParamInfo.objects.get(param_code=4).param_value)
+
+                            shutil.move(i, b)
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)

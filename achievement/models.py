@@ -1,5 +1,8 @@
 import os
 import re
+from _mysql_exceptions import DatabaseError
+
+from django.http import HttpResponse
 
 from django.db import models
 from public_models.models import PersonalInfo, EnterpriseBaseinfo #个人基本信息或者企业基本信息
@@ -81,19 +84,24 @@ class RequirementsInfo(models.Model):
 
     @property
     def fujian(self):
-        # 拼接url地址
 
-        url = '/{}/{}/{}'.format(ParamInfo.objects.get(param_code=0).param_value,AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode,
-                                                     self.req_code)
-        list = os.listdir(url)
-        list1 = []
-        if len(list)!=0:
-            for i in list:
+        url1 = '/{}/{}/{}'.format(ParamInfo.objects.get(param_code=3).param_value,
+                                 AttachmentFileType.objects.get(tname='publishRequirementAttach').tcode,
+                                 self.req_code)
+        url2 = '/{}/{}/{}'.format(ParamInfo.objects.get(param_code=3).param_value,
+                                 AttachmentFileType.objects.get(tname='publishRequirementCover').tcode,
+                                 self.req_code)
+        list = []
+        if os.path.exists(url1) and os.listdir(url1):
+            for i in os.listdir(url1):
                 if i.endswith('pdf') or i.endswith('jpg'):
-                    i = re.findall(ParamInfo.objects.get(param_code=0).param_value+r"(.+)", i)
+                    i = re.findall(ParamInfo.objects.get(param_code=3).param_value + r"(.+)", i)
                     i = ''.join(i)
-                    list1.append(i)
-        return list1
+                    list.append(i)
+        if os.path.exists(url2) and os.listdir(url2):
+            list.extend(os.listdir(url2))
+        return list
+
     @property
     def mcode(self):
         # Results = ResultsInfo.objects.filter(r_code=self.rr_code)
@@ -136,21 +144,28 @@ class ResultsInfo(models.Model):
 
     @property
     def fujian(self):
-        # 拼接url地址
-
-        url = '/{}/{}/{}'.format(ParamInfo.objects.get(param_code=0).param_value,
-            AttachmentFileType.objects.get(
-            tname='requirementGuidancePhoto').tcode,self.r_code)
-
-        list = os.listdir(url)
-        list1 = []
-        if len(list) != 0:
-            for i in list:
+        url1 = '/{}/{}/{}'.format(ParamInfo.objects.get(param_code=3).param_value,
+                                  AttachmentFileType.objects.get(tname='publishResultAttach').tcode,
+                                  self.r_code)
+        url2 = '/{}/{}/{}'.format(ParamInfo.objects.get(param_code=3).param_value,
+                                  AttachmentFileType.objects.get(tname='publishResultCover').tcode,
+                                  self.r_code)
+        list = []
+        #if not os.path.exists(url1):
+            #return HttpResponse('此路径不存在')
+        #if not os.listdir(url1):
+            #return HttpResponse('此文件夹为空')
+        if os.path.exists(url1) and os.listdir(url1):
+            for i in os.listdir(url1):
                 if i.endswith('pdf') or i.endswith('jpg'):
-                    i = re.findall(ParamInfo.objects.get(param_code=0).param_value + r"(.+)", i)
+                    i = re.findall(ParamInfo.objects.get(param_code=3).param_value + r"(.+)", i)
                     i = ''.join(i)
-                    list1.append(i)
-        return list1
+                    list.append(i)
+        if os.path.exists(url2) and os.listdir(url2):
+            list.extend(os.listdir(url2))
+        return list
+
+
 
     @property
     def mcode(self):
