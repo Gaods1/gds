@@ -30,7 +30,11 @@ class ProjectInfo(models.Model):
 
     @property
     def checkinfo(self):
-        checkinfo = ProjectCheckInfo.objects.filter(Q(project_code=self.project_code),~Q(substep_serial = 0),Q(cstate=0)).order_by('-substep_serial')[0]
+        q = ProjectCheckInfo.objects.filter(Q(project_code=self.project_code),~Q(substep_serial = 0),Q(cstate=0)).order_by('-substep_serial')
+        if q != None and len(q)>0:
+            checkinfo = q[0]
+        else:
+            checkinfo = []
         return checkinfo
 
     # @property
