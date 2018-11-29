@@ -286,6 +286,15 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
     queryset = TeamApplyHistory.objects.all().order_by('-serial')
     serializer_class = TeamApplySerializers
 
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("state", "apply_type", "apply_time")
+    filter_fields = ("state", "team_code", "account_code")
+    search_fields = ("account_code", "apply_code","team_code")
+
     '''
     技术团队申请步骤:(涉及表:project_team_baseinfo   team_apply_history team_check_history account_info identity_authorization_info message)
     流程:检索project_team_baseinfo  team_apply_history作为主表 
@@ -300,8 +309,8 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
         try:
             with transaction.atomic():
                 apply_team_baseinfo = self.get_object()
-                if apply_team_baseinfo.state == 1:
-                    return JsonResponse("审核已通过无需再审核")
+                if apply_team_baseinfo.state == 2:
+                    return JsonResponse({"state":0,"msg":"审核已通过无需再审核"})
                 check_state = request.data.get('state')
                 opinion = request.data.get('opinion')
                 # 1 (apply_type:新增或更新或禁权)team_apply_history表
@@ -352,26 +361,28 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                     "Content-Type": "application/x-www-form-urlencoded",
                     "Accept": "application/json"
                 }
-                requests.post(sms_url, data=sms_data, headers=headers)
+                sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
                 # 6 保存短信记录
-                if check_state == 2:
-                    message_content = "您认证的身份信息技术团队审核未通过。请登录平台查看。"
-                else:
-                    message_content = "您认证的身份信息技术团队审核已通过。修改身份信息需重新审核，请谨慎修改。"
-                message_data = {'message_title':'技术团队认证信息审核结果通知',
-                                        'message_content':message_content,
-                                        'account_code':apply_team_baseinfo.team_baseinfo.account_code,
-                                        'state': 0,
-                                        'send_time':time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                                        'sender':request.user.account,
-                                        'sms':1,
-                                        'sms_state':1,
-                                        'sms_phone':account_mobile,
-                                        'email':0,
-                                        'email_state':0,
-                                        'email_account':''}
-                Message.objects.create(**message_data)
+                if int(sms_ret) == 1:
+                    if check_state == 2:
+                        message_content = "您认证的身份信息技术团队审核未通过。请登录平台查看。"
+                    else:
+                        message_content = "您认证的身份信息技术团队审核已通过。修改身份信息需重新审核，请谨慎修改。"
+                    message_data = {'message_title':'技术团队认证信息审核结果通知',
+                                            'message_content':message_content,
+                                            'account_code':apply_team_baseinfo.team_baseinfo.account_code,
+                                            'state': 0,
+                                            'send_time':time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                                            'sender':request.user.account,
+                                            'sms':1,
+                                            'sms_state':1,
+                                            'sms_phone':account_mobile,
+                                            'email':0,
+                                            'email_state':0,
+                                            'email_account':''}
+                    Message.objects.create(**message_data)
         except Exception as e:
-            return JsonResponse("审核失败")
+            fail_msg = "审核失败%s" % str(e)
+            return JsonResponse({"state":0,"msg": fail_msg})
 
-        return JsonResponse("审核成功")
+        return JsonResponse({"state":1,"msg":"审核成功"})
