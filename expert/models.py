@@ -366,7 +366,7 @@ class OwnerApplyHistory(models.Model):
 
     @property
     def opinion(self):
-        history = CollectorCheckHistory.objects.filter(apply_code=self.apply_code)
+        history = OwnerpCheckHistory.objects.filter(apply_code=self.apply_code)
         opinion = None
         if history:
             opinion = history.order_by('-check_time')[0].opinion
@@ -473,6 +473,18 @@ class OwnereApplyHistory(models.Model):
     apply_time = models.DateTimeField(auto_now_add=True)
     apply_type = models.IntegerField(blank=True, null=True)     # 申请类型：1：新增，2:修改，3:删除
 
+    @property
+    def owner(self):
+        return ResultOwnereBaseinfo.objects.get(owner_code=self.owner_code)
+
+    @property
+    def opinion(self):
+        history = OwnereCheckHistory.objects.filter(apply_code=self.apply_code)
+        opinion = None
+        if history:
+            opinion = history.order_by('-check_time')[0].opinion
+        return opinion
+
     class Meta:
         managed = False
         db_table = 'ownere_apply_history'
@@ -484,7 +496,7 @@ class OwnereCheckHistory(models.Model):
     apply_code = models.CharField(max_length=64, blank=True, null=True)     # 申请编号
     opinion = models.TextField(blank=True, null=True)                       # 审核意见
     result = models.IntegerField(blank=True, null=True)                     # 审核结果，3：不通过；2：通过
-    check_time = models.DateTimeField(blank=True, null=True)
+    check_time = models.DateTimeField(auto_now_add=True)
     account = models.CharField(max_length=64, blank=True, null=True)
 
     class Meta:
@@ -517,6 +529,60 @@ class ResultOwnereBaseinfo(models.Model):
     legal_person = models.CharField(max_length=64, blank=True, null=True)                                # 法人姓名
     owner_idtype = models.IntegerField(default=1)   # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
     owner_id = models.CharField(max_length=32)  # 证件号码
+
+
+    @property
+    def city(self):
+        region_info = SystemDistrict.objects.get(district_id=self.owner_city)
+        return region_info.district_name
+
+    @property
+    def idfornt(self):
+        if self.type == 1:
+            value = 'resultOwnerEntLegalIdFront'
+        else:
+            value = 'requirementOwnerEntLegalIdFront'
+        return get_file(self.owner_code, value)
+
+    @property
+    def idback(self):
+        if self.type == 1:
+            value = 'resultOwnerEntLegalIdBack'
+        else:
+            value = 'requirementOwnerEntLegalIdBack'
+        return get_file(self.owner_code, value)
+
+    @property
+    def idphoto(self):
+        if self.type == 1:
+            value = 'resultOwnerEntLegalHandIdPhoto'
+        else:
+            value = 'requirementOwnerEntLegalHandIdPhoto'
+        return get_file(self.owner_code, value)
+
+    @property
+    def license(self):
+        if self.type == 1:
+            value = 'resultOwnerEntLicense'
+        else:
+            value = 'requirementOwnerEntLicense'
+        return get_file(self.owner_code, value)
+
+    @property
+    def logo(self):
+        if self.type == 1:
+            value = 'resultOwnerEntLogo'
+        else:
+            value = 'requirementOwnerEntLogo'
+        return get_file(self.owner_code, value)
+
+    @property
+    def promotional(self):
+        if self.type == 1:
+            value = 'resultOwnerEntProgandaPhoto'
+        else:
+            value = 'requirementOwnerEntProgandaPhoto'
+        return get_file(self.owner_code, value)
 
     class Meta:
         managed = False

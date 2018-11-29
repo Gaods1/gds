@@ -207,7 +207,7 @@ class CollectorApplySerializers(serializers.ModelSerializer):
                   ]
 
 
-# 采集员基本信息表序列
+# 成果/需求基本信息表序列
 class ResultOwnerpSerializers(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     city = serializers.CharField(read_only=True)
@@ -238,9 +238,100 @@ class ResultOwnerpSerializers(serializers.ModelSerializer):
             'creater',
             'insert_time',
             'owner_city',
+            'city',
             'university',
             'profession',
+            'head',
+            'idfornt',  # 证件照正面
+            'idback',  # 证件照反面
+            'idphoto',  # 手持证件照
         ]
+
+
+# 成果/需求审核申请序列
+class OwnerApplySerializers(serializers.ModelSerializer):
+    apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    owner = ResultOwnerpSerializers(read_only=True)
+    opinion = serializers.CharField(read_only=True)
+    account = serializers.CharField(read_only=True)
+    class Meta:
+        model = OwnerApplyHistory
+        fields = ['serial',
+                  'apply_code',
+                  'owner_code',
+                  'owner',
+                  'account_code',
+                  'account',
+                  'state',
+                  'apply_type',
+                  'apply_time',
+                  'opinion'
+                  ]
+
+
+# 成果/需求（企业）基本信息表序列
+class ResultOwnereSerializers(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    city = serializers.CharField(read_only=True)
+    idfornt = serializers.CharField(read_only=True)
+    idback = serializers.CharField(read_only=True)
+    idphoto = serializers.CharField(read_only=True)
+    license = serializers.CharField(read_only=True)
+    logo = serializers.CharField(read_only=True)
+    promotional = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = ResultOwnereBaseinfo
+        fields = [
+            'serial',
+            'owner_code',
+            'ecode',
+            'type',
+            'owner_name',
+            'owner_tel',
+            'owner_mobile',
+            'owner_email',
+            'owner_license',
+            'owner_abstract',
+            'homepage',
+            'creditvalue',
+            'state',
+            'account_code',
+            'creater',
+            'insert_time',
+            'owner_name_abbr',
+            'owner_city',
+            'city',
+            'owner_abstract_detail',
+            'legal_person',
+            'owner_id',
+            'owner_idtype',
+            'idfornt',  # 证件照正面
+            'idback',  # 证件照反面
+            'idphoto',  # 手持证件照
+            'license',  # 营业执照
+            'logo',
+            'promotional',
+        ]
+
+
+# 成果/需求（企业）审核申请序列
+class OwnereApplySerializers(serializers.ModelSerializer):
+    apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    owner = ResultOwnereSerializers(read_only=True)
+    opinion = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = OwnereApplyHistory
+        fields = ['serial',
+                  'apply_code',
+                  'owner_code',
+                  'owner',
+                  'state',
+                  'apply_type',
+                  'apply_time',
+                  'opinion'
+                  ]
 
 
 # 技术团队基本信息表
