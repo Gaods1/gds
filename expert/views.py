@@ -309,8 +309,8 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
         try:
             with transaction.atomic():
                 apply_team_baseinfo = self.get_object()
-                if apply_team_baseinfo.state == 1:
-                    return JsonResponse("审核已通过无需再审核")
+                if apply_team_baseinfo.state == 2:
+                    return JsonResponse({"state":0,"msg":"审核已通过无需再审核"})
                 check_state = request.data.get('state')
                 opinion = request.data.get('opinion')
                 # 1 (apply_type:新增或更新或禁权)team_apply_history表
@@ -382,6 +382,7 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                                             'email_account':''}
                     Message.objects.create(**message_data)
         except Exception as e:
-            return JsonResponse("审核失败")
+            fail_msg = "审核失败%s" % str(e)
+            return JsonResponse({"state":0,"msg": fail_msg})
 
-        return JsonResponse("审核成功")
+        return JsonResponse({"state":1,"msg":"审核成功"})
