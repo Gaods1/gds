@@ -598,6 +598,17 @@ class TeamApplyHistory(models.Model):
         team_baseinfo = ProjectTeamBaseinfo.objects.get(pt_code=self.team_code)
         return team_baseinfo
 
+    @property
+    def major_names(self):
+        major_userinfos = MajorUserinfo.objects.filter(user_type=2, user_code=self.team_code)
+        major_name_list = []
+        if major_userinfos:
+            for major_userinfo in major_userinfos:
+                major_info = MajorInfo.objects.get(mtype=major_userinfo.mtype,mcode=major_userinfo.mcode,state=1)
+                major_name_list.append(major_info.mname)
+
+        return major_name_list
+
     class Meta:
         managed = False
         db_table = 'team_apply_history'
