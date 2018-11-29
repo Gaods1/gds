@@ -1,4 +1,4 @@
-from django.http import HttpResponse,JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from rest_framework import viewsets
 from projectmanagement.models import *
@@ -12,18 +12,11 @@ from django.db import transaction
 import time
 from .serializers import *
 
+
 # Create your views here.
 
 class ProjectInfoViewSet(viewsets.ModelViewSet):
-    '''项目信息
-
-    1 审核 参数说明（put时请求体参数 state,11：审核通过，可以呈现；4：审核未通过）
-    2 put 请求体中将历史记录表的必填字段需携带
-    {
-        state(int):11|4
-        opinion（text）:审核意见,
-    }
-    '''
+    '''项目信息'''
     queryset = ProjectInfo.objects.all().order_by('-pserial')
     serializer_class = ProjectInfoSerializer
     filter_backends = (
@@ -36,13 +29,36 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
     search_fields = ("project_code", "project_name",)
 
 
+class ProjectNeedCheckViewSet(viewsets.ModelViewSet):
+    """
+    项目审核展示(新增项目、修改项目、终止项目)
+    ==================================================
+    PATCH 参数说明 json
+    {
+    "apply_code": "string" 申请编号
+    "check_state": "int"   审核状态 11：审核通过，可以呈现；4：审核未通过
+    "opinion": "string"    审核意见
+    "project_code": "string" 项目代码
+    }
+    """
+
+    queryset = ProjectInfo.objects.all().order_by('-pserial')
+    serializer_class = ProjectInfoSerializer
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("project_name", "project_start_time", "project_from", "last_time", "state")
+    filter_fields = ("project_code", "project_name", "project_start_time", "project_from", "last_time", "state")
+    search_fields = ("project_code", "project_name",)
+
     def update(self, request, *args, **kwargs):
-        instance = self.get_object()
 
         data = request.data
         check_state = data['check_state']
-        if check_state !=11 and check_state !=4 :
-            return JsonResponse({'state':0,'msg':'请确认审核是否通过'})
+        if check_state != 11 and check_state != 4:
+            return JsonResponse({'state': 0, 'msg': '请确认审核是否通过'})
 
         if check_state == 11:
             result = 1
@@ -63,20 +79,6 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
                 project_apply.state = check_state;
                 project_apply.save()
 
-                # history = ProjectCheckHistory.objects.create(
-                #     # 'serial': data['serial'],
-                #     apply_code=data['apply_code'],
-                #     opinion=data['opinion'],
-                #     result=result,
-                #     check_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                #     account=request.user.account
-                # )
-                # del data['apply_code']
-                # del data['opinion']
-                # del data['result']
-                # del data['check_time']
-                # del data['account']
-
                 checkinfo_data = {
                     'apply_code': data['apply_code'],
                     'opinion': data['opinion'],
@@ -92,47 +94,9 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
                 fail_msg = "审核失败%s" % str(e)
                 return JsonResponse({"state": 0, "msg": fail_msg})
 
-            # try:
-            #     # 更新审核状态
-            #     # partial = kwargs.pop('partial', False)
-            #     # serializer = self.get_serializer(instance, data=data, partial=kwargs.pop('partial', False))
-            #     # serializer = self.get_serializer(instance, data=data, partial=partial)
-            #     # serializer.is_valid(raise_exception=True)
-            #     # self.perform_update(serializer)
-            #
-            #     # if getattr(instance, '_prefetched_objects_cache', None):
-            #     #     # If 'prefetch_related' has been applied to a queryset, we need to
-            #     #     # forcibly invalidate the prefetch cache on the instance.
-            #     #     instance._prefetched_objects_cache = {}
-            #
-            # except Exception as e:
-            #     transaction.savepoint_rollback(save_id)
-            #     # return HttpResponse('项目申请表更新失败%s' % str(e))
-            #     fail_msg = "审核失败%s" % str(e)
-            #     return JsonResponse({"state": 0, "msg": fail_msg})
-
             transaction.savepoint_commit(save_id)
 
         return JsonResponse({"state": 1, "msg": "审核成功"})
-
-
-class ProjectNeedCheckViewSet(viewsets.ModelViewSet):
-    """
-    项目审核展示
-    """
-
-    queryset = ProjectInfo.objects.all().order_by('-pserial')
-    serializer_class = ProjectInfoSerializer
-    filter_backends = (
-        filters.SearchFilter,
-        django_filters.rest_framework.DjangoFilterBackend,
-        filters.OrderingFilter,
-    )
-    ordering_fields = ("project_name", "project_start_time", "project_from", "last_time", "state")
-    filter_fields = ("project_code", "project_name", "project_start_time", "project_from", "last_time", "state")
-    search_fields = ("project_code", "project_name",)
-
-
 
 
 """
@@ -211,6 +175,7 @@ class ProjectCheckHistoryViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
 """
+
 
 class ProjectBrokerInfoViewSet(viewsets.ModelViewSet):
     '''项目经纪人信息'''

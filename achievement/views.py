@@ -112,19 +112,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('更新成果持有人表失败%s' % str(e))
 
-                # 附件表上传正式文件夹
-                try:
-                    Results = ResultsInfo.objects.get(r_code=instance.rr_code)
-                    if Results.fujian:
-                        for i in Results.fujian:
-                            #i = 'http://120.77.58.203:8808/{}/{}/{}/1'
-                            #b = i[:25]+i[30:]
-                            b = i.replace(ParamInfo.objects.get(param_code=0).param_value,ParamInfo.objects.get(param_code=1).param_value)
-                            shutil.move(i, b)
-                except Exception as e:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('文件转换失败%s' % str(e))
-
                 try:
                     # 更新个人信息并发送短信
                     owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
@@ -201,6 +188,17 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         # If 'prefetch_related' has been applied to a queryset, we need to
                         # forcibly invalidate the prefetch cache on the instance.
                         instance._prefetched_objects_cache = {}
+
+                    # 将临时路径换成正式路径
+                    url = '/{}/{}/{}'.format(
+                        ParamInfo.objects.get(param_code=0).param_value,
+                        AttachmentFileType.objects.get(tname='resultGuidancePhoto').tcode, instance.rr_code)
+                    list = os.listdir(url)
+                    for i in list:
+                        b = i.replace(ParamInfo.objects.get(param_code=0).param_value,
+                                      ParamInfo.objects.get(param_code=1).param_value)
+
+                        shutil.move(i, b)
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
@@ -440,17 +438,6 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('更新需求持有人表失败%s' % str(e))
-                # 附件表上传正式文件夹
-                try:
-                    Requirements = RequirementsInfo.objects.get(req_code=instance.rr_code)
-                    if Requirements.fujian:
-                        for i in Requirements.fujian:
-                            # i = 'http://120.77.58.203:8808/{}/{}/{}/1'
-                            b = i.replace(ParamInfo.objects.get(param_code=0).param_value,ParamInfo.objects.get(param_code=1).param_value)
-                            shutil.move(i, b)
-                except Exception as e:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('文件转换失败%s' % str(e))
 
                 try:
                     # 更新个人信息并发送短信
@@ -524,6 +511,16 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         # If 'prefetch_related' has been applied to a queryset, we need to
                         # forcibly invalidate the prefetch cache on the instance.
                         instance._prefetched_objects_cache = {}
+
+                    url = '/{}/{}/{}'.format(ParamInfo.objects.get(param_code=0).param_value,
+                        AttachmentFileType.objects.get(tname='requirementGuidancePhoto').tcode,
+                        instance.rr_code)
+                    list = os.listdir(url)
+                    for i in list:
+                        b = i.replace(ParamInfo.objects.get(param_code=0).param_value,
+                                      ParamInfo.objects.get(param_code=1).param_value)
+
+                        shutil.move(i, b)
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)

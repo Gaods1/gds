@@ -25,7 +25,7 @@ class ProjectInfo(models.Model):
 
     @property
     def from_code_info(self):
-        from_code_info = RrApplyHistory.objects.filter(a_code=self.from_code)
+        from_code_info = RrApplyHistory.objects.get(a_code=self.from_code)
         return from_code_info
 
     @property

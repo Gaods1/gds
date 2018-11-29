@@ -3,6 +3,7 @@ from .views import *
 from django.urls import path, include
 
 router = routers.DefaultRouter()
+#  项目基本信息
 router.register(r'project_info', ProjectInfoViewSet)
 
 # 项目审核
