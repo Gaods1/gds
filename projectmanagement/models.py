@@ -3,7 +3,7 @@ from achievement.models import RrApplyHistory
 from expert.models import BrokerBaseinfo, ExpertBaseinfo, ProjectTeamBaseinfo
 from consult.models import ResultsInfo
 from achievement.models import RequirementsInfo
-
+from django.db.models import Q
 
 # Create your models here.
 
@@ -13,13 +13,13 @@ class ProjectInfo(models.Model):
     pserial = models.AutoField(primary_key=True)
     project_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
     project_name = models.CharField(max_length=255, blank=True, null=True)
-    project_start_time = models.DateTimeField(blank=True, null=True)
     project_from = models.IntegerField(blank=True, null=True)
     from_code = models.CharField(max_length=64, blank=True, null=True)
+    project_state = models.IntegerField(blank=True, null=True)
+    project_sub_state = models.IntegerField(blank=True, null=True)
+    start_time = models.DateTimeField(blank=True, null=True)
     last_time = models.DateTimeField(blank=True, null=True)
     project_desc = models.TextField(blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
-    check_state = models.IntegerField(blank=True,null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True)
 
@@ -29,9 +29,9 @@ class ProjectInfo(models.Model):
         return from_code_info
 
     @property
-    def apply(self):
-        apply = ProjectApplyHistory.objects.filter(project_code=self.project_code).order_by('-serial')[0]
-        return apply
+    def checkinfo(self):
+        checkinfo = ProjectCheckInfo.objects.filter(Q(project_code=self.project_code),~Q(substep_serial = 0),Q(cstate=0)).order_by('-substep_serial')[0]
+        return checkinfo
 
     # @property
     # def rr(self):
@@ -46,43 +46,109 @@ class ProjectInfo(models.Model):
         db_table = 'project_info'
 
 
-# 项目审核申请表 *
-class ProjectApplyHistory(models.Model):
-    serial = models.AutoField(primary_key=True)
-    apply_code = models.CharField(max_length=64, blank=True, null=True)
+class ProjectCheckInfo(models.Model):
+    p_serial = models.AutoField(primary_key=True)
     project_code = models.CharField(max_length=64, blank=True, null=True)
-    account_code = models.CharField(max_length=64, blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
-    apply_time = models.DateTimeField(blank=True, null=True)
-    apply_type = models.IntegerField(blank=True, null=True)
-
-    @property
-    def project_name(self):
-        project = ProjectInfo.objects.get(project_code=self.project_code)
-        return project.project_name
-
-    @property
-    def project_from(self):
-        project = ProjectInfo.objects.get(project_code=self.project_code)
-        return project.project_from
+    step_code = models.IntegerField(blank=True, null=True)
+    substep_code = models.IntegerField(blank=True, null=True)
+    substep_serial = models.CharField(max_length=64, blank=True, null=True)
+    cstate = models.IntegerField(blank=True, null=True)
+    cmsg = models.TextField(blank=True, null=True)
+    checker = models.CharField(max_length=32, blank=True, null=True)
+    ctime = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'project_apply_history'
+        db_table = 'project_check_info'
 
-
-# 项目审核历史记录表 *
-class ProjectCheckHistory(models.Model):
-    serial = models.AutoField(primary_key=True)
-    apply_code = models.CharField(max_length=64, blank=True, null=True)
-    opinion = models.TextField(blank=True, null=True)
-    result = models.IntegerField(blank=True, null=True)
-    check_time = models.DateTimeField(blank=True, null=True)
-    account = models.CharField(max_length=64, blank=True, null=True)
+#项目步骤信息表
+class ProjectStepInfo(models.Model):
+    p_serial = models.AutoField(primary_key=True)
+    project_code = models.CharField(max_length=64, blank=True, null=True)
+    step_code = models.IntegerField(blank=True, null=True)
+    btime = models.DateTimeField(blank=True, null=True)
+    etime = models.DateTimeField(blank=True, null=True)
+    step_state = models.IntegerField(blank=True, null=True)
+    step_msg = models.CharField(max_length=255,blank=True, null=True)
 
     class Meta:
         managed = False
-        db_table = 'project_check_history'
+        db_table = 'project_step_info'
+
+
+#项目子步骤信息表
+class ProjectSubstepInfo(models.Model):
+    p_serial = models.AutoField(primary_key=True)
+    project_code = models.CharField(max_length=64, blank=True, null=True)
+    step_code = models.IntegerField(blank=True, null=True)
+    substep_code = models.IntegerField(blank=True, null=True)
+    btime = models.DateTimeField(blank=True, null=True)
+    etime = models.DateTimeField(blank=True, null=True)
+    step_state = models.IntegerField(blank=True, null=True)
+    step_msg = models.CharField(max_length=255,blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'project_substep_info'
+
+#项目子步骤流水信息表
+class ProjectSubstepSerialInfo(models.Model):
+    p_serial = models.AutoField(primary_key=True)
+    project_code = models.CharField(max_length=64, blank=True, null=True)
+    step_code = models.IntegerField(blank=True, null=True)
+    substep_code = models.IntegerField(blank=True, null=True)
+    substep_serial = models.CharField(max_length=64, blank=True, null=True)
+    submit_time = models.DateTimeField(blank=True, null=True)
+    etime = models.DateTimeField(blank=True, null=True)
+    substep_state = models.IntegerField(blank=True, null=True)
+    step_msg = models.CharField(max_length=255,blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'project_substep_serial_info'
+
+
+#项目子步骤流水详情信息表
+class ProjectSubstepDetailInfo(models.Model):
+    p_serial = models.AutoField(primary_key=True)
+    project_code = models.CharField(max_length=64, blank=True, null=True)
+    step_code = models.IntegerField(blank=True, null=True)
+    substep_code = models.IntegerField(blank=True, null=True)
+    substep_serial = models.CharField(max_length=64, blank=True, null=True)
+    submit_time = models.DateTimeField(blank=True, null=True)
+    # 不定长字段暂时没有加
+    step_msg = models.CharField(max_length=255,blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'project_substep_detail_info'
+
+
+# 项目与成果/需求信息表 *
+class ProjectRrInfo(models.Model):
+    p_serial = models.AutoField(primary_key=True)
+    project_code = models.CharField(max_length=64, blank=True, null=True)
+    rr_type = models.IntegerField(blank=True, null=True)
+    rr_code = models.CharField(max_length=64, blank=True, null=True)
+    creater = models.CharField(max_length=32, blank=True, null=True)
+    insert_time = models.DateTimeField(blank=True, null=True)
+    rr_work = models.TextField(blank=True, null=True)
+    contract = models.CharField(max_length=255, blank=True, null=True)
+
+    @property
+    def rr(self):
+        if self.rr_type == 1:
+            results = ResultsInfo.objects.filter(r_code=self.rr_code)
+            return results;
+        elif self.rr_type == 2:
+            requirements = RequirementsInfo.objects.filter(req_code=self.rr_code)
+            return requirements
+
+    class Meta:
+        managed = False
+        db_table = 'project_rr_info'
+        unique_together = (('project_code', 'rr_type', 'rr_code'),)
+
 
 
 # 项目经纪人信息表（项目与经纪人关联表） *
@@ -127,31 +193,6 @@ class ProjectExpertInfo(models.Model):
         db_table = 'project_expert_info'
         unique_together = (('project_code', 'expert_code'),)
 
-
-# 项目与成果/需求信息表 *
-class ProjectRrInfo(models.Model):
-    p_serial = models.AutoField(primary_key=True)
-    project_code = models.CharField(max_length=64, blank=True, null=True)
-    rr_type = models.IntegerField(blank=True, null=True)
-    rr_code = models.CharField(max_length=64, blank=True, null=True)
-    creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
-    rr_work = models.TextField(blank=True, null=True)
-    contract = models.CharField(max_length=255, blank=True, null=True)
-
-    @property
-    def rr(self):
-        if self.rr_type == 1:
-            results = ResultsInfo.objects.filter(r_code=self.rr_code)
-            return results;
-        elif self.rr_type == 2:
-            requirements = RequirementsInfo.objects.filter(req_code=self.rr_code)
-            return requirements
-
-    class Meta:
-        managed = False
-        db_table = 'project_rr_info'
-        unique_together = (('project_code', 'rr_type', 'rr_code'),)
 
 
 # 项目与团队信息表（项目与技术团队关联表）*
