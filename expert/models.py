@@ -496,7 +496,7 @@ class OwnereCheckHistory(models.Model):
     apply_code = models.CharField(max_length=64, blank=True, null=True)     # 申请编号
     opinion = models.TextField(blank=True, null=True)                       # 审核意见
     result = models.IntegerField(blank=True, null=True)                     # 审核结果，3：不通过；2：通过
-    check_time = models.DateTimeField(blank=True, null=True)
+    check_time = models.DateTimeField(auto_now_add=True)
     account = models.CharField(max_length=64, blank=True, null=True)
 
     class Meta:
