@@ -61,7 +61,7 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
         if type == 'check':
             data = request.data
             # consult_code = data.get('consult_code')
-            check_state = data.get('check_state')
+            check_state = int(data.get('check_state'))
             consult_info = self.get_object()
             if check_state !=1 and check_state !=2 :
                 return JsonResponse({'state':0,'msg':'请确认审核是否通过'})
@@ -258,7 +258,7 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
         type = request.data.get('type')  # 添加type传参判断 区分编辑 还是 审核
         if type == 'check':
             checkinfo_data = request.data
-            check_state = checkinfo_data.get('check_state')
+            check_state = int(checkinfo_data.get('check_state'))
             reply_info = self.get_object()
             if check_state !=3 and check_state !=4 :
                 return JsonResponse({'state':0,'msg':'请确认审核是否通过'})
