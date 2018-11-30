@@ -619,6 +619,10 @@ class ProjectTeamBaseinfo(models.Model):
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def major(self):
+        pass
+
     class Meta:
         managed = False
         db_table = 'project_team_baseinfo'
@@ -663,17 +667,6 @@ class TeamApplyHistory(models.Model):
     def team_baseinfo(self):
         team_baseinfo = ProjectTeamBaseinfo.objects.get(pt_code=self.team_code)
         return team_baseinfo
-
-    @property
-    def major_names(self):
-        major_userinfos = MajorUserinfo.objects.filter(user_type=2, user_code=self.team_code)
-        major_name_list = []
-        if major_userinfos:
-            for major_userinfo in major_userinfos:
-                major_info = MajorInfo.objects.get(mtype=major_userinfo.mtype,mcode=major_userinfo.mcode,state=1)
-                major_name_list.append(major_info.mname)
-
-        return major_name_list
 
     class Meta:
         managed = False
