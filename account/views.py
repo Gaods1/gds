@@ -395,7 +395,7 @@ class ParamInfoViewSet(viewsets.ModelViewSet):
     json说明
     {
       "param_code": "string", 参数code   【系统自动生成】
-      "pparam_code": "string",  父级参数 【选填】
+      "pparam_code": "string", 所属参数组 【选填】为0 时为参数组
       "param_name": "string",   参数名称   【必填】
       "param_memo": "string",   参数描述    【选填】
       "param_value": "string"   参数值     【选填】
@@ -409,8 +409,8 @@ class ParamInfoViewSet(viewsets.ModelViewSet):
         filters.OrderingFilter,
     )
     ordering_fields = ("param_name", "insert_time")
-    filter_fields = ("param_code",)
-    search_fields = ("param_name",)
+    filter_fields = ("param_code", "pparam_code")
+    search_fields = ("param_name", "pparam_code")
 
     def create(self, request, *args, **kwargs):
         data = request.data

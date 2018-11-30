@@ -14,6 +14,11 @@ from .utils import *
 import datetime, os, threading
 
 
+# 领域专家管理
+class ExpertViewSet(viewsets.ModelViewSet):
+    pass
+
+
 # 领域专家申请视图
 class ExpertApplyViewSet(viewsets.ModelViewSet):
     queryset = ExpertApplyHistory.objects.all().order_by('state')
@@ -99,6 +104,11 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
             return JsonResponse({"detail":"审核失败：%s" % str(e)})
 
         return Response(serializer.data)
+
+
+# 技术经纪人管理
+class BrokerViewSet(viewsets.ModelViewSet):
+    pass
 
 
 # 技术经纪人申请视图
@@ -188,6 +198,11 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+# 采集员管理
+class CollectorViewSet(viewsets.ModelViewSet):
+    pass
+
+
 # 采集员申请视图
 class CollectorApplyViewSet(viewsets.ModelViewSet):
     queryset = CollectorApplyHistory.objects.all().order_by('state')
@@ -273,6 +288,11 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
             return JsonResponse({"detail":"审核失败：%s" % str(e)})
 
         return Response(serializer.data)
+
+
+# 成果持有人管理视图
+class ResultsOwnerViewSet(viewsets.ModelViewSet):
+    pass
 
 
 # 成果持有人申请视图
@@ -361,6 +381,11 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
             return JsonResponse({"detail":"审核失败：%s" % str(e)})
 
         return Response(serializer.data)
+
+
+# 成果持有人（企业）管理视图
+class ResultsOwnereViewSet(viewsets.ModelViewSet):
+    pass
 
 
 # 成果持有人（企业）申请视图
@@ -459,6 +484,11 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+# 需求持有人管理视图
+class RequirementOwnerViewSet(viewsets.ModelViewSet):
+    pass
+
+
 # 需求持有人申请视图
 class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
     queryset = OwnerApplyHistory.objects.filter(owner_code__in=[i.owner_code for i in ResultOwnerpBaseinfo.objects.filter(type=2)]).order_by('state')
@@ -545,6 +575,11 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
             return JsonResponse({"detail":"审核失败：%s" % str(e)})
 
         return Response(serializer.data)
+
+
+# 需求持有人(企业)管理视图
+class RequirementOwnereViewSet(viewsets.ModelViewSet):
+    pass
 
 
 # 需求持有企业申请视图

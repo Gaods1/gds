@@ -310,7 +310,7 @@ class EnterpriseBaseinfo(models.Model):
 class ParamInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     param_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
-    pparam_code = models.CharField(max_length=64, blank=True, null=True)
+    pparam_code = models.CharField(max_length=64, default=0)
     param_name = models.CharField(unique=True,max_length=64)
     param_memo = models.CharField(max_length=255, blank=True, null=True)
     param_value = models.TextField(blank=True, null=True)
