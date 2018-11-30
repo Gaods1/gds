@@ -29,13 +29,31 @@ class ProjectInfo(models.Model):
         return from_code_info
 
     @property
-    def checkinfo(self):
+    def substep_info(self):
+        q = ProjectSubstepInfo.objects.filter(Q(project_code=self.project_code),Q(step_code = self.project_state),Q(substep_code=self.project_sub_state)).order_by('-p_serial')
+        if q != None and len(q)>0:
+            substep_info = q[0]
+        else:
+            substep_info = []
+        return substep_info
+
+    @property
+    def substep_serial_info(self):
+        q = ProjectSubstepSerialInfo.objects.filter(project_code=self.project_code,substep_code=self.project_sub_state).order_by('-substep_serial')
+        if q != None and len(q)>0:
+            substep_serial_info = q[0]
+        else:
+            substep_serial_info = {}
+        return substep_serial_info
+
+    @property
+    def check_info(self):
         q = ProjectCheckInfo.objects.filter(Q(project_code=self.project_code),~Q(substep_serial = 0),Q(cstate=0)).order_by('-substep_serial')
         if q != None and len(q)>0:
-            checkinfo = q[0]
+            check_info = q[0]
         else:
-            checkinfo = []
-        return checkinfo
+            check_info = []
+        return check_info
 
     # @property
     # def rr(self):
