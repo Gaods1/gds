@@ -58,7 +58,9 @@ class KeywordsInfoSerializer(serializers.ModelSerializer):
 class ResultsInfoSerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     mcode = serializers.ListField(max_length=16, read_only=True)
-    fujian = serializers.ListField(max_length=16, read_only=True)
+    mname = serializers.ListField(max_length=16, read_only=True)
+    fujian = serializers.DictField(read_only=True)
+    fengmian = serializers.DictField(read_only=True)
     class Meta:
         model = ResultsInfo
         fields = ['serial',
@@ -88,14 +90,19 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
                   'r_abstract_detail',
                   'update_time',
                   'mcode',
-                  'fujian'
+                  'fujian',
+                  'mname',
+                  'fengmian',
                   ]
 
 # 需求信息表序列化
 class RequirementsInfoSerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     mcode = serializers.ListField(max_length=16, read_only=True)
-    fujian = serializers.ListField(max_length=16, read_only=True)
+    mname = serializers.ListField(max_length=16, read_only=True)
+    fujian = serializers.DictField(read_only=True)
+    fengmian = serializers.DictField(read_only=True)
+
     class Meta:
         model = RequirementsInfo
         fields = [
@@ -123,7 +130,9 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
             'creater',
             'insert_time',
             'mcode',
+            'mname',
             'fujian',
+            'fengmian',
         ]
 
 
@@ -135,6 +144,7 @@ class RrApplyHistorySerializer(serializers.ModelSerializer):
     Cooperation = ResultsCooperationTypeInfoSerializer(many=True,read_only=True)
     Owner = ResultsOwnerInfoSerializer(many=True,read_only=True)
     Keywords = KeywordsInfoSerializer(many=True,read_only=True)
+
     class Meta:
         model = RrApplyHistory
         fields = ['serial',

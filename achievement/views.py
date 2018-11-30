@@ -15,6 +15,7 @@ import json
 import time
 import shutil
 
+from public_models.utils import fujian_move, dange_move
 from .serializers import *
 from .models import *
 from .utils import massege
@@ -59,6 +60,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
         data = request.data
         state = data['state']
         if state == 2:
+
+            file = ResultsInfo.objects.filter(show_state=2)
+            print(type(file))
             # 建立事物机制
             with transaction.atomic():
                 # 创建一个保存点
@@ -131,7 +135,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
                         # 多线程发送短信
                         t1 = threading.Thread(target=massege,args=(url,body,headers))
-                        t1.start()
+                        #t1.start()
                         #response = requests.post(url, data=body, headers=headers)
 
 
@@ -188,26 +192,18 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         # If 'prefetch_related' has been applied to a queryset, we need to
                         # forcibly invalidate the prefetch cache on the instance.
                         instance._prefetched_objects_cache = {}
-
-                    url = '/{}/{}/{}'.format(ParamInfo.objects.get(param_code=3).param_value,
-                            AttachmentFileType.objects.get(tname='publishResultAttach').tcode,
-                            instance.rr_code)
-                    if os.path.exists(url) and os.listdir(url):
-                        list = ResultsInfo.objects.get(r_code=instance.rr_code).fujian
-                        list += os.listdir(url)
-                        list = list(set(list))
-
-                        for i in list:
-                            b = i.replace(ParamInfo.objects.get(param_code=3).param_value,
-                                          ParamInfo.objects.get(param_code=4).param_value)
-
-                            shutil.move(i, b)
-
+                    dict_fujian = fujian_move('Results', 'publishResultAttach', instance.rr_code)
+                    dict_dange = dange_move('Results', 'publishResultCover', instance.rr_code)
+                    dict_z={}
+                    dict_z['fujian'] = dict_fujian
+                    dict_z['dange'] = dict_dange
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('成果申请表更新失败%s' % str(e))
 
                 transaction.savepoint_commit(save_id)
+                return Response(dict_z)
+
         else:
             # 建立事物机制
             with transaction.atomic():
@@ -347,8 +343,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     return HttpResponse('成果申请表更新失败%s' % str(e))
 
                 transaction.savepoint_commit(save_id)
+                dict_z={}
 
-        return Response(serializer.data)
+                return Response(dict_z)
 
 # 需求
 class RequirementViewSet(viewsets.ModelViewSet):
@@ -514,26 +511,18 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         # If 'prefetch_related' has been applied to a queryset, we need to
                         # forcibly invalidate the prefetch cache on the instance.
                         instance._prefetched_objects_cache = {}
-
-                    url = '/{}/{}/{}'.format(ParamInfo.objects.get(param_code=3).param_value,
-                        AttachmentFileType.objects.get(tname='publishRequirementAttach').tcode,
-                        instance.rr_code)
-                    if os.path.exists(url) and os.listdir(url):
-                        list = RequirementsInfo.objects.get(req_code=instance.rr_code).fujian
-                        list += os.listdir(url)
-                        list = list(set(list))
-
-                        for i in list:
-                            b = i.replace(ParamInfo.objects.get(param_code=3).param_value,
-                                          ParamInfo.objects.get(param_code=4).param_value)
-
-                            shutil.move(i, b)
+                    dict_fujian = fujian_move('Requirements', 'publishRequirementAttach', instance.rr_code)
+                    dict_dange = dange_move('Requirements', 'publishRequirementCover', instance.rr_code)
+                    dict_z = {}
+                    dict_z['fujian'] = dict_fujian
+                    dict_z['dange'] = dict_dange
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('需求申请表更新失败%s' % str(e))
 
                 transaction.savepoint_commit(save_id)
+                return Response(dict_z)
         else:
             # 建立事物机制
             with transaction.atomic():
@@ -675,8 +664,9 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     return HttpResponse('需求申请表更新失败%s' % str(e))
 
                 transaction.savepoint_commit(save_id)
+                dict_z={}
 
-        return Response(serializer.data)
+                return Response(dict_z)
 
 
 

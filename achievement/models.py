@@ -6,9 +6,11 @@ from django.http import HttpResponse
 
 from django.db import models
 from public_models.models import PersonalInfo, EnterpriseBaseinfo #个人基本信息或者企业基本信息
-from public_models.models import MajorUserinfo
+from public_models.models import MajorUserinfo,MajorInfo # 领域类型使用状况信息表以及领域类型基本信息表
 from public_models.models import Message,ParamInfo# 推送消息表以及系统参数表
 from public_models.models import AttachmentFileType,AttachmentFileinfo#附件表及附件类型表
+
+from public_models.utils import fujian_show,dange_show
 
 # Create your models here.
 
@@ -51,7 +53,6 @@ class RrApplyHistory(models.Model):
         Keywords = KeywordsInfo.objects.filter(object_code=self.rr_code)
         return Keywords
 
-
     class Meta:
         managed = False
         db_table = 'rr_apply_history'
@@ -84,30 +85,26 @@ class RequirementsInfo(models.Model):
 
     @property
     def fujian(self):
+        dict = fujian_show('Requirements','publishRequirementAttach',self.req_code)
+        return dict
 
-        url1 = '/{}/{}/{}'.format(ParamInfo.objects.get(param_code=3).param_value,
-                                 AttachmentFileType.objects.get(tname='publishRequirementAttach').tcode,
-                                 self.req_code)
-        url2 = '/{}/{}/{}'.format(ParamInfo.objects.get(param_code=3).param_value,
-                                 AttachmentFileType.objects.get(tname='publishRequirementCover').tcode,
-                                 self.req_code)
-        list = []
-        if os.path.exists(url1) and os.listdir(url1):
-            for i in os.listdir(url1):
-                if i.endswith('pdf') or i.endswith('jpg'):
-                    i = re.findall(ParamInfo.objects.get(param_code=3).param_value + r"(.+)", i)
-                    i = ''.join(i)
-                    list.append(i)
-        if os.path.exists(url2) and os.listdir(url2):
-            list.extend(os.listdir(url2))
-        return list
+    @property
+    def fengmian(self):
+        dict = dange_show('Requirements','publishRequirementCover',self.req_code)
+        return dict
 
     @property
     def mcode(self):
         # Results = ResultsInfo.objects.filter(r_code=self.rr_code)
-        mm = [major_userinfo.mcode for major_userinfo in
-              MajorUserinfo.objects.filter(user_type=4, user_code=self.req_code)]
-        return mm
+        mcode = [major_userinfo.mcode for major_userinfo in
+              MajorUserinfo.objects.filter(user_type=5, user_code=self.req_code)]
+        return mcode
+    @property
+    def mname(self):
+        mcode = [major_userinfo.mcode for major_userinfo in
+                 MajorUserinfo.objects.filter(user_type=5, user_code=self.req_code)]
+        mname = [i.mname for i in MajorInfo.objects.filter(mcode__in=mcode)]
+        return mname
 
     class Meta:
         managed = False
@@ -144,35 +141,27 @@ class ResultsInfo(models.Model):
 
     @property
     def fujian(self):
-        url1 = '/{}/{}/{}'.format(ParamInfo.objects.get(param_code=3).param_value,
-                                  AttachmentFileType.objects.get(tname='publishResultAttach').tcode,
-                                  self.r_code)
-        url2 = '/{}/{}/{}'.format(ParamInfo.objects.get(param_code=3).param_value,
-                                  AttachmentFileType.objects.get(tname='publishResultCover').tcode,
-                                  self.r_code)
-        list = []
-        #if not os.path.exists(url1):
-            #return HttpResponse('此路径不存在')
-        #if not os.listdir(url1):
-            #return HttpResponse('此文件夹为空')
-        if os.path.exists(url1) and os.listdir(url1):
-            for i in os.listdir(url1):
-                if i.endswith('pdf') or i.endswith('jpg'):
-                    i = re.findall(ParamInfo.objects.get(param_code=3).param_value + r"(.+)", i)
-                    i = ''.join(i)
-                    list.append(i)
-        if os.path.exists(url2) and os.listdir(url2):
-            list.extend(os.listdir(url2))
-        return list
+        dict = fujian_show('Results','publishResultAttach',self.r_code)
+        return dict
 
-
+    @property
+    def fengmian(self):
+        dict = dange_show('Results','publishResultCover',self.r_code)
+        return dict
 
     @property
     def mcode(self):
         # Results = ResultsInfo.objects.filter(r_code=self.rr_code)
-        mm = [major_userinfo.mcode for major_userinfo in
+        mcode = [major_userinfo.mcode for major_userinfo in
               MajorUserinfo.objects.filter(user_type=4, user_code=self.r_code)]
-        return mm
+        return mcode
+
+    @property
+    def mname(self):
+        mcode = [major_userinfo.mcode for major_userinfo in
+                 MajorUserinfo.objects.filter(user_type=4, user_code=self.r_code)]
+        mname = [i.mname for i in MajorInfo.objects.filter(mcode__in=mcode)]
+        return mname
 
     class Meta:
         managed =False

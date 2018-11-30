@@ -184,6 +184,7 @@ class AttachmentFileinfo(models.Model):
     state = models.IntegerField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
+    operation_state = models.IntegerField(blank=True, null=True)
 
     class Meta:
         managed = False
