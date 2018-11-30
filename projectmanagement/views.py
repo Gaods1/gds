@@ -36,28 +36,23 @@ class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
     """
     项目审核展示
     ==================================================
+    GET 参数说明 json
+    {
+        'step_code',步骤序号
+        'substep_code',子步骤序号
+    }
+    --------------------------------------------------
     PATCH 参数说明 json
     {
-    'project_code',项目代码
-    'step_code',步骤序号
-    'substep_code',子步骤序号
-    'substep_serial',子步骤提交流水 project_substep_serial_info.substep_serial
-    'cstate', 1：通过；-1：未通过
-    'cmsg',审核意见
+        'project_code',项目代码
+        'step_code',步骤序号
+        'substep_code',子步骤序号
+        'substep_serial',子步骤提交流水 project_substep_serial_info.substep_serial
+        'cstate', 1：通过；-1：未通过
+        'cmsg',审核意见
     }
+    ==================================================
     """
-
-    # queryset = ProjectCheckInfo.objects.filter(~Q(substep_serial=0),Q(cstate=0)).order_by('-p_serial')
-    # serializer_class = ProjectCheckInfoSerializer
-    #
-    # filter_backends = (
-    #     filters.SearchFilter,
-    #     django_filters.rest_framework.DjangoFilterBackend,
-    #     filters.OrderingFilter,
-    # )
-    # ordering_fields = ("project_code","step_code","substep_code")
-    # filter_fields = ("project_code","step_code","substep_code")
-    # # search_fields = ("project_code") 不限定搜索范围在文档中直接给出
 
     queryset = ProjectInfo.objects.all().order_by('-pserial')
     serializer_class = ProjectInfoSerializer
@@ -68,10 +63,28 @@ class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
     )
     ordering_fields = ("project_name", "project_state", "project_sub_state")
     filter_fields = ("project_code", "project_name", "project_state", "project_sub_state")
-    search_fields = ("project_name")
+    search_fields = ("project_name","project_state", "project_sub_state")
+
+    # 需要审核的子步骤
+    need_check_substep_codes = ('12','21','22','32','311','45','71')
 
     def list(self, request, *args, **kwargs):
-        # search = request.GET.get('search')  # 获取参数
+        # 检测 状态在
+        step_code = request.GET.get('step_code')
+        substep_code = request.GET.get('substep_code')
+        if step_code == None or substep_code == None:
+            queryset = []
+            page = self.paginate_queryset(queryset) # 不能省略
+            serializer = self.get_serializer(queryset, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        if substep_code not in self.need_check_substep_codes:
+            queryset = []
+            page = self.paginate_queryset(queryset)  # 不能省略
+            serializer = self.get_serializer(queryset, many=True)
+            return self.get_paginated_response(serializer.data)
+
+
         # if search is not None:  # 如果参数不为空
         #     # 执行filter()方法
         #     projects = ProjectInfo.objects.filter(Q(project_name__icontains=search))
@@ -82,7 +95,7 @@ class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
         #     q = self.get_queryset()
         # queryset = self.filter_queryset(q)
 
-        projectcheckinfos = ProjectCheckInfo.objects.filter(~Q(substep_serial=0), Q(cstate=0)).order_by("-p_serial")
+        projectcheckinfos = ProjectCheckInfo.objects.filter(~Q(substep_serial=0),Q(cstate=0),Q(step_code=step_code),Q(substep_code=substep_code)).order_by("-p_serial")
         project_codes = [check.project_code for check in projectcheckinfos]
         q = self.get_queryset().filter(project_code__in=project_codes)
         if q != None and len(q) > 0:
@@ -101,7 +114,7 @@ class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
         return self.get_paginated_response(serializer.data)
 
     def update(self, request, *args, **kwargs):
-        instance = self.get_object()
+        # instance = self.get_object()
 
         data = request.data
         cstate = data['cstate']
@@ -112,6 +125,7 @@ class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
         step_code = data['step_code']
         substep_code = data['substep_code']
         substep_serial = data['substep_serial']
+        cmsg = data['cmsg']
 
         # 建立事物机制
         with transaction.atomic():
@@ -123,17 +137,26 @@ class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
                 projectcheckinfo = ProjectCheckInfo.objects.get(project_code=project_code,
                                                                 substep_serial=substep_serial)
                 projectcheckinfo.cstate = cstate
+                projectcheckinfo.ctime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                projectcheckinfo.checker = request.user.account
+                projectcheckinfo.cmsg = cmsg
                 projectcheckinfo.save()
 
                 # 项目子步骤流水信息表
                 pssi = ProjectSubstepSerialInfo.objects.get(project_code=project_code, substep_serial=substep_serial)
                 pssi.substep_state = cstate;
+                if cstate == 1:
+                    pssi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                pssi.step_msg = cmsg
                 pssi.save()
 
                 # 项目子步骤信息表
                 psi = ProjectSubstepInfo.objects.get(project_code=project_code, step_code=step_code,
                                                      substep_code=substep_code)
-                psi.substep_state = cstate;
+                psi.step_state = cstate;
+                if cstate == 1:
+                    psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                psi.step_msg = cmsg
                 psi.save()
 
                 # 判断主步骤是否结束
@@ -142,13 +165,19 @@ class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
                 if cstate == 1 and (substep_code in substep_codes):
                     # 项目步骤信息表
                     psi = ProjectStepInfo.objects.get(project_code=project_code, step_code=step_code)
-                    psi.substep_state = cstate;
+                    psi.step_state = cstate;
+                    psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                    psi.step_msg = cmsg
                     psi.save()
+                else:
+                    psi = ProjectStepInfo.objects.get(project_code=project_code, step_code=step_code)
+                    psi.step_msg = cmsg
+                    psi.save()
+
 
                 transaction.savepoint_commit(save_id)
             except Exception as e:
-                # transaction.savepoint_rollback(save_id)
-                # return HttpResponse('项目审核历史记录创建失败%s' % str(e))
+                transaction.savepoint_rollback(save_id)
                 fail_msg = "审核失败%s" % str(e)
                 return JsonResponse({"state": 0, "msg": fail_msg})
 
@@ -169,6 +198,8 @@ class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
             #     return JsonResponse({"state": 0, "msg": fail_msg})
 
         return JsonResponse({"state": 1, "msg": "审核成功"})
+
+
 
 
 class ProjectRrInfoViewSet(viewsets.ModelViewSet):

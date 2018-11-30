@@ -14,6 +14,22 @@ from .utils import *
 import datetime, os, threading
 
 
+# 领域专家管理
+class ExpertViewSet(viewsets.ModelViewSet):
+    queryset = ExpertBaseinfo.objects.all().order_by('state', '-serial')
+    serializer_class = ExpertBaseInfoSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time", "expert_level", "credit_value", "expert_integral")
+    filter_fields = ("state", "creater", "expert_id", "expert_city", "ecode")
+    search_fields = ("expert_name", "expert_id", "expert_mobile", "ecode")
+
+
 # 领域专家申请视图
 class ExpertApplyViewSet(viewsets.ModelViewSet):
     queryset = ExpertApplyHistory.objects.all().order_by('state')
@@ -99,6 +115,22 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
             return JsonResponse({"detail":"审核失败：%s" % str(e)})
 
         return Response(serializer.data)
+
+
+# 技术经纪人管理
+class BrokerViewSet(viewsets.ModelViewSet):
+    queryset = BrokerBaseinfo.objects.all().order_by('state', '-serial')
+    serializer_class = BrokerBaseInfoSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time", "broker_level", "credit_value", "broker_integral", "work_type")
+    filter_fields = ("state", "creater", "broker_id", "broker_city", "ecode", "work_type")
+    search_fields = ("broker_name", "broker_id", "broker_mobile", "ecode", "work_type", "broker_abbr")
 
 
 # 技术经纪人申请视图
@@ -188,6 +220,22 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+# 采集员管理
+class CollectorViewSet(viewsets.ModelViewSet):
+    queryset = CollectorBaseinfo.objects.all().order_by('state', '-serial')
+    serializer_class = CollectorBaseInfoSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time",)
+    filter_fields = ("state", "creater", "collector_id", "collector_city",)
+    search_fields = ("collector_name", "collector_id", "collector_mobile",)
+
+
 # 采集员申请视图
 class CollectorApplyViewSet(viewsets.ModelViewSet):
     queryset = CollectorApplyHistory.objects.all().order_by('state')
@@ -273,6 +321,22 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
             return JsonResponse({"detail":"审核失败：%s" % str(e)})
 
         return Response(serializer.data)
+
+
+# 成果持有人管理视图
+class ResultsOwnerViewSet(viewsets.ModelViewSet):
+    queryset = ResultOwnerpBaseinfo.objects.filter(type=1).order_by('state', '-serial')
+    serializer_class = ResultOwnerpSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time",)
+    filter_fields = ("state", "creater", "owner_id", "owner_city",)
+    search_fields = ("owner_name", "owner_id", "owner_mobile")
 
 
 # 成果持有人申请视图
@@ -361,6 +425,22 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
             return JsonResponse({"detail":"审核失败：%s" % str(e)})
 
         return Response(serializer.data)
+
+
+# 成果持有人（企业）管理视图
+class ResultsOwnereViewSet(viewsets.ModelViewSet):
+    queryset = ResultOwnereBaseinfo.objects.filter(type=1).order_by('state', '-serial')
+    serializer_class = ResultOwnereSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time",)
+    filter_fields = ("state", "creater", "owner_id", "owner_city", "owner_license", "legal_person")
+    search_fields = ("owner_name", "owner_id", "owner_mobile", "owner_license", "legal_person")
 
 
 # 成果持有人（企业）申请视图
@@ -459,6 +539,22 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+# 需求持有人管理视图
+class RequirementOwnerViewSet(viewsets.ModelViewSet):
+    queryset = ResultOwnerpBaseinfo.objects.filter(type=2).order_by('state', '-serial')
+    serializer_class = ResultOwnerpSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time",)
+    filter_fields = ("state", "creater", "owner_id", "owner_city",)
+    search_fields = ("owner_name", "owner_id", "owner_mobile")
+
+
 # 需求持有人申请视图
 class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
     queryset = OwnerApplyHistory.objects.filter(owner_code__in=[i.owner_code for i in ResultOwnerpBaseinfo.objects.filter(type=2)]).order_by('state')
@@ -545,6 +641,22 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
             return JsonResponse({"detail":"审核失败：%s" % str(e)})
 
         return Response(serializer.data)
+
+
+# 需求持有人(企业)管理视图
+class RequirementOwnereViewSet(viewsets.ModelViewSet):
+    queryset = ResultOwnereBaseinfo.objects.filter(type=2).order_by('state', '-serial')
+    serializer_class = ResultOwnereSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time",)
+    filter_fields = ("state", "creater", "owner_id", "owner_city", "owner_license", "legal_person")
+    search_fields = ("owner_name", "owner_id", "owner_mobile", "owner_license", "legal_person")
 
 
 # 需求持有企业申请视图
@@ -645,13 +757,23 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
 
 # 技术团队视图
 class TeamBaseinfoViewSet(viewsets.ModelViewSet):
-    queryset = ProjectTeamBaseinfo.objects.all().order_by('-serial')
+    queryset = ProjectTeamBaseinfo.objects.all().order_by('state', '-serial')
     serializer_class = TeamBaseinfoSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time", "pt_level", "credit_value","pt_integral")
+    filter_fields = ("state", "creater", "pt_people_id", "pt_city",)
+    search_fields = ("pt_name", "pt_people_id", "pt_people_tel", "pt_abbreviation")
 
 
 # 技术团队申请视图
 class TeamApplyViewSet(viewsets.ModelViewSet):
-    queryset = TeamApplyHistory.objects.all().order_by('-serial')
+    queryset = TeamApplyHistory.objects.all().order_by('state')
     serializer_class = TeamApplySerializers
 
     filter_backends = (

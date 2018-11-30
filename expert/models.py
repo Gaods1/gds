@@ -1,7 +1,7 @@
 from django.db import models
 from misc.misc import gen_uuid32
 from public_models.models import *
-from .utils import get_file
+from .utils import get_file, get_major
 from account.models import AccountInfo
 # Create your models here.
 
@@ -106,6 +106,10 @@ class ExpertBaseinfo(models.Model):
     def city(self):
         region_info = SystemDistrict.objects.get(district_id=self.expert_city)
         return region_info.district_name
+
+    @property
+    def major(self):
+        return get_major(1, self.expert_code)
 
     @property
     def enterprise(self):
@@ -213,6 +217,10 @@ class BrokerBaseinfo(models.Model):
     def city(self):
         region_info = SystemDistrict.objects.get(district_id=self.broker_city)
         return region_info.district_name
+
+    @property
+    def major(self):
+        return get_major(3, self.broker_code)
 
     @property
     def enterprise(self):
@@ -414,6 +422,13 @@ class ResultOwnerpBaseinfo(models.Model):
         return region_info.district_name
 
     @property
+    def major(self):
+        if self.type == 1:
+            return get_major(8, self.owner_code)
+        else:
+            return get_major(9, self.owner_code)
+
+    @property
     def head(self):
         if self.type == 1:
             value = 'resultOwnerPerHead'
@@ -537,6 +552,13 @@ class ResultOwnereBaseinfo(models.Model):
         return region_info.district_name
 
     @property
+    def major(self):
+        if self.type == 1:
+            return get_major(6, self.owner_code)
+        else:
+            return get_major(7, self.owner_code)
+
+    @property
     def idfornt(self):
         if self.type == 1:
             value = 'resultOwnerEntLegalIdFront'
@@ -619,6 +641,10 @@ class ProjectTeamBaseinfo(models.Model):
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def major(self):
+        return get_major(2, self.pt_code)
+
     class Meta:
         managed = False
         db_table = 'project_team_baseinfo'
@@ -663,17 +689,6 @@ class TeamApplyHistory(models.Model):
     def team_baseinfo(self):
         team_baseinfo = ProjectTeamBaseinfo.objects.get(pt_code=self.team_code)
         return team_baseinfo
-
-    @property
-    def major_names(self):
-        major_userinfos = MajorUserinfo.objects.filter(user_type=2, user_code=self.team_code)
-        major_name_list = []
-        if major_userinfos:
-            for major_userinfo in major_userinfos:
-                major_info = MajorInfo.objects.get(mtype=major_userinfo.mtype,mcode=major_userinfo.mcode,state=1)
-                major_name_list.append(major_info.mname)
-
-        return major_name_list
 
     class Meta:
         managed = False
