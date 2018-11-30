@@ -11,7 +11,23 @@ import time,requests
 from account.models import AccountInfo
 from public_models.models import Message
 from .utils import *
-import datetime, os
+import datetime, os, threading
+
+
+# 领域专家管理
+class ExpertViewSet(viewsets.ModelViewSet):
+    queryset = ExpertBaseinfo.objects.all().order_by('state', '-serial')
+    serializer_class = ExpertBaseInfoSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time", "expert_level", "credit_value", "expert_integral")
+    filter_fields = ("state", "creater", "expert_id", "expert_city", "ecode")
+    search_fields = ("expert_name", "expert_id", "expert_mobile", "ecode")
 
 
 # 领域专家申请视图
@@ -101,6 +117,22 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+# 技术经纪人管理
+class BrokerViewSet(viewsets.ModelViewSet):
+    queryset = BrokerBaseinfo.objects.all().order_by('state', '-serial')
+    serializer_class = BrokerBaseInfoSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time", "broker_level", "credit_value", "broker_integral", "work_type")
+    filter_fields = ("state", "creater", "broker_id", "broker_city", "ecode", "work_type")
+    search_fields = ("broker_name", "broker_id", "broker_mobile", "ecode", "work_type", "broker_abbr")
+
+
 # 技术经纪人申请视图
 class BrokerApplyViewSet(viewsets.ModelViewSet):
     queryset = BrokerApplyHistory.objects.all().order_by('state')
@@ -159,7 +191,7 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                         update_baseinfo(BrokerBaseinfo, {'broker_code': data['broker_code']}, {'state': 1, 'pcode': pcode})
 
                         # 给账号绑定角色
-                        IdentityAuthorizationInfo.objects.create(account_code=data['account_code'],
+                        IdentityAuthorizationInfo.objects.create(account_code=baseinfo['account_code'],
                                                                  identity_code=IdentityInfo.objects.get(identity_name='broker').identity_code,
                                                                  iab_time=datetime.datetime.now(),
                                                                  creater=request.user.account)
@@ -186,6 +218,22 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
             return JsonResponse({"detail":"审核失败：%s" % str(e)})
 
         return Response(serializer.data)
+
+
+# 采集员管理
+class CollectorViewSet(viewsets.ModelViewSet):
+    queryset = CollectorBaseinfo.objects.all().order_by('state', '-serial')
+    serializer_class = CollectorBaseInfoSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time",)
+    filter_fields = ("state", "creater", "collector_id", "collector_city",)
+    search_fields = ("collector_name", "collector_id", "collector_mobile",)
 
 
 # 采集员申请视图
@@ -246,7 +294,7 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
                         update_baseinfo(CollectorBaseinfo, {'collector_code': data['collector_code']}, {'state': 1, 'pcode': pcode})
 
                         # 给账号绑定角色
-                        IdentityAuthorizationInfo.objects.create(account_code=data['account_code'],
+                        IdentityAuthorizationInfo.objects.create(account_code=baseinfo['account_code'],
                                                                  identity_code=IdentityInfo.objects.get(identity_name='collector').identity_code,
                                                                  iab_time=datetime.datetime.now(),
                                                                  creater=request.user.account)
@@ -275,15 +323,457 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+# 成果持有人管理视图
+class ResultsOwnerViewSet(viewsets.ModelViewSet):
+    queryset = ResultOwnerpBaseinfo.objects.filter(type=1).order_by('state', '-serial')
+    serializer_class = ResultOwnerpSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time",)
+    filter_fields = ("state", "creater", "owner_id", "owner_city",)
+    search_fields = ("owner_name", "owner_id", "owner_mobile")
+
+
+# 成果持有人申请视图
+class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
+    queryset = OwnerApplyHistory.objects.filter(owner_code__in=[i.owner_code for i in ResultOwnerpBaseinfo.objects.filter(type=1)]).order_by('state')
+    serializer_class = OwnerApplySerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("state", "apply_type", "apply_time")
+    filter_fields = ("state", "owner_code", "account_code")
+    search_fields = ("account_code", "apply_code")
+
+    def update(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                data = request.data
+                partial = kwargs.pop('partial', False)
+
+                # 获取基本信息
+                baseinfo = data.pop('owner')
+                # 获取审核意见
+                opinion = data.pop('opinion')
+                # 申请类型
+                apply_type = data['apply_type']
+                # 审核状态
+                apply_state = data['state']
+
+                # 更新申请表
+                instance = self.get_object()
+                serializer = self.get_serializer(instance, data=data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+                # 当申请类型是新增和修改时
+                if apply_type in [1, 2]:
+                    # 审核通过时
+                    if apply_state == 2:
+                        # 更新或创建个人基本信息表和更新角色基本信息表
+                        pinfo = {
+                            'pname': baseinfo['owner_name'],
+                            'pid_type': baseinfo['owner_idtype'],
+                            'pid': baseinfo['owner_id'],
+                            'pmobile': baseinfo['owner_mobile'],
+                            'ptel': baseinfo['owner_tel'],
+                            'pemail': baseinfo['owner_email'],
+                            'peducation': baseinfo['education'],
+                            'pabstract': baseinfo['owner_abstract'],
+                            'state': 2,
+                            'creater': request.user.account,
+                            'account_code': baseinfo['account_code']
+                        }
+                        pcode = update_or_crete_person(baseinfo['pcode'], pinfo)
+
+                        # 更新角色基本信息表
+                        update_baseinfo(ResultOwnerpBaseinfo, {'owner_code': data['owner_code']}, {'state': 1, 'pcode': pcode})
+
+                        # 给账号绑定角色
+                        if baseinfo['account_code']:
+                            IdentityAuthorizationInfo.objects.create(account_code=baseinfo['account_code'],
+                                                                     identity_code=IdentityInfo.objects.get(identity_name='result_personal_owner').identity_code,
+                                                                     iab_time=datetime.datetime.now(),
+                                                                     creater=request.user.account)
+                        # 移动相关附件
+                        mv_file([baseinfo['head'], baseinfo['idfornt'], baseinfo['idback'], baseinfo['idphoto']])
+
+                    # 发送信息
+                    send_msg(baseinfo['owner_mobile'], '成果持有人', apply_state, baseinfo['account_code'], request.user.account)
+                # 当申请状态为删除时
+                elif apply_type in [3]:
+                    pass
+
+                # 增加历史记录表信息
+                OwnerpCheckHistory.objects.create(opinion=opinion,
+                                              apply_code=instance.apply_code,
+                                              result=data['state'],
+                                              account=request.user.account)
+
+                if getattr(instance, '_prefetched_objects_cache', None):
+                    # If 'prefetch_related' has been applied to a queryset, we need to
+                    # forcibly invalidate the prefetch cache on the instance.
+                    instance._prefetched_objects_cache = {}
+        except Exception as e:
+            return JsonResponse({"detail":"审核失败：%s" % str(e)})
+
+        return Response(serializer.data)
+
+
+# 成果持有人（企业）管理视图
+class ResultsOwnereViewSet(viewsets.ModelViewSet):
+    queryset = ResultOwnereBaseinfo.objects.filter(type=1).order_by('state', '-serial')
+    serializer_class = ResultOwnereSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time",)
+    filter_fields = ("state", "creater", "owner_id", "owner_city", "owner_license", "legal_person")
+    search_fields = ("owner_name", "owner_id", "owner_mobile", "owner_license", "legal_person")
+
+
+# 成果持有人（企业）申请视图
+class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
+    queryset = OwnereApplyHistory.objects.filter(owner_code__in=[i.owner_code for i in ResultOwnereBaseinfo.objects.filter(type=1)]).order_by('state')
+    serializer_class = OwnereApplySerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("state", "apply_type", "apply_time")
+    filter_fields = ("state", "owner_code")
+    search_fields = ("apply_code",)
+
+    def update(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                data = request.data
+                partial = kwargs.pop('partial', False)
+
+                # 获取基本信息
+                baseinfo = data.pop('owner')
+                # 获取审核意见
+                opinion = data.pop('opinion')
+                # 申请类型
+                apply_type = data['apply_type']
+                # 审核状态
+                apply_state = data['state']
+
+                # 更新申请表
+                instance = self.get_object()
+                serializer = self.get_serializer(instance, data=data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+                # 当申请类型是新增和修改时
+                if apply_type in [1, 2]:
+                    # 审核通过时
+                    if apply_state == 2:
+                        # 更新或创建个人基本信息表和更新角色基本信息表
+                        einfo = {
+                            'ename': baseinfo['owner_name'],                              # 企业名称
+                            'eabbr': baseinfo['owner_name_abbr'],                  # 简称
+                            'business_license': baseinfo['owner_license'],           # 企业营业执照统一社会信用码
+                            'eabstract': baseinfo['owner_abstract'],              # 简介
+                            'eabstract_detail': baseinfo['owner_abstract_detail'],
+                            'homepage': baseinfo['homepage'],                    # 企业主页url
+                            'etel': baseinfo['owner_tel'],                        # 企业电话
+                            'manager': baseinfo['legal_person'],                       # 企业联系人
+                            'emobile': baseinfo['owner_mobile'],                                # 企业手机
+                            'eemail': baseinfo['owner_email'],                                       # 企业邮箱
+                            # 'addr':baseinfo[''],
+                            # 'zipcode': baseinfo,
+                            'state': 2,
+                            'manager_id': baseinfo['owner_id'],
+                            'manager_idtype': baseinfo['owner_idtype'],
+                            'creater': request.user.account,
+                            'account_code': baseinfo['account_code']
+                        }
+                        ecode = update_or_crete_enterprise(baseinfo['ecode'], einfo)
+
+                        # 更新角色基本信息表
+                        update_baseinfo(ResultOwnereBaseinfo, {'owner_code': data['owner_code']}, {'state': 1, 'ecode': ecode})
+
+                        # 给账号绑定角色
+                        if baseinfo['account_code']:
+                            IdentityAuthorizationInfo.objects.create(account_code=baseinfo['account_code'],
+                                                                     identity_code=IdentityInfo.objects.get(identity_name='result_enterprise_owner').identity_code,
+                                                                     iab_time=datetime.datetime.now(),
+                                                                     creater=request.user.account)
+                        # 移动相关附件
+                        mv_file([baseinfo['idfornt'], baseinfo['idback'], baseinfo['idphoto'],
+                                 baseinfo['license'], baseinfo['logo'], baseinfo['promotional'],])
+
+                    # 发送信息
+                    t1 = threading.Thread(target=send_msg, args=(baseinfo['owner_mobile'], '成果持有企业', apply_state, baseinfo['account_code'], request.user.account))
+                    t1.start()
+                # 当申请状态为删除时
+                elif apply_type in [3]:
+                    pass
+
+                # 增加历史记录表信息
+                OwnereCheckHistory.objects.create(opinion=opinion,
+                                              apply_code=instance.apply_code,
+                                              result=data['state'],
+                                              account=request.user.account)
+
+                if getattr(instance, '_prefetched_objects_cache', None):
+                    # If 'prefetch_related' has been applied to a queryset, we need to
+                    # forcibly invalidate the prefetch cache on the instance.
+                    instance._prefetched_objects_cache = {}
+        except Exception as e:
+            return JsonResponse({"detail":"审核失败：%s" % str(e)})
+
+        return Response(serializer.data)
+
+
+# 需求持有人管理视图
+class RequirementOwnerViewSet(viewsets.ModelViewSet):
+    queryset = ResultOwnerpBaseinfo.objects.filter(type=2).order_by('state', '-serial')
+    serializer_class = ResultOwnerpSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time",)
+    filter_fields = ("state", "creater", "owner_id", "owner_city",)
+    search_fields = ("owner_name", "owner_id", "owner_mobile")
+
+
+# 需求持有人申请视图
+class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
+    queryset = OwnerApplyHistory.objects.filter(owner_code__in=[i.owner_code for i in ResultOwnerpBaseinfo.objects.filter(type=2)]).order_by('state')
+    serializer_class = OwnerApplySerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("state", "apply_type", "apply_time")
+    filter_fields = ("state", "owner_code", "account_code")
+    search_fields = ("account_code", "apply_code")
+
+    def update(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                data = request.data
+                partial = kwargs.pop('partial', False)
+
+                # 获取基本信息
+                baseinfo = data.pop('owner')
+                # 获取审核意见
+                opinion = data.pop('opinion')
+                # 申请类型
+                apply_type = data['apply_type']
+                # 审核状态
+                apply_state = data['state']
+
+                # 更新申请表
+                instance = self.get_object()
+                serializer = self.get_serializer(instance, data=data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+                # 当申请类型是新增和修改时
+                if apply_type in [1, 2]:
+                    # 审核通过时
+                    if apply_state == 2:
+                        # 更新或创建个人基本信息表和更新角色基本信息表
+                        pinfo = {
+                            'pname': baseinfo['owner_name'],
+                            'pid_type': baseinfo['owner_idtype'],
+                            'pid': baseinfo['owner_id'],
+                            'pmobile': baseinfo['owner_mobile'],
+                            'ptel': baseinfo['owner_tel'],
+                            'pemail': baseinfo['owner_email'],
+                            'peducation': baseinfo['education'],
+                            'pabstract': baseinfo['owner_abstract'],
+                            'state': 2,
+                            'creater': request.user.account,
+                            'account_code': baseinfo['account_code']
+                        }
+                        pcode = update_or_crete_person(baseinfo['pcode'], pinfo)
+
+                        # 更新角色基本信息表
+                        update_baseinfo(ResultOwnerpBaseinfo, {'owner_code': data['owner_code']}, {'state': 1, 'pcode': pcode})
+
+                        # 给账号绑定角色
+                        if baseinfo['account_code']:
+                            IdentityAuthorizationInfo.objects.create(account_code=baseinfo['account_code'],
+                                                                     identity_code=IdentityInfo.objects.get(identity_name='requirement_personal_owner').identity_code,
+                                                                     iab_time=datetime.datetime.now(),
+                                                                     creater=request.user.account)
+                        # 移动相关附件
+                        mv_file([baseinfo['head'], baseinfo['idfornt'], baseinfo['idback'], baseinfo['idphoto']])
+
+                    # 发送信息
+                    send_msg(baseinfo['owner_mobile'], '需求持有人', apply_state, baseinfo['account_code'], request.user.account)
+                # 当申请状态为删除时
+                elif apply_type in [3]:
+                    pass
+
+                # 增加历史记录表信息
+                OwnerpCheckHistory.objects.create(opinion=opinion,
+                                              apply_code=instance.apply_code,
+                                              result=data['state'],
+                                              account=request.user.account)
+
+                if getattr(instance, '_prefetched_objects_cache', None):
+                    # If 'prefetch_related' has been applied to a queryset, we need to
+                    # forcibly invalidate the prefetch cache on the instance.
+                    instance._prefetched_objects_cache = {}
+        except Exception as e:
+            return JsonResponse({"detail":"审核失败：%s" % str(e)})
+
+        return Response(serializer.data)
+
+
+# 需求持有人(企业)管理视图
+class RequirementOwnereViewSet(viewsets.ModelViewSet):
+    queryset = ResultOwnereBaseinfo.objects.filter(type=2).order_by('state', '-serial')
+    serializer_class = ResultOwnereSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time",)
+    filter_fields = ("state", "creater", "owner_id", "owner_city", "owner_license", "legal_person")
+    search_fields = ("owner_name", "owner_id", "owner_mobile", "owner_license", "legal_person")
+
+
+# 需求持有企业申请视图
+class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
+    queryset = OwnereApplyHistory.objects.filter(owner_code__in=[i.owner_code for i in ResultOwnereBaseinfo.objects.filter(type=2)]).order_by('state')
+    serializer_class = OwnereApplySerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("state", "apply_type", "apply_time")
+    filter_fields = ("state", "owner_code")
+    search_fields = ("apply_code",)
+
+    def update(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                data = request.data
+                partial = kwargs.pop('partial', False)
+
+                # 获取基本信息
+                baseinfo = data.pop('owner')
+                # 获取审核意见
+                opinion = data.pop('opinion')
+                # 申请类型
+                apply_type = data['apply_type']
+                # 审核状态
+                apply_state = data['state']
+
+                # 更新申请表
+                instance = self.get_object()
+                serializer = self.get_serializer(instance, data=data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+                # 当申请类型是新增和修改时
+                if apply_type in [1, 2]:
+                    # 审核通过时
+                    if apply_state == 2:
+                        # 更新或创建个人基本信息表和更新角色基本信息表
+                        einfo = {
+                            'ename': baseinfo['owner_name'],                              # 企业名称
+                            'eabbr': baseinfo['owner_name_abbr'],                  # 简称
+                            'business_license': baseinfo['owner_license'],           # 企业营业执照统一社会信用码
+                            'eabstract': baseinfo['owner_abstract'],              # 简介
+                            'eabstract_detail': baseinfo['owner_abstract_detail'],
+                            'homepage': baseinfo['homepage'],                    # 企业主页url
+                            'etel': baseinfo['owner_tel'],                        # 企业电话
+                            'manager': baseinfo['legal_person'],                       # 企业联系人
+                            'emobile': baseinfo['owner_mobile'],                                # 企业手机
+                            'eemail': baseinfo['owner_email'],                                       # 企业邮箱
+                            # 'addr':baseinfo[''],
+                            # 'zipcode': baseinfo,
+                            'state': 2,
+                            'manager_id': baseinfo['owner_id'],
+                            'manager_idtype': baseinfo['owner_idtype'],
+                            'creater': request.user.account,
+                            'account_code': baseinfo['account_code']
+                        }
+                        ecode = update_or_crete_enterprise(baseinfo['ecode'], einfo)
+
+                        # 更新角色基本信息表
+                        update_baseinfo(ResultOwnereBaseinfo, {'owner_code': data['owner_code']}, {'state': 1, 'ecode': ecode})
+
+                        # 给账号绑定角色
+                        if baseinfo['account_code']:
+                            IdentityAuthorizationInfo.objects.create(account_code=baseinfo['account_code'],
+                                                                     identity_code=IdentityInfo.objects.get(identity_name='requirement_enterprise_owner').identity_code,
+                                                                     iab_time=datetime.datetime.now(),
+                                                                     creater=request.user.account)
+                        # 移动相关附件
+                        mv_file([baseinfo['idfornt'], baseinfo['idback'], baseinfo['idphoto'],
+                                 baseinfo['license'], baseinfo['logo'], baseinfo['promotional'],])
+
+                    # 发送信息
+                    t1 = threading.Thread(target=send_msg, args=(baseinfo['owner_mobile'], '需求持有企业', apply_state, baseinfo['account_code'], request.user.account))
+                    t1.start()
+                # 当申请状态为删除时
+                elif apply_type in [3]:
+                    pass   # TODO：解除身份时的逻辑
+
+                # 增加历史记录表信息
+                OwnereCheckHistory.objects.create(opinion=opinion,
+                                              apply_code=instance.apply_code,
+                                              result=data['state'],
+                                              account=request.user.account)
+
+                if getattr(instance, '_prefetched_objects_cache', None):
+                    # If 'prefetch_related' has been applied to a queryset, we need to
+                    # forcibly invalidate the prefetch cache on the instance.
+                    instance._prefetched_objects_cache = {}
+        except Exception as e:
+            return JsonResponse({"detail":"审核失败：%s" % str(e)})
+
+        return Response(serializer.data)
+
+
 # 技术团队视图
 class TeamBaseinfoViewSet(viewsets.ModelViewSet):
-    queryset = ProjectTeamBaseinfo.objects.all().order_by('-serial')
+    queryset = ProjectTeamBaseinfo.objects.all().order_by('state', '-serial')
     serializer_class = TeamBaseinfoSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time", "pt_level", "credit_value","pt_integral")
+    filter_fields = ("state", "creater", "pt_people_id", "pt_city",)
+    search_fields = ("pt_name", "pt_people_id", "pt_people_tel", "pt_abbreviation")
 
 
 # 技术团队申请视图
 class TeamApplyViewSet(viewsets.ModelViewSet):
-    queryset = TeamApplyHistory.objects.all().order_by('-serial')
+    queryset = TeamApplyHistory.objects.all().order_by('state')
     serializer_class = TeamApplySerializers
 
     filter_backends = (

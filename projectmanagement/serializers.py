@@ -3,96 +3,81 @@ from rest_framework import serializers
 from achievement.serializers import RrApplyHistorySerializer
 
 
-class ProjectApplyHistorySerializer(serializers.ModelSerializer):
-    apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    project_name = serializers.CharField(read_only=True);
-    project_from = serializers.CharField(read_only=True);
+class ProjectCheckInfoSerializer(serializers.ModelSerializer):
+    ctime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+
     class Meta:
-        model = ProjectApplyHistory
+        model = ProjectCheckInfo
         fields = [
-            'serial',
-            'apply_code',
+            'p_serial',
             'project_code',
-            'account_code',
-            'state',
-            'apply_time',
-            'apply_type',
-            'project_name',
-            'project_from'
+            'step_code',
+            'substep_code',
+            'substep_serial',
+            'cstate',
+            'cmsg',
+            'checker',
+            'ctime'
         ]
+
 
 # 项目表序列化
 class ProjectInfoSerializer(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     from_code_info = RrApplyHistorySerializer(many=True)
-    apply = ProjectApplyHistorySerializer(read_only=True)
+    checkinfo = ProjectCheckInfoSerializer(read_only=True)
+
     class Meta:
         model = ProjectInfo
         fields = [
             'pserial',
             'project_code',
             'project_name',
-            'project_start_time',
             'project_from',
             'from_code',
+            'project_state',
+            'project_sub_state',
+            'start_time',
             'last_time',
             'project_desc',
-            'state',
-            'check_state',
             'creater',
             'insert_time',
             'from_code_info',
-            'apply',
+            'checkinfo',
         ]
 
 
-
-
-class ProjectCheckHistorySerializer(serializers.ModelSerializer):
-    check_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-
+# 项目步骤信息表
+class ProjectStepInfoSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ProjectCheckHistory
-        fields = [
-            'serial',
-            'apply_code',
-            'opinion',
-            'result',
-            'check_time',
-            'account'
-        ]
+        model = ProjectStepInfo
+        fields = '__all__'
 
 
-class ProjectBrokerInfoSerializer(serializers.ModelSerializer):
+# 项目子步骤信息表
+class ProjectSubstepInfoSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ProjectBrokerInfo
-        fields = [
-            'p_serial',
-            'project_code',
-            'broker_code',
-            'broker_work',
-            'broker_tag',
-            'contract',
-            'creater',
-            'insert_time'
-        ]
+        model = ProjectSubstepInfo
+        fields = '__all__'
 
 
-class ProjectExpertInfoSerializer(serializers.ModelSerializer):
+# 项目子步骤流水信息表
+class ProjectSubstepSerialInfoSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ProjectExpertInfo
-        fields = [
-            'pserial',
-            'project_code',
-            'expert_code',
-            'ex_work',
-            'contract',
-            'creater',
-            'insert_time'
-        ]
+        model = ProjectSubstepSerialInfo
+        fields = '__all__'
 
 
+# 项目子步骤流水详情信息表
+class ProjectSubstepDetailInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectSubstepDetailInfo
+        fields = '__all__'
+
+
+# 项目需求/成果信息表
 class ProjectRrInfoSerializer(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     class Meta:
         model = ProjectRrInfo
         fields = [
@@ -107,7 +92,42 @@ class ProjectRrInfoSerializer(serializers.ModelSerializer):
         ]
 
 
+# 项目经纪人信息表
+class ProjectBrokerInfoSerializer(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    class Meta:
+        model = ProjectBrokerInfo
+        fields = [
+            'p_serial',
+            'project_code',
+            'broker_code',
+            'broker_work',
+            'broker_tag',
+            'contract',
+            'creater',
+            'insert_time'
+        ]
+
+
+# 目领域专家信息表
+class ProjectExpertInfoSerializer(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    class Meta:
+        model = ProjectExpertInfo
+        fields = [
+            'pserial',
+            'project_code',
+            'expert_code',
+            'ex_work',
+            'contract',
+            'creater',
+            'insert_time'
+        ]
+
+
+# 项目团队信息表
 class ProjectTeamInfoSerializer(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     class Meta:
         model = ProjectTeamInfo
         fields = [
