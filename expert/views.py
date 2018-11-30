@@ -757,7 +757,7 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
 
 # 技术团队视图
 class TeamBaseinfoViewSet(viewsets.ModelViewSet):
-    queryset = ProjectTeamBaseinfo.objects.all().order_by('-serial')
+    queryset = ProjectTeamBaseinfo.objects.all().order_by('state', '-serial')
     serializer_class = TeamBaseinfoSerializers
 
     filter_backends = (
@@ -771,10 +771,9 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
     search_fields = ("pt_name", "pt_people_id", "pt_people_tel", "pt_abbreviation")
 
 
-
 # 技术团队申请视图
 class TeamApplyViewSet(viewsets.ModelViewSet):
-    queryset = TeamApplyHistory.objects.all().order_by('-serial')
+    queryset = TeamApplyHistory.objects.all().order_by('state')
     serializer_class = TeamApplySerializers
 
     filter_backends = (
