@@ -100,3 +100,11 @@ def mv_file(file_list):
             os.makedirs(new_dir)
         shutil.move(file, new_dir)
     return True
+
+
+# 获取领域
+def get_major(user_type, user_code):
+    mcode = [i['mcode'] for i in
+             MajorUserinfo.objects.values('mcode').filter(mtype=2, user_type=user_type, user_code=user_code)]
+    mname = [i['mname'] for i in MajorInfo.objects.values('mname').filter(mcode__in=mcode, state=1)]
+    return mname

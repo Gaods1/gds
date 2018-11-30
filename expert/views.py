@@ -16,7 +16,18 @@ import datetime, os, threading
 
 # 领域专家管理
 class ExpertViewSet(viewsets.ModelViewSet):
-    pass
+    queryset = ExpertBaseinfo.objects.all().order_by('state', '-serial')
+    serializer_class = ExpertBaseInfoSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time", "expert_level", "credit_value", "expert_integral")
+    filter_fields = ("state", "creater", "expert_id", "expert_city", "ecode")
+    search_fields = ("expert_name", "expert_id", "expert_mobile", "ecode")
 
 
 # 领域专家申请视图
@@ -108,7 +119,18 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
 
 # 技术经纪人管理
 class BrokerViewSet(viewsets.ModelViewSet):
-    pass
+    queryset = BrokerBaseinfo.objects.all().order_by('state', '-serial')
+    serializer_class = BrokerBaseInfoSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time", "broker_level", "credit_value", "broker_integral", "work_type")
+    filter_fields = ("state", "creater", "broker_id", "broker_city", "ecode", "work_type")
+    search_fields = ("broker_name", "broker_id", "broker_mobile", "ecode", "work_type", "broker_abbr")
 
 
 # 技术经纪人申请视图
@@ -200,7 +222,18 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
 
 # 采集员管理
 class CollectorViewSet(viewsets.ModelViewSet):
-    pass
+    queryset = CollectorBaseinfo.objects.all().order_by('state', '-serial')
+    serializer_class = CollectorBaseInfoSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time",)
+    filter_fields = ("state", "creater", "collector_id", "collector_city",)
+    search_fields = ("collector_name", "collector_id", "collector_mobile",)
 
 
 # 采集员申请视图
@@ -292,7 +325,18 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
 
 # 成果持有人管理视图
 class ResultsOwnerViewSet(viewsets.ModelViewSet):
-    pass
+    queryset = ResultOwnerpBaseinfo.objects.filter(type=1).order_by('state', '-serial')
+    serializer_class = ResultOwnerpSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time",)
+    filter_fields = ("state", "creater", "owner_id", "owner_city",)
+    search_fields = ("owner_name", "owner_id", "owner_mobile")
 
 
 # 成果持有人申请视图
@@ -385,7 +429,18 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
 
 # 成果持有人（企业）管理视图
 class ResultsOwnereViewSet(viewsets.ModelViewSet):
-    pass
+    queryset = ResultOwnereBaseinfo.objects.filter(type=1).order_by('state', '-serial')
+    serializer_class = ResultOwnereSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time",)
+    filter_fields = ("state", "creater", "owner_id", "owner_city", "owner_license", "legal_person")
+    search_fields = ("owner_name", "owner_id", "owner_mobile", "owner_license", "legal_person")
 
 
 # 成果持有人（企业）申请视图
@@ -486,7 +541,18 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
 
 # 需求持有人管理视图
 class RequirementOwnerViewSet(viewsets.ModelViewSet):
-    pass
+    queryset = ResultOwnerpBaseinfo.objects.filter(type=2).order_by('state', '-serial')
+    serializer_class = ResultOwnerpSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time",)
+    filter_fields = ("state", "creater", "owner_id", "owner_city",)
+    search_fields = ("owner_name", "owner_id", "owner_mobile")
 
 
 # 需求持有人申请视图
@@ -579,7 +645,18 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
 
 # 需求持有人(企业)管理视图
 class RequirementOwnereViewSet(viewsets.ModelViewSet):
-    pass
+    queryset = ResultOwnereBaseinfo.objects.filter(type=2).order_by('state', '-serial')
+    serializer_class = ResultOwnereSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time",)
+    filter_fields = ("state", "creater", "owner_id", "owner_city", "owner_license", "legal_person")
+    search_fields = ("owner_name", "owner_id", "owner_mobile", "owner_license", "legal_person")
 
 
 # 需求持有企业申请视图
@@ -682,6 +759,17 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
 class TeamBaseinfoViewSet(viewsets.ModelViewSet):
     queryset = ProjectTeamBaseinfo.objects.all().order_by('-serial')
     serializer_class = TeamBaseinfoSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time", "pt_level", "credit_value","pt_integral")
+    filter_fields = ("state", "creater", "pt_people_id", "pt_city",)
+    search_fields = ("pt_name", "pt_people_id", "pt_people_tel", "pt_abbreviation")
+
 
 
 # 技术团队申请视图
