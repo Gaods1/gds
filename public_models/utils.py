@@ -125,7 +125,7 @@ def fujian_move(canshu,tname_fujian,ecode):
     # serializer.data['fujian'] = dict
 
 
-def dange_move(canshu,tname_dange,ecode):
+def dange_move(tname_dange,ecode):
     juedui = ParamInfo.objects.get(param_code=1).param_value
     juedui_qian = ParamInfo.objects.get(param_code=3).param_value
     xiangdui = ParamInfo.objects.get(param_code=2).param_value

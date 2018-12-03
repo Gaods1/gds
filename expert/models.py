@@ -119,19 +119,19 @@ class ExpertBaseinfo(models.Model):
 
     @property
     def head(self):
-        return dange_show('Expert', 'expertHead', self.expert_code)
+        return dange_show('expertHead', self.expert_code)
 
     @property
     def idfornt(self):
-        return dange_show('Expert', 'expertIdFront', self.expert_code)
+        return dange_show('expertIdFront', self.expert_code)
 
     @property
     def idback(self):
-        return dange_show('Expert', 'expertIdBack', self.expert_code)
+        return dange_show('expertIdBack', self.expert_code)
 
     @property
     def idphoto(self):
-        return dange_show('Expert', 'expertHandIDPhoto', self.expert_code)
+        return dange_show('expertHandIDPhoto', self.expert_code)
 
     class Meta:
         managed = True
@@ -230,19 +230,19 @@ class BrokerBaseinfo(models.Model):
 
     @property
     def head(self):
-        return dange_show('Broker', 'brokerHead', self.broker_code)
+        return dange_show('brokerHead', self.broker_code)
 
     @property
     def idfornt(self):
-        return dange_show('Broker', 'brokerIdFront', self.broker_code)
+        return dange_show('brokerIdFront', self.broker_code)
 
     @property
     def idback(self):
-        return dange_show('Broker', 'brokerIdBack', self.broker_code)
+        return dange_show('brokerIdBack', self.broker_code)
 
     @property
     def idphoto(self):
-        return dange_show('Broker', 'brokerHandIdPhoto', self.broker_code)
+        return dange_show('brokerHandIdPhoto', self.broker_code)
 
     class Meta:
         managed = False
@@ -326,20 +326,20 @@ class CollectorBaseinfo(models.Model):
 
     @property
     def head(self):
-        return dange_show('Collector', 'collectorHead', self.collector_code)
+        return dange_show('collectorHead', self.collector_code)
 
     @property
     def idfornt(self):
-        return dange_show('Collector', 'collectorIdFront', self.collector_code)
+        return dange_show('collectorIdFront', self.collector_code)
 
 
     @property
     def idback(self):
-        return dange_show('Collector', 'collectorIdBack', self.collector_code)
+        return dange_show('collectorIdBack', self.collector_code)
 
     @property
     def idphoto(self):
-        return dange_show('Collector', 'collectorHandIdPhoto', self.collector_code)
+        return dange_show('collectorHandIdPhoto', self.collector_code)
 
     class Meta:
         managed = False
@@ -438,7 +438,7 @@ class ResultOwnerpBaseinfo(models.Model):
         else:
             file = 'RequirementOwnerPer'
             value = 'requirementOwnerPerHead'
-        return dange_show(file, value, self.owner_code)
+        return dange_show(value, self.owner_code)
 
     @property
     def idfornt(self):
@@ -448,7 +448,7 @@ class ResultOwnerpBaseinfo(models.Model):
         else:
             file = 'RequirementOwnerPer'
             value = 'requirementOwnerPerIdFront'
-        return dange_show(file, value, self.owner_code)
+        return dange_show(value, self.owner_code)
 
     @property
     def idback(self):
@@ -458,7 +458,7 @@ class ResultOwnerpBaseinfo(models.Model):
         else:
             file = 'RequirementOwnerPer'
             value = 'requirementOwnerPerIdBack'
-        return dange_show(file, value, self.owner_code)
+        return dange_show(value, self.owner_code)
 
     @property
     def idphoto(self):
@@ -468,7 +468,7 @@ class ResultOwnerpBaseinfo(models.Model):
         else:
             file = 'RequirementOwnerPer'
             value = 'requirementOwnerPerHandIdPhoto'
-        return dange_show(file, value, self.owner_code)
+        return dange_show(value, self.owner_code)
 
     class Meta:
         managed = False
@@ -576,7 +576,7 @@ class ResultOwnereBaseinfo(models.Model):
         else:
             file = 'RequirementOwnerEnt'
             value = 'requirementOwnerEntLegalIdFront'
-        return dange_show(file, value, self.owner_code)
+        return dange_show(value, self.owner_code)
 
     @property
     def idback(self):
@@ -586,7 +586,7 @@ class ResultOwnereBaseinfo(models.Model):
         else:
             file = 'RequirementOwnerEnt'
             value = 'requirementOwnerEntLegalIdBack'
-        return dange_show(file, value, self.owner_code)
+        return dange_show(value, self.owner_code)
 
     @property
     def idphoto(self):
@@ -596,7 +596,7 @@ class ResultOwnereBaseinfo(models.Model):
         else:
             file = 'RequirementOwnerEnt'
             value = 'requirementOwnerEntLegalHandIdPhoto'
-        return dange_show(file, value, self.owner_code)
+        return dange_show(value, self.owner_code)
 
     @property
     def license(self):
@@ -606,7 +606,7 @@ class ResultOwnereBaseinfo(models.Model):
         else:
             file = 'RequirementOwnerEnt'
             value = 'requirementOwnerEntLicense'
-        return dange_show(file, value, self.owner_code)
+        return dange_show(value, self.owner_code)
 
     @property
     def logo(self):
@@ -616,7 +616,7 @@ class ResultOwnereBaseinfo(models.Model):
         else:
             file = 'RequirementOwnerEnt'
             value = 'requirementOwnerEntLogo'
-        return dange_show(file, value, self.owner_code)
+        return dange_show(value, self.owner_code)
 
     @property
     def promotional(self):
@@ -626,7 +626,7 @@ class ResultOwnereBaseinfo(models.Model):
         else:
             file = 'RequirementOwnerEnt'
             value = 'requirementOwnerEntProgandaPhoto'
-        return dange_show(file, value, self.owner_code)
+        return dange_show(value, self.owner_code)
 
     class Meta:
         managed = False

@@ -3,7 +3,6 @@ main_menu = {
         'icon': "el-icon-lx-home",
         'index': "dashboard",
         'title': "系统首页",
-        'subs': []
     },
     '系统管理': {
         'icon': "el-icon-setting",

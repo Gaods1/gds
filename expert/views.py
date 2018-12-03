@@ -90,10 +90,10 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
                                                                  iab_time=datetime.datetime.now(),
                                                                  creater=request.user.account)
                         # 移动相关附件
-                        dange_move('Expert', 'expertHead', expert['expert_code'])
-                        dange_move('Expert', 'expertIdFront', expert['expert_code'])
-                        dange_move('Expert', 'expertIdBack', expert['expert_code'])
-                        dange_move('Expert', 'expertHandIDPhoto', expert['expert_code'])
+                        dange_move('expertHead', expert['expert_code'])
+                        dange_move('expertIdFront', expert['expert_code'])
+                        dange_move('expertIdBack', expert['expert_code'])
+                        dange_move('expertHandIDPhoto', expert['expert_code'])
 
                     # 发送信息
                     send_msg(expert['expert_mobile'], '领域专家', apply_state, expert['account_code'], request.user.account)
@@ -196,10 +196,10 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                                                                  iab_time=datetime.datetime.now(),
                                                                  creater=request.user.account)
                         # 移动相关附件
-                        dange_move('Broker', 'brokerHead', baseinfo['broker_code'])
-                        dange_move('Broker', 'brokerIdFront', baseinfo['broker_code'])
-                        dange_move('Broker', 'brokerIdBack', baseinfo['broker_code'])
-                        dange_move('Broker', 'brokerHandIdPhoto', baseinfo['broker_code'])
+                        dange_move('brokerHead', baseinfo['broker_code'])
+                        dange_move('brokerIdFront', baseinfo['broker_code'])
+                        dange_move('brokerIdBack', baseinfo['broker_code'])
+                        dange_move('brokerHandIdPhoto', baseinfo['broker_code'])
 
                     # 发送信息
                     send_msg(baseinfo['broker_mobile'], '技术经纪人', apply_state, baseinfo['account_code'], request.user.account)
@@ -302,10 +302,10 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
                                                                  iab_time=datetime.datetime.now(),
                                                                  creater=request.user.account)
                         # 移动相关附件
-                        dange_move('Collector', 'collectorHead', baseinfo['collector_code'])
-                        dange_move('Collector', 'collectorIdFront', baseinfo['collector_code'])
-                        dange_move('Collector', 'collectorIdBack', baseinfo['collector_code'])
-                        dange_move('Collector', 'collectorIdPhoto', baseinfo['collector_code'])
+                        dange_move('collectorHead', baseinfo['collector_code'])
+                        dange_move('collectorIdFront', baseinfo['collector_code'])
+                        dange_move('collectorIdBack', baseinfo['collector_code'])
+                        dange_move('collectorIdPhoto', baseinfo['collector_code'])
 
                     # 发送信息
                     send_msg(baseinfo['collector_mobile'], '采集员', apply_state, baseinfo['account_code'], request.user.account)
@@ -409,10 +409,10 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
                                                                      iab_time=datetime.datetime.now(),
                                                                      creater=request.user.account)
                         # 移动相关附件
-                        dange_move('ResultOwnerPer', 'resultOwnerPerHead', baseinfo['owner_code'])
-                        dange_move('ResultOwnerPer', 'resultOwnerPerIdFront', baseinfo['owner_code'])
-                        dange_move('ResultOwnerPer', 'resultOwnerPerIdBack', baseinfo['owner_code'])
-                        dange_move('ResultOwnerPer', 'resultOwnerPerHandIdPhoto', baseinfo['owner_code'])
+                        dange_move('resultOwnerPerHead', baseinfo['owner_code'])
+                        dange_move('resultOwnerPerIdFront', baseinfo['owner_code'])
+                        dange_move('resultOwnerPerIdBack', baseinfo['owner_code'])
+                        dange_move('resultOwnerPerHandIdPhoto', baseinfo['owner_code'])
 
                     # 发送信息
                     send_msg(baseinfo['owner_mobile'], '成果持有人', apply_state, baseinfo['account_code'], request.user.account)
@@ -522,12 +522,12 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
                                                                      iab_time=datetime.datetime.now(),
                                                                      creater=request.user.account)
                         # 移动相关附件
-                        dange_move('ResultOwnerEnt', 'resultOwnerEntLegalIdFront', baseinfo['owner_code'])
-                        dange_move('ResultOwnerEnt', 'resultOwnerEntLegalIdBack', baseinfo['owner_code'])
-                        dange_move('ResultOwnerEnt', 'resultOwnerEntLegalHandIdPhoto', baseinfo['owner_code'])
-                        dange_move('ResultOwnerEnt', 'resultOwnerEntLicense', baseinfo['owner_code'])
-                        dange_move('ResultOwnerEnt', 'resultOwnerEntLogo', baseinfo['owner_code'])
-                        dange_move('ResultOwnerEnt', 'resultOwnerEntProgandaPhoto', baseinfo['owner_code'])
+                        dange_move('resultOwnerEntLegalIdFront', baseinfo['owner_code'])
+                        dange_move('resultOwnerEntLegalIdBack', baseinfo['owner_code'])
+                        dange_move('resultOwnerEntLegalHandIdPhoto', baseinfo['owner_code'])
+                        dange_move('resultOwnerEntLicense', baseinfo['owner_code'])
+                        dange_move('resultOwnerEntLogo', baseinfo['owner_code'])
+                        dange_move('resultOwnerEntProgandaPhoto', baseinfo['owner_code'])
 
                     # 发送信息
                     t1 = threading.Thread(target=send_msg, args=(baseinfo['owner_mobile'], '成果持有企业', apply_state, baseinfo['account_code'], request.user.account))
@@ -632,10 +632,10 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
                                                                      iab_time=datetime.datetime.now(),
                                                                      creater=request.user.account)
                         # 移动相关附件
-                        dange_move('RequirementOwnerPer', 'requirementOwnerPerHead', baseinfo['owner_code'])
-                        dange_move('RequirementOwnerPer', 'requirementOwnerPerIdFront', baseinfo['owner_code'])
-                        dange_move('RequirementOwnerPer', 'requirementOwnerPerIdBack', baseinfo['owner_code'])
-                        dange_move('RequirementOwnerPer', 'requirementOwnerPerHandIdPhoto', baseinfo['owner_code'])
+                        dange_move('requirementOwnerPerHead', baseinfo['owner_code'])
+                        dange_move('requirementOwnerPerIdFront', baseinfo['owner_code'])
+                        dange_move('requirementOwnerPerIdBack', baseinfo['owner_code'])
+                        dange_move('requirementOwnerPerHandIdPhoto', baseinfo['owner_code'])
 
                     # 发送信息
                     send_msg(baseinfo['owner_mobile'], '需求持有人', apply_state, baseinfo['account_code'], request.user.account)
@@ -745,12 +745,12 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                                                                      iab_time=datetime.datetime.now(),
                                                                      creater=request.user.account)
                         # 移动相关附件
-                        dange_move('RequirementOwnerEnt', 'requirementOwnerEntLegalIdFront', baseinfo['owner_code'])
-                        dange_move('RequirementOwnerEnt', 'requirementOwnerEntLegalIdBack', baseinfo['owner_code'])
-                        dange_move('RequirementOwnerEnt', 'requirementOwnerEntLegalHandIdPhoto', baseinfo['owner_code'])
-                        dange_move('RequirementOwnerEnt', 'requirementOwnerEntLicense', baseinfo['owner_code'])
-                        dange_move('RequirementOwnerEnt', 'requirementOwnerEntLogo', baseinfo['owner_code'])
-                        dange_move('RequirementOwnerEnt', 'requirementOwnerEntProgandaPhoto', baseinfo['owner_code'])
+                        dange_move('requirementOwnerEntLegalIdFront', baseinfo['owner_code'])
+                        dange_move('requirementOwnerEntLegalIdBack', baseinfo['owner_code'])
+                        dange_move('requirementOwnerEntLegalHandIdPhoto', baseinfo['owner_code'])
+                        dange_move('requirementOwnerEntLicense', baseinfo['owner_code'])
+                        dange_move('requirementOwnerEntLogo', baseinfo['owner_code'])
+                        dange_move('requirementOwnerEntProgandaPhoto', baseinfo['owner_code'])
 
                     # 发送信息
                     t1 = threading.Thread(target=send_msg, args=(baseinfo['owner_mobile'], '需求持有企业', apply_state, baseinfo['account_code'], request.user.account))
