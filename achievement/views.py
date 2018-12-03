@@ -192,8 +192,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         # If 'prefetch_related' has been applied to a queryset, we need to
                         # forcibly invalidate the prefetch cache on the instance.
                         instance._prefetched_objects_cache = {}
-                    dict_fujian = fujian_move('Results', 'publishResultAttach', instance.rr_code)
-                    dict_dange = dange_move('Results', 'publishResultCover', instance.rr_code)
+
+
+                    dict_fujian = fujian_move('publishResultAttach', instance.rr_code)
+                    dict_dange = dange_move('publishResultCover', instance.rr_code)
                     dict_z={}
                     dict_z['fujian'] = dict_fujian
                     dict_z['dange'] = dict_dange
@@ -511,8 +513,10 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         # If 'prefetch_related' has been applied to a queryset, we need to
                         # forcibly invalidate the prefetch cache on the instance.
                         instance._prefetched_objects_cache = {}
-                    dict_fujian = fujian_move('Requirements', 'publishRequirementAttach', instance.rr_code)
-                    dict_dange = dange_move('Requirements', 'publishRequirementCover', instance.rr_code)
+
+
+                    dict_fujian = fujian_move('publishRequirementAttach', instance.rr_code)
+                    dict_dange = dange_move('publishRequirementCover', instance.rr_code)
                     dict_z = {}
                     dict_z['fujian'] = dict_fujian
                     dict_z['dange'] = dict_dange

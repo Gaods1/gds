@@ -7,7 +7,6 @@ from public_models.models import ParamInfo, AttachmentFileType, AttachmentFilein
 """
 1 调函数时相对应的参数说明：
     {
-        'canshu':'比如Results或者Requirements',
         'tname_fujian':'AttachmentFileType表中相对应的附件的tname字段',
         'tname_dange':'AttachmentFileType表中相对应的单个文件的tname字段',
         'ecode':'关联code,比如r_code,rr_code'
@@ -43,12 +42,12 @@ from public_models.models import ParamInfo, AttachmentFileType, AttachmentFilein
 
 
 # operation_state_list = [file.operation_state for file in files]
-def fujian_show(canshu,tname_fujian,ecode):
+def fujian_show(tname_fujian,ecode):
     juedui = ParamInfo.objects.get(param_code=1).param_value
     juedui_qian = ParamInfo.objects.get(param_code=3).param_value
     xiangdui = ParamInfo.objects.get(param_code=2).param_value
     xiangdui_qian = ParamInfo.objects.get(param_code=4).param_value
-    canshu = canshu
+    #canshu = canshu
     tcode_fujian = AttachmentFileType.objects.get(tname=tname_fujian).tcode
     ecode = ecode
     files = AttachmentFileinfo.objects.filter(tcode=tcode_fujian, ecode=ecode, operation_state=1, state=1)
@@ -56,7 +55,7 @@ def fujian_show(canshu,tname_fujian,ecode):
     if files:
 
         for file in files:
-            url = '{}{}/{}/{}/{}'.format(juedui, canshu, tcode_fujian, ecode, file.file_name)
+            url = '{}{}/{}/{}/{}'.format(juedui,file.path, tcode_fujian, ecode, file.file_name)
             if not os.path.exists(url):
                 continue
             if url.endswith('pdf') or url.endswith('jpg'):
@@ -66,19 +65,19 @@ def fujian_show(canshu,tname_fujian,ecode):
                 # list.append(operation_state)
                 dict[url] = operation_state
     return dict
-def dange_show(canshu,tname_dange,ecode):
+def dange_show(tname_dange,ecode):
     juedui = ParamInfo.objects.get(param_code=1).param_value
     juedui_qian = ParamInfo.objects.get(param_code=3).param_value
     xiangdui = ParamInfo.objects.get(param_code=2).param_value
     xiangdui_qian = ParamInfo.objects.get(param_code=4).param_value
-    canshu = canshu
+    #canshu = canshu
     tcode_dange = AttachmentFileType.objects.get(tname=tname_dange).tcode
     ecode = ecode
     files = AttachmentFileinfo.objects.filter(tcode=tcode_dange, ecode=ecode, operation_state=1, state=1)
     dict = {}
     if files:
         for file in files:
-            url = '{}{}/{}/{}/{}'.format(juedui, canshu, tcode_dange, ecode, file.file_name)
+            url = '{}{}/{}/{}/{}'.format(juedui, file.path, tcode_dange, ecode, file.file_name)
             if not os.path.exists(url):
                 continue
             if url.endswith('pdf') or url.endswith('jpg'):
@@ -91,7 +90,7 @@ def fujian_move(canshu,tname_fujian,ecode):
     juedui_qian = ParamInfo.objects.get(param_code=3).param_value
     xiangdui = ParamInfo.objects.get(param_code=2).param_value
     xiangdui_qian = ParamInfo.objects.get(param_code=4).param_value
-    canshu = canshu
+    #canshu = canshu
     tcode_fujian = AttachmentFileType.objects.get(tname=tname_fujian).tcode
     #tcode_dange = AttachmentFileType.objects.get(tname='publishResultCover').tcode
     ecode = ecode
@@ -103,7 +102,7 @@ def fujian_move(canshu,tname_fujian,ecode):
         # 找出伪删除的对象并从表中删除
         if file.operation_state == 2:
             file.delete()
-            url = '{}{}/{}/{}/{}'.format(xiangdui, canshu, tcode_fujian, ecode, file.file_name)
+            url = '{}{}/{}/{}/{}'.format(xiangdui, file.path, tcode_fujian, ecode, file.file_name)
 
             # 找出该路径下是否有文件并删除
             if os.path.exists(url):
@@ -113,7 +112,7 @@ def fujian_move(canshu,tname_fujian,ecode):
             # 将状态改为审核通过
             file.operation_state = 3
             # 将临时文件转为正式文件
-            url_j = '{}{}/{}/{}/{}'.format(juedui, canshu, tcode_fujian, ecode, file.file_name)
+            url_j = '{}{}/{}/{}/{}'.format(juedui, file.path, tcode_fujian, ecode, file.file_name)
             if os.path.exists(url_j):
                 url_x = url_j.replace(juedui, xiangdui)
                 shutil.move(url_j, url_x)
@@ -131,7 +130,7 @@ def dange_move(canshu,tname_dange,ecode):
     juedui_qian = ParamInfo.objects.get(param_code=3).param_value
     xiangdui = ParamInfo.objects.get(param_code=2).param_value
     xiangdui_qian = ParamInfo.objects.get(param_code=4).param_value
-    canshu = canshu
+    #canshu = canshu
     #tcode_fujian = AttachmentFileType.objects.get(tname='publishResultAttach').tcode
     tcode_dange = AttachmentFileType.objects.get(tname=tname_dange).tcode
     ecode = ecode
@@ -143,7 +142,7 @@ def dange_move(canshu,tname_dange,ecode):
         # 找出伪删除的对象并从表中删除
         if file.operation_state == 2:
             file.delete()
-            url = '{}{}/{}/{}/{}'.format(xiangdui, canshu, tcode_dange, ecode, file.file_name)
+            url = '{}{}/{}/{}/{}'.format(xiangdui, file.path, tcode_dange, ecode, file.file_name)
 
             # 找出该路径下是否有文件并删除
             if os.path.exists(url):
@@ -153,7 +152,7 @@ def dange_move(canshu,tname_dange,ecode):
             # 将状态改为审核通过
             file.operation_state = 3
             # 将临时文件转为正式文件
-            url_j = '{}{}/{}/{}/{}'.format(juedui, canshu, tcode_dange, ecode, file.file_name)
+            url_j = '{}{}/{}/{}/{}'.format(juedui, file.path, tcode_dange, ecode, file.file_name)
             if os.path.exists(url_j):
                 url_x = url_j.replace(juedui, xiangdui)
                 shutil.move(url_j, url_x)
