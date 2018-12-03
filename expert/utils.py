@@ -2,7 +2,6 @@ from public_models.models import PersonalInfo, Message, EnterpriseBaseinfo
 import time,requests
 from .models import *
 import datetime
-import shutil, os
 
 
 # 更新或创建个人信息
@@ -74,32 +73,6 @@ def send_msg(tel, name, state, account_code, sender):
 # 更新基本信息表
 def update_baseinfo(obj, code, data):
     obj.objects.filter(**code).update(**data)
-
-
-# 附件获取
-def get_file(ecode, type):
-    tcode = AttachmentFileType.objects.get(tname=type).tcode
-    files = AttachmentFileinfo.objects.filter(tcode=tcode, ecode=ecode, state=1)
-    if files:
-        fname = files.order_by('-insert_time')[0].file_name
-        url = '{}/expert/{}/{}/{}'.format(ParamInfo.objects.get(param_code=1), tcode, ecode, fname)
-    else:
-        url = ''
-    return url
-
-
-# 移动附件
-def mv_file(file_list):
-    for file in file_list:
-        if not file:
-            continue
-        new_path = file.replace(ParamInfo.objects.get(param_code=1).param_value,
-                                  ParamInfo.objects.get(param_code=2).param_value)
-        new_dir = '/'.join(new_path.split('/')[0:-1]) + '/'
-        if not os.path.exists(new_dir):
-            os.makedirs(new_dir)
-        shutil.move(file, new_dir)
-    return True
 
 
 # 获取领域

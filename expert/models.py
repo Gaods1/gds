@@ -1,7 +1,8 @@
 from django.db import models
 from misc.misc import gen_uuid32
 from public_models.models import *
-from .utils import get_file, get_major
+from public_models.utils import dange_show
+from .utils import get_major
 from account.models import AccountInfo
 # Create your models here.
 
@@ -118,19 +119,19 @@ class ExpertBaseinfo(models.Model):
 
     @property
     def head(self):
-        return get_file(self.expert_code, 'expertHead')
+        return dange_show('expertHead', self.expert_code)
 
     @property
     def idfornt(self):
-        return get_file(self.expert_code, 'expertIdFront')
+        return dange_show('expertIdFront', self.expert_code)
 
     @property
     def idback(self):
-        return get_file(self.expert_code, 'expertIdBack')
+        return dange_show('expertIdBack', self.expert_code)
 
     @property
     def idphoto(self):
-        return get_file(self.expert_code, 'expertHandIDPhoto')
+        return dange_show('expertHandIDPhoto', self.expert_code)
 
     class Meta:
         managed = True
@@ -229,19 +230,19 @@ class BrokerBaseinfo(models.Model):
 
     @property
     def head(self):
-        return get_file(self.broker_code, 'brokerHead')
+        return dange_show('brokerHead', self.broker_code)
 
     @property
     def idfornt(self):
-        return get_file(self.broker_code, 'brokerIdFront')
+        return dange_show('brokerIdFront', self.broker_code)
 
     @property
     def idback(self):
-        return get_file(self.broker_code, 'brokerIdBack')
+        return dange_show('brokerIdBack', self.broker_code)
 
     @property
     def idphoto(self):
-        return get_file(self.broker_code, 'brokerHandIDPhoto')
+        return dange_show('brokerHandIdPhoto', self.broker_code)
 
     class Meta:
         managed = False
@@ -325,19 +326,20 @@ class CollectorBaseinfo(models.Model):
 
     @property
     def head(self):
-        return get_file(self.collector_code, 'collectorHead')
+        return dange_show('collectorHead', self.collector_code)
 
     @property
     def idfornt(self):
-        return get_file(self.collector_code, 'collectorIdFront')
+        return dange_show('collectorIdFront', self.collector_code)
+
 
     @property
     def idback(self):
-        return get_file(self.collector_code, 'collectorIdBack')
+        return dange_show('collectorIdBack', self.collector_code)
 
     @property
     def idphoto(self):
-        return get_file(self.collector_code, 'collectorHandIDPhoto')
+        return dange_show('collectorHandIdPhoto', self.collector_code)
 
     class Meta:
         managed = False
@@ -431,34 +433,42 @@ class ResultOwnerpBaseinfo(models.Model):
     @property
     def head(self):
         if self.type == 1:
+            file = 'ResultOwnerPer'
             value = 'resultOwnerPerHead'
         else:
+            file = 'RequirementOwnerPer'
             value = 'requirementOwnerPerHead'
-        return get_file(self.owner_code, value)
+        return dange_show(value, self.owner_code)
 
     @property
     def idfornt(self):
         if self.type == 1:
+            file = 'ResultOwnerPer'
             value = 'resultOwnerPerIdFront'
         else:
+            file = 'RequirementOwnerPer'
             value = 'requirementOwnerPerIdFront'
-        return get_file(self.owner_code, value)
+        return dange_show(value, self.owner_code)
 
     @property
     def idback(self):
         if self.type == 1:
+            file = 'ResultOwnerPer'
             value = 'resultOwnerPerIdBack'
         else:
+            file = 'RequirementOwnerPer'
             value = 'requirementOwnerPerIdBack'
-        return get_file(self.owner_code, value)
+        return dange_show(value, self.owner_code)
 
     @property
     def idphoto(self):
         if self.type == 1:
+            file = 'ResultOwnerPer'
             value = 'resultOwnerPerHandIdPhoto'
         else:
+            file = 'RequirementOwnerPer'
             value = 'requirementOwnerPerHandIdPhoto'
-        return get_file(self.owner_code, value)
+        return dange_show(value, self.owner_code)
 
     class Meta:
         managed = False
@@ -561,50 +571,62 @@ class ResultOwnereBaseinfo(models.Model):
     @property
     def idfornt(self):
         if self.type == 1:
+            file = 'ResultOwnerEnt'
             value = 'resultOwnerEntLegalIdFront'
         else:
+            file = 'RequirementOwnerEnt'
             value = 'requirementOwnerEntLegalIdFront'
-        return get_file(self.owner_code, value)
+        return dange_show(value, self.owner_code)
 
     @property
     def idback(self):
         if self.type == 1:
+            file = 'ResultOwnerEnt'
             value = 'resultOwnerEntLegalIdBack'
         else:
+            file = 'RequirementOwnerEnt'
             value = 'requirementOwnerEntLegalIdBack'
-        return get_file(self.owner_code, value)
+        return dange_show(value, self.owner_code)
 
     @property
     def idphoto(self):
         if self.type == 1:
+            file = 'ResultOwnerEnt'
             value = 'resultOwnerEntLegalHandIdPhoto'
         else:
+            file = 'RequirementOwnerEnt'
             value = 'requirementOwnerEntLegalHandIdPhoto'
-        return get_file(self.owner_code, value)
+        return dange_show(value, self.owner_code)
 
     @property
     def license(self):
         if self.type == 1:
+            file = 'ResultOwnerEnt'
             value = 'resultOwnerEntLicense'
         else:
+            file = 'RequirementOwnerEnt'
             value = 'requirementOwnerEntLicense'
-        return get_file(self.owner_code, value)
+        return dange_show(value, self.owner_code)
 
     @property
     def logo(self):
         if self.type == 1:
+            file = 'ResultOwnerEnt'
             value = 'resultOwnerEntLogo'
         else:
+            file = 'RequirementOwnerEnt'
             value = 'requirementOwnerEntLogo'
-        return get_file(self.owner_code, value)
+        return dange_show(value, self.owner_code)
 
     @property
     def promotional(self):
         if self.type == 1:
+            file = 'ResultOwnerEnt'
             value = 'resultOwnerEntProgandaPhoto'
         else:
+            file = 'RequirementOwnerEnt'
             value = 'requirementOwnerEntProgandaPhoto'
-        return get_file(self.owner_code, value)
+        return dange_show(value, self.owner_code)
 
     class Meta:
         managed = False

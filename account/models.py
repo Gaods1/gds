@@ -4,6 +4,8 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from misc.misc import gen_uuid32,check_md5_password, genearteMD5
 from misc.para_info import state_map
 from public_models.models import *
+from .menu import *
+import copy
 
 
 # 机构部门表
@@ -90,27 +92,22 @@ class AccountInfo(AbstractBaseUser):
 
     @property
     def func(self):
-        role_code = [i.role_code for i in AccountRoleInfo.objects.filter(account=self.account, state=1)]
-
-        account_dis_func = [i.func for i in AccountDisableFuncinfo.objects.filter(account=self.account, state=1)]
-
-        func = []
-        for i in RoleInfo.objects.filter(role_code__in=role_code, state=1):
-            func += i.func
-        func = list(set(func))
-        for df in account_dis_func:
-            if df in func:
-                func.remove(df)
-        func.sort(key=lambda x: x.func_order)
-        func_dict = {}
-        for f in func:
-            if f.func_name in account_dis_func:
-                continue
-            pfunc = f.pfunc
-            if pfunc not in func_dict:
-                func_dict[pfunc] = []
-            func_dict[pfunc].append(f.func_name)
-        return func_dict
+        func_dict = {
+            '系统首页': {
+            'icon': "el-icon-lx-home",
+            'index': "dashboard",
+            'title': "系统首页",
+        },
+        }
+        role_code = [i['role_code'] for i in AccountRoleInfo.objects.values('role_code').filter(account=self.account, state=1)]
+        account_dis_func = [i['func_code'] for i in AccountDisableFuncinfo.objects.values('func_code').filter(account=self.account, state=1)]
+        func_code = list(set([i['func_code'] for i in RoleFuncInfo.objects.values('func_code').filter(role_code__in=role_code, state=1) if i['func_code'] not in account_dis_func]))
+        func_obj = FunctionInfo.objects.filter(func_code__in=func_code, state=1)
+        for f in func_obj:
+            if f.pfunc not in func_dict:
+                func_dict[f.pfunc] = copy.deepcopy(main_menu[f.pfunc])
+            func_dict[f.pfunc]['subs'].append(sub_menu[f.func_name])
+        return func_dict.values()
 
     @property
     def cstate(self):
