@@ -85,12 +85,12 @@ class RequirementsInfo(models.Model):
 
     @property
     def fujian(self):
-        dict = fujian_show('Requirements','publishRequirementAttach',self.req_code)
+        dict = fujian_show('publishRequirementAttach',self.req_code)
         return dict
 
     @property
     def fengmian(self):
-        dict = dange_show('Requirements','publishRequirementCover',self.req_code)
+        dict = dange_show('publishRequirementCover',self.req_code)
         return dict
 
     @property
@@ -141,12 +141,12 @@ class ResultsInfo(models.Model):
 
     @property
     def fujian(self):
-        dict = fujian_show('Results','publishResultAttach',self.r_code)
+        dict = fujian_show('publishResultAttach',self.r_code)
         return dict
 
     @property
     def fengmian(self):
-        dict = dange_show('Results','publishResultCover',self.r_code)
+        dict = dange_show('publishResultCover',self.r_code)
         return dict
 
     @property
