@@ -118,7 +118,7 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
             'obtain_source',
             'entry_type',
             'owner_type',
-            'owber_code',
+            'owner_code',
             'owner_abstract',
             'rcoop_t_abstract',
             'expiry_dateb',
@@ -129,6 +129,7 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
             'sniff_time',
             'creater',
             'insert_time',
+            'update_time',
             'mcode',
             'mname',
             'fujian',
@@ -140,7 +141,7 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
 class RrApplyHistorySerializer(serializers.ModelSerializer):
     apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     Results = ResultsInfoSerializer(many=True,read_only=True)
-    Requirements = ResultsInfoSerializer(many=True,read_only=True)
+    Requirements = RequirementsInfoSerializer(many=True,read_only=True)
     Cooperation = ResultsCooperationTypeInfoSerializer(many=True,read_only=True)
     Owner = ResultsOwnerInfoSerializer(many=True,read_only=True)
     Keywords = KeywordsInfoSerializer(many=True,read_only=True)
