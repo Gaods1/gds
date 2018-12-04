@@ -148,6 +148,19 @@ class RoleInfoViewSet(viewsets.ModelViewSet):
     filter_fields = ("state", "creater", "role_code")
     search_fields = ("role_name",)
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
+             page = None
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.get_paginated_response(serializer.data)
+
     def create(self, request, *args, **kwargs):
         data = request.data
         func = data.pop("func")
