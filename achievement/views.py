@@ -356,7 +356,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                                 "Accept": "application/json"
                             }
 
-                            if ownerp.state == 3:
+                            if ownerp.state == 2:
                                 # 多线程发送短信
                                 t1 = threading.Thread(target=massege, args=(url, body, headers))
                                 t1.start()
@@ -377,7 +377,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                                 "Accept": "application/json"
                             }
 
-                            if ownere.state == 3:
+                            if ownere.state == 2:
                                 # 多线程发送短信
                                 t1 = threading.Thread(target=massege, args=(url, body, headers))
                                 t1.start()
@@ -411,12 +411,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     except Exception as e:
                         return HttpResponse('申请表更新失败%s' % str(e))
                     transaction.savepoint_commit(save_id)
-                    return Response(dict_z)
+                    return Response({'messege':'审核不通过'})
 
                 else:
 
                     try:
-                        dict_z = {}
+                        #dict_z = {}
                         ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                         if ownerp.state == 1:
                             ownerp.state = 3
@@ -466,7 +466,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         return HttpResponse('申请表更新失败%s' % str(e))
 
                     transaction.savepoint_commit(save_id)
-                    return Response(dict_z)
+                    return Response({'messege':'审核不通过'})
 # 需求
 class RequirementViewSet(viewsets.ModelViewSet):
     """
@@ -779,7 +779,6 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 # 判断是否是采集员
                 if Requirements.obtain_type != 1:
                     try:
-                        dict_z = {}
                         if owner.owner_type != 2:
                             ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                             # ownerp.state = 2
@@ -793,7 +792,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                                 "Accept": "application/json"
                             }
 
-                            if ownerp.state == 3:
+                            if ownerp.state == 2:
                                 # 多线程发送短信
                                 t1 = threading.Thread(target=massege, args=(url, body, headers))
                                 t1.start()
@@ -814,7 +813,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                                 "Accept": "application/json"
                             }
 
-                            if ownere.state == 3:
+                            if ownere.state == 2:
                                 # 多线程发送短信
                                 t1 = threading.Thread(target=massege, args=(url, body, headers))
                                 t1.start()
@@ -848,12 +847,11 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     except Exception as e:
                         return HttpResponse('申请表更新失败%s' % str(e))
                     transaction.savepoint_commit(save_id)
-                    return Response(dict_z)
+                    return Response({'messege':'审核不通过'})
 
                 else:
 
                     try:
-                        dict_z = {}
                         ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                         if ownerp.state == 1:
                             ownerp.state = 3
@@ -903,7 +901,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         return HttpResponse('申请表更新失败%s' % str(e))
 
                     transaction.savepoint_commit(save_id)
-                    return Response(dict_z)
+                    return Response({'messege':'审核不通过'})
 
 
 
