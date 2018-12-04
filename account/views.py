@@ -3,6 +3,7 @@ from rest_framework import viewsets
 from account.models import *
 from account.serializers import *
 from rest_framework import status, permissions
+from permissions import ReadOnlyPermission
 from rest_framework.response import Response
 from misc.misc import gen_uuid32, genearteMD5
 from rest_framework import filters
@@ -294,7 +295,7 @@ class AccountRoleViewSet(viewsets.ModelViewSet):
 class FunctionViewSet(viewsets.ModelViewSet):
     queryset = FunctionInfo.objects.exclude(pfunc_code=None).order_by('-serial')
     serializer_class = FunctionInfoSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, ReadOnlyPermission)
 
     filter_backends = (
         filters.SearchFilter,
@@ -305,6 +306,19 @@ class FunctionViewSet(viewsets.ModelViewSet):
     ordering_fields = ("func_order", "insert_time", "func_code")
     filter_fields = ("state", "creater", "item_type", "pfunc_code")
     search_fields = ("func_name", "func_code", "func_url")
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
+             page = None
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.get_paginated_response(serializer.data)
 
     def create(self, request, *args, **kwargs):
         data = request.data
@@ -424,7 +438,7 @@ class ParamInfoViewSet(viewsets.ModelViewSet):
 
 #区域表
 class SystemDistrictViewSet(viewsets.ModelViewSet):
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, ReadOnlyPermission)
     queryset = SystemDistrict.objects.all().order_by('district_id')
     serializer_class = SystemDistrictSerializer
 
