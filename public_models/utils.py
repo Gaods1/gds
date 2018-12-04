@@ -85,7 +85,7 @@ def dange_show(tname_dange,ecode):
                 dict[url] = 1
     return dict
 
-def fujian_move(canshu,tname_fujian,ecode):
+def fujian_move(tname_fujian,ecode):
     juedui = ParamInfo.objects.get(param_code=1).param_value
     juedui_qian = ParamInfo.objects.get(param_code=3).param_value
     xiangdui = ParamInfo.objects.get(param_code=2).param_value

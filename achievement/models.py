@@ -94,6 +94,26 @@ class RequirementsInfo(models.Model):
         return dict
 
     @property
+    def xieyi(self):
+        dict = dange_show('publishRequirementAgencyImg', self.req_code)
+        return dict
+
+    @property
+    def zhengmian(self):
+        dict = dange_show('publishRequirementOwnerPerIdFront', self.req_code)
+        return dict
+
+    @property
+    def fanmian(self):
+        dict = dange_show('publishRequirementOwnerPerIdBack', self.req_code)
+        return dict
+
+    @property
+    def shouchi(self):
+        dict = dange_show('publishRequirementOwnerPerHandId', self.req_code)
+        return dict
+
+    @property
     def mcode(self):
         # Results = ResultsInfo.objects.filter(r_code=self.rr_code)
         mcode = [major_userinfo.mcode for major_userinfo in
@@ -147,6 +167,26 @@ class ResultsInfo(models.Model):
     @property
     def fengmian(self):
         dict = dange_show('publishResultCover',self.r_code)
+        return dict
+
+    @property
+    def xieyi(self):
+        dict = dange_show('publishResultAgencyImg', self.r_code)
+        return dict
+
+    @property
+    def zhengmian(self):
+        dict = dange_show('publishResultOwnerPerIdFront', self.r_code)
+        return dict
+
+    @property
+    def fanmian(self):
+        dict = dange_show('publishResultOwnerPerIdBack', self.r_code)
+        return dict
+
+    @property
+    def shouchi(self):
+        dict = dange_show('publishResultOwnerPerHandId', self.r_code)
         return dict
 
     @property

@@ -61,6 +61,10 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
     mname = serializers.ListField(max_length=16, read_only=True)
     fujian = serializers.DictField(read_only=True)
     fengmian = serializers.DictField(read_only=True)
+    xieyi = serializers.DictField(read_only=True)
+    zhengmian = serializers.DictField(read_only=True)
+    fanmian = serializers.DictField(read_only=True)
+    shouchi = serializers.DictField(read_only=True)
     class Meta:
         model = ResultsInfo
         fields = ['serial',
@@ -93,6 +97,10 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
                   'fujian',
                   'mname',
                   'fengmian',
+                  'xieyi',
+                  'zhengmian',
+                  'fanmian',
+                  'shouchi',
                   ]
 
 # 需求信息表序列化
@@ -102,6 +110,10 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
     mname = serializers.ListField(max_length=16, read_only=True)
     fujian = serializers.DictField(read_only=True)
     fengmian = serializers.DictField(read_only=True)
+    xieyi = serializers.DictField(read_only=True)
+    zhengmian = serializers.DictField(read_only=True)
+    fanmian = serializers.DictField(read_only=True)
+    shouchi = serializers.DictField(read_only=True)
 
     class Meta:
         model = RequirementsInfo
@@ -134,6 +146,10 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
             'mname',
             'fujian',
             'fengmian',
+            'xieyi',
+            'zhengmian',
+            'fanmian',
+            'shouchi',
         ]
 
 
