@@ -39,7 +39,7 @@ REST_FRAMEWORK = {
 
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-        # 'permissions.FuncPermission'
+        'permissions.FuncPermission'
     ),
 
     'DEFAULT_AUTHENTICATION_CLASSES': (
