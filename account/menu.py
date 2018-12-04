@@ -6,36 +6,43 @@ main_menu = {
     },
     '系统管理': {
         'icon': "el-icon-setting",
+        'index': "sys_manage",
         'title': "系统管理",
         'subs': []
     },
     '用户认证管理': {
         'icon': "el-icon-lx-profile",
+        'index': "user_ident",
         'title': "用户认证管理",
         'subs': []
     },
     '科技人才管理':{
         'icon': "el-icon-warning",
+        'index': "tec_per_info",
         'title': "科技人才管理",
         'subs': []
     },
     '信息征询管理': {
         'icon': "el-icon-lx-copy",
+        'index': "consult",
         'title': "信息征询管理",
         'subs': []
     },
     '项目管理': {
         'icon': "el-icon-lx-file",
+        'index': "project",
         'title': "项目管理",
         'subs': []
     },
     '成果信息管理':{
         'icon': "el-icon-lx-calendar",
+        'index': "achie_info",
         'title': "成果信息管理",
         'subs': []
     },
     '需求信息管理': {
         'icon': "el-icon-lx-edit",
+        'index': "demand_info",
         'title': "需求信息管理",
         'subs': []
     }
@@ -43,7 +50,7 @@ main_menu = {
 
 sub_menu = {
     '账号管理': {
-        'index ': "account",
+        'index': "account",
         'title': "帐号管理"
     },
     '角色管理': {

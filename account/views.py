@@ -421,11 +421,13 @@ class ParamInfoViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+
 #区域表
 class SystemDistrictViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated,)
     queryset = SystemDistrict.objects.all().order_by('district_id')
     serializer_class = SystemDistrictSerializer
+
     filter_backends = (
         filters.SearchFilter,
         django_filters.rest_framework.DjangoFilterBackend,
