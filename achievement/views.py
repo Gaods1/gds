@@ -125,9 +125,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 if Results.obtain_type != 1:
                     try:
                         dict_z = {}
-                        # 更新个人信息并发送短信
-                        #owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
-                        #Results = ResultsInfo.objects.get(r_code=instance.rr_code)
+                        # 判断是个人还是企业
                         if owner.owner_type!=2:
                             ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                             #ownerp.state = 2
@@ -141,6 +139,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                                 "Accept": "application/json"
                             }
 
+                            # 判断申请人是否通过审核
                             if ownerp.state==2:
                                 # 多线程发送短信
                                 t1 = threading.Thread(target=massege, args=(url, body, headers))
@@ -149,7 +148,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
 
                         else:
-                            # 更新企业信息并发送短信
                             ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
                             #ownere.state = 2
                             #ownere.save()
@@ -208,11 +206,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 else:
 
                     try:
+                        # 如果是采集员
                         dict_z = {}
-                        # 更新个人信息并发送短信
-                        #owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
-                        #Results = ResultsInfo.objects.get(r_code=instance.rr_code)
                         ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
+
+                        # 判断是否待审和状态
                         if ownerp.state == 1:
                             ownerp.state=2
                             ownerp.save()
@@ -345,9 +343,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 if Results.obtain_type != 1:
                     try:
                         dict_z = {}
-                        # 更新个人信息并发送短信
-                        # owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
-                        # Results = ResultsInfo.objects.get(r_code=instance.rr_code)
                         if owner.owner_type != 2:
                             ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                             # ownerp.state = 2
@@ -422,9 +417,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
                     try:
                         dict_z = {}
-                        # 更新个人信息并发送短信
-                        # owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
-                        # Results = ResultsInfo.objects.get(r_code=instance.rr_code)
                         ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                         if ownerp.state == 1:
                             ownerp.state = 3
@@ -574,9 +566,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 if Requirements.obtain_type != 1:
                     try:
                         dict_z = {}
-                        # 更新个人信息并发送短信
-                        # owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
-                        # Results = ResultsInfo.objects.get(r_code=instance.rr_code)
+                        # 如果是个人或者团队
                         if owner.owner_type != 2:
                             ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                             # ownerp.state = 2
@@ -590,6 +580,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                                 "Accept": "application/json"
                             }
 
+                            # 如果申请人审核通过
                             if ownerp.state == 2:
                                 # 多线程发送短信
                                 t1 = threading.Thread(target=massege, args=(url, body, headers))
@@ -598,7 +589,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
 
                         else:
-                            # 更新企业信息并发送短信
+                            # 企业送短信
                             ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
                             # ownere.state = 2
                             # ownere.save()
@@ -617,8 +608,8 @@ class RequirementViewSet(viewsets.ModelViewSet):
                                 t1.start()
 
                         # 返回相对路径
-                        dict_fujian = fujian_move('publishResultAttach', instance.rr_code)
-                        dict_dange = dange_move('publishResultCover', instance.rr_code)
+                        dict_fujian = fujian_move('publishRequirementAttach', instance.rr_code)
+                        dict_dange = dange_move('publishRequirementCover', instance.rr_code)
 
                         dict_z['fujian'] = dict_fujian
                         dict_z['dange'] = dict_dange
@@ -658,9 +649,6 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
                     try:
                         dict_z = {}
-                        # 更新个人信息并发送短信
-                        # owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
-                        # Results = ResultsInfo.objects.get(r_code=instance.rr_code)
                         ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                         if ownerp.state == 1:
                             ownerp.state = 2
@@ -680,12 +668,12 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             # response = requests.post(url, data=body, headers=headers)
 
                             # 返回相对路径
-                            dict_fujian = fujian_move('publishResultAttach', instance.rr_code)
-                            dict_dange_fengmian = dange_move('publishResultCover', instance.rr_code)
-                            dict_dange_xieyi = fujian_move('publishResultAgencyImg', instance.rr_code)
-                            dict_dange_zhengmian = dange_move('publishResultOwnerPerIdFront', instance.rr_code)
-                            dict_dange_fanmian = fujian_move('publishResultOwnerPerIdBack', instance.rr_code)
-                            dict_dange_shouchi = dange_move('publishResultOwnerPerHandIdPhoto', instance.rr_code)
+                            dict_fujian = fujian_move('publishRequirementAttach', instance.rr_code)
+                            dict_dange_fengmian = dange_move('publishRequirementCover', instance.rr_code)
+                            dict_dange_xieyi = fujian_move('publishRequirementAgencyImg', instance.rr_code)
+                            dict_dange_zhengmian = dange_move('publishRequirementOwnerPerIdFront', instance.rr_code)
+                            dict_dange_fanmian = fujian_move('publishRequirementOwnerPerIdBack', instance.rr_code)
+                            dict_dange_shouchi = dange_move('publishRequirementOwnerPerHandIdPhoto', instance.rr_code)
 
                             dict_z['fujian'] = dict_fujian
                             dict_z['fengmian'] = dict_dange_fengmian
@@ -792,9 +780,6 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 if Requirements.obtain_type != 1:
                     try:
                         dict_z = {}
-                        # 更新个人信息并发送短信
-                        # owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
-                        # Results = ResultsInfo.objects.get(r_code=instance.rr_code)
                         if owner.owner_type != 2:
                             ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                             # ownerp.state = 2
@@ -869,9 +854,6 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
                     try:
                         dict_z = {}
-                        # 更新个人信息并发送短信
-                        # owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
-                        # Results = ResultsInfo.objects.get(r_code=instance.rr_code)
                         ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                         if ownerp.state == 1:
                             ownerp.state = 3
