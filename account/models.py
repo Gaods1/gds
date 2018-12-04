@@ -135,7 +135,7 @@ class AccountInfo(AbstractBaseUser):
             for role in roles:
                 if RoleInfo.objects.filter(role_code=role.role_code, state=1):
                     return True
-        raise {'detail': "该用户还未绑定任何角色"}
+        raise False
 
     class Meta:
         managed = True
