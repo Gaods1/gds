@@ -7,7 +7,7 @@ router = routers.DefaultRouter()
 #  项目基本信息
 router.register(r'project_info', ProjectInfoViewSet)
 
-# router.register(r'getCheckList', CheckList)
+router.register(r'project_step_info', ProjectStepInfoViewSet)
 
 # 项目审核
 router.register(r'project_check_info', ProjectCheckInfoViewSet)

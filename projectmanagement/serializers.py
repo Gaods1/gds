@@ -92,9 +92,19 @@ class ProjectInfoSerializer(serializers.ModelSerializer):
 
 # 项目步骤信息表
 class ProjectStepInfoSerializer(serializers.ModelSerializer):
+    substep_info = ProjectSubstepInfoSerializer(many=True,read_only=True)
     class Meta:
         model = ProjectStepInfo
-        fields = '__all__'
+        fields = [
+            'p_serial',
+            'project_code',
+            'step_code',
+            'btime',
+            'etime',
+            'step_state',
+            'step_msg',
+            'substep_info',
+        ]
 
 
 # 项目子步骤流水详情信息表

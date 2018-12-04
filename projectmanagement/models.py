@@ -48,7 +48,7 @@ class ProjectInfo(models.Model):
 
     @property
     def check_info(self):
-        q = ProjectCheckInfo.objects.filter(Q(project_code=self.project_code),~Q(substep_serial = 0),Q(cstate=0)).order_by('-substep_serial')
+        q = ProjectCheckInfo.objects.filter(Q(project_code=self.project_code),~Q(substep_serial = 0)).order_by('-substep_serial')
         if q != None and len(q)>0:
             check_info = q[0]
         else:
@@ -93,9 +93,15 @@ class ProjectStepInfo(models.Model):
     step_state = models.IntegerField(blank=True, null=True)
     step_msg = models.CharField(max_length=255,blank=True, null=True)
 
+    @property
+    def substep_info(self):
+        q = ProjectSubstepInfo.objects.filter(project_code=self.project_code, step_code=self.step_code).order_by('substep_code')
+        return q
+
     class Meta:
         managed = False
         db_table = 'project_step_info'
+        unique_together = ('project_code', 'step_code')
 
 
 #项目子步骤信息表
@@ -112,6 +118,7 @@ class ProjectSubstepInfo(models.Model):
     class Meta:
         managed = False
         db_table = 'project_substep_info'
+        unique_together = ('project_code', 'step_code', 'substep_code')
 
 #项目子步骤流水信息表
 class ProjectSubstepSerialInfo(models.Model):
@@ -128,6 +135,7 @@ class ProjectSubstepSerialInfo(models.Model):
     class Meta:
         managed = False
         db_table = 'project_substep_serial_info'
+        unique_together = ('project_code','step_code','substep_code')
 
 
 #项目子步骤流水详情信息表
@@ -144,6 +152,7 @@ class ProjectSubstepDetailInfo(models.Model):
     class Meta:
         managed = False
         db_table = 'project_substep_detail_info'
+        unique_together = ('project_code','step_code','substep_code','substep_serial')
 
 
 # 项目与成果/需求信息表 *

@@ -35,13 +35,25 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
 class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
     """
     项目审核展示
+
+    --------------------------------------------------
+    需要审核的有8个子步骤
+    项目立项审核 step_code:1  substep_code:12
+    上传合同审核 step_code:2  substep_code:21
+    签约合同审核 step_code:2  substep_code:22
+    项目标书审核 step_code:3  substep_code:32
+    中标签约审核 step_code:3  substep_code:311
+    项目固化审核 step_code:4  substep_code:45
+    项目结案审核 step_code:7  substep_code:71
+    项目终止审核 step_code:9  substep_code:91
+
     ==================================================
     GET 参数说明 json
     {
         'step_code',步骤序号
         'substep_code',子步骤序号
     }
-    --------------------------------------------------
+    ==================================================
     PATCH 参数说明 json
     {
         'project_code',项目代码
@@ -67,6 +79,20 @@ class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
 
     # 需要审核的子步骤
     need_check_substep_codes = ('12','21','22','32','311','45','71')
+
+    # def retrieve(self, request, *args, **kwargs):
+    #
+    #     queryset = self.get_queryset()
+    #     page = self.paginate_queryset(queryset)
+    #     if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
+    #         page = None
+    #     if page is not None:
+    #         serializer = self.get_serializer(page, many=True)
+    #         return self.get_paginated_response(serializer.data)
+    #
+    #     serializer = self.get_serializer(queryset, many=True)
+    #     return self.get_paginated_response(serializer.data)
+
 
     def list(self, request, *args, **kwargs):
         # 检测 状态在
@@ -95,7 +121,7 @@ class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
         #     q = self.get_queryset()
         # queryset = self.filter_queryset(q)
 
-        projectcheckinfos = ProjectCheckInfo.objects.filter(~Q(substep_serial=0),Q(cstate=0),Q(step_code=step_code),Q(substep_code=substep_code)).order_by("-p_serial")
+        projectcheckinfos = ProjectCheckInfo.objects.filter(~Q(substep_serial=0),Q(step_code=step_code),Q(substep_code=substep_code)).order_by("-p_serial")
         project_codes = [check.project_code for check in projectcheckinfos]
         q = self.get_queryset().filter(project_code__in=project_codes)
         if q != None and len(q) > 0:
@@ -145,17 +171,37 @@ class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
                 # 项目子步骤流水信息表
                 pssi = ProjectSubstepSerialInfo.objects.get(project_code=project_code, substep_serial=substep_serial)
                 pssi.substep_state = cstate;
-                if cstate == 1:
-                    pssi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                # if cstate == 1:
+                pssi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 pssi.step_msg = cmsg
                 pssi.save()
+
+                # 项目子步骤流水详情信息表
+                # 每一个项目的每一个子步骤还将创建一个substep_serial=0的记录，用来保存已经审核通过的数据（审核通过后将内容拷贝到该记录中）
+                # 这种做法是为了便于显示的时候快速查找
+
+                # 重复审核时 清空上次审核的记录  主要是方便测试
+                psdi_old = ProjectSubstepDetailInfo.objects.filter(project_code=project_code, step_code=step_code,
+                                                                   substep_code=substep_code, substep_serial=0)
+                if psdi_old != None and len(psdi_old) > 0:
+                    psdi_old[0].delete()
+
+                if cstate == 1:
+                    psdis = ProjectSubstepDetailInfo.objects.filter(project_code=project_code,step_code=step_code,substep_code=substep_code,substep_serial=substep_serial)
+                    if psdis != None and len(psdis)>0:
+                        psdi = psdis[0]
+                        psdi.p_serial = None
+                        psdi.substep_serial = 0
+                        psdi.submit_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                        psdi.step_msg = cmsg
+                        psdi.save()
 
                 # 项目子步骤信息表
                 psi = ProjectSubstepInfo.objects.get(project_code=project_code, step_code=step_code,
                                                      substep_code=substep_code)
                 psi.step_state = cstate;
-                if cstate == 1:
-                    psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                # if cstate == 1:
+                psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 psi.step_msg = cmsg
                 psi.save()
 
@@ -200,6 +246,19 @@ class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
         return JsonResponse({"state": 1, "msg": "审核成功"})
 
 
+class ProjectStepInfoViewSet(viewsets.ModelViewSet):
+    '''项目步骤信息'''
+    queryset = ProjectStepInfo.objects.all().order_by('step_code')
+    serializer_class = ProjectStepInfoSerializer
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("project_code", "step_code")
+    filter_fields = ("project_code", "step_code")
+    search_fields = ("project_code", "step_code")
 
 
 class ProjectRrInfoViewSet(viewsets.ModelViewSet):
