@@ -130,12 +130,7 @@ class AccountInfo(AbstractBaseUser):
         if not check_md5_password(raw_password, self.password):
             return False
 
-        roles = AccountRoleInfo.objects.filter(account=self.account, state=1)
-        if roles:
-            for role in roles:
-                if RoleInfo.objects.filter(role_code=role.role_code, state=1):
-                    return True
-        return False
+        return True
 
     class Meta:
         managed = True
