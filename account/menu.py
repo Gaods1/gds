@@ -6,36 +6,43 @@ main_menu = {
     },
     '系统管理': {
         'icon': "el-icon-setting",
+        'index': "sys_manage",
         'title': "系统管理",
         'subs': []
     },
     '用户认证管理': {
         'icon': "el-icon-lx-profile",
+        'index': "user_ident",
         'title': "用户认证管理",
         'subs': []
     },
     '科技人才管理':{
         'icon': "el-icon-warning",
+        'index': "tec_per_info",
         'title': "科技人才管理",
         'subs': []
     },
     '信息征询管理': {
         'icon': "el-icon-lx-copy",
+        'index': "consult",
         'title': "信息征询管理",
         'subs': []
     },
     '项目管理': {
         'icon': "el-icon-lx-file",
+        'index': "project",
         'title': "项目管理",
         'subs': []
     },
     '成果信息管理':{
         'icon': "el-icon-lx-calendar",
+        'index': "achie_info",
         'title': "成果信息管理",
         'subs': []
     },
     '需求信息管理': {
         'icon': "el-icon-lx-edit",
+        'index': "demand_info",
         'title': "需求信息管理",
         'subs': []
     }
@@ -43,7 +50,7 @@ main_menu = {
 
 sub_menu = {
     '账号管理': {
-        'index ': "account",
+        'index': "account",
         'title': "帐号管理"
     },
     '角色管理': {
@@ -68,11 +75,11 @@ sub_menu = {
     },
     '技术经纪人认证管理':{
         'title': "技术经纪人认证管理",
-        'index': "tec_agent_ident"
+        'index': "broker_apply"
     },
     '领域专家认证管理':{
         'title': "领域专家认证管理",
-        'index': "domain_expert_ident"
+        'index': "expert_apply"
     },
     '技术团队认证管理':{
         'title': "技术团队认证管理",
@@ -80,23 +87,23 @@ sub_menu = {
     },
     '信息采集员认证管理':{
         'title': "信息采集员认证管理",
-        'index': "info_colle_ident"
+        'index': "collector_apply"
     },
     '成果持有人认证管理':{
         'title': "成果持有人认证管理",
-        'index': "outcome_holder_ident"
+        'index': "results_owner_person_apply"
     },
     '成果持有企业认证管理':{
         'title': "成果持有企业认证管理",
-        'index': "outcome_enter_ident"
+        'index': "results_owner_enterprise_apply"
     },
     '需求持有人认证管理':{
         'title': "需求持有人认证管理",
-        'index': "dem_holder_ident"
+        'index': "requirement_owner_person_apply"
     },
     '需求持有企业认证管理':{
         'title': "需求持有企业认证管理",
-        'index': "dem_enter_ident"
+        'index': "requirement_owner_enterprise_apply"
     },
     '征询信息管理':{
         'title': " 征询信息管理",

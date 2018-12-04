@@ -125,9 +125,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 if Results.obtain_type != 1:
                     try:
                         dict_z = {}
-                        # 更新个人信息并发送短信
-                        #owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
-                        #Results = ResultsInfo.objects.get(r_code=instance.rr_code)
+                        # 判断是个人还是企业
                         if owner.owner_type!=2:
                             ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                             #ownerp.state = 2
@@ -141,6 +139,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                                 "Accept": "application/json"
                             }
 
+                            # 判断申请人是否通过审核
                             if ownerp.state==2:
                                 # 多线程发送短信
                                 t1 = threading.Thread(target=massege, args=(url, body, headers))
@@ -149,7 +148,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
 
                         else:
-                            # 更新企业信息并发送短信
                             ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
                             #ownere.state = 2
                             #ownere.save()
@@ -168,11 +166,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
                                 t1.start()
 
                         # 返回相对路径
-                        dict_fujian = fujian_move('publishResultAttach', instance.rr_code)
-                        dict_dange = dange_move('publishResultCover', instance.rr_code)
+                        dict_fujian = fujian_move('attachment', instance.rr_code)
+                        dict_dange = dange_move('coverImg', instance.rr_code)
 
-                        dict_z['fujian'] = dict_fujian
-                        dict_z['dange'] = dict_dange
+                        dict_z['Attach'] = dict_fujian
+                        dict_z['Cover'] = dict_dange
 
                         # 创建推送表
                         mm = Message.objects.create(**{
@@ -208,11 +206,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 else:
 
                     try:
+                        # 如果是采集员
                         dict_z = {}
-                        # 更新个人信息并发送短信
-                        #owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
-                        #Results = ResultsInfo.objects.get(r_code=instance.rr_code)
                         ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
+
+                        # 判断是否待审和状态
                         if ownerp.state == 1:
                             ownerp.state=2
                             ownerp.save()
@@ -232,19 +230,19 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             #response = requests.post(url, data=body, headers=headers)
 
                             # 返回相对路径
-                            dict_fujian = fujian_move('publishResultAttach', instance.rr_code)
-                            dict_dange_fengmian = dange_move('publishResultCover', instance.rr_code)
-                            dict_dange_xieyi = fujian_move('publishResultAgencyImg', instance.rr_code)
-                            dict_dange_zhengmian =  dange_move('publishResultOwnerPerIdFront', instance.rr_code)
-                            dict_dange_fanmian = fujian_move('publishResultOwnerPerIdBack', instance.rr_code)
-                            dict_dange_shouchi = dange_move('publishResultOwnerPerHandIdPhoto', instance.rr_code)
+                            dict_fujian = fujian_move('attachment', instance.rr_code)
+                            dict_dange_fengmian = dange_move('coverImg', instance.rr_code)
+                            dict_dange_xieyi = fujian_move('agreement', instance.rr_code)
+                            dict_dange_zhengmian =  dange_move('identityFront', instance.rr_code)
+                            dict_dange_fanmian = fujian_move('identityBack', instance.rr_code)
+                            dict_dange_shouchi = dange_move('handIdentityPhoto', instance.rr_code)
 
-                            dict_z['fujian'] = dict_fujian
-                            dict_z['fengmian'] = dict_dange_fengmian
-                            dict_z['xieyi'] = dict_dange_xieyi
-                            dict_z['zhengmian'] = dict_dange_zhengmian
-                            dict_z['fanmian'] = dict_dange_fanmian
-                            dict_z['shouchi'] = dict_dange_shouchi
+                            dict_z['Attach'] = dict_fujian
+                            dict_z['Cover'] = dict_dange_fengmian
+                            dict_z['AgencyImg'] = dict_dange_xieyi
+                            dict_z['PerIdFront'] = dict_dange_zhengmian
+                            dict_z['PerIdBack'] = dict_dange_fanmian
+                            dict_z['PerHandIdPhoto'] = dict_dange_shouchi
 
                             # 创建推送表
                             mm = Message.objects.create(**{
@@ -345,9 +343,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 if Results.obtain_type != 1:
                     try:
                         dict_z = {}
-                        # 更新个人信息并发送短信
-                        # owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
-                        # Results = ResultsInfo.objects.get(r_code=instance.rr_code)
                         if owner.owner_type != 2:
                             ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                             # ownerp.state = 2
@@ -361,7 +356,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                                 "Accept": "application/json"
                             }
 
-                            if ownerp.state == 3:
+                            if ownerp.state == 2:
                                 # 多线程发送短信
                                 t1 = threading.Thread(target=massege, args=(url, body, headers))
                                 t1.start()
@@ -382,7 +377,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                                 "Accept": "application/json"
                             }
 
-                            if ownere.state == 3:
+                            if ownere.state == 2:
                                 # 多线程发送短信
                                 t1 = threading.Thread(target=massege, args=(url, body, headers))
                                 t1.start()
@@ -416,15 +411,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     except Exception as e:
                         return HttpResponse('申请表更新失败%s' % str(e))
                     transaction.savepoint_commit(save_id)
-                    return Response(dict_z)
+                    return Response({'messege':'审核不通过'})
 
                 else:
 
                     try:
-                        dict_z = {}
-                        # 更新个人信息并发送短信
-                        # owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
-                        # Results = ResultsInfo.objects.get(r_code=instance.rr_code)
+                        #dict_z = {}
                         ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                         if ownerp.state == 1:
                             ownerp.state = 3
@@ -474,7 +466,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         return HttpResponse('申请表更新失败%s' % str(e))
 
                     transaction.savepoint_commit(save_id)
-                    return Response(dict_z)
+                    return Response({'messege':'审核不通过'})
 # 需求
 class RequirementViewSet(viewsets.ModelViewSet):
     """
@@ -574,9 +566,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 if Requirements.obtain_type != 1:
                     try:
                         dict_z = {}
-                        # 更新个人信息并发送短信
-                        # owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
-                        # Results = ResultsInfo.objects.get(r_code=instance.rr_code)
+                        # 如果是个人或者团队
                         if owner.owner_type != 2:
                             ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                             # ownerp.state = 2
@@ -590,6 +580,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                                 "Accept": "application/json"
                             }
 
+                            # 如果申请人审核通过
                             if ownerp.state == 2:
                                 # 多线程发送短信
                                 t1 = threading.Thread(target=massege, args=(url, body, headers))
@@ -598,7 +589,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
 
                         else:
-                            # 更新企业信息并发送短信
+                            # 企业送短信
                             ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
                             # ownere.state = 2
                             # ownere.save()
@@ -617,11 +608,11 @@ class RequirementViewSet(viewsets.ModelViewSet):
                                 t1.start()
 
                         # 返回相对路径
-                        dict_fujian = fujian_move('publishResultAttach', instance.rr_code)
-                        dict_dange = dange_move('publishResultCover', instance.rr_code)
+                        dict_fujian = fujian_move('attachment', instance.rr_code)
+                        dict_dange = dange_move('coverImg', instance.rr_code)
 
-                        dict_z['fujian'] = dict_fujian
-                        dict_z['dange'] = dict_dange
+                        dict_z['Attach'] = dict_fujian
+                        dict_z['Cover'] = dict_dange
 
                         # 创建推送表
                         mm = Message.objects.create(**{
@@ -658,9 +649,6 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
                     try:
                         dict_z = {}
-                        # 更新个人信息并发送短信
-                        # owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
-                        # Results = ResultsInfo.objects.get(r_code=instance.rr_code)
                         ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                         if ownerp.state == 1:
                             ownerp.state = 2
@@ -680,19 +668,19 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             # response = requests.post(url, data=body, headers=headers)
 
                             # 返回相对路径
-                            dict_fujian = fujian_move('publishResultAttach', instance.rr_code)
-                            dict_dange_fengmian = dange_move('publishResultCover', instance.rr_code)
-                            dict_dange_xieyi = fujian_move('publishResultAgencyImg', instance.rr_code)
-                            dict_dange_zhengmian = dange_move('publishResultOwnerPerIdFront', instance.rr_code)
-                            dict_dange_fanmian = fujian_move('publishResultOwnerPerIdBack', instance.rr_code)
-                            dict_dange_shouchi = dange_move('publishResultOwnerPerHandIdPhoto', instance.rr_code)
+                            dict_fujian = fujian_move('attachment', instance.rr_code)
+                            dict_dange_fengmian = dange_move('coverImg', instance.rr_code)
+                            dict_dange_xieyi = fujian_move('agreement', instance.rr_code)
+                            dict_dange_zhengmian = dange_move('identityFront', instance.rr_code)
+                            dict_dange_fanmian = fujian_move('identityBack', instance.rr_code)
+                            dict_dange_shouchi = dange_move('handIdentityPhoto', instance.rr_code)
 
-                            dict_z['fujian'] = dict_fujian
-                            dict_z['fengmian'] = dict_dange_fengmian
-                            dict_z['xieyi'] = dict_dange_xieyi
-                            dict_z['zhengmian'] = dict_dange_zhengmian
-                            dict_z['fanmian'] = dict_dange_fanmian
-                            dict_z['shouchi'] = dict_dange_shouchi
+                            dict_z['Attach'] = dict_fujian
+                            dict_z['Cover'] = dict_dange_fengmian
+                            dict_z['AgencyImg'] = dict_dange_xieyi
+                            dict_z['PerIdFront'] = dict_dange_zhengmian
+                            dict_z['PerIdBack'] = dict_dange_fanmian
+                            dict_z['PerHandIdPhoto'] = dict_dange_shouchi
 
                             # 创建推送表
                             mm = Message.objects.create(**{
@@ -791,10 +779,6 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 # 判断是否是采集员
                 if Requirements.obtain_type != 1:
                     try:
-                        dict_z = {}
-                        # 更新个人信息并发送短信
-                        # owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
-                        # Results = ResultsInfo.objects.get(r_code=instance.rr_code)
                         if owner.owner_type != 2:
                             ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                             # ownerp.state = 2
@@ -808,7 +792,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                                 "Accept": "application/json"
                             }
 
-                            if ownerp.state == 3:
+                            if ownerp.state == 2:
                                 # 多线程发送短信
                                 t1 = threading.Thread(target=massege, args=(url, body, headers))
                                 t1.start()
@@ -829,7 +813,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                                 "Accept": "application/json"
                             }
 
-                            if ownere.state == 3:
+                            if ownere.state == 2:
                                 # 多线程发送短信
                                 t1 = threading.Thread(target=massege, args=(url, body, headers))
                                 t1.start()
@@ -863,15 +847,11 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     except Exception as e:
                         return HttpResponse('申请表更新失败%s' % str(e))
                     transaction.savepoint_commit(save_id)
-                    return Response(dict_z)
+                    return Response({'messege':'审核不通过'})
 
                 else:
 
                     try:
-                        dict_z = {}
-                        # 更新个人信息并发送短信
-                        # owner = ResultsOwnerInfo.objects.get(r_code=instance.rr_code)
-                        # Results = ResultsInfo.objects.get(r_code=instance.rr_code)
                         ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
                         if ownerp.state == 1:
                             ownerp.state = 3
@@ -921,7 +901,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         return HttpResponse('申请表更新失败%s' % str(e))
 
                     transaction.savepoint_commit(save_id)
-                    return Response(dict_z)
+                    return Response({'messege':'审核不通过'})
 
 
 

@@ -102,11 +102,14 @@ class AccountInfo(AbstractBaseUser):
         role_code = [i['role_code'] for i in AccountRoleInfo.objects.values('role_code').filter(account=self.account, state=1)]
         account_dis_func = [i['func_code'] for i in AccountDisableFuncinfo.objects.values('func_code').filter(account=self.account, state=1)]
         func_code = list(set([i['func_code'] for i in RoleFuncInfo.objects.values('func_code').filter(role_code__in=role_code, state=1) if i['func_code'] not in account_dis_func]))
-        func_obj = FunctionInfo.objects.filter(func_code__in=func_code, state=1)
+        func_obj = FunctionInfo.objects.values('pfunc_code', 'func_name').filter(func_code__in=func_code, state=1)
+        pfunc_code_list = []
         for f in func_obj:
-            if f.pfunc not in func_dict:
-                func_dict[f.pfunc] = copy.deepcopy(main_menu[f.pfunc])
-            func_dict[f.pfunc]['subs'].append(sub_menu[f.func_name])
+            if f['pfunc_code'] not in pfunc_code_list:
+                pfunc = FunctionInfo.objects.values('func_name').get(func_code=f['pfunc_code'])['func_name']
+                func_dict[pfunc] = copy.deepcopy(main_menu[pfunc])
+                pfunc_code_list.append(f['pfunc_code'])
+            func_dict[pfunc]['subs'].append(sub_menu[f['func_name']])
         return func_dict.values()
 
     @property
@@ -132,7 +135,7 @@ class AccountInfo(AbstractBaseUser):
             for role in roles:
                 if RoleInfo.objects.filter(role_code=role.role_code, state=1):
                     return True
-        return False
+        raise False
 
     class Meta:
         managed = True

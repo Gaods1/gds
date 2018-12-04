@@ -30,3 +30,12 @@ class FuncPermission(permissions.BasePermission):
                 pass
 
         return False
+
+
+class ReadOnlyPermission(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        method = request.method
+        if method != 'GET':
+            return False
+        return True
