@@ -59,12 +59,12 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     mcode = serializers.ListField(max_length=16, read_only=True)
     mname = serializers.ListField(max_length=16, read_only=True)
-    fujian = serializers.DictField(read_only=True)
-    fengmian = serializers.DictField(read_only=True)
-    xieyi = serializers.DictField(read_only=True)
-    zhengmian = serializers.DictField(read_only=True)
-    fanmian = serializers.DictField(read_only=True)
-    shouchi = serializers.DictField(read_only=True)
+    Attach = serializers.DictField(read_only=True)
+    Cover = serializers.DictField(read_only=True)
+    AgencyImg = serializers.DictField(read_only=True)
+    PerIdFront = serializers.DictField(read_only=True)
+    PerIdBack = serializers.DictField(read_only=True)
+    PerHandId = serializers.DictField(read_only=True)
     class Meta:
         model = ResultsInfo
         fields = ['serial',
@@ -94,13 +94,13 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
                   'r_abstract_detail',
                   'update_time',
                   'mcode',
-                  'fujian',
                   'mname',
-                  'fengmian',
-                  'xieyi',
-                  'zhengmian',
-                  'fanmian',
-                  'shouchi',
+                  'Attach',
+                  'Cover',
+                  'AgencyImg',
+                  'PerIdFront',
+                  'PerIdBack',
+                  'PerHandId',
                   ]
 
 # 需求信息表序列化
@@ -108,12 +108,12 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     mcode = serializers.ListField(max_length=16, read_only=True)
     mname = serializers.ListField(max_length=16, read_only=True)
-    fujian = serializers.DictField(read_only=True)
-    fengmian = serializers.DictField(read_only=True)
-    xieyi = serializers.DictField(read_only=True)
-    zhengmian = serializers.DictField(read_only=True)
-    fanmian = serializers.DictField(read_only=True)
-    shouchi = serializers.DictField(read_only=True)
+    Attach = serializers.DictField(read_only=True)
+    Cover = serializers.DictField(read_only=True)
+    AgencyImg = serializers.DictField(read_only=True)
+    PerIdFront = serializers.DictField(read_only=True)
+    PerIdBack = serializers.DictField(read_only=True)
+    PerHandId = serializers.DictField(read_only=True)
 
     class Meta:
         model = RequirementsInfo
@@ -144,12 +144,12 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
             'update_time',
             'mcode',
             'mname',
-            'fujian',
-            'fengmian',
-            'xieyi',
-            'zhengmian',
-            'fanmian',
-            'shouchi',
+            'Attach',
+            'Cover',
+            'AgencyImg',
+            'PerIdFront',
+            'PerIdBack',
+            'PerHandId',
         ]
 
 
