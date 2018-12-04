@@ -85,32 +85,32 @@ class RequirementsInfo(models.Model):
 
     @property
     def Attach(self):
-        dict = fujian_show('publishRequirementAttach',self.req_code)
+        dict = fujian_show('attachment',self.req_code)
         return dict
 
     @property
     def Cover(self):
-        dict = dange_show('publishRequirementCover',self.req_code)
+        dict = dange_show('coverImg',self.req_code)
         return dict
 
     @property
     def AgencyImg(self):
-        dict = dange_show('publishRequirementAgencyImg', self.req_code)
+        dict = dange_show('agreement', self.req_code)
         return dict
 
     @property
     def PerIdFront(self):
-        dict = dange_show('publishRequirementOwnerPerIdFront', self.req_code)
+        dict = dange_show('identityFront', self.req_code)
         return dict
 
     @property
     def PerIdBack(self):
-        dict = dange_show('publishRequirementOwnerPerIdBack', self.req_code)
+        dict = dange_show('identityBack', self.req_code)
         return dict
 
     @property
     def PerHandId(self):
-        dict = dange_show('publishRequirementOwnerPerHandId', self.req_code)
+        dict = dange_show('handIdentityPhoto', self.req_code)
         return dict
 
     @property
@@ -161,32 +161,32 @@ class ResultsInfo(models.Model):
 
     @property
     def Attach(self):
-        dict = fujian_show('publishResultAttach',self.r_code)
+        dict = fujian_show('attachment',self.r_code)
         return dict
 
     @property
     def Cover(self):
-        dict = dange_show('publishResultCover',self.r_code)
+        dict = dange_show('coverImg',self.r_code)
         return dict
 
     @property
     def AgencyImg(self):
-        dict = dange_show('publishResultAgencyImg', self.r_code)
+        dict = dange_show('agreement', self.r_code)
         return dict
 
     @property
     def PerIdFront(self):
-        dict = dange_show('publishResultOwnerPerIdFront', self.r_code)
+        dict = dange_show('identityFront', self.r_code)
         return dict
 
     @property
     def PerIdBack(self):
-        dict = dange_show('publishResultOwnerPerIdBack', self.r_code)
+        dict = dange_show('identityBack', self.r_code)
         return dict
 
     @property
     def shPerHandId(self):
-        dict = dange_show('publishResultOwnerPerHandId', self.r_code)
+        dict = dange_show('handIdentityPhoto', self.r_code)
         return dict
 
     @property

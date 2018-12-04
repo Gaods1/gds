@@ -166,8 +166,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
                                 t1.start()
 
                         # 返回相对路径
-                        dict_fujian = fujian_move('publishResultAttach', instance.rr_code)
-                        dict_dange = dange_move('publishResultCover', instance.rr_code)
+                        dict_fujian = fujian_move('attachment', instance.rr_code)
+                        dict_dange = dange_move('coverImg', instance.rr_code)
 
                         dict_z['Attach'] = dict_fujian
                         dict_z['Cover'] = dict_dange
@@ -230,12 +230,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             #response = requests.post(url, data=body, headers=headers)
 
                             # 返回相对路径
-                            dict_fujian = fujian_move('publishResultAttach', instance.rr_code)
-                            dict_dange_fengmian = dange_move('publishResultCover', instance.rr_code)
-                            dict_dange_xieyi = fujian_move('publishResultAgencyImg', instance.rr_code)
-                            dict_dange_zhengmian =  dange_move('publishResultOwnerPerIdFront', instance.rr_code)
-                            dict_dange_fanmian = fujian_move('publishResultOwnerPerIdBack', instance.rr_code)
-                            dict_dange_shouchi = dange_move('publishResultOwnerPerHandIdPhoto', instance.rr_code)
+                            dict_fujian = fujian_move('attachment', instance.rr_code)
+                            dict_dange_fengmian = dange_move('coverImg', instance.rr_code)
+                            dict_dange_xieyi = fujian_move('agreement', instance.rr_code)
+                            dict_dange_zhengmian =  dange_move('identityFront', instance.rr_code)
+                            dict_dange_fanmian = fujian_move('identityBack', instance.rr_code)
+                            dict_dange_shouchi = dange_move('handIdentityPhoto', instance.rr_code)
 
                             dict_z['Attach'] = dict_fujian
                             dict_z['Cover'] = dict_dange_fengmian
@@ -608,8 +608,8 @@ class RequirementViewSet(viewsets.ModelViewSet):
                                 t1.start()
 
                         # 返回相对路径
-                        dict_fujian = fujian_move('publishRequirementAttach', instance.rr_code)
-                        dict_dange = dange_move('publishRequirementCover', instance.rr_code)
+                        dict_fujian = fujian_move('attachment', instance.rr_code)
+                        dict_dange = dange_move('coverImg', instance.rr_code)
 
                         dict_z['Attach'] = dict_fujian
                         dict_z['Cover'] = dict_dange
@@ -668,12 +668,12 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             # response = requests.post(url, data=body, headers=headers)
 
                             # 返回相对路径
-                            dict_fujian = fujian_move('publishRequirementAttach', instance.rr_code)
-                            dict_dange_fengmian = dange_move('publishRequirementCover', instance.rr_code)
-                            dict_dange_xieyi = fujian_move('publishRequirementAgencyImg', instance.rr_code)
-                            dict_dange_zhengmian = dange_move('publishRequirementOwnerPerIdFront', instance.rr_code)
-                            dict_dange_fanmian = fujian_move('publishRequirementOwnerPerIdBack', instance.rr_code)
-                            dict_dange_shouchi = dange_move('publishRequirementOwnerPerHandIdPhoto', instance.rr_code)
+                            dict_fujian = fujian_move('attachment', instance.rr_code)
+                            dict_dange_fengmian = dange_move('coverImg', instance.rr_code)
+                            dict_dange_xieyi = fujian_move('agreement', instance.rr_code)
+                            dict_dange_zhengmian = dange_move('identityFront', instance.rr_code)
+                            dict_dange_fanmian = fujian_move('identityBack', instance.rr_code)
+                            dict_dange_shouchi = dange_move('handIdentityPhoto', instance.rr_code)
 
                             dict_z['Attach'] = dict_fujian
                             dict_z['Cover'] = dict_dange_fengmian
