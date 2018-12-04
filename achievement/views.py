@@ -169,8 +169,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         dict_fujian = fujian_move('publishResultAttach', instance.rr_code)
                         dict_dange = dange_move('publishResultCover', instance.rr_code)
 
-                        dict_z['fujian'] = dict_fujian
-                        dict_z['dange'] = dict_dange
+                        dict_z['Attach'] = dict_fujian
+                        dict_z['Cover'] = dict_dange
 
                         # 创建推送表
                         mm = Message.objects.create(**{
@@ -237,12 +237,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             dict_dange_fanmian = fujian_move('publishResultOwnerPerIdBack', instance.rr_code)
                             dict_dange_shouchi = dange_move('publishResultOwnerPerHandIdPhoto', instance.rr_code)
 
-                            dict_z['fujian'] = dict_fujian
-                            dict_z['fengmian'] = dict_dange_fengmian
-                            dict_z['xieyi'] = dict_dange_xieyi
-                            dict_z['zhengmian'] = dict_dange_zhengmian
-                            dict_z['fanmian'] = dict_dange_fanmian
-                            dict_z['shouchi'] = dict_dange_shouchi
+                            dict_z['Attach'] = dict_fujian
+                            dict_z['Cover'] = dict_dange_fengmian
+                            dict_z['AgencyImg'] = dict_dange_xieyi
+                            dict_z['PerIdFront'] = dict_dange_zhengmian
+                            dict_z['PerIdBack'] = dict_dange_fanmian
+                            dict_z['PerHandIdPhoto'] = dict_dange_shouchi
 
                             # 创建推送表
                             mm = Message.objects.create(**{
@@ -611,8 +611,8 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         dict_fujian = fujian_move('publishRequirementAttach', instance.rr_code)
                         dict_dange = dange_move('publishRequirementCover', instance.rr_code)
 
-                        dict_z['fujian'] = dict_fujian
-                        dict_z['dange'] = dict_dange
+                        dict_z['Attach'] = dict_fujian
+                        dict_z['Cover'] = dict_dange
 
                         # 创建推送表
                         mm = Message.objects.create(**{
@@ -675,12 +675,12 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             dict_dange_fanmian = fujian_move('publishRequirementOwnerPerIdBack', instance.rr_code)
                             dict_dange_shouchi = dange_move('publishRequirementOwnerPerHandIdPhoto', instance.rr_code)
 
-                            dict_z['fujian'] = dict_fujian
-                            dict_z['fengmian'] = dict_dange_fengmian
-                            dict_z['xieyi'] = dict_dange_xieyi
-                            dict_z['zhengmian'] = dict_dange_zhengmian
-                            dict_z['fanmian'] = dict_dange_fanmian
-                            dict_z['shouchi'] = dict_dange_shouchi
+                            dict_z['Attach'] = dict_fujian
+                            dict_z['Cover'] = dict_dange_fengmian
+                            dict_z['AgencyImg'] = dict_dange_xieyi
+                            dict_z['PerIdFront'] = dict_dange_zhengmian
+                            dict_z['PerIdBack'] = dict_dange_fanmian
+                            dict_z['PerHandIdPhoto'] = dict_dange_shouchi
 
                             # 创建推送表
                             mm = Message.objects.create(**{

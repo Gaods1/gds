@@ -84,32 +84,32 @@ class RequirementsInfo(models.Model):
     insert_time = models.DateTimeField(blank=True, null=True)
 
     @property
-    def fujian(self):
+    def Attach(self):
         dict = fujian_show('publishRequirementAttach',self.req_code)
         return dict
 
     @property
-    def fengmian(self):
+    def Cover(self):
         dict = dange_show('publishRequirementCover',self.req_code)
         return dict
 
     @property
-    def xieyi(self):
+    def AgencyImg(self):
         dict = dange_show('publishRequirementAgencyImg', self.req_code)
         return dict
 
     @property
-    def zhengmian(self):
+    def PerIdFront(self):
         dict = dange_show('publishRequirementOwnerPerIdFront', self.req_code)
         return dict
 
     @property
-    def fanmian(self):
+    def PerIdBack(self):
         dict = dange_show('publishRequirementOwnerPerIdBack', self.req_code)
         return dict
 
     @property
-    def shouchi(self):
+    def PerHandId(self):
         dict = dange_show('publishRequirementOwnerPerHandId', self.req_code)
         return dict
 
@@ -160,32 +160,32 @@ class ResultsInfo(models.Model):
     r_abstract_detail = models.TextField(blank=True, null=True)
 
     @property
-    def fujian(self):
+    def Attach(self):
         dict = fujian_show('publishResultAttach',self.r_code)
         return dict
 
     @property
-    def fengmian(self):
+    def Cover(self):
         dict = dange_show('publishResultCover',self.r_code)
         return dict
 
     @property
-    def xieyi(self):
+    def AgencyImg(self):
         dict = dange_show('publishResultAgencyImg', self.r_code)
         return dict
 
     @property
-    def zhengmian(self):
+    def PerIdFront(self):
         dict = dange_show('publishResultOwnerPerIdFront', self.r_code)
         return dict
 
     @property
-    def fanmian(self):
+    def PerIdBack(self):
         dict = dange_show('publishResultOwnerPerIdBack', self.r_code)
         return dict
 
     @property
-    def shouchi(self):
+    def shPerHandId(self):
         dict = dange_show('publishResultOwnerPerHandId', self.r_code)
         return dict
 
