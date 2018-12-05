@@ -42,7 +42,7 @@ main_menu = {
     },
     '需求信息管理': {
         'icon': "el-icon-lx-edit",
-        'index': "demand_info",
+        'index': "requirement_info",
         'title': "需求信息管理",
         'subs': []
     }
@@ -163,7 +163,7 @@ sub_menu = {
     },
     '需求信息管理':{
         'title': "需求信息管理",
-        'index': "demand_info_detail"
+        'index': "requirement"
     },
     '技术经纪人管理': {
         'title': "技术经纪人管理",
