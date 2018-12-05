@@ -152,18 +152,19 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
             with transaction.atomic():
                 data = request.data
                 partial = kwargs.pop('partial', False)
+                # 获取更新记录
+                instance = self.get_object()
 
                 # 获取基本信息
-                baseinfo = data.pop('broker')
+                baseinfo = instance.broker
                 # 获取审核意见
                 opinion = data.pop('opinion')
                 # 申请类型
-                apply_type = data['apply_type']
+                apply_type = instance.apply_type
                 # 审核状态
                 apply_state = data['state']
 
                 # 更新申请表
-                instance = self.get_object()
                 serializer = self.get_serializer(instance, data=data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
@@ -173,36 +174,36 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                     if apply_state == 2:
                         # 更新或创建个人基本信息表和更新角色基本信息表
                         pinfo = {
-                            'pname': baseinfo['broker_name'],
-                            'pid_type': baseinfo['broker_id_type'],
-                            'pid': baseinfo['broker_id'],
-                            'pmobile': baseinfo['broker_mobile'],
-                            'ptel': baseinfo['broker_tel'],
-                            'pemail': baseinfo['broker_email'],
-                            'peducation': baseinfo['education'],
-                            'pabstract': baseinfo['broker_abstract'],
+                            'pname': baseinfo.broker_name,
+                            'pid_type': baseinfo.broker_id_type,
+                            'pid': baseinfo.broker_id,
+                            'pmobile': baseinfo.broker_mobile,
+                            'ptel': baseinfo.broker_tel,
+                            'pemail': baseinfo.broker_email,
+                            'peducation': baseinfo.education,
+                            'pabstract': baseinfo.broker_abstract,
                             'state': 2,
                             'creater': request.user.account,
-                            'account_code': baseinfo['account_code']
+                            'account_code': baseinfo.account_code
                         }
                         pcode = update_or_crete_person(baseinfo['pcode'], pinfo)
 
                         # 更新角色基本信息表
-                        update_baseinfo(BrokerBaseinfo, {'broker_code': data['broker_code']}, {'state': 1, 'pcode': pcode})
+                        update_baseinfo(BrokerBaseinfo, {'broker_code': baseinfo.broker_code}, {'state': 1, 'pcode': pcode})
 
                         # 给账号绑定角色
-                        IdentityAuthorizationInfo.objects.create(account_code=baseinfo['account_code'],
+                        IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
                                                                  identity_code=IdentityInfo.objects.get(identity_name='broker').identity_code,
                                                                  iab_time=datetime.datetime.now(),
                                                                  creater=request.user.account)
                         # 移动相关附件
-                        dange_move('headPhoto', baseinfo['broker_code'])
-                        dange_move('identityFront', baseinfo['broker_code'])
-                        dange_move('identityBack', baseinfo['broker_code'])
-                        dange_move('handIdentityPhoto', baseinfo['broker_code'])
+                        dange_move('headPhoto', baseinfo.broker_code)
+                        dange_move('identityFront', baseinfo.broker_code)
+                        dange_move('identityBack', baseinfo.broker_code)
+                        dange_move('handIdentityPhoto', baseinfo.broker_code)
 
                     # 发送信息
-                    send_msg(baseinfo['broker_mobile'], '技术经纪人', apply_state, baseinfo['account_code'], request.user.account)
+                    send_msg(baseinfo.broker_mobile, '技术经纪人', apply_state, baseinfo.account_code, request.user.account)
                 # 当申请状态为删除时
                 elif apply_type in [3]:
                     pass
