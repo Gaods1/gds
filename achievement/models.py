@@ -158,6 +158,7 @@ class ResultsInfo(models.Model):
     insert_time = models.DateTimeField(blank=True, null=True)
     account_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
     r_abstract_detail = models.TextField(blank=True, null=True)
+    patent_number = models.CharField(max_length=64, blank=True, null=True)
 
     @property
     def Attach(self):
