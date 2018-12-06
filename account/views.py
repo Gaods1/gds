@@ -403,7 +403,7 @@ class DeptinfoViewSet(viewsets.ModelViewSet):
         filters.OrderingFilter,
     )
     ordering_fields = ("dept_name", "insert_time")
-    filter_fields = ("state",)
+    filter_fields = ("state", "dept_level", "region_code")
     search_fields = ("dept_name",)
 
 
