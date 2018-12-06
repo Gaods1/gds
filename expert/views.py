@@ -44,20 +44,21 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         try:
             with transaction.atomic():
+                # 获取单个记录
+                instance = self.get_object()
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
                 # 获取专家基本信息
-                expert = data.pop('expert')
+                expert = instance.expert
                 # 获取审核意见
                 opinion = data.pop('opinion')
                 # 申请类型
-                apply_type = data['apply_type']
+                apply_type = instance.apply_type
                 # 审核状态
                 apply_state = data['state']
 
                 # 更新申请表
-                instance = self.get_object()
                 serializer = self.get_serializer(instance, data=data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
@@ -67,36 +68,36 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
                     if apply_state == 2:
                         # 更新或创建个人基本信息表和更新专家基本信息表
                         pinfo = {
-                            'pname': expert['expert_name'],
-                            'pid_type':expert['expert_id_type'],
-                            'pid':expert['expert_id'],
-                            'pmobile':expert['expert_mobile'],
-                            'ptel': expert['expert_tel'],
-                            'pemail': expert['expert_email'],
-                            'peducation': expert['education'],
-                            'pabstract': expert['expert_abstract'],
+                            'pname': expert.expert_name,
+                            'pid_type':expert.expert_id_type,
+                            'pid':expert.expert_id,
+                            'pmobile':expert.expert_mobile,
+                            'ptel': expert.expert_tel,
+                            'pemail': expert.expert_email,
+                            'peducation': expert.education,
+                            'pabstract': expert.expert_abstract,
                             'state': 2,
                             'creater': request.user.account,
-                            'account_code': expert['account_code']
+                            'account_code': expert.account_code
                         }
-                        pcode = update_or_crete_person(expert['pcode'], pinfo)
+                        pcode = update_or_crete_person(expert.pcode, pinfo)
 
                         # 更新专家基本信息表
-                        update_baseinfo(ExpertBaseinfo, {'expert_code': data['expert_code']}, {'state': 1, 'pcode': pcode})
+                        update_baseinfo(ExpertBaseinfo, {'expert_code': expert.expert_code}, {'state': 1, 'pcode': pcode})
 
                         # 给账号绑定角色
-                        IdentityAuthorizationInfo.objects.create(account_code=expert['account_code'],
+                        IdentityAuthorizationInfo.objects.create(account_code=expert.account_code,
                                                                  identity_code=IdentityInfo.objects.get(identity_name='expert').identity_code,
                                                                  iab_time=datetime.datetime.now(),
                                                                  creater=request.user.account)
                         # 移动相关附件
-                        dange_move('headPhoto', expert['expert_code'])
-                        dange_move('identityFront', expert['expert_code'])
-                        dange_move('identityBack', expert['expert_code'])
-                        dange_move('handIdentityPhoto', expert['expert_code'])
+                        dange_move('headPhoto', expert.expert_code)
+                        dange_move('identityFront', expert.expert_code)
+                        dange_move('identityBack', expert.expert_code)
+                        dange_move('handIdentityPhoto', expert.expert_code)
 
                     # 发送信息
-                    send_msg(expert['expert_mobile'], '领域专家', apply_state, expert['account_code'], request.user.account)
+                    send_msg(expert.expert_mobile, '领域专家', apply_state, expert.account_code, request.user.account)
                 # 当申请状态为删除时
                 elif apply_type in [3]:
                     pass
@@ -186,7 +187,7 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                             'creater': request.user.account,
                             'account_code': baseinfo.account_code
                         }
-                        pcode = update_or_crete_person(baseinfo['pcode'], pinfo)
+                        pcode = update_or_crete_person(baseinfo.pcode, pinfo)
 
                         # 更新角色基本信息表
                         update_baseinfo(BrokerBaseinfo, {'broker_code': baseinfo.broker_code}, {'state': 1, 'pcode': pcode})
@@ -257,20 +258,21 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         try:
             with transaction.atomic():
+                # 获取单个信息
+                instance = self.get_object()
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
                 # 获取基本信息
-                baseinfo = data.pop('collector')
+                baseinfo = instance.collector
                 # 获取审核意见
                 opinion = data.pop('opinion')
                 # 申请类型
-                apply_type = data['apply_type']
+                apply_type = instance.apply_type
                 # 审核状态
                 apply_state = data['state']
 
                 # 更新申请表
-                instance = self.get_object()
                 serializer = self.get_serializer(instance, data=data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
@@ -280,36 +282,36 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
                     if apply_state == 2:
                         # 更新或创建个人基本信息表和更新角色基本信息表
                         pinfo = {
-                            'pname': baseinfo['collector_name'],
-                            'pid_type': baseinfo['collector_idtype'],
-                            'pid': baseinfo['collector_id'],
-                            'pmobile': baseinfo['collector_mobile'],
-                            'ptel': baseinfo['collector_tel'],
-                            'pemail': baseinfo['collector_email'],
-                            'peducation': baseinfo['education'],
-                            'pabstract': baseinfo['collector_abstract'],
+                            'pname': baseinfo.collector_name,
+                            'pid_type': baseinfo.collector_idtype,
+                            'pid': baseinfo.collector_id,
+                            'pmobile': baseinfo.collector_mobile,
+                            'ptel': baseinfo.collector_tel,
+                            'pemail': baseinfo.collector_email,
+                            'peducation': baseinfo.education,
+                            'pabstract': baseinfo.collector_abstract,
                             'state': 2,
                             'creater': request.user.account,
-                            'account_code': baseinfo['account_code']
+                            'account_code': baseinfo.account_code
                         }
-                        pcode = update_or_crete_person(baseinfo['pcode'], pinfo)
+                        pcode = update_or_crete_person(baseinfo.pcode, pinfo)
 
                         # 更新角色基本信息表
-                        update_baseinfo(CollectorBaseinfo, {'collector_code': data['collector_code']}, {'state': 1, 'pcode': pcode})
+                        update_baseinfo(CollectorBaseinfo, {'collector_code': baseinfo.collector_code}, {'state': 1, 'pcode': pcode})
 
                         # 给账号绑定角色
-                        IdentityAuthorizationInfo.objects.create(account_code=baseinfo['account_code'],
+                        IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
                                                                  identity_code=IdentityInfo.objects.get(identity_name='collector').identity_code,
                                                                  iab_time=datetime.datetime.now(),
                                                                  creater=request.user.account)
                         # 移动相关附件
-                        dange_move('headPhoto', baseinfo['collector_code'])
-                        dange_move('identityFront', baseinfo['collector_code'])
-                        dange_move('identityBack', baseinfo['collector_code'])
-                        dange_move('handIdentityPhoto', baseinfo['collector_code'])
+                        dange_move('headPhoto', baseinfo.collector_code)
+                        dange_move('identityFront', baseinfo.collector_code)
+                        dange_move('identityBack', baseinfo.collector_code)
+                        dange_move('handIdentityPhoto', baseinfo.collector_code)
 
                     # 发送信息
-                    send_msg(baseinfo['collector_mobile'], '采集员', apply_state, baseinfo['account_code'], request.user.account)
+                    send_msg(baseinfo.collector_mobile, '采集员', apply_state, baseinfo.account_code, request.user.account)
                 # 当申请状态为删除时
                 elif apply_type in [3]:
                     pass
@@ -363,20 +365,21 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         try:
             with transaction.atomic():
+                # 获取单个信息
+                instance = self.get_object()
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
                 # 获取基本信息
-                baseinfo = data.pop('owner')
+                baseinfo = instance.owner
                 # 获取审核意见
                 opinion = data.pop('opinion')
                 # 申请类型
-                apply_type = data['apply_type']
+                apply_type = instance.apply_type
                 # 审核状态
                 apply_state = data['state']
 
                 # 更新申请表
-                instance = self.get_object()
                 serializer = self.get_serializer(instance, data=data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
@@ -386,37 +389,37 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
                     if apply_state == 2:
                         # 更新或创建个人基本信息表和更新角色基本信息表
                         pinfo = {
-                            'pname': baseinfo['owner_name'],
-                            'pid_type': baseinfo['owner_idtype'],
-                            'pid': baseinfo['owner_id'],
-                            'pmobile': baseinfo['owner_mobile'],
-                            'ptel': baseinfo['owner_tel'],
-                            'pemail': baseinfo['owner_email'],
-                            'peducation': baseinfo['education'],
-                            'pabstract': baseinfo['owner_abstract'],
+                            'pname': baseinfo.owner_name,
+                            'pid_type': baseinfo.owner_idtype,
+                            'pid': baseinfo.owner_id,
+                            'pmobile': baseinfo.owner_mobile,
+                            'ptel': baseinfo.owner_tel,
+                            'pemail': baseinfo.owner_email,
+                            'peducation': baseinfo.education,
+                            'pabstract': baseinfo.owner_abstract,
                             'state': 2,
                             'creater': request.user.account,
-                            'account_code': baseinfo['account_code']
+                            'account_code': baseinfo.account_code
                         }
-                        pcode = update_or_crete_person(baseinfo['pcode'], pinfo)
+                        pcode = update_or_crete_person(baseinfo.pcode, pinfo)
 
                         # 更新角色基本信息表
-                        update_baseinfo(ResultOwnerpBaseinfo, {'owner_code': data['owner_code']}, {'state': 1, 'pcode': pcode})
+                        update_baseinfo(ResultOwnerpBaseinfo, {'owner_code': baseinfo.owner_code}, {'state': 1, 'pcode': pcode})
 
                         # 给账号绑定角色
-                        if baseinfo['account_code']:
-                            IdentityAuthorizationInfo.objects.create(account_code=baseinfo['account_code'],
+                        if baseinfo.account_code:
+                            IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
                                                                      identity_code=IdentityInfo.objects.get(identity_name='result_personal_owner').identity_code,
                                                                      iab_time=datetime.datetime.now(),
                                                                      creater=request.user.account)
                         # 移动相关附件
-                        dange_move('headPhoto', baseinfo['owner_code'])
-                        dange_move('identityFront', baseinfo['owner_code'])
-                        dange_move('identityBack', baseinfo['owner_code'])
-                        dange_move('handIdentityPhoto', baseinfo['owner_code'])
+                        dange_move('headPhoto', baseinfo.owner_code)
+                        dange_move('identityFront', baseinfo.owner_code)
+                        dange_move('identityBack', baseinfo.owner_code)
+                        dange_move('handIdentityPhoto', baseinfo.owner_code)
 
                     # 发送信息
-                    send_msg(baseinfo['owner_mobile'], '成果持有人', apply_state, baseinfo['account_code'], request.user.account)
+                    send_msg(baseinfo.owner_mobile, '成果持有人', apply_state, baseinfo.account_code, request.user.account)
                 # 当申请状态为删除时
                 elif apply_type in [3]:
                     pass
@@ -470,20 +473,21 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         try:
             with transaction.atomic():
+                # 获取单个信息、
+                instance = self.get_object()
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
                 # 获取基本信息
-                baseinfo = data.pop('owner')
+                baseinfo = instance.owner
                 # 获取审核意见
                 opinion = data.pop('opinion')
                 # 申请类型
-                apply_type = data['apply_type']
+                apply_type = instance.apply_type
                 # 审核状态
                 apply_state = data['state']
 
                 # 更新申请表
-                instance = self.get_object()
                 serializer = self.get_serializer(instance, data=data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
@@ -493,45 +497,45 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
                     if apply_state == 2:
                         # 更新或创建个人基本信息表和更新角色基本信息表
                         einfo = {
-                            'ename': baseinfo['owner_name'],                              # 企业名称
-                            'eabbr': baseinfo['owner_name_abbr'],                  # 简称
-                            'business_license': baseinfo['owner_license'],           # 企业营业执照统一社会信用码
-                            'eabstract': baseinfo['owner_abstract'],              # 简介
-                            'eabstract_detail': baseinfo['owner_abstract_detail'],
-                            'homepage': baseinfo['homepage'],                    # 企业主页url
-                            'etel': baseinfo['owner_tel'],                        # 企业电话
-                            'manager': baseinfo['legal_person'],                       # 企业联系人
-                            'emobile': baseinfo['owner_mobile'],                                # 企业手机
-                            'eemail': baseinfo['owner_email'],                                       # 企业邮箱
+                            'ename': baseinfo.owner_name,                              # 企业名称
+                            'eabbr': baseinfo.owner_name_abbr,                  # 简称
+                            'business_license': baseinfo.owner_license,           # 企业营业执照统一社会信用码
+                            'eabstract': baseinfo.owner_abstract,              # 简介
+                            'eabstract_detail': baseinfo.owner_abstract_detail,
+                            'homepage': baseinfo.homepage,                    # 企业主页url
+                            'etel': baseinfo.owner_tel,                        # 企业电话
+                            'manager': baseinfo.legal_person,                       # 企业联系人
+                            'emobile': baseinfo.owner_mobile,                                # 企业手机
+                            'eemail': baseinfo.owner_email,                                       # 企业邮箱
                             # 'addr':baseinfo[''],
                             # 'zipcode': baseinfo,
                             'state': 2,
-                            'manager_id': baseinfo['owner_id'],
-                            'manager_idtype': baseinfo['owner_idtype'],
+                            'manager_id': baseinfo.owner_id,
+                            'manager_idtype': baseinfo.owner_idtype,
                             'creater': request.user.account,
-                            'account_code': baseinfo['account_code']
+                            'account_code': baseinfo.account_code
                         }
-                        ecode = update_or_crete_enterprise(baseinfo['ecode'], einfo)
+                        ecode = update_or_crete_enterprise(baseinfo.ecode, einfo)
 
                         # 更新角色基本信息表
-                        update_baseinfo(ResultOwnereBaseinfo, {'owner_code': data['owner_code']}, {'state': 1, 'ecode': ecode})
+                        update_baseinfo(ResultOwnereBaseinfo, {'owner_code': baseinfo.owner_code}, {'state': 1, 'ecode': ecode})
 
                         # 给账号绑定角色
-                        if baseinfo['account_code']:
-                            IdentityAuthorizationInfo.objects.create(account_code=baseinfo['account_code'],
+                        if baseinfo.account_code:
+                            IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
                                                                      identity_code=IdentityInfo.objects.get(identity_name='result_enterprise_owner').identity_code,
                                                                      iab_time=datetime.datetime.now(),
                                                                      creater=request.user.account)
                         # 移动相关附件
-                        dange_move('identityFront', baseinfo['owner_code'])
-                        dange_move('identityBack', baseinfo['owner_code'])
-                        dange_move('handIdentityPhoto', baseinfo['owner_code'])
-                        dange_move('entLicense', baseinfo['owner_code'])
-                        dange_move('logoPhoto', baseinfo['owner_code'])
-                        dange_move('Propaganda', baseinfo['owner_code'])
+                        dange_move('identityFront', baseinfo.owner_code)
+                        dange_move('identityBack', baseinfo.owner_code)
+                        dange_move('handIdentityPhoto', baseinfo.owner_code)
+                        dange_move('entLicense', baseinfo.owner_code)
+                        dange_move('logoPhoto', baseinfo.owner_code)
+                        dange_move('Propaganda', baseinfo.owner_code)
 
                     # 发送信息
-                    t1 = threading.Thread(target=send_msg, args=(baseinfo['owner_mobile'], '成果持有企业', apply_state, baseinfo['account_code'], request.user.account))
+                    t1 = threading.Thread(target=send_msg, args=(baseinfo.owner_mobile, '成果持有企业', apply_state, baseinfo.account_code, request.user.account))
                     t1.start()
                 # 当申请状态为删除时
                 elif apply_type in [3]:
@@ -586,20 +590,22 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         try:
             with transaction.atomic():
+                # 获取单个记录
+                instance = self.get_object()
+
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
                 # 获取基本信息
-                baseinfo = data.pop('owner')
+                baseinfo = instance.owner
                 # 获取审核意见
                 opinion = data.pop('opinion')
                 # 申请类型
-                apply_type = data['apply_type']
+                apply_type = instance.apply_type
                 # 审核状态
                 apply_state = data['state']
 
                 # 更新申请表
-                instance = self.get_object()
                 serializer = self.get_serializer(instance, data=data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
@@ -609,37 +615,37 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
                     if apply_state == 2:
                         # 更新或创建个人基本信息表和更新角色基本信息表
                         pinfo = {
-                            'pname': baseinfo['owner_name'],
-                            'pid_type': baseinfo['owner_idtype'],
-                            'pid': baseinfo['owner_id'],
-                            'pmobile': baseinfo['owner_mobile'],
-                            'ptel': baseinfo['owner_tel'],
-                            'pemail': baseinfo['owner_email'],
-                            'peducation': baseinfo['education'],
-                            'pabstract': baseinfo['owner_abstract'],
+                            'pname': baseinfo.owner_name,
+                            'pid_type': baseinfo.owner_idtype,
+                            'pid': baseinfo.owner_id,
+                            'pmobile': baseinfo.owner_mobile,
+                            'ptel': baseinfo.owner_tel,
+                            'pemail': baseinfo.owner_email,
+                            'peducation': baseinfo.education,
+                            'pabstract': baseinfo.owner_abstract,
                             'state': 2,
                             'creater': request.user.account,
-                            'account_code': baseinfo['account_code']
+                            'account_code': baseinfo.account_code
                         }
-                        pcode = update_or_crete_person(baseinfo['pcode'], pinfo)
+                        pcode = update_or_crete_person(baseinfo.pcode, pinfo)
 
                         # 更新角色基本信息表
-                        update_baseinfo(ResultOwnerpBaseinfo, {'owner_code': data['owner_code']}, {'state': 1, 'pcode': pcode})
+                        update_baseinfo(ResultOwnerpBaseinfo, {'owner_code': baseinfo.owner_code}, {'state': 1, 'pcode': pcode})
 
                         # 给账号绑定角色
-                        if baseinfo['account_code']:
-                            IdentityAuthorizationInfo.objects.create(account_code=baseinfo['account_code'],
+                        if baseinfo.account_code:
+                            IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
                                                                      identity_code=IdentityInfo.objects.get(identity_name='requirement_personal_owner').identity_code,
                                                                      iab_time=datetime.datetime.now(),
                                                                      creater=request.user.account)
                         # 移动相关附件
-                        dange_move('headPhoto', baseinfo['owner_code'])
-                        dange_move('identityFront', baseinfo['owner_code'])
-                        dange_move('identityBack', baseinfo['owner_code'])
-                        dange_move('handIdentityPhoto', baseinfo['owner_code'])
+                        dange_move('headPhoto', baseinfo.owner_code)
+                        dange_move('identityFront', baseinfo.owner_code)
+                        dange_move('identityBack', baseinfo.owner_code)
+                        dange_move('handIdentityPhoto', baseinfo.owner_code)
 
                     # 发送信息
-                    send_msg(baseinfo['owner_mobile'], '需求持有人', apply_state, baseinfo['account_code'], request.user.account)
+                    send_msg(baseinfo.owner_mobile, '需求持有人', apply_state, baseinfo.account_code, request.user.account)
                 # 当申请状态为删除时
                 elif apply_type in [3]:
                     pass
@@ -693,20 +699,21 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         try:
             with transaction.atomic():
+                # 获取单个信息
+                instance = self.get_object()
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
                 # 获取基本信息
-                baseinfo = data.pop('owner')
+                baseinfo = instance.owner
                 # 获取审核意见
                 opinion = data.pop('opinion')
                 # 申请类型
-                apply_type = data['apply_type']
+                apply_type = instance.apply_type
                 # 审核状态
                 apply_state = data['state']
 
                 # 更新申请表
-                instance = self.get_object()
                 serializer = self.get_serializer(instance, data=data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
@@ -716,45 +723,45 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                     if apply_state == 2:
                         # 更新或创建个人基本信息表和更新角色基本信息表
                         einfo = {
-                            'ename': baseinfo['owner_name'],                              # 企业名称
-                            'eabbr': baseinfo['owner_name_abbr'],                  # 简称
-                            'business_license': baseinfo['owner_license'],           # 企业营业执照统一社会信用码
-                            'eabstract': baseinfo['owner_abstract'],              # 简介
-                            'eabstract_detail': baseinfo['owner_abstract_detail'],
-                            'homepage': baseinfo['homepage'],                    # 企业主页url
-                            'etel': baseinfo['owner_tel'],                        # 企业电话
-                            'manager': baseinfo['legal_person'],                       # 企业联系人
-                            'emobile': baseinfo['owner_mobile'],                                # 企业手机
-                            'eemail': baseinfo['owner_email'],                                       # 企业邮箱
+                            'ename': baseinfo.owner_name,                              # 企业名称
+                            'eabbr': baseinfo.owner_name_abbr,                  # 简称
+                            'business_license': baseinfo.owner_license,           # 企业营业执照统一社会信用码
+                            'eabstract': baseinfo.owner_abstract,              # 简介
+                            'eabstract_detail': baseinfo.owner_abstract_detail,
+                            'homepage': baseinfo.homepage,                    # 企业主页url
+                            'etel': baseinfo.owner_tel,                        # 企业电话
+                            'manager': baseinfo.legal_person,                       # 企业联系人
+                            'emobile': baseinfo.owner_mobile,                                # 企业手机
+                            'eemail': baseinfo.owner_email,                                       # 企业邮箱
                             # 'addr':baseinfo[''],
                             # 'zipcode': baseinfo,
                             'state': 2,
-                            'manager_id': baseinfo['owner_id'],
-                            'manager_idtype': baseinfo['owner_idtype'],
+                            'manager_id': baseinfo.owner_id,
+                            'manager_idtype': baseinfo.owner_idtype,
                             'creater': request.user.account,
-                            'account_code': baseinfo['account_code']
+                            'account_code': baseinfo.account_code
                         }
-                        ecode = update_or_crete_enterprise(baseinfo['ecode'], einfo)
+                        ecode = update_or_crete_enterprise(baseinfo.ecode, einfo)
 
                         # 更新角色基本信息表
-                        update_baseinfo(ResultOwnereBaseinfo, {'owner_code': data['owner_code']}, {'state': 1, 'ecode': ecode})
+                        update_baseinfo(ResultOwnereBaseinfo, {'owner_code': baseinfo.owner_code}, {'state': 1, 'ecode': ecode})
 
                         # 给账号绑定角色
-                        if baseinfo['account_code']:
-                            IdentityAuthorizationInfo.objects.create(account_code=baseinfo['account_code'],
+                        if baseinfo.account_code:
+                            IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
                                                                      identity_code=IdentityInfo.objects.get(identity_name='requirement_enterprise_owner').identity_code,
                                                                      iab_time=datetime.datetime.now(),
                                                                      creater=request.user.account)
                         # 移动相关附件
-                        dange_move('identityFront', baseinfo['owner_code'])
-                        dange_move('identityBack', baseinfo['owner_code'])
-                        dange_move('handIdentityPhoto', baseinfo['owner_code'])
-                        dange_move('entLicense', baseinfo['owner_code'])
-                        dange_move('logoPhoto', baseinfo['owner_code'])
-                        dange_move('Propaganda', baseinfo['owner_code'])
+                        dange_move('identityFront', baseinfo.owner_code)
+                        dange_move('identityBack', baseinfo.owner_code)
+                        dange_move('handIdentityPhoto', baseinfo.owner_code)
+                        dange_move('entLicense', baseinfo.owner_code)
+                        dange_move('logoPhoto', baseinfo.owner_code)
+                        dange_move('Propaganda', baseinfo.owner_code)
 
                     # 发送信息
-                    t1 = threading.Thread(target=send_msg, args=(baseinfo['owner_mobile'], '需求持有企业', apply_state, baseinfo['account_code'], request.user.account))
+                    t1 = threading.Thread(target=send_msg, args=(baseinfo.owner_mobile, '需求持有企业', apply_state, baseinfo.account_code, request.user.account))
                     t1.start()
                 # 当申请状态为删除时
                 elif apply_type in [3]:
