@@ -89,7 +89,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         #cursor.execute("create index account_code_index on account_info(account_code(10))")
         #cursor.execute("create index account_code_index on rr_apply_history(account_code(10))")
         # 执行语句
-        cursor.execute("select rr_apply_history.* from rr_apply_history left join account_info on rr_apply_history.account_code=account_info.account_code where account_info.account_code='string' and rr_apply_history.type=1")
+        cursor.execute("select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.account_code='string' and rr_apply_history.type=1")
         raw_list = cursor.fetchall()  # 读取所有，返回tuple
         # 关闭游标
         cursor.close()
