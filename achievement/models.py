@@ -186,7 +186,7 @@ class ResultsInfo(models.Model):
         return dict
 
     @property
-    def shPerHandId(self):
+    def PerHandId(self):
         dict = dange_show('handIdentityPhoto', self.r_code)
         return dict
 

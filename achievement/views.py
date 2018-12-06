@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import filters
 
+
 from misc.misc import gen_uuid32, genearteMD5
 import django_filters
 import threading
@@ -14,8 +15,10 @@ import requests
 import json
 import time
 import shutil
+from django.db import connection  # django封装好的方法
 
 from public_models.utils import fujian_move, dange_move
+from account.models import Deptinfo
 from .serializers import *
 from .models import *
 from .utils import massege
@@ -56,9 +59,12 @@ class ProfileViewSet(viewsets.ModelViewSet):
     filter_fields = ("account_code", "rr_code","a_code")
     search_fields = ("rr_code","account_code","a_code")
     def list(self, request, *args, **kwargs):
-        #queryset = RrApplyHistory.objects.filter(type=1).order_by('-serial')
+
+
 
         queryset = self.filter_queryset(self.get_queryset())
+        #queryset = self.filter_queryset(queryset)
+
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
