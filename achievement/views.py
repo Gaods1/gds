@@ -48,7 +48,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         opinion（text）:审核意见,
     }
     """
-    queryset = RrApplyHistory.objects.filter(type=1).order_by('-serial')
+    queryset = RrApplyHistory.objects.filter(type=1).order_by('state')
 
     serializer_class = RrApplyHistorySerializer
     filter_backends = (
@@ -88,15 +88,41 @@ class ProfileViewSet(viewsets.ModelViewSet):
         # 创建索引
         #cursor.execute("create index account_code_index on account_info(account_code(10))")
         #cursor.execute("create index account_code_index on rr_apply_history(account_code(10))")
-        # 执行语句
-        cursor.execute("select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.account_code='string' and rr_apply_history.type=1")
+        # 创建视图
+        #create view v_view as select语句
+
+
+        SQL = """
+        	select rr_apply_history.*
+            from rr_apply_history
+        	inner join account_info
+        	on account_info.account_code=rr_apply_history.account_code
+        	where account_info.account_code='string'
+        	and rr_apply_history.type=1
+        """
+        SQL_V = """
+            create view v_view as
+            select rr_apply_history.*
+            from rr_apply_history
+        	inner join account_info
+        	on account_info.account_code=rr_apply_history.account_code
+        	where account_info.account_code='string'
+        	and rr_apply_history.type=1
+        """
+        SQL_S = """
+            select * from v_view
+        """
+        # 执行语句创建视图
+        #cursor.execute(SQL_V)
+        # 执行语句查询视图
+        cursor.execute(SQL_S)
         raw_list = cursor.fetchall()  # 读取所有，返回tuple
         # 关闭游标
         cursor.close()
 
         # queryset = RrApplyHistory.objects.raw()
         # 转化数据类型
-        queryset = RrApplyHistory.objects.filter(pk__in=[x[0] for x in diedai(raw_list)])
+        queryset = RrApplyHistory.objects.filter(pk__in=[x[0] for x in diedai(raw_list)]).order_by('state')
 
         #queryset = self.filter_queryset(self.get_queryset())
         queryset = self.filter_queryset(queryset)
@@ -543,7 +569,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
         opinion（text）:审核意见,
     }
     """
-    queryset = RrApplyHistory.objects.filter(type=2).order_by('-serial')
+    queryset = RrApplyHistory.objects.filter(type=2).order_by('state')
     serializer_class = RrApplyHistorySerializer
     filter_backends = (
         filters.SearchFilter,
