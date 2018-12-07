@@ -1,7 +1,7 @@
 from django.db import models
 from misc.misc import gen_uuid32
 from public_models.models import *
-from public_models.utils import dange_show
+from public_models.utils import get_single
 from .utils import get_major
 from account.models import AccountInfo
 # Create your models here.
