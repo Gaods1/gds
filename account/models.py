@@ -99,9 +99,9 @@ class AccountInfo(AbstractBaseUser):
             'title': "系统首页",
         },
         }
-        role_code = [i['role_code'] for i in AccountRoleInfo.objects.values('role_code').filter(account=self.account, state=1)]
-        account_dis_func = [i['func_code'] for i in AccountDisableFuncinfo.objects.values('func_code').filter(account=self.account, state=1)]
-        func_code = list(set([i['func_code'] for i in RoleFuncInfo.objects.values('func_code').filter(role_code__in=role_code, state=1) if i['func_code'] not in account_dis_func]))
+        role_code = AccountRoleInfo.objects.values_list('role_code', flat=True).filter(account=self.account, state=1, type=0)
+        account_dis_func = AccountDisableFuncinfo.objects.values_list('func_code', flat=True).filter(account=self.account, state=1)
+        func_code = list(filter(lambda t:t not in account_dis_func, set(RoleFuncInfo.objects.values_list('func_code', flat=True).filter(role_code__in=role_code, state=1))))
         func_obj = FunctionInfo.objects.values('pfunc_code', 'func_name').filter(func_code__in=func_code, state=1)
         pfunc_code_list = []
         for f in func_obj:
@@ -111,6 +111,15 @@ class AccountInfo(AbstractBaseUser):
                 pfunc_code_list.append(f['pfunc_code'])
             func_dict[pfunc]['subs'].append(sub_menu[f['func_name']])
         return func_dict.values()
+
+    @property
+    def authorized_func(self):
+        role_code = AccountRoleInfo.objects.values_list('role_code', flat=True).filter(account=self.account, state=1, type=1)
+        account_dis_func = AccountDisableFuncinfo.objects.values_list('func_code', flat=True).filter(account=self.account, state=1)
+        func_code = list(filter(lambda t:t not in account_dis_func, set(RoleFuncInfo.objects.values_list('func_code', flat=True).filter(role_code__in=role_code, state=1))))
+        func_obj = FunctionInfo.objects.values('func_code', 'func_name').filter(func_code__in=func_code, state=1)
+        return func_obj
+
 
     @property
     def cstate(self):
