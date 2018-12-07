@@ -299,7 +299,7 @@ class AccountRoleViewSet(viewsets.ModelViewSet):
         data = request.data
         user = data['account']
         if user == 'root' or user == request.user.account:
-            return JsonResponse({"datil": "此操作不被允许"})
+            return JsonResponse({"detail": "此操作不被允许"})
 
         data['creater'] = request.user.account
         serializer = self.get_serializer(data=data)
