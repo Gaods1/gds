@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from misc.misc import gen_uuid32, genearteMD5
 from rest_framework import filters
 import django_filters
+from django.http import JsonResponse
 # Create your views here.
 
 
@@ -296,6 +297,10 @@ class AccountRoleViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         data = request.data
+        user = data['account']
+        if user == 'root' or user == request.user.account:
+            return JsonResponse({"datil": "此操作不被允许"})
+
         data['creater'] = request.user.account
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)

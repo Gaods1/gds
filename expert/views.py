@@ -865,6 +865,11 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                         'creater': request.user.account
                     }
                     IdentityAuthorizationInfo.objects.create(**identity_authorization_data)
+                    dange_move('identityFront', apply_team_baseinfo.team_baseinfo.pt_code)
+                    dange_move('identityBack', apply_team_baseinfo.team_baseinfo.pt_code)
+                    dange_move('handIdentityPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
+                    dange_move('logoPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
+                    dange_move('Propaganda', apply_team_baseinfo.team_baseinfo.pt_code)
                 # 5 发送短信通知
                 account_info = AccountInfo.objects.get(account_code=apply_team_baseinfo.team_baseinfo.account_code)
                 account_mobile = account_info.user_mobile
