@@ -17,7 +17,7 @@ import time
 import shutil
 from django.db import connection  # django封装好的方法
 
-from public_models.utils import fujian_move, dange_move
+from public_models.utils import  move_attachment, move_single
 from account.models import Deptinfo
 from .serializers import *
 from .models import *
@@ -221,11 +221,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
                                 t1.start()
 
                         # 返回相对路径
-                        dict_fujian = fujian_move('attachment', instance.rr_code)
-                        dict_dange = dange_move('coverImg', instance.rr_code)
+                        dict_attachment = move_attachment('attachment', instance.rr_code)
+                        dict_single = move_single('coverImg', instance.rr_code)
 
-                        dict_z['Attach'] = dict_fujian
-                        dict_z['Cover'] = dict_dange
+                        dict_z['Attach'] = dict_attachment
+                        dict_z['Cover'] = dict_single
 
                         # 创建推送表
                         mm = Message.objects.create(**{
@@ -285,19 +285,19 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             #response = requests.post(url, data=body, headers=headers)
 
                             # 返回相对路径
-                            dict_fujian = fujian_move('attachment', instance.rr_code)
-                            dict_dange_fengmian = dange_move('coverImg', instance.rr_code)
-                            dict_dange_xieyi = fujian_move('agreement', instance.rr_code)
-                            dict_dange_zhengmian =  dange_move('identityFront', instance.rr_code)
-                            dict_dange_fanmian = fujian_move('identityBack', instance.rr_code)
-                            dict_dange_shouchi = dange_move('handIdentityPhoto', instance.rr_code)
+                            dict_attachment = move_attachment('attachment', instance.rr_code)
+                            dict_single_coverImg = move_single('coverImg', instance.rr_code)
+                            dict_single_agreement = move_single('agreement', instance.rr_code)
+                            dict_single_identityFront =  move_single('identityFront', instance.rr_code)
+                            dict_single_identityBack = move_single('identityBack', instance.rr_code)
+                            dict_single_handIdentityPhoto = move_single('handIdentityPhoto', instance.rr_code)
 
-                            dict_z['Attach'] = dict_fujian
-                            dict_z['Cover'] = dict_dange_fengmian
-                            dict_z['AgencyImg'] = dict_dange_xieyi
-                            dict_z['PerIdFront'] = dict_dange_zhengmian
-                            dict_z['PerIdBack'] = dict_dange_fanmian
-                            dict_z['PerHandIdPhoto'] = dict_dange_shouchi
+                            dict_z['Attach'] = dict_attachment
+                            dict_z['Cover'] = dict_single_coverImg
+                            dict_z['AgencyImg'] = dict_single_agreement
+                            dict_z['PerIdFront'] = dict_single_identityFront
+                            dict_z['PerIdBack'] = dict_single_identityBack
+                            dict_z['PerHandIdPhoto'] = dict_single_handIdentityPhoto
 
                             # 创建推送表
                             mm = Message.objects.create(**{
@@ -663,11 +663,11 @@ class RequirementViewSet(viewsets.ModelViewSet):
                                 t1.start()
 
                         # 返回相对路径
-                        dict_fujian = fujian_move('attachment', instance.rr_code)
-                        dict_dange = dange_move('coverImg', instance.rr_code)
+                        dict_attachment = move_attachment('attachment', instance.rr_code)
+                        dict_single = move_single('coverImg', instance.rr_code)
 
-                        dict_z['Attach'] = dict_fujian
-                        dict_z['Cover'] = dict_dange
+                        dict_z['Attach'] = dict_attachment
+                        dict_z['Cover'] = dict_single
 
                         # 创建推送表
                         mm = Message.objects.create(**{
@@ -723,19 +723,19 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             # response = requests.post(url, data=body, headers=headers)
 
                             # 返回相对路径
-                            dict_fujian = fujian_move('attachment', instance.rr_code)
-                            dict_dange_fengmian = dange_move('coverImg', instance.rr_code)
-                            dict_dange_xieyi = fujian_move('agreement', instance.rr_code)
-                            dict_dange_zhengmian = dange_move('identityFront', instance.rr_code)
-                            dict_dange_fanmian = fujian_move('identityBack', instance.rr_code)
-                            dict_dange_shouchi = dange_move('handIdentityPhoto', instance.rr_code)
+                            dict_attachment = move_attachment('attachment', instance.rr_code)
+                            dict_single_coverImg = move_single('coverImg', instance.rr_code)
+                            dict_single_agreement = move_single('agreement', instance.rr_code)
+                            dict_single_identityFront = move_single('identityFront', instance.rr_code)
+                            dict_single_identityBack = move_single('identityBack', instance.rr_code)
+                            dict_single_handIdentityPhoto = move_single('handIdentityPhoto', instance.rr_code)
 
-                            dict_z['Attach'] = dict_fujian
-                            dict_z['Cover'] = dict_dange_fengmian
-                            dict_z['AgencyImg'] = dict_dange_xieyi
-                            dict_z['PerIdFront'] = dict_dange_zhengmian
-                            dict_z['PerIdBack'] = dict_dange_fanmian
-                            dict_z['PerHandIdPhoto'] = dict_dange_shouchi
+                            dict_z['Attach'] = dict_attachment
+                            dict_z['Cover'] = dict_single_coverImg
+                            dict_z['AgencyImg'] = dict_single_agreement
+                            dict_z['PerIdFront'] = dict_single_identityFront
+                            dict_z['PerIdBack'] = dict_single_identityBack
+                            dict_z['PerHandIdPhoto'] = dict_single_handIdentityPhoto
 
                             # 创建推送表
                             mm = Message.objects.create(**{

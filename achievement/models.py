@@ -10,7 +10,7 @@ from public_models.models import MajorUserinfo,MajorInfo # 领域类型使用状
 from public_models.models import Message,ParamInfo# 推送消息表以及系统参数表
 from public_models.models import AttachmentFileType,AttachmentFileinfo#附件表及附件类型表
 
-from public_models.utils import fujian_show,dange_show
+from public_models.utils import get_attachment,get_single
 
 # Create your models here.
 
@@ -85,32 +85,32 @@ class RequirementsInfo(models.Model):
 
     @property
     def Attach(self):
-        dict = fujian_show('attachment',self.req_code)
+        dict = get_attachment('attachment',self.req_code)
         return dict
 
     @property
     def Cover(self):
-        dict = dange_show('coverImg',self.req_code)
+        dict = get_single('coverImg',self.req_code)
         return dict
 
     @property
     def AgencyImg(self):
-        dict = dange_show('agreement', self.req_code)
+        dict = get_single('agreement', self.req_code)
         return dict
 
     @property
     def PerIdFront(self):
-        dict = dange_show('identityFront', self.req_code)
+        dict = get_single('identityFront', self.req_code)
         return dict
 
     @property
     def PerIdBack(self):
-        dict = dange_show('identityBack', self.req_code)
+        dict = get_single('identityBack', self.req_code)
         return dict
 
     @property
     def PerHandId(self):
-        dict = dange_show('handIdentityPhoto', self.req_code)
+        dict = get_single('handIdentityPhoto', self.req_code)
         return dict
 
     @property
@@ -162,32 +162,32 @@ class ResultsInfo(models.Model):
 
     @property
     def Attach(self):
-        dict = fujian_show('attachment',self.r_code)
+        dict = get_attachment('attachment',self.r_code)
         return dict
 
     @property
     def Cover(self):
-        dict = dange_show('coverImg',self.r_code)
+        dict = get_single('coverImg',self.r_code)
         return dict
 
     @property
     def AgencyImg(self):
-        dict = dange_show('agreement', self.r_code)
+        dict = get_single('agreement', self.r_code)
         return dict
 
     @property
     def PerIdFront(self):
-        dict = dange_show('identityFront', self.r_code)
+        dict = get_single('identityFront', self.r_code)
         return dict
 
     @property
     def PerIdBack(self):
-        dict = dange_show('identityBack', self.r_code)
+        dict = get_single('identityBack', self.r_code)
         return dict
 
     @property
     def PerHandId(self):
-        dict = dange_show('handIdentityPhoto', self.r_code)
+        dict = get_single('handIdentityPhoto', self.r_code)
         return dict
 
     @property

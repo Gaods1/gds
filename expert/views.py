@@ -8,7 +8,7 @@ from django.db import transaction
 from django.http import JsonResponse
 from .utils import *
 import datetime, threading
-from public_models.utils import dange_move
+from public_models.utils import move_single
 
 
 # 领域专家管理
