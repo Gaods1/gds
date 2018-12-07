@@ -122,22 +122,22 @@ class ExpertBaseinfo(models.Model):
     # 头像
     @property
     def head(self):
-        return dange_show('headPhoto', self.expert_code)
+        return get_single('headPhoto', self.expert_code)
 
     # 身份证正面
     @property
     def idfornt(self):
-        return dange_show('identityFront', self.expert_code)
+        return get_single('identityFront', self.expert_code)
 
     # 身份证反面
     @property
     def idback(self):
-        return dange_show('identityBack', self.expert_code)
+        return get_single('identityBack', self.expert_code)
 
     # 手持身份证照片
     @property
     def idphoto(self):
-        return dange_show('handIdentityPhoto', self.expert_code)
+        return get_single('handIdentityPhoto', self.expert_code)
 
     class Meta:
         managed = True
@@ -237,22 +237,22 @@ class BrokerBaseinfo(models.Model):
     # 头像
     @property
     def head(self):
-        return dange_show('headPhoto', self.broker_code)
+        return get_single('headPhoto', self.broker_code)
 
     # 身份证正面
     @property
     def idfornt(self):
-        return dange_show('identityFront', self.broker_code)
+        return get_single('identityFront', self.broker_code)
 
     # 身份证反面
     @property
     def idback(self):
-        return dange_show('identityBack', self.broker_code)
+        return get_single('identityBack', self.broker_code)
 
     # 手持身份证照片
     @property
     def idphoto(self):
-        return dange_show('handIdentityPhoto', self.broker_code)
+        return get_single('handIdentityPhoto', self.broker_code)
 
     class Meta:
         managed = False
@@ -337,22 +337,22 @@ class CollectorBaseinfo(models.Model):
     # 头像
     @property
     def head(self):
-        return dange_show('headPhoto', self.collector_code)
+        return get_single('headPhoto', self.collector_code)
 
     # 身份证正面
     @property
     def idfornt(self):
-        return dange_show('identityFront', self.collector_code)
+        return get_single('identityFront', self.collector_code)
 
     # 身份证反面
     @property
     def idback(self):
-        return dange_show('identityBack', self.collector_code)
+        return get_single('identityBack', self.collector_code)
 
     # 手持身份证照片
     @property
     def idphoto(self):
-        return dange_show('handIdentityPhoto', self.collector_code)
+        return get_single('handIdentityPhoto', self.collector_code)
 
     class Meta:
         managed = False
@@ -446,22 +446,22 @@ class ResultOwnerpBaseinfo(models.Model):
     # 头像
     @property
     def head(self):
-        return dange_show("headPhoto", self.owner_code)
+        return get_single("headPhoto", self.owner_code)
 
     # 身份证前面
     @property
     def idfornt(self):
-        return dange_show("identityFront", self.owner_code)
+        return get_single("identityFront", self.owner_code)
 
     # 身份证反面
     @property
     def idback(self):
-        return dange_show("identityBack", self.owner_code)
+        return get_single("identityBack", self.owner_code)
 
     # 手持身份证
     @property
     def idphoto(self):
-        return dange_show("handIdentityPhoto", self.owner_code)
+        return get_single("handIdentityPhoto", self.owner_code)
 
     class Meta:
         managed = False
@@ -564,32 +564,32 @@ class ResultOwnereBaseinfo(models.Model):
     # 法人身份证正面
     @property
     def idfornt(self):
-        return dange_show("identityFront", self.owner_code)
+        return get_single("identityFront", self.owner_code)
 
     # 法人身份证反面
     @property
     def idback(self):
-        return dange_show("identityBack", self.owner_code)
+        return get_single("identityBack", self.owner_code)
 
     # 法人手持身份证
     @property
     def idphoto(self):
-        return dange_show("handIdentityPhoto", self.owner_code)
+        return get_single("handIdentityPhoto", self.owner_code)
 
     # 营业执照
     @property
     def license(self):
-        return dange_show("entLicense", self.owner_code)
+        return get_single("entLicense", self.owner_code)
 
     # 企业logo
     @property
     def logo(self):
-        return dange_show("logoPhoto", self.owner_code)
+        return get_single("logoPhoto", self.owner_code)
 
     # 企业宣传图片
     @property
     def promotional(self):
-        return dange_show("Propaganda", self.owner_code)
+        return get_single("Propaganda", self.owner_code)
 
     class Meta:
         managed = False
@@ -633,27 +633,27 @@ class ProjectTeamBaseinfo(models.Model):
     # 管理人员身份证正面
     @property
     def idfornt(self):
-        return dange_show("identityFront", self.pt_code)
+        return get_single("identityFront", self.pt_code)
 
     # 管理人员身份证反面
     @property
     def idback(self):
-        return dange_show("identityBack", self.pt_code)
+        return get_single("identityBack", self.pt_code)
 
     # 管理人员手持身份证
     @property
     def idphoto(self):
-        return dange_show("handIdentityPhoto", self.pt_code)
+        return get_single("handIdentityPhoto", self.pt_code)
 
     # 团队logo
     @property
     def logo(self):
-        return dange_show("logoPhoto", self.pt_code)
+        return get_single("logoPhoto", self.pt_code)
 
     # 团队宣传图片
     @property
     def promotional(self):
-        return dange_show("Propaganda", self.pt_code)
+        return get_single("Propaganda", self.pt_code)
 
     class Meta:
         managed = False

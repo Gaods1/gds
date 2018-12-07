@@ -107,6 +107,14 @@ class AccountViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user = instance.account
+        if user in [request.user.account, 'root']:
+            return JsonResponse({"detail": "此操作不被允许"})
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 # 角色管理
 class RoleInfoViewSet(viewsets.ModelViewSet):
@@ -181,6 +189,11 @@ class RoleInfoViewSet(viewsets.ModelViewSet):
         partial = kwargs.pop('partial', False)
         data = request.data
         instance = self.get_object()
+
+        user = AccountRoleInfo.objects.values_list('account', flat=True).filter(role_code=instance.role_code)
+        if 'root' in user or request.user.account.user:
+            return JsonResponse({"detail": "此操作不被允许"})
+
         old_func_code = [i.func_code for i in instance.func]
         new_func_code = data.pop('func')
         if new_func_code != old_func_code:
@@ -202,6 +215,9 @@ class RoleInfoViewSet(viewsets.ModelViewSet):
 
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+        user = AccountRoleInfo.objects.values_list('account', flat=True).filter(role_code=instance.role_code)
+        if 'root' in user or request.user.account.user:
+            return JsonResponse({"detail": "此操作不被允许"})
         RoleFuncInfo.objects.filter(role_code=instance.role_code).delete()
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -307,6 +323,31 @@ class AccountRoleViewSet(viewsets.ModelViewSet):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        user = instance.account
+        if user == 'root' or user == request.user.account:
+            return JsonResponse({"detail": "此操作不被允许"})
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        user = instance.account
+        if user == 'root' or user == request.user.account:
+            return JsonResponse({"detail": "此操作不被允许"})
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # 功能点管理
