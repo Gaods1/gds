@@ -372,6 +372,11 @@ class TeamBaseinfoSerializers(serializers.ModelSerializer):
             'account_code',    # 系统账号
             'creater',   #录入者
             'insert_time',  # 创建时间
+            'idfornt',
+            'idback',
+            'idphoto',
+            'logo',
+            'promotional',
         ]
 
 
