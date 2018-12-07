@@ -157,13 +157,13 @@ sub_menu = {
         'title': "项目终止审核",
         'index': "project_end_cer"
     },
-    '成果信息管理':{
-        'title': "成果信息管理",
-        'index': "result"
+    '成果信息审核':{
+        'title': "成果信息审核",
+        'index': "result_apply"
     },
-    '需求信息管理':{
-        'title': "需求信息管理",
-        'index': "requirement"
+    '需求信息审核':{
+        'title': "需求信息审核",
+        'index': "requirement_apply"
     },
     '技术经纪人管理': {
         'title': "技术经纪人管理",
