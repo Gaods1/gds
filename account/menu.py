@@ -159,7 +159,7 @@ sub_menu = {
     },
     '成果信息管理':{
         'title': "成果信息管理",
-        'index': "achie_info_detail"
+        'index': "result"
     },
     '需求信息管理':{
         'title': "需求信息管理",

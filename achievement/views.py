@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import filters
 
+
 from misc.misc import gen_uuid32, genearteMD5
 import django_filters
 import threading
@@ -14,11 +15,14 @@ import requests
 import json
 import time
 import shutil
+from django.db import connection  # django封装好的方法
 
 from public_models.utils import fujian_move, dange_move
+from account.models import Deptinfo
 from .serializers import *
 from .models import *
-from .utils import massege
+from .utils import massege, diedai
+
 
 # Create your views here.
 
@@ -56,9 +60,47 @@ class ProfileViewSet(viewsets.ModelViewSet):
     filter_fields = ("account_code", "rr_code","a_code")
     search_fields = ("rr_code","account_code","a_code")
     def list(self, request, *args, **kwargs):
-        #queryset = RrApplyHistory.objects.filter(type=1).order_by('-serial')
+        # queryset = RrApplyHistory.objects.filter(type=1).order_by('-serial')
+        #dept_code = request.user.dept_code
+        #dept_level = Deptinfo.objects.get(dept_code=dept_code).dept_level
+        #if dept_level == 1:
+            #dept_code = [deptinfo.dept_code for deptinfo in Deptinfo.objects.all()]
 
-        queryset = self.filter_queryset(self.get_queryset())
+            #cursor = connection.cursor()
+            #cursor.execute(
+                #"select rr_aplay_history.* from  rr_aplay_history inner join account_info on rr_aplay_history.account_code=account_info.account_code where account_info.account_code in dept_code and rr_aplay_history.type=1")
+
+            #raw_list = cursor.fetchall()  # 读取所有，返回list
+            #cursor.close()
+        #elif dept_level == 2:
+            #dept_code = [deptinfo.dept_code for deptinfo in Deptinfo.objects.get(pdept_code=dept_code).dept_code]
+
+            #cursor = connection.cursor()
+            #cursor.execute(
+                #"select rr_aplay_history.* from  rr_aplay_history inner join account_info on rr_aplay_history.account_code=account_info.account_code where account_info.account_code in dept_code and rr_aplay_history.type=1")
+
+            #raw_list = cursor.fetchall()  # 读取所有，返回list
+            #cursor.close()
+        #else:
+            #dept_code = dept_code
+        # 建立游标
+        cursor = connection.cursor()
+        # 创建索引
+        #cursor.execute("create index account_code_index on account_info(account_code(10))")
+        #cursor.execute("create index account_code_index on rr_apply_history(account_code(10))")
+        # 执行语句
+        cursor.execute("select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.account_code='string' and rr_apply_history.type=1")
+        raw_list = cursor.fetchall()  # 读取所有，返回tuple
+        # 关闭游标
+        cursor.close()
+
+        # queryset = RrApplyHistory.objects.raw()
+        # 转化数据类型
+        queryset = RrApplyHistory.objects.filter(pk__in=[x[0] for x in diedai(raw_list)])
+
+        #queryset = self.filter_queryset(self.get_queryset())
+        queryset = self.filter_queryset(queryset)
+
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
