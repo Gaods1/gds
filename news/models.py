@@ -1,4 +1,5 @@
 from django.db import models
+from misc.misc import gen_uuid32
 
 # Create your models here.
 
@@ -21,6 +22,7 @@ class NewsGroupInfo(models.Model):
 class NewsInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     group_code = models.CharField(max_length=64, blank=True, null=True)
+    news_code = models.CharField(max_length=64, default=gen_uuid32)
     caption = models.CharField(max_length=64, blank=True, null=True)
     caption_ext = models.CharField(max_length=64, blank=True, null=True)
     author = models.CharField(max_length=32, blank=True, null=True)
@@ -65,6 +67,7 @@ class PolicyGroupInfo(models.Model):
 class PolicyInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     group_code = models.CharField(max_length=64, blank=True, null=True)
+    policy_code = models.CharField(max_length=64, default=gen_uuid32)
     caption = models.CharField(max_length=64, blank=True, null=True)
     caption_ext = models.CharField(max_length=64, blank=True, null=True)
     author = models.CharField(max_length=64, blank=True, null=True)

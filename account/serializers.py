@@ -83,6 +83,7 @@ class AccountInfoSerializer(serializers.ModelSerializer):
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     cstate = serializers.CharField(read_only=True)
     func = serializers.ListField(read_only=True)
+    authorized_func = serializers.ListField(read_only=True)
 
     class Meta:
         model = AccountInfo
@@ -95,6 +96,7 @@ class AccountInfoSerializer(serializers.ModelSerializer):
                   'dept_code',
                   'dept',
                   'func',
+                  'authorized_func',
                   'account_memo',
                   'user_name',
                   'account_id',
