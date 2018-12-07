@@ -91,10 +91,10 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
                                                                  iab_time=datetime.datetime.now(),
                                                                  creater=request.user.account)
                         # 移动相关附件
-                        dange_move('headPhoto', expert.expert_code)
-                        dange_move('identityFront', expert.expert_code)
-                        dange_move('identityBack', expert.expert_code)
-                        dange_move('handIdentityPhoto', expert.expert_code)
+                        move_single('headPhoto', expert.expert_code)
+                        move_single('identityFront', expert.expert_code)
+                        move_single('identityBack', expert.expert_code)
+                        move_single('handIdentityPhoto', expert.expert_code)
 
                     # 发送信息
                     send_msg(expert.expert_mobile, '领域专家', apply_state, expert.account_code, request.user.account)
@@ -198,10 +198,10 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                                                                  iab_time=datetime.datetime.now(),
                                                                  creater=request.user.account)
                         # 移动相关附件
-                        dange_move('headPhoto', baseinfo.broker_code)
-                        dange_move('identityFront', baseinfo.broker_code)
-                        dange_move('identityBack', baseinfo.broker_code)
-                        dange_move('handIdentityPhoto', baseinfo.broker_code)
+                        move_single('headPhoto', baseinfo.broker_code)
+                        move_single('identityFront', baseinfo.broker_code)
+                        move_single('identityBack', baseinfo.broker_code)
+                        move_single('handIdentityPhoto', baseinfo.broker_code)
 
                     # 发送信息
                     send_msg(baseinfo.broker_mobile, '技术经纪人', apply_state, baseinfo.account_code, request.user.account)
@@ -305,10 +305,10 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
                                                                  iab_time=datetime.datetime.now(),
                                                                  creater=request.user.account)
                         # 移动相关附件
-                        dange_move('headPhoto', baseinfo.collector_code)
-                        dange_move('identityFront', baseinfo.collector_code)
-                        dange_move('identityBack', baseinfo.collector_code)
-                        dange_move('handIdentityPhoto', baseinfo.collector_code)
+                        move_single('headPhoto', baseinfo.collector_code)
+                        move_single('identityFront', baseinfo.collector_code)
+                        move_single('identityBack', baseinfo.collector_code)
+                        move_single('handIdentityPhoto', baseinfo.collector_code)
 
                     # 发送信息
                     send_msg(baseinfo.collector_mobile, '采集员', apply_state, baseinfo.account_code, request.user.account)
@@ -413,10 +413,10 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
                                                                      iab_time=datetime.datetime.now(),
                                                                      creater=request.user.account)
                         # 移动相关附件
-                        dange_move('headPhoto', baseinfo.owner_code)
-                        dange_move('identityFront', baseinfo.owner_code)
-                        dange_move('identityBack', baseinfo.owner_code)
-                        dange_move('handIdentityPhoto', baseinfo.owner_code)
+                        move_single('headPhoto', baseinfo.owner_code)
+                        move_single('identityFront', baseinfo.owner_code)
+                        move_single('identityBack', baseinfo.owner_code)
+                        move_single('handIdentityPhoto', baseinfo.owner_code)
 
                     # 发送信息
                     send_msg(baseinfo.owner_mobile, '成果持有人', apply_state, baseinfo.account_code, request.user.account)
@@ -527,12 +527,12 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
                                                                      iab_time=datetime.datetime.now(),
                                                                      creater=request.user.account)
                         # 移动相关附件
-                        dange_move('identityFront', baseinfo.owner_code)
-                        dange_move('identityBack', baseinfo.owner_code)
-                        dange_move('handIdentityPhoto', baseinfo.owner_code)
-                        dange_move('entLicense', baseinfo.owner_code)
-                        dange_move('logoPhoto', baseinfo.owner_code)
-                        dange_move('Propaganda', baseinfo.owner_code)
+                        move_single('identityFront', baseinfo.owner_code)
+                        move_single('identityBack', baseinfo.owner_code)
+                        move_single('handIdentityPhoto', baseinfo.owner_code)
+                        move_single('entLicense', baseinfo.owner_code)
+                        move_single('logoPhoto', baseinfo.owner_code)
+                        move_single('Propaganda', baseinfo.owner_code)
 
                     # 发送信息
                     t1 = threading.Thread(target=send_msg, args=(baseinfo.owner_mobile, '成果持有企业', apply_state, baseinfo.account_code, request.user.account))
@@ -639,10 +639,10 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
                                                                      iab_time=datetime.datetime.now(),
                                                                      creater=request.user.account)
                         # 移动相关附件
-                        dange_move('headPhoto', baseinfo.owner_code)
-                        dange_move('identityFront', baseinfo.owner_code)
-                        dange_move('identityBack', baseinfo.owner_code)
-                        dange_move('handIdentityPhoto', baseinfo.owner_code)
+                        move_single('headPhoto', baseinfo.owner_code)
+                        move_single('identityFront', baseinfo.owner_code)
+                        move_single('identityBack', baseinfo.owner_code)
+                        move_single('handIdentityPhoto', baseinfo.owner_code)
 
                     # 发送信息
                     send_msg(baseinfo.owner_mobile, '需求持有人', apply_state, baseinfo.account_code, request.user.account)
@@ -753,12 +753,12 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                                                                      iab_time=datetime.datetime.now(),
                                                                      creater=request.user.account)
                         # 移动相关附件
-                        dange_move('identityFront', baseinfo.owner_code)
-                        dange_move('identityBack', baseinfo.owner_code)
-                        dange_move('handIdentityPhoto', baseinfo.owner_code)
-                        dange_move('entLicense', baseinfo.owner_code)
-                        dange_move('logoPhoto', baseinfo.owner_code)
-                        dange_move('Propaganda', baseinfo.owner_code)
+                        move_single('identityFront', baseinfo.owner_code)
+                        move_single('identityBack', baseinfo.owner_code)
+                        move_single('handIdentityPhoto', baseinfo.owner_code)
+                        move_single('entLicense', baseinfo.owner_code)
+                        move_single('logoPhoto', baseinfo.owner_code)
+                        move_single('Propaganda', baseinfo.owner_code)
 
                     # 发送信息
                     t1 = threading.Thread(target=send_msg, args=(baseinfo.owner_mobile, '需求持有企业', apply_state, baseinfo.account_code, request.user.account))
@@ -865,11 +865,11 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                         'creater': request.user.account
                     }
                     IdentityAuthorizationInfo.objects.create(**identity_authorization_data)
-                    dange_move('identityFront', apply_team_baseinfo.team_baseinfo.pt_code)
-                    dange_move('identityBack', apply_team_baseinfo.team_baseinfo.pt_code)
-                    dange_move('handIdentityPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
-                    dange_move('logoPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
-                    dange_move('Propaganda', apply_team_baseinfo.team_baseinfo.pt_code)
+                    move_single('identityFront', apply_team_baseinfo.team_baseinfo.pt_code)
+                    move_single('identityBack', apply_team_baseinfo.team_baseinfo.pt_code)
+                    move_single('handIdentityPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
+                    move_single('logoPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
+                    move_single('Propaganda', apply_team_baseinfo.team_baseinfo.pt_code)
                 # 5 发送短信通知
                 account_info = AccountInfo.objects.get(account_code=apply_team_baseinfo.team_baseinfo.account_code)
                 account_mobile = account_info.user_mobile
