@@ -4,6 +4,7 @@ from expert.models import ExpertBaseinfo
 from account.models import AccountInfo
 from misc.misc import gen_uuid32
 import time
+from public_models.utils import get_attachment,get_single
 
 
 class ConsultCheckinfo(models.Model):
@@ -33,6 +34,16 @@ class ConsultInfo(models.Model):
     consult_state = models.IntegerField(blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True)
     creater = models.CharField(max_length=64, blank=True, null=True)
+
+    @property
+    def attachments(self):
+        attachments = get_attachment('consultEditor', self.consult_code)
+        return attachments
+
+    @property
+    def cover_img(self):
+        cover_img = get_single('coverImg', self.consult_code)
+        return cover_img
 
     @property
     def rr(self):
