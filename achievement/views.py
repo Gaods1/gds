@@ -64,40 +64,23 @@ class ProfileViewSet(viewsets.ModelViewSet):
         #dept_code = request.user.dept_code
         #dept_level = Deptinfo.objects.get(dept_code=dept_code).dept_level
         #if dept_level == 1:
-            #dept_code = [deptinfo.dept_code for deptinfo in Deptinfo.objects.all()]
-
-            #cursor = connection.cursor()
-            #cursor.execute(
-                #"select rr_aplay_history.* from  rr_aplay_history inner join account_info on rr_aplay_history.account_code=account_info.account_code where account_info.account_code in dept_code and rr_aplay_history.type=1")
-
-            #raw_list = cursor.fetchall()  # 读取所有，返回list
-            #cursor.close()
+            #dept_code = [deptinfo.dept_code for deptinfo in Deptinfo.objects.all()
         #elif dept_level == 2:
             #dept_code = [deptinfo.dept_code for deptinfo in Deptinfo.objects.get(pdept_code=dept_code).dept_code]
-
-            #cursor = connection.cursor()
-            #cursor.execute(
-                #"select rr_aplay_history.* from  rr_aplay_history inner join account_info on rr_aplay_history.account_code=account_info.account_code where account_info.account_code in dept_code and rr_aplay_history.type=1")
-
-            #raw_list = cursor.fetchall()  # 读取所有，返回list
-            #cursor.close()
         #else:
             #dept_code = dept_code
         # 建立游标
         cursor = connection.cursor()
         # 创建索引
-        #cursor.execute("create index account_code_index on account_info(account_code(10))")
+        cursor.execute("create index account_code_index on account_info(dept_code(10))")
         #cursor.execute("create index account_code_index on rr_apply_history(account_code(10))")
-        # 创建视图
-        #create view v_view as select语句
-
 
         SQL = """
         	select rr_apply_history.*
             from rr_apply_history
         	inner join account_info
         	on account_info.account_code=rr_apply_history.account_code
-        	where account_info.account_code='string'
+        	where account_info.dept_code='string'
         	and rr_apply_history.type=1
         """
         SQL_V = """
@@ -106,14 +89,14 @@ class ProfileViewSet(viewsets.ModelViewSet):
             from rr_apply_history
         	inner join account_info
         	on account_info.account_code=rr_apply_history.account_code
-        	where account_info.account_code='string'
+        	where account_info.dept_code='string'
         	and rr_apply_history.type=1
         """
         SQL_S = """
             select * from v_view
         """
         # 执行语句创建视图
-        #cursor.execute(SQL_V)
+        cursor.execute(SQL_V)
         # 执行语句查询视图
         cursor.execute(SQL_S)
         raw_list = cursor.fetchall()  # 读取所有，返回tuple
