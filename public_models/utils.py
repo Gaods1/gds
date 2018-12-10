@@ -57,7 +57,7 @@ def get_attachment(tname_attachment,ecode):
     if files:
 
         for file in files:
-            url = '{}{}/{}/{}/{}'.format(absolute_path,file.path, tcode_attachment, ecode, file.file_name)
+            url = '{}{}{}'.format(absolute_path,file.path,file.file_name)
             if not os.path.exists(url):
                 continue
             if url.endswith('pdf') or url.endswith('jpg'):
@@ -79,7 +79,7 @@ def get_single(tname_single,ecode):
     dict = {}
     if files:
         for file in files:
-            url = '{}{}/{}/{}/{}'.format(absolute_path, file.path, tname_single, ecode, file.file_name)
+            url = '{}{}{}'.format(absolute_path, file.path,file.file_name)
             if not os.path.exists(url):
                 continue
             if url.endswith('pdf') or url.endswith('jpg'):
@@ -104,7 +104,7 @@ def move_attachment(tname_attachment,ecode):
         # 找出伪删除的对象并从表中删除
         if file.operation_state == 2:
             file.delete()
-            url = '{}{}/{}/{}/{}'.format(relative_path, file.path, tcode_attachment, ecode, file.file_name)
+            url = '{}{}{}'.format(relative_path, file.path,file.file_name)
 
             # 找出该路径下是否有文件并删除
             if os.path.exists(url):
@@ -114,7 +114,7 @@ def move_attachment(tname_attachment,ecode):
             # 将状态改为审核通过
             file.operation_state = 3
             # 将临时文件转为正式文件
-            url_j = '{}{}/{}/{}/{}'.format(absolute_path, file.path, tcode_attachment, ecode, file.file_name)
+            url_j = '{}{}{}'.format(absolute_path, file.path,file.file_name)
             if os.path.exists(url_j):
                 url_x = url_j.replace(absolute_path, relative_path)
                 shutil.move(url_j, url_x)
@@ -144,7 +144,7 @@ def move_single(tname_singgle,ecode):
         # 找出伪删除的对象并从表中删除
         if file.operation_state == 2:
             file.delete()
-            url = '{}{}/{}/{}/{}'.format(relative_path, file.path, tcode_single, ecode, file.file_name)
+            url = '{}{}{}'.format(relative_path, file.path,file.file_name)
 
             # 找出该路径下是否有文件并删除
             if os.path.exists(url):
@@ -154,7 +154,7 @@ def move_single(tname_singgle,ecode):
             # 将状态改为审核通过
             file.operation_state = 3
             # 将临时文件转为正式文件
-            url_j = '{}{}/{}/{}/{}'.format(absolute_path, file.path, tcode_single, ecode, file.file_name)
+            url_j = '{}{}{}'.format(absolute_path, file.path,file.file_name)
             if os.path.exists(url_j):
                 url_x = url_j.replace(absolute_path, relative_path)
                 shutil.move(url_j, url_x)
