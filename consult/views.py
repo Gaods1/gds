@@ -3,7 +3,7 @@ from rest_framework import viewsets
 from consult.models import *
 from expert.models import ExpertBaseinfo
 from achievement.models import ResultsInfo,RequirementsInfo
-from account.models import AccountInfo
+from account.models import AccountInfo,Deptinfo
 from public_models.models import MajorUserinfo,Message
 from consult.serializers import *
 from rest_framework import status
@@ -15,6 +15,7 @@ from django.db import transaction
 import random,requests,time,json
 from django.http import HttpResponse,JsonResponse
 from public_models.utils import move_attachment,move_single
+# from django.db import connection
 
 
 # Create your views here.
@@ -50,6 +51,57 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
     ordering_fields = ("consult_time", "consult_endtime", "consult_state")
     filter_fields = ("consult_state", "consult_code", "serial","consulter")
     search_fields = ("consult_title", "consult_memo")
+
+    #征询信息根据发起征询者所属机构部门检索
+    def list(self, request, *args, **kwargs):
+        consult_title =request.query_params.get('consult_title')
+        consult_memo = request.query_params.get('consult_memo')
+        consult_state = request.query_params.get('consult_state')
+        consult_state_list = ['0','1','2','3','5']
+        search_where = ''
+        if consult_state in consult_state_list:
+            search_where += " and ci.consult_state="+consult_state+" "
+        if consult_title is not None:
+            search_where += " and ci.consult_title like '%"+consult_title+"%' "
+        if consult_memo is not None:
+            search_where += " and ci.consult_memo like '%"+consult_memo+"%' "
+
+        dept_code = request.user.dept_code
+        deptinfo = Deptinfo.objects.get(dept_code=dept_code)
+        dept_codes_list = []
+        if deptinfo.pdept_code  != 0:    #为省级或市级机构,
+            dept_codes = [di.dept_code for di in Deptinfo.objects.filter(pdept_code=dept_code)]
+            dept_codes.append(dept_code)
+            for dc in dept_codes:
+                dept_codes_list.append("'"+dc+"'")
+            dept_codes_str = ",".join(dept_codes_list)
+
+            # cursor = connection.cursor()
+            # cursor.execute("select ci.*  from consult_info as ci left join account_info as ai on  ci.consulter=ai.account_code where ai.dept_code  in ("+dept_codes_str+") "+ search_where)
+            # consult_infos = cursor.fetchall()
+            # consult_infos
+
+
+            consult_info_queryset = ConsultInfo.objects.raw("select ci.*  from consult_info as ci left join account_info as ai on  ci.consulter=ai.account_code where ai.dept_code  in ("+dept_codes_str+") "+ search_where)
+            page = self.paginate_queryset(consult_info_queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+
+            serializer = self.get_serializer(consult_info_queryset, many=True)
+            return Response(serializer.data)
+        else:   #顶级机构,检索所有
+            queryset = self.filter_queryset(self.get_queryset())
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+
+
+
 
     '''
     征询审核接口：一 审核通过 | 审核未通过:   生成审核记录(consult_checkinfo) 更新征询表状态(consult_info)  

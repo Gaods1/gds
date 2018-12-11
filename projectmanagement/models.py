@@ -23,11 +23,13 @@ class ProjectInfo(models.Model):
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True)
 
+    # 项目来源
     @property
     def from_code_info(self):
         from_code_info = RrApplyHistory.objects.get(a_code=self.from_code)
         return from_code_info
 
+    # 项目子步骤
     @property
     def substep_info(self):
         q = ProjectSubstepInfo.objects.filter(Q(project_code=self.project_code),Q(step_code = self.project_state),Q(substep_code=self.project_sub_state)).order_by('-p_serial')
@@ -37,6 +39,7 @@ class ProjectInfo(models.Model):
             substep_info = []
         return substep_info
 
+    # 项目子步骤流水
     @property
     def substep_serial_info(self):
         q = ProjectSubstepSerialInfo.objects.filter(project_code=self.project_code,substep_code=self.project_sub_state).order_by('-substep_serial')
@@ -46,6 +49,7 @@ class ProjectInfo(models.Model):
             substep_serial_info = {}
         return substep_serial_info
 
+    # 项目审核信息
     @property
     def check_info(self):
         q = ProjectCheckInfo.objects.filter(Q(project_code=self.project_code),~Q(substep_serial = 0)).order_by('-substep_serial')
@@ -54,6 +58,16 @@ class ProjectInfo(models.Model):
         else:
             check_info = []
         return check_info
+
+    # 项目关联技术经济人
+    @property
+    def broker_info(self):
+        q = ProjectBrokerInfo.objects.filter(project_code=self.project_code)
+        if q != None and len(q)>0:
+            broker_info = q[0]
+        else:
+            broker_info = {}
+        return broker_info
 
     # @property
     # def rr(self):
@@ -195,7 +209,7 @@ class ProjectBrokerInfo(models.Model):
 
     @property
     def broker(self):
-        broker = BrokerBaseinfo.objects.filter(broker_code=self.broker_code)
+        broker = BrokerBaseinfo.objects.get(broker_code=self.broker_code)
         return broker
 
     class Meta:

@@ -1,6 +1,7 @@
 from projectmanagement.models import *
 from rest_framework import serializers
 from achievement.serializers import RrApplyHistorySerializer
+from expert.serializers import BrokerBaseInfoSerializers
 
 
 class ProjectCheckInfoSerializer(serializers.ModelSerializer):
@@ -58,6 +59,26 @@ class ProjectSubstepSerialInfoSerializer(serializers.ModelSerializer):
                   'step_msg']
 
 
+# 项目经纪人信息表
+class ProjectBrokerInfoSerializer(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    broker = BrokerBaseInfoSerializers(read_only=True)
+
+    class Meta:
+        model = ProjectBrokerInfo
+        fields = [
+            'p_serial',
+            'project_code',
+            'broker_code',
+            'broker_work',
+            'broker_tag',
+            'contract',
+            'creater',
+            'insert_time',
+            'broker'
+        ]
+
+
 # 项目表序列化
 class ProjectInfoSerializer(serializers.ModelSerializer):
     start_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
@@ -67,6 +88,7 @@ class ProjectInfoSerializer(serializers.ModelSerializer):
     substep_info = ProjectSubstepInfoSerializer(read_only=True)
     substep_serial_info = ProjectSubstepSerialInfoSerializer(read_only=True)
     check_info = ProjectCheckInfoSerializer(read_only=True)
+    broker_info = ProjectBrokerInfoSerializer(read_only=True)
 
     class Meta:
         model = ProjectInfo
@@ -87,6 +109,7 @@ class ProjectInfoSerializer(serializers.ModelSerializer):
             'substep_info',
             'substep_serial_info',
             'check_info',
+            'broker_info'
         ]
 
 
@@ -132,22 +155,7 @@ class ProjectRrInfoSerializer(serializers.ModelSerializer):
         ]
 
 
-# 项目经纪人信息表
-class ProjectBrokerInfoSerializer(serializers.ModelSerializer):
-    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
 
-    class Meta:
-        model = ProjectBrokerInfo
-        fields = [
-            'p_serial',
-            'project_code',
-            'broker_code',
-            'broker_work',
-            'broker_tag',
-            'contract',
-            'creater',
-            'insert_time'
-        ]
 
 
 # 目领域专家信息表
