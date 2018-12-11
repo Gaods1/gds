@@ -196,6 +196,10 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+DEFAULT_FILE_STORAGE = 'backends.ImageStorage'
+#MEDIA_ROOT = os.path.join(BASE_DIR , "static/")
+#MEDIA_URL = 'yuming'
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/

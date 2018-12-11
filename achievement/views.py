@@ -1,3 +1,4 @@
+
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.db import transaction
@@ -7,7 +8,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import filters
 
-
+from backends import ImageStorage
 from misc.misc import gen_uuid32, genearteMD5
 import django_filters
 import threading
@@ -18,7 +19,7 @@ import shutil
 from django.db import connection  # django封装好的方法
 
 from public_models.utils import  move_attachment, move_single
-from account.models import Deptinfo
+from account.models import Deptinfo, AccountInfo
 from .serializers import *
 from .models import *
 from .utils import massege, diedai
@@ -48,7 +49,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         opinion（text）:审核意见,
     }
     """
-    queryset = RrApplyHistory.objects.filter(type=1).order_by('-serial')
+    queryset = RrApplyHistory.objects.filter(type=1).order_by('state')
 
     serializer_class = RrApplyHistorySerializer
     filter_backends = (
@@ -64,39 +65,48 @@ class ProfileViewSet(viewsets.ModelViewSet):
         #dept_code = request.user.dept_code
         #dept_level = Deptinfo.objects.get(dept_code=dept_code).dept_level
         #if dept_level == 1:
-            #dept_code = [deptinfo.dept_code for deptinfo in Deptinfo.objects.all()]
-
-            #cursor = connection.cursor()
-            #cursor.execute(
-                #"select rr_aplay_history.* from  rr_aplay_history inner join account_info on rr_aplay_history.account_code=account_info.account_code where account_info.account_code in dept_code and rr_aplay_history.type=1")
-
-            #raw_list = cursor.fetchall()  # 读取所有，返回list
-            #cursor.close()
+            #dept_code = [deptinfo.dept_code for deptinfo in Deptinfo.objects.all()
         #elif dept_level == 2:
             #dept_code = [deptinfo.dept_code for deptinfo in Deptinfo.objects.get(pdept_code=dept_code).dept_code]
-
-            #cursor = connection.cursor()
-            #cursor.execute(
-                #"select rr_aplay_history.* from  rr_aplay_history inner join account_info on rr_aplay_history.account_code=account_info.account_code where account_info.account_code in dept_code and rr_aplay_history.type=1")
-
-            #raw_list = cursor.fetchall()  # 读取所有，返回list
-            #cursor.close()
         #else:
             #dept_code = dept_code
         # 建立游标
         cursor = connection.cursor()
         # 创建索引
-        #cursor.execute("create index account_code_index on account_info(account_code(10))")
+        #cursor.execute("create index account_code_index on account_info(dept_code(10))")
         #cursor.execute("create index account_code_index on rr_apply_history(account_code(10))")
-        # 执行语句
-        cursor.execute("select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.account_code='string' and rr_apply_history.type=1")
+
+        SQL = """
+        	select rr_apply_history.*
+            from rr_apply_history
+        	inner join account_info
+        	on account_info.account_code=rr_apply_history.account_code
+        	where account_info.dept_code='string'
+        	and rr_apply_history.type=1
+        """
+        SQL_V = """
+            create view v_view as
+            select rr_apply_history.*
+            from rr_apply_history
+        	inner join account_info
+        	on account_info.account_code=rr_apply_history.account_code
+        	where account_info.dept_code='string'
+        	and rr_apply_history.type=1
+        """
+        SQL_S = """
+            select * from v_view
+        """
+        # 执行语句创建视图
+        #cursor.execute(SQL_V)
+        # 执行语句查询视图
+        cursor.execute(SQL_S)
         raw_list = cursor.fetchall()  # 读取所有，返回tuple
         # 关闭游标
         cursor.close()
 
         # queryset = RrApplyHistory.objects.raw()
         # 转化数据类型
-        queryset = RrApplyHistory.objects.filter(pk__in=[x[0] for x in diedai(raw_list)])
+        queryset = RrApplyHistory.objects.filter(pk__in=[x[0] for x in diedai(raw_list)]).order_by('state')
 
         #queryset = self.filter_queryset(self.get_queryset())
         queryset = self.filter_queryset(queryset)
@@ -543,7 +553,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
         opinion（text）:审核意见,
     }
     """
-    queryset = RrApplyHistory.objects.filter(type=2).order_by('-serial')
+    queryset = RrApplyHistory.objects.filter(type=2).order_by('state')
     serializer_class = RrApplyHistorySerializer
     filter_backends = (
         filters.SearchFilter,
@@ -957,6 +967,41 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
                     transaction.savepoint_commit(save_id)
                     return Response({'messege':'审核不通过'})
+
+class ManagementpViewSet(viewsets.ModelViewSet,ImageStorage):
+    queryset = ResultsInfo.objects.all().order_by('-serial')
+    serializer_class = ResultsInfoSerializer
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("role_name", "insert_time")
+    filter_fields = ("state", "creater", "role_code")
+    search_fields = ("role_name",)
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        data['creater'] = request.user.account
+        account_code = data['account_code']
+        dept_code = data['dept_code']
+        try:
+            AccountInfo.objects.create(account_code=account_code,dept_code=dept_code)
+        except Exception as e:
+            return HttpResponse('创建账户失败%s' % str(e))
+        file = request.FILES.get('file')
+        name = request.form['name']
+        if not file or name:
+            return HttpResponse('上传失败')
+        name = self._save(name,file)
+        url = self.url(name)
+
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
 
 
 

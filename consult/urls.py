@@ -7,7 +7,6 @@ router.register(r'consult_info', ConsultInfoViewSet)
 router.register(r'consult_reply_info', ConsultReplyInfoViewSet)
 router.register(r'consult_checkinfo', ConsultCheckinfoViewSet)
 router.register(r'consult_reply_checkinfo', ConsultReplyCheckinfoViewSet)
-router.register(r'consult_need_check', ConsultNeedCheckViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
