@@ -967,7 +967,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_commit(save_id)
                     return Response({'messege':'审核不通过'})
 
-class ManagementpViewSet(viewsets.ModelViewSet,FileSystemStorage):
+class ManagementpViewSet(viewsets.ModelViewSet):
     queryset = ResultsInfo.objects.all().order_by('-serial')
     serializer_class = ResultsInfoSerializer
     filter_backends = (
@@ -986,21 +986,6 @@ class ManagementpViewSet(viewsets.ModelViewSet,FileSystemStorage):
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
-
-        r_code = serializer.data['r_code']
-
-        # 添加表格信息
-
-        # 上传文件
-        files = request.FILES.get('file', None)
-        name = request.form['name']
-        if not files or name:
-            return HttpResponse('上传失败')
-        file_s = FileSystemStorage(location='hehe/niheo/haha', base_url='www.nnihao.come:8088/nihao')
-        list_url = []
-        for file in files:
-            url = self._save(name, file)
-            list_url.append(url)
 
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)

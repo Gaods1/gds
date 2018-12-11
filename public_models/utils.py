@@ -2,6 +2,7 @@ import os
 
 import shutil
 
+from backends import FileStorage
 from public_models.models import ParamInfo, AttachmentFileType, AttachmentFileinfo
 
 """
@@ -163,3 +164,26 @@ def move_single(tname_singgle,ecode):
                 url_x_q = url_x.replace(relative_path, relative_path_front)
                 dict[url_x_q] = file.operation_state
     return dict
+
+
+#def upload_attachment(tname,param_name,r_code,files):
+    #ecode = r_code
+    #t_code_attach = AttachmentFileType.objects.get(tname='attachment').tcode
+    #t_code_coverImg = AttachmentFileType.objects.get(tname='coverImg').tcode
+    #param = ParamInfo.objects.get(param_name='File_Result_Path').param_value
+    #list_url = []
+    #list_create = []
+    #for file in files:
+        # 拼接地址
+        #url = '/{}/{}/{}/{}'.format(param, t_code_attach, r_code, file.name)
+        #list_url.append(url)
+        #list_create.append(
+            #AttachmentFileinfo(tcode=t_code_attach, ecode=ecode, file_name=file.name, path=url, operation_state=3,
+                               #state=1))
+    # 添加表格信息
+    #AttachmentFileinfo.objects.bulk_create(list_create)
+    # 新建对象
+    #obj = FileStorage()
+    # 上传服务器
+    #list_url = obj._save(list_url, files)
+    #return list_url
