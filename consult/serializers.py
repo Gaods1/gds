@@ -7,6 +7,9 @@ class ConsultInfoSerializer(serializers.ModelSerializer):
     consult_endtime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     rr = serializers.ListField(required=False)
+    cover_img = serializers.CharField(read_only=True)
+    attachments = serializers.DictField(read_only=True)
+
     class Meta:
         model = ConsultInfo
         fields = ['serial',
@@ -20,7 +23,9 @@ class ConsultInfoSerializer(serializers.ModelSerializer):
                   'consult_state',
                   'insert_time',
                   'creater',
-                  'rr',]
+                  'rr',
+                  'cover_img',
+                  'attachments']
 
 
 
@@ -65,6 +70,7 @@ class ConsultReplyInfoSerializer(serializers.ModelSerializer):
 #征询审核表序列化
 class ConsultCheckinfoSerializer(serializers.ModelSerializer):
     check_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+
     class Meta:
         model = ConsultCheckinfo
         fields = ['serial',

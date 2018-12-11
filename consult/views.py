@@ -14,6 +14,7 @@ from misc.misc import gen_uuid32, genearteMD5
 from django.db import transaction
 import random,requests,time,json
 from django.http import HttpResponse,JsonResponse
+from public_models.utils import move_attachment,move_single
 
 
 # Create your views here.
@@ -133,6 +134,12 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
 
                         ConsultExpert.objects.bulk_create(consult_expert_list)
 
+                        #移动封面附件
+                        move_single('coverImg',consult_info.consult_code)
+
+                        # 移动富文本编辑器附件
+                        move_attachment('consultEditor',consult_info.consult_code)
+
                         # 6 群发短信给领域专家
                         sms_url = 'http://120.77.58.203:8808/sms/patclubmanage/send/needreply'
                         sms_data = {
@@ -167,38 +174,6 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                 instance._prefetched_objects_cache = {}
 
             return Response(serializer.data)
-
-
-#征询审核管理(专门针对审核列表添加)
-class ConsultNeedCheckViewSet(viewsets.ModelViewSet):
-    """
-    征询管理(检索 查询  排序)
-    ######################################################################################
-    参数说明（param， get时使用的参数）
-    page(integer):           【页数, 默认为1】
-    page_size（integer )     【每页显示的条目，默认为10】
-    search（string）         【模糊搜索  consult_memo】
-    consult_code(string)       【筛选字段 系统自动生成的征询编码，有数字和大写英文字母组成】
-    serial(number)           【筛选字段 为自增id】
-    consulter(string)          【筛选字段 征询人账号】
-    ordering(string)          【排序， 排序字段有"consult_time", "consult_endtime", "consult_state"】
-    ######################################################################################
-    审核用patch接口请求 提交json数据说明
-    {
-          "check_state": "number",  审核状态【必填1审核通过2审核不通过】
-          "check_memo": "string ",  审核描述【必填】
-    }
-    """
-    queryset = ConsultInfo.objects.filter(consult_state__in=[0,4]).order_by('-serial')
-    serializer_class = ConsultInfoSerializer
-    filter_backends = (
-        filters.SearchFilter,
-        django_filters.rest_framework.DjangoFilterBackend,
-        filters.OrderingFilter,
-    )
-    ordering_fields = ("consult_time", "consult_endtime", "consult_state")
-    filter_fields = ("consult_code", "serial","consulter")
-    search_fields = ("consult_title","consult_memo")
 
 
 #征询专家关系管理

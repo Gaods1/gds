@@ -449,7 +449,7 @@ class DeptinfoViewSet(viewsets.ModelViewSet):
         filters.OrderingFilter,
     )
     ordering_fields = ("dept_name", "insert_time")
-    filter_fields = ("state", "dept_level", "region_code")
+    filter_fields = ("state", "dept_level", "region_code","dept_code","pdept_code")
     search_fields = ("dept_name",)
 
 
