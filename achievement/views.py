@@ -1,4 +1,4 @@
-
+from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.db import transaction
@@ -8,7 +8,6 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import filters
 
-from backends import ImageStorage
 from misc.misc import gen_uuid32, genearteMD5
 import django_filters
 import threading
@@ -968,7 +967,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_commit(save_id)
                     return Response({'messege':'审核不通过'})
 
-class ManagementpViewSet(viewsets.ModelViewSet,ImageStorage):
+class ManagementpViewSet(viewsets.ModelViewSet,FileSystemStorage):
     queryset = ResultsInfo.objects.all().order_by('-serial')
     serializer_class = ResultsInfoSerializer
     filter_backends = (
@@ -977,29 +976,32 @@ class ManagementpViewSet(viewsets.ModelViewSet,ImageStorage):
         filters.OrderingFilter,
     )
 
-    ordering_fields = ("role_name", "insert_time")
-    filter_fields = ("state", "creater", "role_code")
-    search_fields = ("role_name",)
+    ordering_fields = ("r_code", "r_name","account_code")
+    filter_fields = ("r_name", "account_code", "r_name")
+    search_fields = ("r_name",)
 
     def create(self, request, *args, **kwargs):
         data = request.data
         data['creater'] = request.user.account
-        account_code = data['account_code']
-        dept_code = data['dept_code']
-        try:
-            AccountInfo.objects.create(account_code=account_code,dept_code=dept_code)
-        except Exception as e:
-            return HttpResponse('创建账户失败%s' % str(e))
-        file = request.FILES.get('file')
-        name = request.form['name']
-        if not file or name:
-            return HttpResponse('上传失败')
-        name = self._save(name,file)
-        url = self.url(name)
-
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
+
+        r_code = serializer.data['r_code']
+
+        # 添加表格信息
+
+        # 上传文件
+        files = request.FILES.get('file', None)
+        name = request.form['name']
+        if not files or name:
+            return HttpResponse('上传失败')
+        file_s = FileSystemStorage(location='hehe/niheo/haha', base_url='www.nnihao.come:8088/nihao')
+        list_url = []
+        for file in files:
+            url = self._save(name, file)
+            list_url.append(url)
+
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
 
