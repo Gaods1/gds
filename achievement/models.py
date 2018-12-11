@@ -1,5 +1,6 @@
 import os
 import re
+from misc.misc import gen_uuid32, genearteMD5
 from _mysql_exceptions import DatabaseError
 
 from django.http import HttpResponse
@@ -60,7 +61,7 @@ class RrApplyHistory(models.Model):
 # 需求基本信息表 *
 class RequirementsInfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    req_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    req_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     req_name = models.CharField(max_length=64, blank=True, null=True)
     req_form_type = models.IntegerField(blank=True, null=True)
     r_abstract = models.TextField(blank=True, null=True)
@@ -134,7 +135,7 @@ class RequirementsInfo(models.Model):
 # 成果基本信息表 *
 class ResultsInfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    r_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    r_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     r_name = models.CharField(max_length=64, blank=True, null=True)
     r_form_type = models.IntegerField(blank=True, null=True)
     r_abstract = models.TextField(blank=True, null=True)

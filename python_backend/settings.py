@@ -197,8 +197,6 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 DEFAULT_FILE_STORAGE = 'backends.ImageStorage'
-#MEDIA_ROOT = os.path.join(BASE_DIR , "static/")
-#MEDIA_URL = 'yuming'
 
 
 # Internationalization

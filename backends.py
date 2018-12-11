@@ -17,10 +17,12 @@ class AccountBackend(ModelBackend):
         except Exception as e:
             return None
 
-class ImageStorage(FileSystemStorage):
 
+class FileStorage(FileSystemStorage):
 
-    def __init__(self, location=settings.MEDIA_ROOT, base_url=settings.MEDIA_URL):
-        # 初始化
-        super(ImageStorage, self).__init__(location, base_url)
+    def __init__(self, location, base_url):
+        self.location = location or None
+        self.base_url = base_url or None
+        super(FileStorage, self).__init__(location, base_url)
+
 
