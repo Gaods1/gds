@@ -78,6 +78,7 @@ INSTALLED_APPS = [
     'achievement',
     'public_models',
     'news',
+    'public_tools',
     'rest_framework',
     'rest_framework_jwt',
     'django_filters',
@@ -198,10 +199,8 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 DEFAULT_FILE_STORAGE = 'backends.ImageStorage'
-#MEDIA_ROOT = os.path.join(BASE_DIR , "static/")
-#MEDIA_URL = 'yuming'
-
-
+base_url = '/alidata1/patclub/uploads/'
+location = 'localhost'
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
 

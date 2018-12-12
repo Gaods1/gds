@@ -13,7 +13,9 @@ from django.db import transaction
 import time
 from .serializers import *
 from django.views.generic import View
-from django.db import connection, transaction;
+from django.db import connection, transaction
+from account.models import Deptinfo, AccountInfo
+from expert.models import BrokerBaseinfo
 
 
 # Create your views here.
@@ -30,6 +32,63 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
     ordering_fields = ("project_name", "project_state", "project_sub_state")
     filter_fields = ("project_code", "project_name", "project_state", "project_sub_state")
     search_fields = ("project_code", "project_name", "project_state", "project_sub_state")
+
+    def list(self, request, *args, **kwargs):
+
+        # 获取当前账号所属部门及子部门 上级能查看审核下级
+        dept_code = request.user.dept_code
+        if dept_code == None:
+            # 测试时使用
+            dept_code = 'K8iLcvcqqp47R10BwLWvSYMfg0SkloWI'
+        dept_level = Deptinfo.objects.get(dept_code=dept_code).dept_level
+        if dept_level == 1:
+            dept_codes = [deptinfo.dept_code for deptinfo in Deptinfo.objects.all()]
+        elif dept_level == 2:
+            dept_codes = [deptinfo.dept_code for deptinfo in Deptinfo.objects.get(pdept_code=dept_code).dept_code]
+            dept_codes.append(dept_code)
+        else:
+            dept_codes = [dept_code]
+
+        # connection.connect()
+        # conn = connection.connection
+        # cursor = conn.cursor()
+        # sql = """
+        #     select a.* from
+        #     project_info as a,project_broker_info as b,account_info as c,broker_baseinfo as d
+        #     where c.dept_code in (%s) and c.account_code=d.account_code
+        #     and d.broker_code=b.broker_code and b.project_code=a.project_code
+        # """ % (','.join(['"%s"' % item for item in dept_codes]))
+        #
+        # cursor.execute(sql)
+        # raw_list = cursor.fetchall()
+        # connection.close()
+        # queryset = ProjectInfo.objects.filter(pk__in=[x[0] for x in raw_list]);
+
+        # 当前部门所有账号
+        account_codes = [account.account_code for account in
+                         AccountInfo.objects.only('dept_code').filter(dept_code__in=dept_codes)]
+        # 当前部门账号相关的技术经济人
+        brokers = [broker.broker_code for broker in
+                   BrokerBaseinfo.objects.only('account_code').filter(account_code__in=account_codes)]
+        # 技术经济人相关的项目
+        project_codes = [projectbrokerinfo.project_code for projectbrokerinfo in
+                         ProjectBrokerInfo.objects.filter(broker_code__in=brokers)]
+
+        q = self.get_queryset().filter(project_code__in=project_codes)
+        if q != None and len(q) > 0:
+            queryset = self.filter_queryset(q)
+        else:
+            queryset = []
+
+        page = self.paginate_queryset(queryset)
+        if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
+            page = None
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.get_paginated_response(serializer.data)
 
 
 class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
@@ -75,10 +134,10 @@ class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
     )
     ordering_fields = ("project_name", "project_state", "project_sub_state")
     filter_fields = ("project_code", "project_name", "project_state", "project_sub_state")
-    search_fields = ("project_name","project_state", "project_sub_state")
+    search_fields = ("project_name", "project_state", "project_sub_state")
 
     # 需要审核的子步骤
-    need_check_substep_codes = ('12','21','22','32','311','45','71')
+    need_check_substep_codes = ('12', '21', '22', '32', '311', '45', '71')
 
     # def retrieve(self, request, *args, **kwargs):
     #
@@ -93,14 +152,13 @@ class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
     #     serializer = self.get_serializer(queryset, many=True)
     #     return self.get_paginated_response(serializer.data)
 
-
     def list(self, request, *args, **kwargs):
         # 检测 状态在
         step_code = request.GET.get('step_code')
         substep_code = request.GET.get('substep_code')
         if step_code == None or substep_code == None:
             queryset = []
-            page = self.paginate_queryset(queryset) # 不能省略
+            page = self.paginate_queryset(queryset)  # 不能省略
             serializer = self.get_serializer(queryset, many=True)
             return self.get_paginated_response(serializer.data)
 
@@ -110,21 +168,39 @@ class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(queryset, many=True)
             return self.get_paginated_response(serializer.data)
 
+        # 获取当前账号所属部门及子部门 上级能查看审核下级
+        dept_code = request.user.dept_code
+        if dept_code == None:
+            # 测试时使用
+            dept_code = 'K8iLcvcqqp47R10BwLWvSYMfg0SkloWI'
+        dept_level = Deptinfo.objects.get(dept_code=dept_code).dept_level
+        if dept_level == 1:
+            dept_codes = [deptinfo.dept_code for deptinfo in Deptinfo.objects.all()]
+        elif dept_level == 2:
+            dept_codes = [deptinfo.dept_code for deptinfo in Deptinfo.objects.get(pdept_code=dept_code).dept_code]
+            dept_codes.append(dept_code)
+        else:
+            dept_codes = [dept_code]
 
-        # if search is not None:  # 如果参数不为空
-        #     # 执行filter()方法
-        #     projects = ProjectInfo.objects.filter(Q(project_name__icontains=search))
-        #     project_codes = [project.project_code for project in projects]
-        #     q = ProjectCheckInfo.objects.filter(project_code__in=project_codes).order_by("-substep_serial")
-        # else:
-        #     # 如果参数为空，执行all()方法
-        #     q = self.get_queryset()
-        # queryset = self.filter_queryset(q)
+        # 当前部门所有账号
+        account_codes = [account.account_code for account in AccountInfo.objects.filter(dept_code__in=dept_codes)]
+        # 当前部门账号相关的技术经济人代码
+        brokers = [broker.broker_code for broker in BrokerBaseinfo.objects.filter(account_code__in=account_codes)]
+        # 技术经济人相关的项目
+        project_codes = [projectbrokerinfo.project_code for projectbrokerinfo in
+                         ProjectBrokerInfo.objects.filter(broker_code__in=brokers)]
+
+        q = self.get_queryset().filter(project_code__in=project_codes)
+        if q != None and len(q) > 0:
+            queryset = self.filter_queryset(q)
+        else:
+            queryset = []
 
         # Q(cstate=0) 测试时可以先去掉条件 不然界面上没数据
-        projectcheckinfos = ProjectCheckInfo.objects.filter(~Q(substep_serial=0), Q(cstate=0), Q(step_code=step_code), Q(substep_code=substep_code)).order_by("-p_serial")
+        projectcheckinfos = ProjectCheckInfo.objects.filter(~Q(substep_serial=0), Q(cstate=0), Q(step_code=step_code),
+                                                            Q(substep_code=substep_code)).order_by("-p_serial")
         project_codes = [check.project_code for check in projectcheckinfos]
-        q = self.get_queryset().filter(project_code__in=project_codes)
+        q = queryset.filter(project_code__in=project_codes)
         if q != None and len(q) > 0:
             queryset = self.filter_queryset(q)
         else:
@@ -188,8 +264,10 @@ class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
                     psdi_old[0].delete()
 
                 if cstate == 1:
-                    psdis = ProjectSubstepDetailInfo.objects.filter(project_code=project_code,step_code=step_code,substep_code=substep_code,substep_serial=substep_serial)
-                    if psdis != None and len(psdis)>0:
+                    psdis = ProjectSubstepDetailInfo.objects.filter(project_code=project_code, step_code=step_code,
+                                                                    substep_code=substep_code,
+                                                                    substep_serial=substep_serial)
+                    if psdis != None and len(psdis) > 0:
                         psdi = psdis[0]
                         psdi.p_serial = None
                         psdi.substep_serial = 0
@@ -220,7 +298,6 @@ class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
                     psi = ProjectStepInfo.objects.get(project_code=project_code, step_code=step_code)
                     psi.step_msg = cmsg
                     psi.save()
-
 
                 transaction.savepoint_commit(save_id)
             except Exception as e:

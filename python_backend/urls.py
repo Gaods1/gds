@@ -33,4 +33,5 @@ urlpatterns = [
     path('achievement/', include('achievement.urls')),
     path('project/', include('projectmanagement.urls')),
     path('consult/', include('consult.urls')),
+    path('public/', include('public_tools.urls')),
 ]

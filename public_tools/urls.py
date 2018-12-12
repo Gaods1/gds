@@ -1,0 +1,10 @@
+from rest_framework import routers
+from .views import *
+from django.urls import path, include, re_path
+
+router = routers.DefaultRouter()
+router.register(r'^uploadment', PublicInfo)#上传附件及单个图片
+
+urlpatterns = [
+    path('', include(router.urls)),
+]
