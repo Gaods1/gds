@@ -20,10 +20,10 @@ class AccountBackend(ModelBackend):
 
 class FileStorage(FileSystemStorage):
 
-    def __init__(self, location, base_url):
+    def __init__(self):
         self.location = settings.location
         self.base_url = settings.base_url
-        super(FileStorage, self).__init__(location, base_url)
+        #super(FileStorage, self).__init__(location, base_url)
 
     def _save(self, names, content):
         list_name = list()

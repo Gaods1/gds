@@ -2,11 +2,13 @@ import os
 
 from django.db import transaction
 from django.http import HttpResponse
+from django.http import JsonResponse
 from django.shortcuts import render
 
 # Create your views here.
 from rest_framework.response import Response
 from rest_framework import viewsets
+from rest_framework.utils import json
 from rest_framework.views import APIView
 
 from backends import FileStorage
@@ -23,20 +25,24 @@ class PublicInfo(APIView,FileStorage):
             save_id = transaction.savepoint()
             absolute_path = ParamInfo.objects.get(param_code=1).param_value
             temporary = 'temporary'
+            if not request.method == "POST":
+                return JsonResponse({"error": u"不支持此种请求"}, safe=False)
 
-            files = request.FILES.getlist('file', None)
+            files = request.FILES.getlist('file',None)
+            print(files)
+            print(type(files))
             if not files:
                 return HttpResponse('上传失败')
             list_url = []
             dict = {}
 
             url1 = '{}{}'.format(absolute_path, temporary)
-            if not os.path.exists(url1):
-                os.makedirs(url1)
+            #if not os.path.exists(url1):
+                #os.makedirs(url1)
 
             for file in files:
                 # 拼接地址
-                url = url1 + '/' + file
+                url = url1 + '/' + file.name
                 list_url.append(url)
             try:
                 # 上传服务器
