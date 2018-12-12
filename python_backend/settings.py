@@ -39,7 +39,8 @@ REST_FRAMEWORK = {
 
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-        # 'permissions.FuncPermission'
+        'permissions.FuncPermission',
+        'permissions.DontCheckRoot'
     ),
 
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -222,3 +223,6 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "frontend/dist/static"),
 ]
 STATIC_ROOT = os.path.join(BASE_DIR , "static/")
+
+# 登陆后全开放接口
+public_url = ['/docs/', '/public/uploadment', '/public/uploadment/']
