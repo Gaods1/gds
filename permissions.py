@@ -42,7 +42,10 @@ class DontCheckRoot(permissions.BasePermission):
 
     def has_permission(self, request, view):
         method = request.method
-        url = re.search('^/(.*?)/(.*?)/(\d*)', request.path)
+        path = request.path
+        if path in ['/docs/']:
+            return True
+        url = re.search('^/(.*?)/(.*?)/(\d*)', path)
         model = url.group(2)
         serial = url.group(3)
         user = request.user.account
