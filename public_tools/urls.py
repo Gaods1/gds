@@ -8,5 +8,5 @@ from django.urls import path, include, re_path
 #router.register(r'^uploadment', PublicInfo)#上传附件及单个图片
 
 urlpatterns = [
-    path(r'^uploadment', views.PublicInfo.as_view()),
+    re_path(r'^uploadment', views.PublicInfo.as_view()),
 ]
