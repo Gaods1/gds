@@ -1,6 +1,7 @@
 from rest_framework import permissions
 from account.models import AccountInfo, FunctionInfo, AccountRoleInfo, RoleInfo, RoleFuncInfo, AccountDisableFuncinfo
 import re
+from python_backend.settings import public_url
 
 model_map = {
     "accounts": AccountInfo,
@@ -15,7 +16,7 @@ class FuncPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         # 查询是否有这个功能点
         path = request.path
-        if path in ['/docs/']:
+        if path in public_url:
             return True
         url = re.search('^(/.*?/.*?/)(\d*)', path).group(1)
         try:
@@ -43,7 +44,7 @@ class DontCheckRoot(permissions.BasePermission):
     def has_permission(self, request, view):
         method = request.method
         path = request.path
-        if path in ['/docs/']:
+        if path in public_url:
             return True
         url = re.search('^/(.*?)/(.*?)/(\d*)', path)
         model = url.group(2)
