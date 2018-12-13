@@ -39,13 +39,20 @@ class PublicInfo(APIView):
                 for file in files:
                     # 拼接地址
                     url = settings.MEDIA_ROOT
+                    if not os.path.exists(url):
+                        os.mkdir(url)
+                    #上传服务器的路径
                     url = url + file.name
                     try:
                         # 创建对象
                         a = FileStorage()
                         # 上传服务器
-                        urls = a._save(url, file)
-                        list_url.append(urls)
+                        url = a._save(url, file)
+
+                        # 给前端的路径
+                        u_z = url.split('/')[-1]
+                        url_front = settings.media_root_front + u_z
+                        list_url.append(url_front)
 
                     except Exception as e:
                         transaction.savepoint_rollback(save_id)
@@ -56,13 +63,21 @@ class PublicInfo(APIView):
                 for file in files:
                     dict = {}
                     url = settings.MEDIA_ROOT
+                    if not os.path.exists(url):
+                        os.mkdir(url)
                     url = url + file.name
                     try:
                         # 创建对象
                         a = FileStorage()
                         # 上传服务器
                         url = a._save(url, file)
-                        dict['dange'] = url
+                        print(url)
+
+                        # 给前端的路径
+                        u_z = url.split('/')[-1]
+                        url_front = settings.media_root_front + u_z
+
+                        dict['dange'] = url_front
                         return Response(dict)
                     except Exception as e:
                         transaction.savepoint_rollback(save_id)
