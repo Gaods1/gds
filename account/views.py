@@ -59,12 +59,24 @@ class AccountViewSet(viewsets.ModelViewSet):
     search_fields = ("account","user_name", "user_email",)
 
     def list(self, request, *args, **kwargs):
-        if 'admin' in request.query_params and request.query_params['admin'] == 'True':
-            q = AccountInfo.objects.exclude(account=None).order_by('-serial')
-        elif 'admin' in request.query_params and request.query_params['admin'] == 'False':
-            q = AccountInfo.objects.filter(account=None).order_by('-serial')
+        deptinfo = Deptinfo.objects.get(dept_code=request.user.dept_code)
+        dept_codes_list = [request.user.dept_code]
+        if deptinfo.pdept_code != '0':  # 为省级或市级机构,
+            dept_codes_list.extend([di.dept_code for di in Deptinfo.objects.filter(pdept_code=request.user.dept_code)])
+        else: #为全国顶级
+            dept_codes_list.clear()
+
+        if dept_codes_list:
+            account_queryset = AccountInfo.objects.filter(dept_code__in=dept_codes_list)
         else:
-            q = self.get_queryset()
+            account_queryset = AccountInfo.objects.all()
+        print(request.query_params)
+        if 'admin' in request.query_params and request.query_params['admin'] == 'True':
+            q = account_queryset.exclude(account=None).order_by('-serial')
+        elif 'admin' in request.query_params and request.query_params['admin'] == 'False':
+            q = account_queryset.filter(account=None).order_by('-serial')
+        else:
+            q = account_queryset
         queryset = self.filter_queryset(q)
 
         page = self.paginate_queryset(queryset)
