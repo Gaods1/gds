@@ -18,14 +18,15 @@ class FuncPermission(permissions.BasePermission):
         path = request.path
         if path in public_url:
             return True
-        url = re.search('^(/.*?/.*?/)(\d*)', path).group(1)
+        path_group = re.search('^(/.*?/.*?/)(\d*)', path)
+        url = path_group.group(1)
         try:
-            func_code = FunctionInfo.objects.values_list('func_code', flat=True).get(func_url=url, state=1)
+            func_code = FunctionInfo.objects.values_list('func_code', flat=True).get(func_url__exact=url, state=1)
         except Exception as e:
             return False
 
         # 查询此用户是否禁掉了此功能点
-        account = request.user
+        account = request.user.account
         disable_fuc = AccountDisableFuncinfo.objects.values_list('func_code', flat=True).filter(account=account, state=1)
         if func_code in disable_fuc:
             return False
@@ -36,6 +37,13 @@ class FuncPermission(permissions.BasePermission):
         funcs = RoleFuncInfo.objects.values_list('func_code', flat=True).filter(role_code__in=roles_code, state=1)
         if func_code in funcs:
             return True
+
+        # 查看是否是获取自己账号的基本信息
+        serial = path_group.group(2)
+        user = AccountInfo.objects.values_list('account', flat=True).get(serial=serial)
+        if request.method == 'GET' and account == user:
+            return True
+
         return False
 
 
