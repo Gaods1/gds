@@ -199,8 +199,9 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 DEFAULT_FILE_STORAGE = 'backends.ImageStorage'
-base_url = '/alidata1/patclub/uploads/'
-location = 'localhost'
+MEDIA_ROOT = '/home/python/Desktop/temporary/'#此数据为测试数据
+BASE_URL= 'http://127.0.0.1/'#此数据为测试数据
+media_root_front = 'http://patclub.for8.cn:8764/Desktop/temporary/'#此数据为测试数据
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
 

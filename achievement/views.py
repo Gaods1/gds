@@ -17,8 +17,9 @@ import time
 import shutil
 from django.db import connection  # django封装好的方法
 
-from public_models.utils import  move_attachment, move_single
+from public_models.utils import  move_attachment, move_single, get_detcode_str
 from account.models import Deptinfo, AccountInfo
+from python_backend import settings
 from .serializers import *
 from .models import *
 from .utils import massege, diedai
@@ -60,55 +61,35 @@ class ProfileViewSet(viewsets.ModelViewSet):
     filter_fields = ("account_code", "rr_code","a_code")
     search_fields = ("rr_code","account_code","a_code")
     def list(self, request, *args, **kwargs):
-        # queryset = RrApplyHistory.objects.filter(type=1).order_by('-serial')
-        #dept_code = request.user.dept_code
-        #dept_level = Deptinfo.objects.get(dept_code=dept_code).dept_level
-        #if dept_level == 1:
-            #dept_code = [deptinfo.dept_code for deptinfo in Deptinfo.objects.all()
-        #elif dept_level == 2:
-            #dept_code = [deptinfo.dept_code for deptinfo in Deptinfo.objects.get(pdept_code=dept_code).dept_code]
-        #else:
-            #dept_code = dept_code
-        # 建立游标
-        cursor = connection.cursor()
-        # 创建索引
-        #cursor.execute("create index account_code_index on account_info(dept_code(10))")
-        #cursor.execute("create index account_code_index on rr_apply_history(account_code(10))")
 
-        SQL = """
-        	select rr_apply_history.*
-            from rr_apply_history
-        	inner join account_info
-        	on account_info.account_code=rr_apply_history.account_code
-        	where account_info.dept_code='string'
-        	and rr_apply_history.type=1
-        """
-        SQL_V = """
-            create view v_view as
-            select rr_apply_history.*
-            from rr_apply_history
-        	inner join account_info
-        	on account_info.account_code=rr_apply_history.account_code
-        	where account_info.dept_code='string'
-        	and rr_apply_history.type=1
-        """
-        SQL_S = """
-            select * from v_view
-        """
-        # 执行语句创建视图
-        #cursor.execute(SQL_V)
-        # 执行语句查询视图
-        cursor.execute(SQL_S)
-        raw_list = cursor.fetchall()  # 读取所有，返回tuple
-        # 关闭游标
-        cursor.close()
-
-        # queryset = RrApplyHistory.objects.raw()
-        # 转化数据类型
-        queryset = RrApplyHistory.objects.filter(pk__in=[x[0] for x in diedai(raw_list)]).order_by('state')
-
-        #queryset = self.filter_queryset(self.get_queryset())
-        queryset = self.filter_queryset(queryset)
+        dept_code = request.user.dept_code
+        dept_code_str = get_detcode_str(dept_code)
+        if dept_code_str:
+            SQL = """
+                    	select rr_apply_history.*
+                        from rr_apply_history
+                    	inner join account_info
+                    	on account_info.account_code=rr_apply_history.account_code
+                    	where account_info.dept_code in ("+dept_code_str+")
+                    	and rr_apply_history.type=1
+                    """
+            #SQL_V = """
+                        #create view v_view as
+                        #select rr_apply_history.*
+                        #from rr_apply_history
+                    	#inner join account_info
+                    	#on account_info.account_code=rr_apply_history.account_code
+                    	#where account_info.dept_code in ("+dept_code_str+")
+                    	#and rr_apply_history.type=1
+                    #"""
+            #SQL_S = """
+                        #select * from v_view
+                    #"""
+            raw_queryset = RrApplyHistory.objects.raw(SQL)
+            consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset])
+            queryset = self.filter_queryset(consult_reply_set)
+        else:
+            queryset = self.filter_queryset(self.get_queryset())
 
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -117,7 +98,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
-
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -1007,33 +987,39 @@ class ManagementpViewSet(viewsets.ModelViewSet):
         dict = {}
         list1 = []
         list2 = []
-        for url in url_list:
-            if len(url)==1:
-                url_l = url.split('/')
-                url_z = url_l[-1]
-                url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
-                url_x = '{}{}{}{}'.format(relative_path, tcode_attachment, serializer_ecode, url_z)
+        for url_front in url_list:
+            if len(url_front)==1:
+                url_l = url_front.split('/')
+                url_file = url_l[-1]
 
+                url_j = settings.MEDIA_ROOT + url_file
+                #url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
+                url_x = '{}{}{}{}'.format(relative_path, tcode_attachment, serializer_ecode, url_file)
+
+                # 拼接给前端的的地址
                 url_x_f = url_x.replace(relative_path,relative_path_front)
                 list2.append(url_x_f)
 
+                # 拼接ecode表中的path
                 path = '{}/{}/{}/'.format(param_value,tcode_attachment,serializer_ecode)
-                list1.append(AttachmentFileinfo(tcode=tcode_attachment,ecode=serializer_ecode,file_name=url_z,path=path,operation_state=3,state=1))
+                list1.append(AttachmentFileinfo(tcode=tcode_attachment,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1))
+
                 # 将临时目录转移到正式目录
                 shutil.move(url_j, url_x)
             else:
-                for u in url:
+                for u in url_front:
                     url_l = u.split('/')
-                    url_z = url_l[-1]
-                    url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
-                    url_x = '{}{}{}{}'.format(relative_path, tcode_attachment, serializer_ecode, url_z)
+                    url_file = url_l[-1]
+                    url_j = settings.MEDIA_ROOT + url_file
+                    #url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
+                    url_x = '{}{}{}{}'.format(relative_path, tcode_attachment, serializer_ecode, url_file)
 
                     url_x_f = url_x.replace(relative_path, relative_path_front)
                     list2.append(url_x_f)
 
                     path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
                     list1.append(
-                        AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_z, path=path,
+                        AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,
                                            operation_state=3, state=1))
                     # 将临时目录转移到正式目录
                     shutil.move(url_j, url_x)
@@ -1042,7 +1028,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
         AttachmentFileinfo.objects.bulk_create(list1)
 
         # 删除临时目录
-        shutil.rmtree(absolute_path + temporary)
+        shutil.rmtree(settings.MEDIA_ROOT)
 
         # 给前端抛正式目录
         dict['url'] = list2
