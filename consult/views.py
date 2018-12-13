@@ -14,8 +14,7 @@ from misc.misc import gen_uuid32, genearteMD5
 from django.db import transaction
 import random,requests,time,json
 from django.http import HttpResponse,JsonResponse
-from public_models.utils import move_attachment,move_single
-# from django.db import connection
+from public_models.utils import move_attachment,move_single,get_detcode_str
 
 
 # Create your views here.
@@ -54,53 +53,22 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
 
     #征询信息根据发起征询者所属机构部门检索
     def list(self, request, *args, **kwargs):
-        consult_title =request.query_params.get('consult_title')
-        consult_memo = request.query_params.get('consult_memo')
-        consult_state = request.query_params.get('consult_state')
-        consult_state_list = ['0','1','2','3','5']
-        search_where = ''
-        if consult_state in consult_state_list:
-            search_where += " and ci.consult_state="+consult_state+" "
-        if consult_title is not None:
-            search_where += " and ci.consult_title like '%"+consult_title+"%' "
-        if consult_memo is not None:
-            search_where += " and ci.consult_memo like '%"+consult_memo+"%' "
-
         dept_code = request.user.dept_code
-        deptinfo = Deptinfo.objects.get(dept_code=dept_code)
-        dept_codes_list = []
-        if deptinfo.pdept_code  != 0:    #为省级或市级机构,
-            dept_codes = [di.dept_code for di in Deptinfo.objects.filter(pdept_code=dept_code)]
-            dept_codes.append(dept_code)
-            for dc in dept_codes:
-                dept_codes_list.append("'"+dc+"'")
-            dept_codes_str = ",".join(dept_codes_list)
-
-            # cursor = connection.cursor()
-            # cursor.execute("select ci.*  from consult_info as ci left join account_info as ai on  ci.consulter=ai.account_code where ai.dept_code  in ("+dept_codes_str+") "+ search_where)
-            # consult_infos = cursor.fetchall()
-            # consult_infos
-
-
-            consult_info_queryset = ConsultInfo.objects.raw("select ci.*  from consult_info as ci left join account_info as ai on  ci.consulter=ai.account_code where ai.dept_code  in ("+dept_codes_str+") "+ search_where)
-            page = self.paginate_queryset(consult_info_queryset)
-            if page is not None:
-                serializer = self.get_serializer(page, many=True)
-                return self.get_paginated_response(serializer.data)
-
-            serializer = self.get_serializer(consult_info_queryset, many=True)
-            return Response(serializer.data)
-        else:   #顶级机构,检索所有
+        dept_code_str = get_detcode_str(dept_code)
+        if dept_code_str:
+            raw_queryset = ConsultInfo.objects.raw("select ci.serial  from consult_info as ci left join account_info as ai on  ci.consulter=ai.account_code where ai.dept_code  in ("+dept_code_str+") ")
+            consult_info_set = ConsultInfo.objects.filter(serial__in=[i.serial for i in raw_queryset])
+            queryset = self.filter_queryset(consult_info_set)
+        else:
             queryset = self.filter_queryset(self.get_queryset())
-            page = self.paginate_queryset(queryset)
-            if page is not None:
-                serializer = self.get_serializer(page, many=True)
-                return self.get_paginated_response(serializer.data)
 
-            serializer = self.get_serializer(queryset, many=True)
-            return Response(serializer.data)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
 
-
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
     '''
@@ -274,6 +242,25 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
     ordering_fields = ("reply_time", "reply_state")
     filter_fields = ("reply_state", "consult_code", "serial", "reply_code")
     search_fields = ("reply_body",)
+
+    def list(self, request, *args, **kwargs):
+        dept_code = request.user.dept_code
+        dept_code_str = get_detcode_str(dept_code)
+        if dept_code_str:
+            raw_queryset = ConsultReplyInfo.objects.raw("select ri.serial from consult_reply_info as ri left join consult_info as ci on ri.consult_code=ci.consult_code left join account_info as ai on ci.consulter=ai.account_code where ai.dept_code in ("+dept_code_str+")")
+            consult_reply_set = ConsultReplyInfo.objects.filter(serial__in=[i.serial for i in raw_queryset])
+            queryset = self.filter_queryset(consult_reply_set)
+        else:
+            queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 
     '''
     征询回复审核接口： 

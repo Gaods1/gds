@@ -19,26 +19,26 @@ class AccountBackend(ModelBackend):
 
 
 class FileStorage(FileSystemStorage):
-
-    def __init__(self):
-        self.location = settings.location
-        self.base_url = settings.base_url
+    pass
+    #def __init__(self):
+        #self.location = settings.location
+        #self.base_url = settings.base_url
         #super(FileStorage, self).__init__(location, base_url)
 
-    def _save(self, names, content):
-        list_name = list()
-        for name in names:
+    #def _save(self, names, content):
+        #list_name = list()
+        #for name in names:
             # 文件扩展名
-            ext = os.path.splitext(name)[1]
+           # ext = os.path.splitext(name)[1]
             # 文件目录
-            d = os.path.dirname(name)
+            #d = os.path.dirname(name)
             # 定义文件名，年月日时分秒随机数
-            fn = time.strftime('%Y%m%d%H%M%S')
-            fn = fn + '_%d' % random.randint(0, 100)
+            #fn = time.strftime('%Y%m%d%H%M%S')
+            #fn = fn + '_%d' % random.randint(0, 100)
             # 重写合成文件名
-            name = os.path.join(d, fn + ext)
-            list_name.append(name)
+            #name = os.path.join(d, fn + ext)
+            #list_name.append(name)
         # 调用父类方法
-        return super()._save(list_name, content)
+        #return super()._save(list_name, content)
 
 
