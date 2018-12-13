@@ -225,4 +225,4 @@ STATICFILES_DIRS = [
 STATIC_ROOT = os.path.join(BASE_DIR , "static/")
 
 # 登陆后全开放接口
-public_url = ['/docs/', '/public/uploadment', '/public/uploadment/']
+public_url = ['/docs/', '/public/uploadment', '/public/uploadment/','/project/project_step_info/']
