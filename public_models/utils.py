@@ -5,6 +5,18 @@ import copy
 
 from backends import FileStorage
 from public_models.models import ParamInfo, AttachmentFileType, AttachmentFileinfo
+from account.models import Deptinfo
+
+
+def get_detcode_str(code):
+
+    deptinfo = Deptinfo.objects.get(dept_code=code)
+    dept_codes_list = ["'"+code+"'"]
+    if deptinfo.pdept_code != '0':  # 为省级或市级机构,
+        dept_codes_list.extend(["'"+di.dept_code+"'" for di in Deptinfo.objects.filter(pdept_code=code)])
+        return ",".join(dept_codes_list)
+    return []
+
 
 """
 1 调函数时相对应的参数说明：
