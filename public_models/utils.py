@@ -86,7 +86,6 @@ def get_single(tname_single,ecode):
     absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
     relative_path = ParamInfo.objects.get(param_code=2).param_value
     relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-    # canshu = canshu
     tcode_single = AttachmentFileType.objects.get(tname=tname_single).tcode
     ecode = ecode
     files = AttachmentFileinfo.objects.filter(tcode=tcode_single, ecode=ecode, operation_state=1, state=1)

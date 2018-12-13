@@ -1,9 +1,14 @@
+import os
+
 from django.db import transaction
 from django.http import HttpResponse
+from django.http import JsonResponse
 from django.shortcuts import render
 
 # Create your views here.
+from rest_framework.response import Response
 from rest_framework import viewsets
+from rest_framework.utils import json
 from rest_framework.views import APIView
 
 from backends import FileStorage
@@ -18,28 +23,32 @@ class PublicInfo(APIView,FileStorage):
         with transaction.atomic():
             # 创建一个保存点
             save_id = transaction.savepoint()
+            absolute_path = ParamInfo.objects.get(param_code=1).param_value
+            temporary = 'temporary'
+            if not request.method == "POST":
+                return JsonResponse({"error": u"不支持此种请求"}, safe=False)
 
-            tname = request.data['tname']
-            param_name = request.data['param_name']
-
-            ecode = gen_uuid32
-            t_code = AttachmentFileType.objects.get(tname=tname).tcode
-            param = ParamInfo.objects.get(param_name=param_name).param_value
-
-            files = request.FILES.getlist('file', None)
+            files = request.FILES.getlist('file',None)
+            print(files)
+            print(type(files))
             if not files:
                 return HttpResponse('上传失败')
             list_url = []
+            dict = {}
+
+            url1 = '{}{}'.format(absolute_path, temporary)
+            #if not os.path.exists(url1):
+                #os.makedirs(url1)
+
             for file in files:
                 # 拼接地址
-                url = '/{}/{}/{}/{}'.format(param, t_code, ecode, file.name)
+                url = url1 + '/' + file.name
                 list_url.append(url)
             try:
-                dict = {}
                 # 上传服务器
                 list_url = self._save(list_url, files)
-                dict[ecode] = list_url
-                return dict
+                dict['url'] = list_url
+                return Response(dict)
             except Exception as e:
                 transaction.savepoint_rollback(save_id)
                 return HttpResponse('上传失败' % str(e))

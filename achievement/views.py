@@ -982,12 +982,75 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         data = request.data
+
         data['creater'] = request.user.account
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
+
+        serializer_ecode = serializer.data['ecode']
+
+        url_list = request.data.get('url',None)
+        tname_attachment = request.data.get('tname_attachment',None)
+        tname_singgle = request.data.get('tname_singgle',None)
+
+        if not url_list:
+            return HttpResponse('请先上传相关文件')
+
+        absolute_path = ParamInfo.objects.get(param_code=1).param_value
+        relative_path = ParamInfo.objects.get(param_code=2).param_value
+        relative_path_front = ParamInfo.objects.get(param_code=4).param_value
+        tcode_attachment = AttachmentFileType.objects.get(tname=tname_attachment).tcode
+        tcode_single = AttachmentFileType.objects.get(tname=tname_singgle).tcode
+        param_value = ParamInfo.objects.get(param_code=6).param_value
+        temporary = 'temporary'
+        dict = {}
+        list1 = []
+        list2 = []
+        for url in url_list:
+            if len(url)==1:
+                url_l = url.split('/')
+                url_z = url_l[-1]
+                url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
+                url_x = '{}{}{}{}'.format(relative_path, tcode_attachment, serializer_ecode, url_z)
+
+                url_x_f = url_x.replace(relative_path,relative_path_front)
+                list2.append(url_x_f)
+
+                path = '{}/{}/{}/'.format(param_value,tcode_attachment,serializer_ecode)
+                list1.append(AttachmentFileinfo(tcode=tcode_attachment,ecode=serializer_ecode,file_name=url_z,path=path,operation_state=3,state=1))
+                # 将临时目录转移到正式目录
+                shutil.move(url_j, url_x)
+            else:
+                for u in url:
+                    url_l = u.split('/')
+                    url_z = url_l[-1]
+                    url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
+                    url_x = '{}{}{}{}'.format(relative_path, tcode_attachment, serializer_ecode, url_z)
+
+                    url_x_f = url_x.replace(relative_path, relative_path_front)
+                    list2.append(url_x_f)
+
+                    path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                    list1.append(
+                        AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_z, path=path,
+                                           operation_state=3, state=1))
+                    # 将临时目录转移到正式目录
+                    shutil.move(url_j, url_x)
+
+        # 创建atachmentinfo表
+        AttachmentFileinfo.objects.bulk_create(list1)
+
+        # 删除临时目录
+        shutil.rmtree(absolute_path + temporary)
+
+        # 给前端抛正式目录
+        dict['url'] = list2
+
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
+        #return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
+        return Response(dict)
+
 
 
 
