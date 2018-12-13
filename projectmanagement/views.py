@@ -1,18 +1,12 @@
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from rest_framework import viewsets
-from rest_framework.views import APIView
-from projectmanagement.models import *
-from projectmanagement.serializers import *
-from rest_framework import status
-from rest_framework.response import Response
-from misc.misc import gen_uuid32, genearteMD5
 from rest_framework import filters
+from rest_framework import mixins
 import django_filters
 from django.db import transaction
 import time
 from .serializers import *
-from django.views.generic import View
 from django.db import connection, transaction
 from account.models import Deptinfo, AccountInfo
 from expert.models import BrokerBaseinfo
@@ -20,7 +14,7 @@ from expert.models import BrokerBaseinfo
 
 # Create your views here.
 
-class ProjectInfoViewSet(viewsets.ModelViewSet):
+class ProjectInfoViewSet(viewsets.ReadOnlyModelViewSet):
     '''项目信息'''
     queryset = ProjectInfo.objects.all().order_by('-pserial')
     serializer_class = ProjectInfoSerializer
@@ -91,28 +85,31 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
         return self.get_paginated_response(serializer.data)
 
 
-class ProjectCheckInfoViewSet(viewsets.ModelViewSet):
+
+
+class ProjectCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,viewsets.GenericViewSet):
     """
     项目8步审核
 
-    # 项目立项审核
+    ==================================================
+    ## 项目立项审核
     router.register(r'project_cer', ProjectCheckInfoViewSet)
-    # 项目上传合同审核
+    ## 项目上传合同审核
     router.register(r'project_upcontract_cer', ProjectCheckInfoViewSet)
-    # 签约合同审核
+    ## 签约合同审核
     router.register(r'project_signcontract_cer', ProjectCheckInfoViewSet)
-    # 项目标书审核
+    ## 项目标书审核
     router.register(r'project_bid_cer', ProjectCheckInfoViewSet)
-    # 中标签约审核
+    ## 中标签约审核
     router.register(r'project_bidsign_cer', ProjectCheckInfoViewSet)
-    # 项目固化审核
+    ## 项目固化审核
     router.register(r'project_solid_cer', ProjectCheckInfoViewSet)
-    # 项目结案审核
+    ## 项目结案审核
     router.register(r'project_finish_cer', ProjectCheckInfoViewSet)
-    # 项目终止审核
+    ## 项目终止审核
     router.register(r'project_end_cer', ProjectCheckInfoViewSet)
 
-    --------------------------------------------------
+    ==================================================
     需要审核的有8个子步骤
     项目立项审核 step_code:1  substep_code:12
     上传合同审核 step_code:2  substep_code:21
