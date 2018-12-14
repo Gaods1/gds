@@ -8,6 +8,17 @@ from public_models.models import ParamInfo, AttachmentFileType, AttachmentFilein
 from account.models import Deptinfo
 
 
+# 获取机构部门列表用于django orm 筛选条件
+def get_dept_codes(dept_code):
+    dept_codes_list = []
+    deptinfo = Deptinfo.objects.get(dept_code=dept_code)
+    if deptinfo.pdept_code != '0':  # 为省级或市级机构,
+        dept_codes_list.append(dept_code)
+        dept_codes_list.extend(Deptinfo.objects.values_list('dept_code', flat=True).filter(pdept_code=dept_code))
+    return dept_codes_list
+
+
+# 获取机构部门字符串用于sql
 def get_detcode_str(code):
 
     deptinfo = Deptinfo.objects.get(dept_code=code)
