@@ -72,7 +72,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     	on account_info.account_code=rr_apply_history.account_code
                     	where account_info.dept_code in ("+dept_code_str+")
                     	and rr_apply_history.type=1
-                    """
+                """
             #SQL_V = """
                         #create view v_view as
                         #select rr_apply_history.*
