@@ -8,8 +8,8 @@ from rest_framework.response import Response
 from misc.misc import gen_uuid32, genearteMD5
 from rest_framework import filters
 import django_filters
-from django.http import JsonResponse
 from django.db.models.query import QuerySet
+from public_models.utils import get_dept_codes
 # Create your views here.
 
 
@@ -59,17 +59,15 @@ class AccountViewSet(viewsets.ModelViewSet):
     filter_fields = ("state", "dept_code", "creater", "account")
     search_fields = ("account","user_name", "user_email",)
 
-    dept_codes_list = []
-
     def get_queryset(self):
         assert self.queryset is not None, (
             "'%s' should either include a `queryset` attribute, "
             "or override the `get_queryset()` method."
             % self.__class__.__name__
         )
-
-        if self.dept_codes_list:
-            queryset = AccountInfo.objects.filter(dept_code__in=self.dept_codes_list).order_by('-serial')
+        dept_codes_list = get_dept_codes(self.request.user.dept_code)
+        if dept_codes_list:
+            queryset = AccountInfo.objects.filter(dept_code__in=dept_codes_list).order_by('-serial')
         else:
             queryset = self.queryset
 
@@ -78,14 +76,7 @@ class AccountViewSet(viewsets.ModelViewSet):
             queryset = queryset.all()
         return queryset
 
-    def get_dept_codes(self, dept_code):
-        deptinfo = Deptinfo.objects.get(dept_code=dept_code)
-        if deptinfo.pdept_code != '0':  # 为省级或市级机构,
-            self.dept_codes_list.append(dept_code)
-            self.dept_codes_list.extend(Deptinfo.objects.values_list('dept_code', flat=True).filter(pdept_code=dept_code))
-
     def list(self, request, *args, **kwargs):
-        self.get_dept_codes(request.user.dept_code)
         q = self.get_queryset()
         if 'admin' in request.query_params and request.query_params['admin'] == 'True':
             q = q.exclude(account=None).order_by('-serial')
