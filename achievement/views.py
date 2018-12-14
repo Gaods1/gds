@@ -60,44 +60,25 @@ class ProfileViewSet(viewsets.ModelViewSet):
     ordering_fields = ("account_code","a_code","rr_code")
     filter_fields = ("account_code", "rr_code","a_code")
     search_fields = ("rr_code","account_code","a_code")
-    def list(self, request, *args, **kwargs):
+    pagination_class = None
 
-        dept_code = request.user.dept_code
+    def get_queryset(self):
+        dept_code = self.request.user.dept_code
         dept_code_str = get_detcode_str(dept_code)
         if dept_code_str:
-            SQL = """
-                    	select rr_apply_history.*
-                        from rr_apply_history
-                    	inner join account_info
-                    	on account_info.account_code=rr_apply_history.account_code
-                    	where account_info.dept_code in ("+dept_code_str+")
-                    	and rr_apply_history.type=1
-                """
-            #SQL_V = """
-                        #create view v_view as
-                        #select rr_apply_history.*
-                        #from rr_apply_history
-                    	#inner join account_info
-                    	#on account_info.account_code=rr_apply_history.account_code
-                    	#where account_info.dept_code in ("+dept_code_str+")
-                    	#and rr_apply_history.type=1
-                    #"""
-            #SQL_S = """
-                        #select * from v_view
-                    #"""
-            raw_queryset = RrApplyHistory.objects.raw(SQL)
+            #SQL = "select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.dept_code in ("+dept_code_str+") and rr_apply_history.type=1"
+            SQL = "select rr_apply_history.* \
+            		from rr_apply_history \
+            		inner join account_info \
+            		on account_info.account_code=rr_apply_history.account_code \
+            		where account_info.dept_code in ({dept_s}) \
+            		and rr_apply_history.type=1"
+
+            raw_queryset = RrApplyHistory.objects.raw(SQL.format(dept_s=dept_code_str))
             consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset])
-            queryset = self.filter_queryset(consult_reply_set)
+            return consult_reply_set
         else:
-            queryset = self.filter_queryset(self.get_queryset())
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+            return self.queryset
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -542,6 +523,24 @@ class RequirementViewSet(viewsets.ModelViewSet):
     ordering_fields = ("account_code","a_code","rr_code")
     filter_fields = ("account_code", "rr_code","a_code")
     search_fields = ("rr_code","account_code","a_code")
+
+    def get_queryset(self):
+        dept_code = self.request.user.dept_code
+        dept_code_str = get_detcode_str(dept_code)
+        if dept_code_str:
+            #SQL = "select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.dept_code in ("+dept_code_str+") and rr_apply_history.type=1"
+            SQL = "select rr_apply_history.* \
+            		from rr_apply_history \
+            		inner join account_info \
+            		on account_info.account_code=rr_apply_history.account_code \
+            		where account_info.dept_code in ({dept_s}) \
+            		and rr_apply_history.type=2"
+
+            raw_queryset = RrApplyHistory.objects.raw(SQL.format(dept_s=dept_code_str))
+            consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset])
+            return consult_reply_set
+        else:
+            return self.queryset
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()

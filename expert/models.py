@@ -105,6 +105,10 @@ class ExpertBaseinfo(models.Model):
     insert_time = models.DateTimeField(auto_now_add=True)
 
     @property
+    def dept_code(self):
+        return AccountInfo.objects.get(account_code=self.account_code).dept_code
+
+    @property
     def city(self):
         region_info = SystemDistrict.objects.get(district_id=self.expert_city)
         return region_info.district_name
@@ -221,6 +225,10 @@ class BrokerBaseinfo(models.Model):
     account_code = models.CharField(max_length=32, blank=True, null=True)   # 关联账号
 
     @property
+    def dept_code(self):
+        return AccountInfo.objects.get(account_code=self.account_code).dept_code
+
+    @property
     def city(self):
         region_info = SystemDistrict.objects.get(district_id=self.broker_city)
         return region_info.district_name
@@ -330,6 +338,10 @@ class CollectorBaseinfo(models.Model):
     insert_time = models.DateTimeField(auto_now_add=True)
 
     @property
+    def dept_code(self):
+        return AccountInfo.objects.get(account_code=self.account_code).dept_code
+
+    @property
     def city(self):
         region_info = SystemDistrict.objects.get(district_id=self.collector_city)
         return region_info.district_name
@@ -430,6 +442,9 @@ class ResultOwnerpBaseinfo(models.Model):
     university = models.CharField(max_length=64, blank=True, null=True)     # 毕业院校
     profession = models.CharField(max_length=64, blank=True, null=True)     # 专业
 
+    @property
+    def dept_code(self):
+        return AccountInfo.objects.get(account_code=self.account_code).dept_code
 
     @property
     def city(self):
@@ -548,6 +563,10 @@ class ResultOwnereBaseinfo(models.Model):
     owner_idtype = models.IntegerField(default=1)   # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
     owner_id = models.CharField(max_length=32)  # 证件号码
 
+    @property
+    def dept_code(self):
+        return AccountInfo.objects.get(account_code=self.account_code).dept_code
+
 
     @property
     def city(self):
@@ -625,6 +644,10 @@ class ProjectTeamBaseinfo(models.Model):
     account_code = models.CharField(max_length=64, blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def dept_code(self):
+        return AccountInfo.objects.get(account_code=self.account_code).dept_code
 
     @property
     def major(self):
