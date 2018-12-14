@@ -1,4 +1,5 @@
 from django.core.files.storage import FileSystemStorage
+from django.db.models import QuerySet
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.db import transaction
@@ -78,7 +79,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
             consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset])
             return consult_reply_set
         else:
-            return self.queryset
+            queryset = self.queryset
+            if isinstance(queryset, QuerySet):
+                # Ensure queryset is re-evaluated on each request.
+                queryset = queryset.all()
+            return queryset
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
