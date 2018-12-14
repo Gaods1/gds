@@ -12,6 +12,7 @@ class ExpertBaseInfoSerializers(serializers.ModelSerializer):
     idfornt = serializers.CharField(read_only=True)
     idback = serializers.CharField(read_only=True)
     idphoto = serializers.CharField(read_only=True)
+    dept_code = serializers.CharField(read_only=True)
 
     class Meta:
         model = ExpertBaseinfo
@@ -50,6 +51,7 @@ class ExpertBaseInfoSerializers(serializers.ModelSerializer):
             'creater',  # 创建者
             'account_code',  # 关联账号
             'insert_time',  # 创建时间
+            'dept_code',
         ]
 
 
@@ -85,6 +87,7 @@ class BrokerBaseInfoSerializers(serializers.ModelSerializer):
     idfornt = serializers.CharField(read_only=True)
     idback = serializers.CharField(read_only=True)
     idphoto = serializers.CharField(read_only=True)
+    dept_code = serializers.CharField(read_only=True)
 
     class Meta:
         model = BrokerBaseinfo
@@ -124,6 +127,7 @@ class BrokerBaseInfoSerializers(serializers.ModelSerializer):
             'creater',  # 创建者
             'account_code',  # 关联账号
             'insert_time',  # 创建时间
+            'dept_code',
         ]
 
 
@@ -157,6 +161,7 @@ class CollectorBaseInfoSerializers(serializers.ModelSerializer):
     idfornt = serializers.CharField(read_only=True)
     idback = serializers.CharField(read_only=True)
     idphoto = serializers.CharField(read_only=True)
+    dept_code = serializers.CharField(read_only=True)
 
     class Meta:
         model = CollectorBaseinfo
@@ -186,6 +191,7 @@ class CollectorBaseInfoSerializers(serializers.ModelSerializer):
             'idfornt',  # 证件照正面
             'idback',  # 证件照反面
             'idphoto',  # 手持证件照
+            'dept_code',
         ]
 
 
@@ -220,6 +226,7 @@ class ResultOwnerpSerializers(serializers.ModelSerializer):
     idfornt = serializers.CharField(read_only=True)
     idback = serializers.CharField(read_only=True)
     idphoto = serializers.CharField(read_only=True)
+    dept_code = serializers.CharField(read_only=True)
     class Meta:
         model = ResultOwnerpBaseinfo
         fields = [
@@ -251,6 +258,7 @@ class ResultOwnerpSerializers(serializers.ModelSerializer):
             'idfornt',  # 证件照正面
             'idback',  # 证件照反面
             'idphoto',  # 手持证件照
+            'dept_code'
         ]
 
 
@@ -286,6 +294,7 @@ class ResultOwnereSerializers(serializers.ModelSerializer):
     license = serializers.CharField(read_only=True)
     logo = serializers.CharField(read_only=True)
     promotional = serializers.CharField(read_only=True)
+    dept_code = serializers.CharField(read_only=True)
 
     class Meta:
         model = ResultOwnereBaseinfo
@@ -320,6 +329,7 @@ class ResultOwnereSerializers(serializers.ModelSerializer):
             'license',  # 营业执照
             'logo',
             'promotional',
+            'dept_code'
         ]
 
 
@@ -346,6 +356,7 @@ class OwnereApplySerializers(serializers.ModelSerializer):
 class TeamBaseinfoSerializers(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     major = serializers.ListField(read_only=True)
+    dept_code = serializers.CharField(read_only=True)
 
     class Meta:
         model = ProjectTeamBaseinfo
@@ -377,6 +388,7 @@ class TeamBaseinfoSerializers(serializers.ModelSerializer):
             'idphoto',
             'logo',
             'promotional',
+            'dept_code',
         ]
 
 

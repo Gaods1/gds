@@ -86,15 +86,25 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
                         update_baseinfo(ExpertBaseinfo, {'expert_code': expert.expert_code}, {'state': 1, 'pcode': pcode})
 
                         # 给账号绑定角色
-                        IdentityAuthorizationInfo.objects.create(account_code=expert.account_code,
-                                                                 identity_code=IdentityInfo.objects.get(identity_name='expert').identity_code,
-                                                                 iab_time=datetime.datetime.now(),
-                                                                 creater=request.user.account)
+                        # IdentityAuthorizationInfo.objects.create(account_code=expert.account_code,
+                        #                                          identity_code=IdentityInfo.objects.get(identity_name='expert').identity_code,
+                        #                                          iab_time=datetime.datetime.now(),
+                        #                                          creater=request.user.account)
+                        # 申请类型新增或修改时 更新account_info表dept_code
+                        if data.get('dept_code'):
+                            AccountInfo.objects.filter(account_code=instance.expert.account_code).update(dept_code=data.get('dept_code'))
+
                         # 移动相关附件
                         move_single('headPhoto', expert.expert_code)
                         move_single('identityFront', expert.expert_code)
                         move_single('identityBack', expert.expert_code)
                         move_single('handIdentityPhoto', expert.expert_code)
+
+
+                    # 更新账号绑定角色状态
+                    if expert.account_code:
+                        IdentityAuthorizationInfo.objects.filter(account_code=expert.account_code,
+                                                                 identity_code=IdentityInfo.objects.get(identity_name='expert').identity_code).update(state=apply_state)
 
                     # 发送信息
                     send_msg(expert.expert_mobile, '领域专家', apply_state, expert.account_code, request.user.account)
@@ -193,15 +203,24 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                         update_baseinfo(BrokerBaseinfo, {'broker_code': baseinfo.broker_code}, {'state': 1, 'pcode': pcode})
 
                         # 给账号绑定角色
-                        IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
-                                                                 identity_code=IdentityInfo.objects.get(identity_name='broker').identity_code,
-                                                                 iab_time=datetime.datetime.now(),
-                                                                 creater=request.user.account)
+                        # IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
+                        #                                          identity_code=IdentityInfo.objects.get(identity_name='broker').identity_code,
+                        #                                          iab_time=datetime.datetime.now(),
+                        #                                          creater=request.user.account)
+                        # 申请类型新增或修改时 更新account_info表dept_code
+                        if data.get('dept_code'):
+                            AccountInfo.objects.filter(account_code=instance.broker.account_code).update(dept_code=data.get('dept_code'))
+
                         # 移动相关附件
                         move_single('headPhoto', baseinfo.broker_code)
                         move_single('identityFront', baseinfo.broker_code)
                         move_single('identityBack', baseinfo.broker_code)
                         move_single('handIdentityPhoto', baseinfo.broker_code)
+
+                    # 更新账号绑定角色状态
+                    if baseinfo.account_code:
+                        IdentityAuthorizationInfo.objects.filter(account_code=baseinfo.account_code,
+                                                                 identity_code=IdentityInfo.objects.get(identity_name='broker').identity_code).update(state=apply_state)
 
                     # 发送信息
                     send_msg(baseinfo.broker_mobile, '技术经纪人', apply_state, baseinfo.account_code, request.user.account)
@@ -300,15 +319,24 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
                         update_baseinfo(CollectorBaseinfo, {'collector_code': baseinfo.collector_code}, {'state': 1, 'pcode': pcode})
 
                         # 给账号绑定角色
-                        IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
-                                                                 identity_code=IdentityInfo.objects.get(identity_name='collector').identity_code,
-                                                                 iab_time=datetime.datetime.now(),
-                                                                 creater=request.user.account)
+                        # IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
+                        #                                          identity_code=IdentityInfo.objects.get(identity_name='collector').identity_code,
+                        #                                          iab_time=datetime.datetime.now(),
+                        #                                          creater=request.user.account)
+                        # 申请类型新增或修改时 更新account_info表dept_code
+                        if data.get('dept_code'):
+                            AccountInfo.objects.filter(account_code=instance.collector.account_code).update(dept_code=data.get('dept_code'))
+
                         # 移动相关附件
                         move_single('headPhoto', baseinfo.collector_code)
                         move_single('identityFront', baseinfo.collector_code)
                         move_single('identityBack', baseinfo.collector_code)
                         move_single('handIdentityPhoto', baseinfo.collector_code)
+
+                    # 更新账号绑定角色状态
+                    if baseinfo.account_code:
+                        IdentityAuthorizationInfo.objects.filter(account_code=baseinfo.account_code,
+                                                                 identity_code=IdentityInfo.objects.get(identity_name='collector').identity_code).update(state=apply_state)
 
                     # 发送信息
                     send_msg(baseinfo.collector_mobile, '采集员', apply_state, baseinfo.account_code, request.user.account)
@@ -407,16 +435,25 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
                         update_baseinfo(ResultOwnerpBaseinfo, {'owner_code': baseinfo.owner_code}, {'state': 1, 'pcode': pcode})
 
                         # 给账号绑定角色
-                        if baseinfo.account_code:
-                            IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
-                                                                     identity_code=IdentityInfo.objects.get(identity_name='result_personal_owner').identity_code,
-                                                                     iab_time=datetime.datetime.now(),
-                                                                     creater=request.user.account)
+                        # if baseinfo.account_code:
+                        #     IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
+                        #                                              identity_code=IdentityInfo.objects.get(identity_name='result_personal_owner').identity_code,
+                        #                                              iab_time=datetime.datetime.now(),
+                        #                                              creater=request.user.account)
+                        # 申请类型新增或修改时 更新account_info表dept_code
+                        if data.get('dept_code'):
+                            AccountInfo.objects.filter(account_code=instance.owner.account_code).update(dept_code=data.get('dept_code'))
+
                         # 移动相关附件
                         move_single('headPhoto', baseinfo.owner_code)
                         move_single('identityFront', baseinfo.owner_code)
                         move_single('identityBack', baseinfo.owner_code)
                         move_single('handIdentityPhoto', baseinfo.owner_code)
+
+                    # 更新账号绑定角色状态
+                    if baseinfo.account_code:
+                        IdentityAuthorizationInfo.objects.filter(account_code=baseinfo.account_code,
+                                                                 identity_code=IdentityInfo.objects.get(identity_name='result_personal_owner').identity_code).update(state=apply_state)
 
                     # 发送信息
                     send_msg(baseinfo.owner_mobile, '成果持有人', apply_state, baseinfo.account_code, request.user.account)
@@ -521,11 +558,16 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
                         update_baseinfo(ResultOwnereBaseinfo, {'owner_code': baseinfo.owner_code}, {'state': 1, 'ecode': ecode})
 
                         # 给账号绑定角色
-                        if baseinfo.account_code:
-                            IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
-                                                                     identity_code=IdentityInfo.objects.get(identity_name='result_enterprise_owner').identity_code,
-                                                                     iab_time=datetime.datetime.now(),
-                                                                     creater=request.user.account)
+                        # if baseinfo.account_code:
+                        #     IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
+                        #                                              identity_code=IdentityInfo.objects.get(identity_name='result_enterprise_owner').identity_code,
+                        #                                              iab_time=datetime.datetime.now(),
+                        #                                              creater=request.user.account)
+
+                        # 申请类型新增或修改时 更新account_info表dept_code
+                        if data.get('dept_code'):
+                            AccountInfo.objects.filter(account_code=instance.owner.account_code).update(dept_code=data.get('dept_code'))
+
                         # 移动相关附件
                         move_single('identityFront', baseinfo.owner_code)
                         move_single('identityBack', baseinfo.owner_code)
@@ -533,6 +575,12 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
                         move_single('entLicense', baseinfo.owner_code)
                         move_single('logoPhoto', baseinfo.owner_code)
                         move_single('Propaganda', baseinfo.owner_code)
+
+
+                    # 更新账号绑定角色状态
+                    if baseinfo.account_code:
+                        IdentityAuthorizationInfo.objects.filter(account_code=baseinfo.account_code,
+                                                                 identity_code=IdentityInfo.objects.get(identity_name='result_enterprise_owner').identity_code).update(state=apply_state)
 
                     # 发送信息
                     t1 = threading.Thread(target=send_msg, args=(baseinfo.owner_mobile, '成果持有企业', apply_state, baseinfo.account_code, request.user.account))
@@ -633,16 +681,26 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
                         update_baseinfo(ResultOwnerpBaseinfo, {'owner_code': baseinfo.owner_code}, {'state': 1, 'pcode': pcode})
 
                         # 给账号绑定角色
-                        if baseinfo.account_code:
-                            IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
-                                                                     identity_code=IdentityInfo.objects.get(identity_name='requirement_personal_owner').identity_code,
-                                                                     iab_time=datetime.datetime.now(),
-                                                                     creater=request.user.account)
+                        # if baseinfo.account_code:
+                        #     IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
+                        #                                              identity_code=IdentityInfo.objects.get(identity_name='requirement_personal_owner').identity_code,
+                        #                                              iab_time=datetime.datetime.now(),
+                        #                                              creater=request.user.account)
+                        # 申请类型新增或修改时 更新account_info表dept_code
+                        if data.get('dept_code'):
+                            AccountInfo.objects.filter(account_code=instance.owner.account_code).update(dept_code=data.get('dept_code'))
+
                         # 移动相关附件
                         move_single('headPhoto', baseinfo.owner_code)
                         move_single('identityFront', baseinfo.owner_code)
                         move_single('identityBack', baseinfo.owner_code)
                         move_single('handIdentityPhoto', baseinfo.owner_code)
+
+                    # 更新账号绑定角色状态
+                    if baseinfo.account_code:
+                        IdentityAuthorizationInfo.objects.filter(account_code=baseinfo.account_code,
+                                                                 identity_code=IdentityInfo.objects.get(identity_name='requirement_personal_owner').identity_code).update(state=apply_state)
+
 
                     # 发送信息
                     send_msg(baseinfo.owner_mobile, '需求持有人', apply_state, baseinfo.account_code, request.user.account)
@@ -747,11 +805,15 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                         update_baseinfo(ResultOwnereBaseinfo, {'owner_code': baseinfo.owner_code}, {'state': 1, 'ecode': ecode})
 
                         # 给账号绑定角色
-                        if baseinfo.account_code:
-                            IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
-                                                                     identity_code=IdentityInfo.objects.get(identity_name='requirement_enterprise_owner').identity_code,
-                                                                     iab_time=datetime.datetime.now(),
-                                                                     creater=request.user.account)
+                        # if baseinfo.account_code:
+                        #     IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
+                        #                                              identity_code=IdentityInfo.objects.get(identity_name='requirement_enterprise_owner').identity_code,
+                        #                                              iab_time=datetime.datetime.now(),
+                        #                                              creater=request.user.account)
+                        # 申请类型新增或修改时 更新account_info表dept_code
+                        if data.get('dept_code'):
+                            AccountInfo.objects.filter(account_code=instance.owner.account_code).update(dept_code=data.get('dept_code'))
+
                         # 移动相关附件
                         move_single('identityFront', baseinfo.owner_code)
                         move_single('identityBack', baseinfo.owner_code)
@@ -759,6 +821,11 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                         move_single('entLicense', baseinfo.owner_code)
                         move_single('logoPhoto', baseinfo.owner_code)
                         move_single('Propaganda', baseinfo.owner_code)
+
+                    # 更新账号绑定角色状态
+                    if baseinfo.account_code:
+                        IdentityAuthorizationInfo.objects.filter(account_code=baseinfo.account_code,
+                                                                 identity_code=IdentityInfo.objects.get(identity_name='requirement_enterprise_owner').identity_code).update(state=apply_state)
 
                     # 发送信息
                     t1 = threading.Thread(target=send_msg, args=(baseinfo.owner_mobile, '需求持有企业', apply_state, baseinfo.account_code, request.user.account))
@@ -829,6 +896,7 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                 apply_team_baseinfo = self.get_object()
                 if apply_team_baseinfo.state == 2:
                     return JsonResponse({"state":0,"msg":"审核已通过无需再审核"})
+
                 check_state = request.data.get('state')
                 opinion = request.data.get('opinion')
                 # 1 (apply_type:新增或更新或禁权)team_apply_history表
@@ -846,6 +914,11 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
 
                 # 2 更新project_team_baseinfo表状态
                 ProjectTeamBaseinfo.objects.filter(serial=apply_team_baseinfo.team_baseinfo.serial).update(state=baseinfo_state)
+
+                # 申请类型新增或修改时 更新account_info表dept_code
+                if request.data.get('dept_code') and check_state == 2:
+                    AccountInfo.objects.filter(account_code=apply_team_baseinfo.team_baseinfo.account_code).update(dept_code=request.data.get('dept_code'))
+
                 # 3 新增tema_check_history表记录
                 team_checkinfo_data = {
                     'apply_code': apply_team_baseinfo.apply_code,
@@ -855,21 +928,26 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                     'account': request.user.account
                 }
                 TeamCheckHistory.objects.create(**team_checkinfo_data)
-                # 4 新增前台角色授权记录 identity_authorization_info
+                # 4 新增前台角色授权记录 identity_authorization_info   变为移动附件
                 if check_state == 2:
-                    identity_authorization_data = {
-                        'account_code': apply_team_baseinfo.team_baseinfo.account_code,
-                        'identity_code':3,
-                        'state': 1,
-                        'insert_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                        'creater': request.user.account
-                    }
-                    IdentityAuthorizationInfo.objects.create(**identity_authorization_data)
+                    # identity_authorization_data = {
+                    #     'account_code': apply_team_baseinfo.team_baseinfo.account_code,
+                    #     'identity_code':3,
+                    #     'state': 1,
+                    #     'insert_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                    #     'creater': request.user.account
+                    # }
+                    # IdentityAuthorizationInfo.objects.create(**identity_authorization_data)
                     move_single('identityFront', apply_team_baseinfo.team_baseinfo.pt_code)
                     move_single('identityBack', apply_team_baseinfo.team_baseinfo.pt_code)
                     move_single('handIdentityPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
                     move_single('logoPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
                     move_single('Propaganda', apply_team_baseinfo.team_baseinfo.pt_code)
+
+                #更新前台角色授权状态(审核通过未通过都更新)
+                IdentityAuthorizationInfo.objects.filter(account_code=apply_team_baseinfo.team_baseinfo.account_code,
+                                                         identity_code=IdentityInfo.objects.get(identity_name='team').identity_code).update(state=check_state)
+
                 # 5 发送短信通知
                 account_info = AccountInfo.objects.get(account_code=apply_team_baseinfo.team_baseinfo.account_code)
                 account_mobile = account_info.user_mobile
