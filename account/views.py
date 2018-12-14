@@ -9,6 +9,7 @@ from misc.misc import gen_uuid32, genearteMD5
 from rest_framework import filters
 import django_filters
 from django.http import JsonResponse
+from django.db.models.query import QuerySet
 # Create your views here.
 
 
@@ -58,25 +59,39 @@ class AccountViewSet(viewsets.ModelViewSet):
     filter_fields = ("state", "dept_code", "creater", "account")
     search_fields = ("account","user_name", "user_email",)
 
-    def list(self, request, *args, **kwargs):
-        deptinfo = Deptinfo.objects.get(dept_code=request.user.dept_code)
-        dept_codes_list = [request.user.dept_code]
-        if deptinfo.pdept_code != '0':  # 为省级或市级机构,
-            dept_codes_list.extend([di.dept_code for di in Deptinfo.objects.filter(pdept_code=request.user.dept_code)])
-        else: #为全国顶级
-            dept_codes_list.clear()
+    dept_codes_list = []
 
-        if dept_codes_list:
-            account_queryset = AccountInfo.objects.filter(dept_code__in=dept_codes_list)
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+
+        if self.dept_codes_list:
+            queryset = AccountInfo.objects.filter(dept_code__in=self.dept_codes_list).order_by('-serial')
         else:
-            account_queryset = AccountInfo.objects.all()
-        print(request.query_params)
+            queryset = self.queryset
+
+        if isinstance(queryset, QuerySet):
+            # Ensure queryset is re-evaluated on each request.
+            queryset = queryset.all()
+        return queryset
+
+    def get_dept_codes(self, dept_code):
+        deptinfo = Deptinfo.objects.get(dept_code=dept_code)
+        if deptinfo.pdept_code != '0':  # 为省级或市级机构,
+            self.dept_codes_list.append(dept_code)
+            self.dept_codes_list.extend(Deptinfo.objects.values_list('dept_code', flat=True).filter(pdept_code=dept_code))
+
+    def list(self, request, *args, **kwargs):
+        self.get_dept_codes(request.user.dept_code)
+        q = self.get_queryset()
         if 'admin' in request.query_params and request.query_params['admin'] == 'True':
-            q = account_queryset.exclude(account=None).order_by('-serial')
+            q = q.exclude(account=None).order_by('-serial')
         elif 'admin' in request.query_params and request.query_params['admin'] == 'False':
-            q = account_queryset.filter(account=None).order_by('-serial')
-        else:
-            q = account_queryset
+            q = q.filter(account=None).order_by('-serial')
+
         queryset = self.filter_queryset(q)
 
         page = self.paginate_queryset(queryset)
