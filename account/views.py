@@ -9,7 +9,7 @@ from misc.misc import gen_uuid32, genearteMD5
 from rest_framework import filters
 import django_filters
 from django.db.models.query import QuerySet
-from public_models.utils import get_dept_codes
+from public_models.utils import get_dept_codes,get_detcode_str
 # Create your views here.
 
 
@@ -168,6 +168,26 @@ class RoleInfoViewSet(viewsets.ModelViewSet):
     ordering_fields = ("role_name", "insert_time")
     filter_fields = ("state", "creater", "role_code")
     search_fields = ("role_name",)
+
+
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        dept_codes_str = get_detcode_str(self.request.user.dept_code)
+        if dept_codes_str:
+            raw_queryset = RoleInfo.objects.raw("select r.serial  from role_info as r left join account_info as ai on  r.creater=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
+            queryset = RoleInfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("insert_time")
+        else:
+            queryset = self.queryset
+
+        if isinstance(queryset, QuerySet):
+            # Ensure queryset is re-evaluated on each request.
+            queryset = queryset.all()
+        return queryset
+
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
