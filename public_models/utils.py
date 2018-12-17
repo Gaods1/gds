@@ -170,7 +170,8 @@ def move_attachment(tname_attachment,ecode):
 
                 # 给前端抛路径以及状态
                 url_x_q = url_x.replace(relative_path, relative_path_front)
-                dict[url_x_q] = file.operation_state
+                if url_x_q.endswith('pdf') or url_x_q.endswith('jpg'):
+                    dict[url_x_q] = file.operation_state
     return dict
 
 def move_single(tname_singgle,ecode):
@@ -219,7 +220,8 @@ def move_single(tname_singgle,ecode):
 
                 # 给前端抛路径以及状态
                 url_x_q = url_x.replace(relative_path, relative_path_front)
-                dict[url_x_q] = file.operation_state
+                if url_x_q.endswith('pdf') or url_x_q.endswith('jpg'):
+                    dict[url_x_q] = file.operation_state
     return dict
 
 
