@@ -286,6 +286,24 @@ class AccountDisableFuncinfoViewSet(viewsets.ModelViewSet):
     filter_fields = ("state", "creater", "account", "func_code")
     search_fields = ("account", "func_code")
 
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        dept_codes_str = get_detcode_str(self.request.user.dept_code)
+        if dept_codes_str:
+            raw_queryset = AccountDisableFuncinfo.objects.raw("select d.serial  from account_disable_funcinfo as d left join account_info as ai on  d.creater=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
+            queryset = AccountDisableFuncinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
+        else:
+            queryset = self.queryset
+
+        if isinstance(queryset, QuerySet):
+            # Ensure queryset is re-evaluated on each request.
+            queryset = queryset.all()
+        return queryset
+
     def create(self, request, *args, **kwargs):
         data = request.data
 
@@ -336,6 +354,24 @@ class AccountRoleViewSet(viewsets.ModelViewSet):
     ordering_fields = ("account", "insert_time", "role_code")
     filter_fields = ("state", "creater", "account", "role_code", "type")
     search_fields = ("account", "role_code")
+
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        dept_codes_str = get_detcode_str(self.request.user.dept_code)
+        if dept_codes_str:
+            raw_queryset = AccountRoleInfo.objects.raw("select ari.serial  from account_role_info as ari left join account_info as ai on  ari.creater=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
+            queryset = AccountRoleInfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
+        else:
+            queryset = self.queryset
+
+        if isinstance(queryset, QuerySet):
+            # Ensure queryset is re-evaluated on each request.
+            queryset = queryset.all()
+        return queryset
 
     def create(self, request, *args, **kwargs):
         data = request.data
@@ -451,6 +487,26 @@ class DeptinfoViewSet(viewsets.ModelViewSet):
     filter_fields = ("state", "dept_level", "region_code","dept_code","pdept_code")
     search_fields = ("dept_name",)
 
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        dept_codes_str = get_detcode_str(self.request.user.dept_code)
+        if dept_codes_str:
+            raw_queryset = Deptinfo.objects.raw("select d.serial  from deptinfo as d where d.dept_code  in (" + dept_codes_str + ") ")
+            queryset = Deptinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
+        else:
+            queryset = self.queryset
+
+        if isinstance(queryset, QuerySet):
+            # Ensure queryset is re-evaluated on each request.
+            queryset = queryset.all()
+        return queryset
+
+
+
 
 # 参数配置管理
 class ParamInfoViewSet(viewsets.ModelViewSet):
@@ -483,6 +539,26 @@ class ParamInfoViewSet(viewsets.ModelViewSet):
     ordering_fields = ("param_name", "insert_time")
     filter_fields = ("param_code", "pparam_code")
     search_fields = ("param_name", "pparam_code")
+
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        dept_codes_str = get_detcode_str(self.request.user.dept_code)
+        if dept_codes_str:
+            raw_queryset = ParamInfo.objects.raw("select p.serial  from param_info as p left join account_info as ai on  p.creater=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
+            queryset = ParamInfo.objects.filter(serial__in=[i.serial for i in raw_queryset])
+        else:
+            queryset = self.queryset
+
+        if isinstance(queryset, QuerySet):
+            # Ensure queryset is re-evaluated on each request.
+            queryset = queryset.all()
+        return queryset
+
+
 
     def create(self, request, *args, **kwargs):
         data = request.data
