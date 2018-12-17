@@ -179,7 +179,7 @@ class RoleInfoViewSet(viewsets.ModelViewSet):
         dept_codes_str = get_detcode_str(self.request.user.dept_code)
         if dept_codes_str:
             raw_queryset = RoleInfo.objects.raw("select r.serial  from role_info as r left join account_info as ai on  r.creater=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
-            queryset = RoleInfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("insert_time")
+            queryset = RoleInfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
         else:
             queryset = self.queryset
 
