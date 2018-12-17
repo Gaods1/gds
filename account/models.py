@@ -103,13 +103,18 @@ class AccountInfo(AbstractBaseUser):
         account_dis_func = AccountDisableFuncinfo.objects.values_list('func_code', flat=True).filter(account=self.account, state=1)
         func_code = list(filter(lambda t:t not in account_dis_func, set(RoleFuncInfo.objects.values_list('func_code', flat=True).filter(role_code__in=role_code, state=1))))
         func_obj = FunctionInfo.objects.values('pfunc_code', 'func_name').filter(func_code__in=func_code, state=1)
-        pfunc_code_list = []
+        pfunc_list = []
         for f in func_obj:
-            if f['pfunc_code'] not in pfunc_code_list:
-                pfunc = FunctionInfo.objects.values('func_name').get(func_code=f['pfunc_code'])['func_name']
+            pfunc_code = f['pfunc_code']
+            pfunc = FunctionInfo.objects.values('func_name').get(func_code=pfunc_code)['func_name']
+            if pfunc not in pfunc_list:
                 func_dict[pfunc] = copy.deepcopy(main_menu[pfunc])
-                pfunc_code_list.append(f['pfunc_code'])
-            func_dict[pfunc]['subs'].append(sub_menu[f['func_name']])
+                pfunc_list.append(pfunc)
+            try:
+                sub = sub_menu[f['func_name']]
+            except Exception as e :
+                continue
+            func_dict[pfunc]['subs'].append(sub)
         return func_dict.values()
 
     @property
@@ -191,6 +196,10 @@ class FunctionInfo(models.Model):
     func_memo = models.CharField(max_length=255, blank=True, null=True)
     func_url = models.CharField(max_length=255, blank=True, null=True)
     add_param = models.CharField(max_length=255, blank=True, null=True)
+    sub_url_delete = models.CharField(max_length=255, blank=True, null=True)
+    sub_url_update = models.CharField(max_length=255, blank=True, null=True)
+    sub_url_create = models.CharField(max_length=255, blank=True, null=True)
+    sub_url_get = models.CharField(max_length=255, blank=True, null=True)
     item_type = models.IntegerField(default=0)
     pfunc_code = models.CharField(max_length=64, blank=True, null=True)
     func_order = models.IntegerField(default=0)
