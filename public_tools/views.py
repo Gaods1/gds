@@ -20,30 +20,29 @@ from python_backend import settings
 class PublicInfo(APIView):
 
     def post(self, request):
-        # 建立事物机制
-        with transaction.atomic():
-            # 创建一个保存点
-            save_id = transaction.savepoint()
-            absolute_path = ParamInfo.objects.get(param_code=1).param_value
-            temporary = 'temporary'
-            if not request.method == "POST":
-                return JsonResponse({"error": u"不支持此种请求"}, safe=False)
+        absolute_path = ParamInfo.objects.get(param_code=1).param_value
+        if not request.method == "POST":
+            return JsonResponse({"error": u"不支持此种请求"}, safe=False)
 
-            files = request.FILES.getlist('file',None)
-            if not files:
-                return HttpResponse('上传失败')
-            if len(files)!=1:
-                list_url = []
-                dict = {}
+        files = request.FILES.getlist('file',None)
+        if not files:
+            return HttpResponse('上传失败')
+        if len(files)!=1:
+            list_url = []
+            dict = {}
+            # 建立事物机制
+            with transaction.atomic():
+                # 创建一个保存点
+                save_id = transaction.savepoint()
+                try:
+                    for file in files:
+                        # 拼接地址
+                        url = settings.MEDIA_ROOT
+                        if not os.path.exists(url):
+                            os.mkdir(url)
+                        #上传服务器的路径
+                        url = url + file.name
 
-                for file in files:
-                    # 拼接地址
-                    url = settings.MEDIA_ROOT
-                    if not os.path.exists(url):
-                        os.mkdir(url)
-                    #上传服务器的路径
-                    url = url + file.name
-                    try:
                         # 创建对象
                         a = FileStorage()
                         # 上传服务器
@@ -54,78 +53,98 @@ class PublicInfo(APIView):
                         url_front = settings.media_root_front + u_z
                         list_url.append(url_front)
 
-                    except Exception as e:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('上传失败' % str(e))
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('上传失败' % str(e))
+
                 dict['fujian'] = list_url
+                transaction.savepoint_commit(save_id)
                 return Response(dict)
-            else:
-                for file in files:
-                    dict = {}
-                    url = settings.MEDIA_ROOT
-                    if not os.path.exists(url):
-                        os.mkdir(url)
-                    url = url + file.name
-                    try:
+        else:
+            # 建立事物机制
+            with transaction.atomic():
+                # 创建一个保存点
+                save_id = transaction.savepoint()
+                dict = {}
+                try:
+                    for file in files:
+                        url = settings.MEDIA_ROOT
+                        if not os.path.exists(url):
+                            os.mkdir(url)
+                        url = url + file.name
+
                         # 创建对象
                         a = FileStorage()
                         # 上传服务器
                         url = a._save(url, file)
-                        print(url)
 
                         # 给前端的路径
                         u_z = url.split('/')[-1]
                         url_front = settings.media_root_front + u_z
-
                         dict['dange'] = url_front
-                        return Response(dict)
-                    except Exception as e:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('上传失败' % str(e))
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('上传失败' % str(e))
 
+                transaction.savepoint_commit(save_id)
+                return Response(dict)
     def delete(self,request):
-        # 建立事物机制
-        with transaction.atomic():
-            # 创建一个保存点
-            save_id = transaction.savepoint()
-            if not request.method == "DELETE":
-                return JsonResponse({"error": u"不支持此种请求"}, safe=False)
 
-            name = request.query_params['name']
-            serial = request.query_params['serial']
-            # 在提交之前的删除
-            if not serial:
-                if not name:
-                    return HttpResponse('删除失败')
-                # 拼接地址
-                url = settings.MEDIA_ROOT
-                url = url + name
+        if not request.method == "DELETE":
+            return JsonResponse({"error": u"不支持此种请求"}, safe=False)
+
+        name = request.query_params.get('name',None)
+        serial = request.query_params.get('serial',None)
+        # 在提交之前的删除
+        if not serial:
+            if not name:
+                return HttpResponse('删除失败')
+            # 拼接地址
+            url = settings.MEDIA_ROOT
+            url = url + name
+            # 建立事物机制
+            with transaction.atomic():
+                # 创建一个保存点
+                save_id = transaction.savepoint()
                 try:
                     # 创建对象
                     a = FileStorage()
                     # 删除
                     a.delete(url)
-                    return HttpResponse('ok')
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('上传失败' % str(e))
+
+                transaction.savepoint_commit(save_id)
+                return HttpResponse('ok')
+
             # 在提交之后的删除
-            else:
-                if not name:
-                    return HttpResponse('删除失败')
-                # 拼接地址
-                url = '/home/python/Desktop/temporary/' + name
+        else:
+            if not name:
+                return HttpResponse('删除失败')
+            # 建立事物机制
+            with transaction.atomic():
+                # 创建一个保存点
+                save_id = transaction.savepoint()
                 try:
+                    # 拼接地址
+                    relative_path = ParamInfo.objects.get(param_code=2).param_value
+                    path = AttachmentFileinfo.objects.get(file_name=name).path
+                    # url = '/home/python/Desktop/temporary/' + name  测试数据
+                    url = '{}{}{}'.format(relative_path, path, name)
                     # 创建对象
                     a = FileStorage()
                     # 删除文件
                     a.delete(url)
                     # 删除表记录
                     AttachmentFileinfo.objects.get(file_name=name).delete()
-                    return HttpResponse('ok')
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('上传失败' % str(e))
+                transaction.savepoint_commit(save_id)
+                return HttpResponse('ok')
+
+
 
 
 
