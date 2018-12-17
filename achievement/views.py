@@ -9,6 +9,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import filters
 
+from backends import FileStorage
 from misc.misc import gen_uuid32, genearteMD5
 import django_filters
 import threading
@@ -964,160 +965,432 @@ class ManagementpViewSet(viewsets.ModelViewSet):
     search_fields = ("r_name",)
 
     def create(self, request, *args, **kwargs):
-        data = request.data
-        url_list = request.data.pop('url', None)
-        #tname_attachment = request.data.pop('tname_attachment', None)
-        #tname_singgle = request.data.pop('tname_singgle', None)
+        # 建立事物机制
+        with transaction.atomic():
+            # 创建一个保存点
+            save_id = transaction.savepoint()
+            try:
+                data = request.data
+                url_list = request.data.pop('url', None)
 
-        data['creater'] = request.user.account
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+                data['creater'] = request.user.account
+                serializer = self.get_serializer(data=data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
 
-        serializer_ecode = serializer.data['ecode']
+                serializer_ecode = serializer.data['r_code']
 
-        if not url_list:
-            return HttpResponse('请先上传相关文件')
+                if not url_list:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('请先上传相关文件')
 
-        absolute_path = ParamInfo.objects.get(param_code=1).param_value
-        relative_path = ParamInfo.objects.get(param_code=2).param_value
-        relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-        tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
-        tcode_single = AttachmentFileType.objects.get(tname='coverImg').tcode
-        param_value = ParamInfo.objects.get(param_code=6).param_value
-        dict = {}
-        list1 = []
-        list2 = []
-        for url_front in url_list:
-            if len(url_front)==1:
-                url_l = url_front.split('/')
-                url_file = url_l[-1]
+                absolute_path = ParamInfo.objects.get(param_code=1).param_value
+                relative_path = ParamInfo.objects.get(param_code=2).param_value
+                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
+                tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
+                tcode_single = AttachmentFileType.objects.get(tname='coverImg').tcode
+                param_value = ParamInfo.objects.get(param_code=6).param_value
+                dict = {}
+                list1 = []
+                list2 = []
+                for url_front in url_list:
+                    if len(url_front)==1:
+                        url_l = url_front.split('/')
+                        url_file = url_l[-1]
 
-                url_j = settings.MEDIA_ROOT + url_file
-                #url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
-                url_x = '{}{}/{}/{}/{}'.format(relative_path,param_value,tcode_single, serializer_ecode, url_file)
+                        url_j = settings.MEDIA_ROOT + url_file
+                        #url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
+                        url_x = '{}{}/{}/{}/{}'.format(relative_path,param_value,tcode_single, serializer_ecode, url_file)
 
-                # 拼接给前端的的地址
-                url_x_f = url_x.replace(relative_path,relative_path_front)
-                list2.append(url_x_f)
+                        # 拼接给前端的的地址
+                        url_x_f = url_x.replace(relative_path,relative_path_front)
+                        list2.append(url_x_f)
 
-                # 拼接ecode表中的path
-                path = '{}/{}/{}/'.format(param_value,tcode_single,serializer_ecode)
-                list1.append(AttachmentFileinfo(tcode=tcode_single,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1))
+                        # 拼接ecode表中的path
+                        path = '{}/{}/{}/'.format(param_value,tcode_single,serializer_ecode)
+                        list1.append(AttachmentFileinfo(tcode=tcode_single,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1))
 
-                # 将临时目录转移到正式目录
-                shutil.move(url_j, url_x)
-            else:
-                for u in url_front:
-                    url_l = u.split('/')
-                    url_file = url_l[-1]
-                    url_j = settings.MEDIA_ROOT + url_file
-                    #url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path,param_value,tcode_attachment, serializer_ecode, url_file)
+                        # 将临时目录转移到正式目录
+                        shutil.move(url_j, url_x)
+                    else:
+                        for u in url_front:
+                            url_l = u.split('/')
+                            url_file = url_l[-1]
+                            url_j = settings.MEDIA_ROOT + url_file
+                            #url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
+                            url_x = '{}{}/{}/{}/{}'.format(relative_path,param_value,tcode_attachment, serializer_ecode, url_file)
 
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
+                            url_x_f = url_x.replace(relative_path, relative_path_front)
+                            list2.append(url_x_f)
 
-                    path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                    list1.append(
-                        AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,
-                                           operation_state=3, state=1))
-                    # 将临时目录转移到正式目录
-                    shutil.move(url_j, url_x)
+                            path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                            list1.append(
+                                AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,
+                                                   operation_state=3, state=1))
+                            # 将临时目录转移到正式目录
+                            shutil.move(url_j, url_x)
 
-        # 创建atachmentinfo表
-        AttachmentFileinfo.objects.bulk_create(list1)
+                # 创建atachmentinfo表
+                AttachmentFileinfo.objects.bulk_create(list1)
 
-        # 删除临时目录
-        shutil.rmtree(settings.MEDIA_ROOT)
+                # 删除临时目录
+                shutil.rmtree(settings.MEDIA_ROOT)
 
-        # 给前端抛正式目录
-        dict['url'] = list2
+                # 给前端抛正式目录
+                dict['url'] = list2
 
-        headers = self.get_success_headers(serializer.data)
-        #return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
-        return Response(dict)
+                headers = self.get_success_headers(serializer.data)
+                #return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return HttpResponse('创建失败%s' % str(e))
+            transaction.savepoint_commit(save_id)
+            return Response(dict)
 
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer_ecode = instance.ecode
-        url_list = request.data.pop('url', None)
-        #tname_attachment = request.data.pop('tname_attachment', None)
-        #tname_singgle = request.data.pop('tname_singgle', None)
+        # 建立事物机制
+        with transaction.atomic():
+            # 创建一个保存点
+            save_id = transaction.savepoint()
+            try:
+                partial = kwargs.pop('partial', False)
+                instance = self.get_object()
+                serializer_ecode = instance.r_code
+                url_list = request.data.pop('url', None)
 
-        if not url_list:
-            return HttpResponse('请先上传相关文件')
+                if not url_list:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('请先上传相关文件')
 
-        absolute_path = ParamInfo.objects.get(param_code=1).param_value
-        relative_path = ParamInfo.objects.get(param_code=2).param_value
-        relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-        tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
-        tcode_single = AttachmentFileType.objects.get(tname='coverImg').tcode
-        param_value = ParamInfo.objects.get(param_code=6).param_value
-        dict = {}
-        list1 = []
-        list2 = []
-        for url_front in url_list:
-            if len(url_front) == 1:
-                url_l = url_front.split('/')
-                url_file = url_l[-1]
+                absolute_path = ParamInfo.objects.get(param_code=1).param_value
+                relative_path = ParamInfo.objects.get(param_code=2).param_value
+                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
+                tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
+                tcode_single = AttachmentFileType.objects.get(tname='coverImg').tcode
+                param_value = ParamInfo.objects.get(param_code=6).param_value
+                dict = {}
+                list1 = []
+                list2 = []
+                for url_front in url_list:
+                    if len(url_front) == 1:
+                        url_l = url_front.split('/')
+                        url_file = url_l[-1]
 
-                url_j = settings.MEDIA_ROOT + url_file
-                # url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
-                url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value,tcode_single, serializer_ecode, url_file)
+                        url_j = settings.MEDIA_ROOT + url_file
+                        # url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
+                        url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_single, serializer_ecode,
+                                                       url_file)
 
-                # 拼接给前端的的地址
-                url_x_f = url_x.replace(relative_path, relative_path_front)
-                list2.append(url_x_f)
+                        # 拼接给前端的的地址
+                        url_x_f = url_x.replace(relative_path, relative_path_front)
+                        list2.append(url_x_f)
 
-                # 拼接ecode表中的path
-                path = '{}/{}/{}/'.format(param_value, tcode_single, serializer_ecode)
-                list1.append(
-                    AttachmentFileinfo(tcode=tcode_single, ecode=serializer_ecode, file_name=url_file, path=path,
-                                       operation_state=3, state=1))
+                        # 拼接ecode表中的path
+                        path = '{}/{}/{}/'.format(param_value, tcode_single, serializer_ecode)
+                        list1.append(
+                            AttachmentFileinfo(tcode=tcode_single, ecode=serializer_ecode, file_name=url_file,
+                                               path=path,
+                                               operation_state=3, state=1))
 
-                # 将临时目录转移到正式目录
-                shutil.move(url_j, url_x)
-            else:
-                for u in url_front:
-                    url_l = u.split('/')
-                    url_file = url_l[-1]
-                    url_j = settings.MEDIA_ROOT + url_file
-                    # url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path,param_value, tcode_attachment, serializer_ecode, url_file)
+                        # 将临时目录转移到正式目录
+                        shutil.move(url_j, url_x)
+                    else:
+                        for u in url_front:
+                            url_l = u.split('/')
+                            url_file = url_l[-1]
+                            url_j = settings.MEDIA_ROOT + url_file
+                            # url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
+                            url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment,
+                                                           serializer_ecode,
+                                                           url_file)
 
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
+                            url_x_f = url_x.replace(relative_path, relative_path_front)
+                            list2.append(url_x_f)
 
-                    path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                    list1.append(
-                        AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file,
-                                           path=path,
-                                           operation_state=3, state=1))
-                    # 将临时目录转移到正式目录
-                    shutil.move(url_j, url_x)
+                            path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                            list1.append(
+                                AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file,
+                                                   path=path,
+                                                   operation_state=3, state=1))
+                            # 将临时目录转移到正式目录
+                            shutil.move(url_j, url_x)
 
-        # 创建atachmentinfo表
-        AttachmentFileinfo.objects.bulk_create(list1)
+                # 创建atachmentinfo表
+                AttachmentFileinfo.objects.bulk_create(list1)
 
-        # 删除临时目录
-        shutil.rmtree(settings.MEDIA_ROOT)
+                # 删除临时目录
+                shutil.rmtree(settings.MEDIA_ROOT)
 
-        # 给前端抛正式目录
-        dict['url'] = list2
+                # 给前端抛正式目录
+                dict['url'] = list2
 
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+                serializer = self.get_serializer(instance, data=request.data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+
+                if getattr(instance, '_prefetched_objects_cache', None):
+                    # If 'prefetch_related' has been applied to a queryset, we need to
+                    # forcibly invalidate the prefetch cache on the instance.
+                    instance._prefetched_objects_cache = {}
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return HttpResponse('更新失败%s' % str(e))
+            transaction.savepoint_commit(save_id)
+            return Response(dict)
+
+    def destroy(self, request, *args, **kwargs):
+        with transaction.atomic():
+            save_id = transaction.savepoint()
+
+            try:
+                instance = self.get_object()
+                serializer_ecode = instance.r_code
+                relative_path = ParamInfo.objects.get(param_code=2).param_value
+                obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
+                # url = '/home/python/Desktop/temporary/' + name  测试数据
+                if obj:
+                    try:
+                        for i in obj:
+                            url = '{}{}{}'.format(relative_path, i.path, i.file_name)
+                            # 创建对象
+                            a = FileStorage()
+                            # 删除文件
+                            a.delete(url)
+                            # 删除表记录
+                            i.delete()
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return HttpResponse('删除失败' % str(e))
+
+                self.perform_destroy(instance)
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return HttpResponse('删除失败%s' % str(e))
+            transaction.savepoint_commit(save_id)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-        if getattr(instance, '_prefetched_objects_cache', None):
-            # If 'prefetch_related' has been applied to a queryset, we need to
-            # forcibly invalidate the prefetch cache on the instance.
-            instance._prefetched_objects_cache = {}
+class ManagementrViewSet(viewsets.ModelViewSet):
+    queryset = RequirementsInfo.objects.all().order_by('-serial')
+    serializer_class = RequirementsInfoSerializer
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
 
-        return Response(dict)
+    ordering_fields = ("req_code", "req_name","account_code")
+    filter_fields = ("req_name", "account_code", "req_name")
+    search_fields = ("req_name",)
+
+    def create(self, request, *args, **kwargs):
+        # 建立事物机制
+        with transaction.atomic():
+            # 创建一个保存点
+            save_id = transaction.savepoint()
+            try:
+                data = request.data
+                url_list = request.data.pop('url', None)
+
+                data['creater'] = request.user.account
+                serializer = self.get_serializer(data=data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
+
+                serializer_ecode = serializer.data['req_code']
+
+                if not url_list:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('请先上传相关文件')
+
+                absolute_path = ParamInfo.objects.get(param_code=1).param_value
+                relative_path = ParamInfo.objects.get(param_code=2).param_value
+                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
+                tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
+                tcode_single = AttachmentFileType.objects.get(tname='coverImg').tcode
+                param_value = ParamInfo.objects.get(param_code=7).param_value
+                dict = {}
+                list1 = []
+                list2 = []
+                for url_front in url_list:
+                    if len(url_front) == 1:
+                        url_l = url_front.split('/')
+                        url_file = url_l[-1]
+
+                        url_j = settings.MEDIA_ROOT + url_file
+                        # url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
+                        url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_single, serializer_ecode,
+                                                       url_file)
+
+                        # 拼接给前端的的地址
+                        url_x_f = url_x.replace(relative_path, relative_path_front)
+                        list2.append(url_x_f)
+
+                        # 拼接ecode表中的path
+                        path = '{}/{}/{}/'.format(param_value, tcode_single, serializer_ecode)
+                        list1.append(AttachmentFileinfo(tcode=tcode_single, ecode=serializer_ecode, file_name=url_file,
+                                                        path=path, operation_state=3, state=1))
+
+                        # 将临时目录转移到正式目录
+                        shutil.move(url_j, url_x)
+                    else:
+                        for u in url_front:
+                            url_l = u.split('/')
+                            url_file = url_l[-1]
+                            url_j = settings.MEDIA_ROOT + url_file
+                            # url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
+                            url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment,
+                                                           serializer_ecode, url_file)
+
+                            url_x_f = url_x.replace(relative_path, relative_path_front)
+                            list2.append(url_x_f)
+
+                            path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                            list1.append(
+                                AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file,
+                                                   path=path,
+                                                   operation_state=3, state=1))
+                            # 将临时目录转移到正式目录
+                            shutil.move(url_j, url_x)
+
+                # 创建atachmentinfo表
+                AttachmentFileinfo.objects.bulk_create(list1)
+
+                # 删除临时目录
+                shutil.rmtree(settings.MEDIA_ROOT)
+
+                # 给前端抛正式目录
+                dict['url'] = list2
+
+                headers = self.get_success_headers(serializer.data)
+                # return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return HttpResponse('创建失败%s' % str(e))
+            transaction.savepoint_commit(save_id)
+            return Response(dict)
+
+    def update(self, request, *args, **kwargs):
+        # 建立事物机制
+        with transaction.atomic():
+            # 创建一个保存点
+            save_id = transaction.savepoint()
+            try:
+                partial = kwargs.pop('partial', False)
+                instance = self.get_object()
+                serializer_ecode = instance.req_code
+                url_list = request.data.pop('url', None)
+
+                if not url_list:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('请先上传相关文件')
+
+                absolute_path = ParamInfo.objects.get(param_code=1).param_value
+                relative_path = ParamInfo.objects.get(param_code=2).param_value
+                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
+                tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
+                tcode_single = AttachmentFileType.objects.get(tname='coverImg').tcode
+                param_value = ParamInfo.objects.get(param_code=7).param_value
+                dict = {}
+                list1 = []
+                list2 = []
+                for url_front in url_list:
+                    if len(url_front) == 1:
+                        url_l = url_front.split('/')
+                        url_file = url_l[-1]
+
+                        url_j = settings.MEDIA_ROOT + url_file
+                        # url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
+                        url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_single, serializer_ecode,
+                                                       url_file)
+
+                        # 拼接给前端的的地址
+                        url_x_f = url_x.replace(relative_path, relative_path_front)
+                        list2.append(url_x_f)
+
+                        # 拼接ecode表中的path
+                        path = '{}/{}/{}/'.format(param_value, tcode_single, serializer_ecode)
+                        list1.append(
+                            AttachmentFileinfo(tcode=tcode_single, ecode=serializer_ecode, file_name=url_file,
+                                               path=path,
+                                               operation_state=3, state=1))
+
+                        # 将临时目录转移到正式目录
+                        shutil.move(url_j, url_x)
+                    else:
+                        for u in url_front:
+                            url_l = u.split('/')
+                            url_file = url_l[-1]
+                            url_j = settings.MEDIA_ROOT + url_file
+                            # url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
+                            url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment,
+                                                           serializer_ecode,
+                                                           url_file)
+
+                            url_x_f = url_x.replace(relative_path, relative_path_front)
+                            list2.append(url_x_f)
+
+                            path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                            list1.append(
+                                AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file,
+                                                   path=path,
+                                                   operation_state=3, state=1))
+                            # 将临时目录转移到正式目录
+                            shutil.move(url_j, url_x)
+
+                # 创建atachmentinfo表
+                AttachmentFileinfo.objects.bulk_create(list1)
+
+                # 删除临时目录
+                shutil.rmtree(settings.MEDIA_ROOT)
+
+                # 给前端抛正式目录
+                dict['url'] = list2
+
+                serializer = self.get_serializer(instance, data=request.data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+
+                if getattr(instance, '_prefetched_objects_cache', None):
+                    # If 'prefetch_related' has been applied to a queryset, we need to
+                    # forcibly invalidate the prefetch cache on the instance.
+                    instance._prefetched_objects_cache = {}
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return HttpResponse('更新失败%s' % str(e))
+            transaction.savepoint_commit(save_id)
+            return Response(dict)
+
+    def destroy(self, request, *args, **kwargs):
+        with transaction.atomic():
+            save_id = transaction.savepoint()
+
+            try:
+                instance = self.get_object()
+                serializer_ecode = instance.req_code
+                relative_path = ParamInfo.objects.get(param_code=2).param_value
+                obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
+                # url = '/home/python/Desktop/temporary/' + name  测试数据
+                if obj:
+                    try:
+                        for i in obj:
+                            url = '{}{}{}'.format(relative_path, i.path, i.file_name)
+                            # 创建对象
+                            a = FileStorage()
+                            # 删除文件
+                            a.delete(url)
+                            # 删除表记录
+                            i.delete()
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return HttpResponse('删除失败' % str(e))
+
+                self.perform_destroy(instance)
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return HttpResponse('删除失败%s' % str(e))
+            transaction.savepoint_commit(save_id)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 
