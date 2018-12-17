@@ -197,4 +197,12 @@ sub_menu = {
         'title': "需求持有企业管理",
         'index': "requirement_owner_enterprise"
     },
+    '成果信息管理':{
+        'title': "成果信息管理",
+        'index': "result"
+    },
+    '需求信息管理':{
+        'title': "需求信息管理",
+        'index': "requirement"
+    }
 }
