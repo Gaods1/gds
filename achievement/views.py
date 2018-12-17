@@ -61,7 +61,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
     ordering_fields = ("account_code","a_code","rr_code")
     filter_fields = ("account_code", "rr_code","a_code")
     search_fields = ("rr_code","account_code","a_code")
-    pagination_class = None
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
