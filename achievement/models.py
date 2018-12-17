@@ -28,24 +28,24 @@ class RrApplyHistory(models.Model):
 
     @property
     def Results(self):
-        Results = ResultsInfo.objects.filter(r_code=self.rr_code)
+        Results = ResultsInfo.objects.get(r_code=self.rr_code)
         return Results
 
     @property
     def Requirements(self):
-        Requirements = RequirementsInfo.objects.filter(req_code=self.rr_code)
+        Requirements = RequirementsInfo.objects.get(req_code=self.rr_code)
         return Requirements
 
     @property
     def Cooperation(self):
         #Results = ResultsInfo.objects.filter(r_code=self.rr_code)
-        Cooperation = ResultsCooperationTypeInfo.objects.filter(rr_code=self.rr_code)
+        Cooperation = ResultsCooperationTypeInfo.objects.get(rr_code=self.rr_code)
         return Cooperation
 
     @property
     def Owner(self):
         #Results = ResultsInfo.objects.filter(r_code=self.rr_code)
-        Owner = ResultsOwnerInfo.objects.filter(r_code=self.rr_code)
+        Owner = ResultsOwnerInfo.objects.get(r_code=self.rr_code)
         return Owner
 
     @property
