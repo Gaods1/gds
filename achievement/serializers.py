@@ -156,10 +156,10 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
 # 成果/需求申请表序列化
 class RrApplyHistorySerializer(serializers.ModelSerializer):
     apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    Results = ResultsInfoSerializer(many=True,read_only=True)
-    Requirements = RequirementsInfoSerializer(many=True,read_only=True)
-    Cooperation = ResultsCooperationTypeInfoSerializer(many=True,read_only=True)
-    Owner = ResultsOwnerInfoSerializer(many=True,read_only=True)
+    Results = ResultsInfoSerializer(read_only=True)
+    Requirements = RequirementsInfoSerializer(read_only=True)
+    Cooperation = ResultsCooperationTypeInfoSerializer(read_only=True)
+    Owner = ResultsOwnerInfoSerializer(read_only=True)
     Keywords = KeywordsInfoSerializer(many=True,read_only=True)
 
     class Meta:

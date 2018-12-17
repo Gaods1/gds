@@ -92,20 +92,40 @@ class PublicInfo(APIView):
                 return JsonResponse({"error": u"不支持此种请求"}, safe=False)
 
             name = request.query_params['name']
-            if not name:
-                return HttpResponse('删除失败')
-            # 拼接地址
-            url = settings.MEDIA_ROOT
-            url = url + name
-            try:
-                # 创建对象
-                a = FileStorage()
-                # 上传服务器
-                a.delete(url)
-                return HttpResponse('ok')
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('上传失败' % str(e))
+            serial = request.query_params['serial']
+            # 在提交之前的删除
+            if not serial:
+                if not name:
+                    return HttpResponse('删除失败')
+                # 拼接地址
+                url = settings.MEDIA_ROOT
+                url = url + name
+                try:
+                    # 创建对象
+                    a = FileStorage()
+                    # 删除
+                    a.delete(url)
+                    return HttpResponse('ok')
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('上传失败' % str(e))
+            # 在提交之后的删除
+            else:
+                if not name:
+                    return HttpResponse('删除失败')
+                # 拼接地址
+                url = '/home/python/Desktop/temporary/' + name
+                try:
+                    # 创建对象
+                    a = FileStorage()
+                    # 删除文件
+                    a.delete(url)
+                    # 删除表记录
+                    AttachmentFileinfo.objects.get(file_name=name).delete()
+                    return HttpResponse('ok')
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('上传失败' % str(e))
 
 
 

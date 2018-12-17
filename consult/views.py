@@ -14,7 +14,8 @@ from misc.misc import gen_uuid32, genearteMD5
 from django.db import transaction
 import random,requests,time,json
 from django.http import HttpResponse,JsonResponse
-from public_models.utils import move_attachment,move_single,get_detcode_str
+from public_models.utils import move_attachment,move_single,get_detcode_str,get_dept_codes
+from django.db.models.query import QuerySet
 
 
 # Create your views here.
@@ -51,24 +52,42 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
     filter_fields = ("consult_state", "consult_code", "serial","consulter")
     search_fields = ("consult_title", "consult_memo")
 
-    #征询信息根据发起征询者所属机构部门检索
-    def list(self, request, *args, **kwargs):
-        dept_code = request.user.dept_code
-        dept_code_str = get_detcode_str(dept_code)
-        if dept_code_str:
-            raw_queryset = ConsultInfo.objects.raw("select ci.serial  from consult_info as ci left join account_info as ai on  ci.consulter=ai.account_code where ai.dept_code  in ("+dept_code_str+") ")
-            consult_info_set = ConsultInfo.objects.filter(serial__in=[i.serial for i in raw_queryset])
-            queryset = self.filter_queryset(consult_info_set)
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        dept_codes_str = get_detcode_str(self.request.user.dept_code)
+        if dept_codes_str:
+            raw_queryset = ConsultInfo.objects.raw("select ci.serial  from consult_info as ci left join account_info as ai on  ci.consulter=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
+            queryset = ConsultInfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("consult_state")
         else:
-            queryset = self.filter_queryset(self.get_queryset())
+            queryset = self.queryset
 
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+        if isinstance(queryset, QuerySet):
+            # Ensure queryset is re-evaluated on each request.
+            queryset = queryset.all()
+        return queryset
 
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+    #征询信息根据发起征询者所属机构部门检索
+    # def list(self, request, *args, **kwargs):
+    #     dept_code = request.user.dept_code
+    #     dept_code_str = get_detcode_str(dept_code)
+    #     if dept_code_str:
+    #         raw_queryset = ConsultInfo.objects.raw("select ci.serial  from consult_info as ci left join account_info as ai on  ci.consulter=ai.account_code where ai.dept_code  in ("+dept_code_str+") ")
+    #         consult_info_set = ConsultInfo.objects.filter(serial__in=[i.serial for i in raw_queryset])
+    #         queryset = self.filter_queryset(consult_info_set)
+    #     else:
+    #         queryset = self.filter_queryset(self.get_queryset())
+    #
+    #     page = self.paginate_queryset(queryset)
+    #     if page is not None:
+    #         serializer = self.get_serializer(page, many=True)
+    #         return self.get_paginated_response(serializer.data)
+    #
+    #     serializer = self.get_serializer(queryset, many=True)
+    #     return Response(serializer.data)
 
 
     '''
@@ -243,23 +262,41 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
     filter_fields = ("reply_state", "consult_code", "serial", "reply_code")
     search_fields = ("reply_body",)
 
-    def list(self, request, *args, **kwargs):
-        dept_code = request.user.dept_code
-        dept_code_str = get_detcode_str(dept_code)
-        if dept_code_str:
-            raw_queryset = ConsultReplyInfo.objects.raw("select ri.serial from consult_reply_info as ri left join consult_info as ci on ri.consult_code=ci.consult_code left join account_info as ai on ci.consulter=ai.account_code where ai.dept_code in ("+dept_code_str+")")
-            consult_reply_set = ConsultReplyInfo.objects.filter(serial__in=[i.serial for i in raw_queryset])
-            queryset = self.filter_queryset(consult_reply_set)
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        dept_codes_str = get_detcode_str(self.request.user.dept_code)
+        if dept_codes_str:
+            raw_queryset = ConsultReplyInfo.objects.raw("select ri.serial from consult_reply_info as ri left join consult_info as ci on ri.consult_code=ci.consult_code left join account_info as ai on ci.consulter=ai.account_code where ai.dept_code in ("+dept_codes_str+")")
+            queryset = ConsultReplyInfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("reply_state")
         else:
-            queryset = self.filter_queryset(self.get_queryset())
+            queryset = self.queryset
 
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+        if isinstance(queryset, QuerySet):
+            # Ensure queryset is re-evaluated on each request.
+            queryset = queryset.all()
+        return queryset
 
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+    # def list(self, request, *args, **kwargs):
+    #     dept_code = request.user.dept_code
+    #     dept_code_str = get_detcode_str(dept_code)
+    #     if dept_code_str:
+    #         raw_queryset = ConsultReplyInfo.objects.raw("select ri.serial from consult_reply_info as ri left join consult_info as ci on ri.consult_code=ci.consult_code left join account_info as ai on ci.consulter=ai.account_code where ai.dept_code in ("+dept_code_str+")")
+    #         consult_reply_set = ConsultReplyInfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("reply_state")
+    #         queryset = self.filter_queryset(consult_reply_set)
+    #     else:
+    #         queryset = self.filter_queryset(self.get_queryset())
+    #
+    #     page = self.paginate_queryset(queryset)
+    #     if page is not None:
+    #         serializer = self.get_serializer(page, many=True)
+    #         return self.get_paginated_response(serializer.data)
+    #
+    #     serializer = self.get_serializer(queryset, many=True)
+    #     return Response(serializer.data)
 
 
     '''
