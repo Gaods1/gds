@@ -79,6 +79,8 @@ def get_attachment(tname_attachment,ecode):
     ecode = ecode
     files = AttachmentFileinfo.objects.filter(tcode=tcode_attachment, ecode=ecode, operation_state=1, state=1)
     dict = {}
+    list_look = []
+    list_down = []
     if files:
 
         for file in files:
@@ -88,9 +90,14 @@ def get_attachment(tname_attachment,ecode):
             if url.endswith('pdf') or url.endswith('jpg'):
                 url = url.replace(absolute_path, absolute_path_front)
                 operation_state = file.operation_state
-                # list.append(url)
+                list_look.append(url)
                 # list.append(operation_state)
-                dict[url] = operation_state
+                #dict[url] = operation_state
+            else:
+                url = url.replace(absolute_path, absolute_path_front)
+                list_down.append(url)
+        dict['look']=list_look
+        dict['down']=list_down
     return dict
 def get_single(tname_single,ecode):
     absolute_path = ParamInfo.objects.get(param_code=1).param_value
@@ -108,7 +115,11 @@ def get_single(tname_single,ecode):
                 continue
             if url.endswith('pdf') or url.endswith('jpg'):
                 url = url.replace(absolute_path, absolute_path_front)
-                dict[url] = 1
+                dict['look'] = url
+            else:
+                url = url.replace(absolute_path, absolute_path_front)
+                dict['down'] = url
+
     return dict
 
 def move_attachment(tname_attachment,ecode):
@@ -159,7 +170,8 @@ def move_attachment(tname_attachment,ecode):
 
                 # 给前端抛路径以及状态
                 url_x_q = url_x.replace(relative_path, relative_path_front)
-                dict[url_x_q] = file.operation_state
+                if url_x_q.endswith('pdf') or url_x_q.endswith('jpg'):
+                    dict[url_x_q] = file.operation_state
     return dict
 
 def move_single(tname_singgle,ecode):
@@ -208,7 +220,8 @@ def move_single(tname_singgle,ecode):
 
                 # 给前端抛路径以及状态
                 url_x_q = url_x.replace(relative_path, relative_path_front)
-                dict[url_x_q] = file.operation_state
+                if url_x_q.endswith('pdf') or url_x_q.endswith('jpg'):
+                    dict[url_x_q] = file.operation_state
     return dict
 
 
