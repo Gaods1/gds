@@ -198,10 +198,11 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# 上传附件用的测试数据,部署到线上后在修改
 DEFAULT_FILE_STORAGE = 'backends.ImageStorage'
-MEDIA_ROOT = '/home/python/Desktop/temporary/'#此数据为测试数据
-BASE_URL= 'http//:127.0.0.1:8000/'#此数据为测试数据
-media_root_front = 'http://patclub.for8.cn:8764/Desktop/temporary/'#此数据为测试数据
+MEDIA_ROOT = '/home/python/PDF/'#部署后将此地址改为正式的临时目录
+BASE_URL= 'http//:127.0.0.1:8000/'#此地址根据图片服务器的真实地址而定
+media_root_front = 'http://patclub.for8.cn:8764/PDF/'#此地址为抛给前端的地址
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
 

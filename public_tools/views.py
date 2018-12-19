@@ -1,5 +1,9 @@
 import os
+import subprocess
 
+import shutil
+
+import time
 from django.core.files.storage import FileSystemStorage
 from django.db import transaction
 from django.http import HttpResponse
@@ -29,7 +33,8 @@ class PublicInfo(APIView,FileStorage):
         if not files:
             return HttpResponse('上传失败')
         if len(files)!=1:
-            list_url = []
+            list_url_show = []
+            list_url_down = []
             dict = {}
             # 建立事物机制
             with transaction.atomic():
@@ -49,16 +54,28 @@ class PublicInfo(APIView,FileStorage):
                         # 上传服务器
                         url = a._save(url,file)
 
+                        # 判断如果是office文件
+                        if url.endswith('doc') or url.endswith('xls'):
+                            # 转换office文件为pdf文件
+                            child = subprocess.Popen('lowriter --pt pdf ' + url, stdout=subprocess.PIPE, shell=True)
+                            # 拼接转换pdf后的路径
+                            url_pdf = os.path.splitext(url)[0] + '.pdf'
+                            # 给前端抛出pdf路径
+                            u_z = url_pdf.split('/')[-1]
+                            url_front = settings.media_root_front + u_z
+                            list_url_show.append(url_front)
+
                         # 给前端的路径
                         u_z = url.split('/')[-1]
                         url_front = settings.media_root_front + u_z
-                        list_url.append(url_front)
+                        list_url_down.append(url_front)
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('上传失败' % str(e))
 
-                dict['fujian'] = list_url
+                dict['attachment_show'] = list_url_show
+                dict['attachment_down'] = list_url_down
                 transaction.savepoint_commit(save_id)
                 return Response(dict)
         else:
@@ -69,21 +86,31 @@ class PublicInfo(APIView,FileStorage):
                 dict = {}
                 try:
                     for file in files:
-                        a = FileStorage()
+
                         url = settings.MEDIA_ROOT
                         if not os.path.exists(url):
                             os.mkdir(url)
                         url = url + file.name
-
+                        # 创建对象
+                        a = FileStorage()
                         # 上传服务器
                         url = a._save(url, file)
+                        # 判断如果是office文件
                         if url.endswith('doc') or url.endswith('xls'):
-                            url_pdf = os.path.splitext(url)[0] + '.pdf'
 
-                        # 给前端的路径
+                            # 转换office文件为pdf文件
+                            child = subprocess.Popen('lowriter --pt pdf ' + url, stdout=subprocess.PIPE,shell=True)
+                            # 拼接转换pdf后的路径
+                            url_pdf = os.path.splitext(url)[0] + '.pdf'
+                            # 给前端抛出pdf路径
+                            u_z = url_pdf.split('/')[-1]
+                            url_front = settings.media_root_front + u_z
+                            dict['single_show'] = url_front
+
+                        # 给前端抛出office文件路径
                         u_z = url.split('/')[-1]
                         url_front = settings.media_root_front + u_z
-                        dict['dange'] = url_front
+                        dict['single_down'] = url_front
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('上传失败' % str(e))
