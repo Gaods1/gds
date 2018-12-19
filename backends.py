@@ -20,12 +20,13 @@ class AccountBackend(ModelBackend):
 
 class FileStorage(FileSystemStorage):
     pass
-    #def __init__(self):
-        #self.location = settings.location
-        #self.base_url = settings.base_url
+    #def __init__(self,location=None, base_url=None):
+        #self._location = settings.MEDIA_ROOT
+        #self._base_url = settings.BASE_URL
         #super(FileStorage, self).__init__(location, base_url)
 
-    #def _save(self, names, content):
+    #def save(self, names, content):
+        #return super()._save(names,content)
         #list_name = list()
         #for name in names:
             # 文件扩展名
