@@ -142,6 +142,8 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
             'creater',
             'insert_time',
             'update_time',
+            'account_code',
+            'r_abstract_detail',
             'mcode',
             'mname',
             'Attach',

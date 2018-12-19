@@ -1,5 +1,6 @@
 import os
 
+from django.core.files.storage import FileSystemStorage
 from django.db import transaction
 from django.http import HttpResponse
 from django.http import JsonResponse
@@ -17,7 +18,7 @@ from public_models.models import AttachmentFileType, ParamInfo, AttachmentFilein
 from python_backend import settings
 
 
-class PublicInfo(APIView):
+class PublicInfo(APIView,FileStorage):
 
     def post(self, request):
         absolute_path = ParamInfo.objects.get(param_code=1).param_value
@@ -46,7 +47,7 @@ class PublicInfo(APIView):
                         # 创建对象
                         a = FileStorage()
                         # 上传服务器
-                        url = a._save(url, file)
+                        url = a._save(url,file)
 
                         # 给前端的路径
                         u_z = url.split('/')[-1]
@@ -68,15 +69,16 @@ class PublicInfo(APIView):
                 dict = {}
                 try:
                     for file in files:
+                        a = FileStorage()
                         url = settings.MEDIA_ROOT
                         if not os.path.exists(url):
                             os.mkdir(url)
                         url = url + file.name
 
-                        # 创建对象
-                        a = FileStorage()
                         # 上传服务器
                         url = a._save(url, file)
+                        if url.endswith('doc') or url.endswith('xls'):
+                            url_pdf = os.path.splitext(url)[0] + '.pdf'
 
                         # 给前端的路径
                         u_z = url.split('/')[-1]
