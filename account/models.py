@@ -141,15 +141,23 @@ class AccountInfo(AbstractBaseUser):
         if self.state != 1:
             return False
 
+        # 验证密码
         if not check_md5_password(raw_password, self.password):
             return False
 
-        roles = AccountRoleInfo.objects.filter(account=self.account, state=1)
-        if roles:
-            for role in roles:
-                if RoleInfo.objects.filter(role_code=role.role_code, state=1):
-                    return True
-        raise False
+        # 验证角色
+        role_codes = AccountRoleInfo.objects.values_list('role_code', flat=True).filter(account=self.account, state=1)
+        roles = RoleInfo.objects.filter(role_code__in=role_codes, state=1)
+        if not roles:
+            return False
+
+        # 验证机构部门
+        try:
+            Deptinfo.objects.get(dept_code=self.dept_code, state=1)
+        except Exception:
+            return False
+
+        return True
 
     class Meta:
         managed = True

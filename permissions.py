@@ -18,31 +18,49 @@ class FuncPermission(permissions.BasePermission):
         path = request.path
         if path in public_url:
             return True
-        path_group = re.search('^(/.*?/.*?/)(\d*)', path)
-        url = path_group.group(1)
         try:
-            func_code = FunctionInfo.objects.values_list('func_code', flat=True).get(func_url__exact=url, state=1)
+            path_group = re.search('^(/.*?/.*?/)(\d*)', path)
+            url = path_group.group(1)
+            serial = path_group.group(2)
         except Exception as e:
-            return False
+            url = path
+            serial = None
+        method = request.method
 
-        # 查询此用户是否禁掉了此功能点
+        # 查询是否存在此功能点
+        func_code = FunctionInfo.objects.values_list('func_code', flat=True).filter(func_url__icontains=url, state=1)
+        func_code_get = FunctionInfo.objects.values_list('func_code', flat=True).filter(sub_url_get__icontains=url, state=1)
+        func_code_create = FunctionInfo.objects.values_list('func_code', flat=True).filter(sub_url_create__icontains=url, state=1)
+        func_code_update = FunctionInfo.objects.values_list('func_code', flat=True).filter(sub_url_update__icontains=url, state=1)
+        func_code_delete = FunctionInfo.objects.values_list('func_code', flat=True).filter(sub_url_delete__icontains=url, state=1)
+
+        # 查询用户所有功能点
         account = request.user.account
-        disable_fuc = AccountDisableFuncinfo.objects.values_list('func_code', flat=True).filter(account=account, state=1)
-        if func_code in disable_fuc:
-            return False
-
-        # 查询用户是否有当前功能点
         account_roles = AccountRoleInfo.objects.values_list('role_code', flat=True).filter(account=account, state=1, type=0)
         roles_code = RoleInfo.objects.values_list('role_code', flat=True).filter(role_code__in=account_roles, state=1)
-        funcs = RoleFuncInfo.objects.values_list('func_code', flat=True).filter(role_code__in=roles_code, state=1)
-        if func_code in funcs:
+        have_funcs = RoleFuncInfo.objects.values_list('func_code', flat=True).filter(role_code__in=roles_code, state=1)
+
+        # 查询用户被禁掉的功能点
+        disable_funcs = AccountDisableFuncinfo.objects.values_list('func_code', flat=True).filter(account=account, state=1)
+        # 用户真实拥有的功能点
+        funcs = list(set(have_funcs).difference(disable_funcs))
+
+        if set(funcs).intersection(func_code):
+            return True
+        elif set(funcs).intersection(func_code_get) and method == 'GET':
+            return True
+        elif set(funcs).intersection(func_code_create) and method == 'POST':
+            return True
+        elif set(funcs).intersection(func_code_update) and method in ['PATCH', 'PUT']:
+            return True
+        elif set(funcs).intersection(func_code_delete) and method  == 'DELETE':
             return True
 
         # 查看是否是获取自己账号的基本信息
-        serial = path_group.group(2)
-        user = AccountInfo.objects.values_list('account', flat=True).get(serial=serial)
-        if request.method == 'GET' and account == user:
-            return True
+        if url == '/system/accounts/' and serial:
+            user = AccountInfo.objects.values_list('account', flat=True).get(serial=serial)
+            if method == 'GET' and account == user:
+                return True
 
         return False
 
