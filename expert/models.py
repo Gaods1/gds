@@ -646,6 +646,11 @@ class ProjectTeamBaseinfo(models.Model):
     insert_time = models.DateTimeField(auto_now_add=True)
 
     @property
+    def city(self):
+        region_info = SystemDistrict.objects.get(district_id=self.pt_city)
+        return region_info.district_name
+
+    @property
     def dept_code(self):
         return AccountInfo.objects.get(account_code=self.account_code).dept_code
 

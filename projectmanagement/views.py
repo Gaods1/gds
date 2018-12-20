@@ -11,6 +11,9 @@ from django.db import connection, transaction
 from account.models import Deptinfo, AccountInfo
 from expert.models import BrokerBaseinfo
 
+from django.db.models.query import QuerySet
+from public_models.utils import get_dept_codes,get_detcode_str
+
 
 # Create your views here.
 
@@ -29,50 +32,61 @@ class ProjectInfoViewSet(viewsets.ReadOnlyModelViewSet):
 
     def list(self, request, *args, **kwargs):
 
-        # 获取当前账号所属部门及子部门 上级能查看审核下级
-        dept_code = request.user.dept_code
-        if dept_code == None:
-            # 测试时使用
-            dept_code = 'K8iLcvcqqp47R10BwLWvSYMfg0SkloWI'
-        dept_level = Deptinfo.objects.get(dept_code=dept_code).dept_level
-        if dept_level == 1:
-            dept_codes = [deptinfo.dept_code for deptinfo in Deptinfo.objects.all()]
-        elif dept_level == 2:
-            dept_codes = [deptinfo.dept_code for deptinfo in Deptinfo.objects.get(pdept_code=dept_code).dept_code]
-            dept_codes.append(dept_code)
-        else:
-            dept_codes = [dept_code]
-
-        # connection.connect()
-        # conn = connection.connection
-        # cursor = conn.cursor()
-        # sql = """
-        #     select a.* from
-        #     project_info as a,project_broker_info as b,account_info as c,broker_baseinfo as d
-        #     where c.dept_code in (%s) and c.account_code=d.account_code
-        #     and d.broker_code=b.broker_code and b.project_code=a.project_code
-        # """ % (','.join(['"%s"' % item for item in dept_codes]))
+        # # 获取当前账号所属部门及子部门 上级能查看审核下级
+        # dept_code = request.user.dept_code
+        # # dept_level = Deptinfo.objects.get(dept_code=dept_code).dept_level
+        # # if dept_level == 1:
+        # #     dept_codes = [deptinfo.dept_code for deptinfo in Deptinfo.objects.all()]
+        # # elif dept_level == 2:
+        # #     dept_codes = [deptinfo.dept_code for deptinfo in Deptinfo.objects.get(pdept_code=dept_code).dept_code]
+        # #     dept_codes.append(dept_code)
+        # # else:
+        # #     dept_codes = [dept_code]
         #
-        # cursor.execute(sql)
-        # raw_list = cursor.fetchall()
-        # connection.close()
-        # queryset = ProjectInfo.objects.filter(pk__in=[x[0] for x in raw_list]);
+        # # 测试
+        # # dept_code = 'olcCzXtqapyOJzTwhM1y3338PK4l5aJZ'
+        #
+        # # 只要返回空列表我就认为你的部门是一级部门
+        # dept_codes = get_dept_codes(dept_code);
+        #
+        #
+        # # connection.connect()
+        # # conn = connection.connection
+        # # cursor = conn.cursor()
+        # # sql = """
+        # #     select a.* from
+        # #     project_info as a,project_broker_info as b,account_info as c,broker_baseinfo as d
+        # #     where c.dept_code in (%s) and c.account_code=d.account_code
+        # #     and d.broker_code=b.broker_code and b.project_code=a.project_code
+        # # """ % (','.join(['"%s"' % item for item in dept_codes]))
+        # #
+        # # cursor.execute(sql)
+        # # raw_list = cursor.fetchall()
+        # # connection.close()
+        # # queryset = ProjectInfo.objects.filter(pk__in=[x[0] for x in raw_list]);
+        #
+        # # 当前部门所有账号
+        # if dept_codes == None or len(dept_codes) == 0:
+        #     account_codes = [account.account_code for account in
+        #                      AccountInfo.objects.only('dept_code')]
+        # else:
+        #     account_codes = [account.account_code for account in
+        #                  AccountInfo.objects.only('dept_code').filter(dept_code__in=dept_codes)]
+        # # 当前部门账号相关的技术经济人
+        # brokers = [broker.broker_code for broker in
+        #            BrokerBaseinfo.objects.only('account_code').filter(account_code__in=account_codes)]
+        # # 技术经济人相关的项目
+        # project_codes = [projectbrokerinfo.project_code for projectbrokerinfo in
+        #                  ProjectBrokerInfo.objects.filter(broker_code__in=brokers)]
+        #
+        # q = self.get_queryset().filter(project_code__in=project_codes)
+        # if q != None and len(q) > 0:
+        #     queryset = self.filter_queryset(q)
+        # else:
+        #     queryset = []
 
-        # 当前部门所有账号
-        account_codes = [account.account_code for account in
-                         AccountInfo.objects.only('dept_code').filter(dept_code__in=dept_codes)]
-        # 当前部门账号相关的技术经济人
-        brokers = [broker.broker_code for broker in
-                   BrokerBaseinfo.objects.only('account_code').filter(account_code__in=account_codes)]
-        # 技术经济人相关的项目
-        project_codes = [projectbrokerinfo.project_code for projectbrokerinfo in
-                         ProjectBrokerInfo.objects.filter(broker_code__in=brokers)]
-
-        q = self.get_queryset().filter(project_code__in=project_codes)
-        if q != None and len(q) > 0:
-            queryset = self.filter_queryset(q)
-        else:
-            queryset = []
+        # 获取我所在的机构下的项目
+        queryset = getProjectByDept(self, request)
 
         page = self.paginate_queryset(queryset)
         if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
@@ -176,24 +190,23 @@ class ProjectCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,view
         return upCheckinfo(self,request)
 
 
-
-def getCheckInfo(self,request, step_code, substep_code):
+def getProjectByDept(self, request):
     # 获取当前账号所属部门及子部门 上级能查看审核下级
     dept_code = request.user.dept_code
-    if dept_code == None:
-        # 测试时使用
-        dept_code = 'K8iLcvcqqp47R10BwLWvSYMfg0SkloWI'
-    dept_level = Deptinfo.objects.get(dept_code=dept_code).dept_level
-    if dept_level == 1:
-        dept_codes = [deptinfo.dept_code for deptinfo in Deptinfo.objects.all()]
-    elif dept_level == 2:
-        dept_codes = [deptinfo.dept_code for deptinfo in Deptinfo.objects.get(pdept_code=dept_code).dept_code]
-        dept_codes.append(dept_code)
-    else:
-        dept_codes = [dept_code]
 
+    # 只要返回空列表我就认为你的部门是一级部门
+    dept_codes = get_dept_codes(dept_code);
+
+    # 此处可以继续优化，但是数据关系不完整，暂时不做优化
+    # TODO...
     # 当前部门所有账号
-    account_codes = [account.account_code for account in AccountInfo.objects.filter(dept_code__in=dept_codes)]
+    if dept_codes == None or len(dept_codes) == 0:
+        account_codes = [account.account_code for account in
+                         AccountInfo.objects.only('dept_code').filter()]
+    else:
+        account_codes = [account.account_code for account in
+                         AccountInfo.objects.only('dept_code').filter(dept_code__in=dept_codes)]
+
     # 当前部门账号相关的技术经济人代码
     brokers = [broker.broker_code for broker in BrokerBaseinfo.objects.filter(account_code__in=account_codes)]
     # 技术经济人相关的项目
@@ -205,6 +218,12 @@ def getCheckInfo(self,request, step_code, substep_code):
         queryset = self.filter_queryset(q)
     else:
         queryset = []
+
+    return queryset
+
+def getCheckInfo(self,request, step_code, substep_code):
+    # 获取我所在的机构下的项目
+    queryset = getProjectByDept(self, request)
 
     # Q(cstate=0) 测试时可以先去掉条件 不然界面上没数据
     projectcheckinfos = ProjectCheckInfo.objects.filter(~Q(substep_serial=0), Q(cstate=0), Q(step_code=step_code),
