@@ -72,9 +72,14 @@ class DontCheckRoot(permissions.BasePermission):
         path = request.path
         if path in public_url:
             return True
-        url = re.search('^/(.*?)/(.*?)/(\d*)', path)
-        model = url.group(2)
-        serial = url.group(3)
+        try:
+            path_group = re.search('^/(.*?)/(.*?)/(\d*)', path)
+            model = path_group.group(2)
+            serial = path_group.group(3)
+        except Exception as e:
+            model = None
+            serial = None
+
         user = request.user.account
         if method in ['DELETE'] and serial:
             if model in ['accounts', 'account_disable_func', 'account_role']:
