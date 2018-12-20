@@ -357,6 +357,7 @@ class TeamBaseinfoSerializers(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     major = serializers.ListField(read_only=True)
     dept_code = serializers.CharField(read_only=True)
+    city = serializers.CharField(read_only=True)
 
     class Meta:
         model = ProjectTeamBaseinfo
@@ -389,6 +390,7 @@ class TeamBaseinfoSerializers(serializers.ModelSerializer):
             'logo',
             'promotional',
             'dept_code',
+            'city',
         ]
 
 
