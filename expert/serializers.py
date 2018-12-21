@@ -382,7 +382,9 @@ class TeamBaseinfoSerializers(serializers.ModelSerializer):
             'pt_integral',     # 积分
             'state',  # 信息状态。1：正常；2：暂停；3：伪删除
             'account_code',    # 系统账号
+            'account',
             'creater',   #录入者
+            'creater_username',
             'insert_time',  # 创建时间
             'idfornt',
             'idback',

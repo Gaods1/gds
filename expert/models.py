@@ -640,7 +640,7 @@ class ProjectTeamBaseinfo(models.Model):
     pt_describe = models.TextField(blank=True, null=True)                           # 描述
 
     pt_integral = models.IntegerField(default=0)
-    state = models.IntegerField(blank=True, null=True)
+    state = models.IntegerField(default=1)
     account_code = models.CharField(max_length=64, blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
@@ -653,6 +653,16 @@ class ProjectTeamBaseinfo(models.Model):
     @property
     def dept_code(self):
         return AccountInfo.objects.get(account_code=self.account_code).dept_code
+
+    @property
+    def account(self):
+        account = AccountInfo.objects.get(account_code=self.account_code)
+        return account.account if account.account else account.user_name
+
+    @property
+    def creater_username(self):
+        account = AccountInfo.objects.get(account_code=self.creater)
+        return account.account if account.account else account.user_name
 
     @property
     def major(self):
