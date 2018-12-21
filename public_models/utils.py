@@ -154,7 +154,7 @@ def move_attachment(tname_attachment,ecode):
                     #更新绝对路径并转移文件
                     url_x = '{}{}'.format(relative_path, file.path)
                     if not os.path.exists(url_x):
-                        os.mkdir(url_x)
+                        os.makedirs(url_x)
                     url_x = url_x + file.file_name
                     shutil.move(url_j_c, url_x)
 
