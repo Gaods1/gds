@@ -122,48 +122,51 @@ def move_attachment(tname_attachment,ecode):
     tcode_attachment = AttachmentFileType.objects.get(tname=tname_attachment).tcode
     files_fujian = AttachmentFileinfo.objects.filter(tcode=tcode_attachment, ecode=ecode, state=1)
     dict = {}
-    # 遍历所有状态下的对象(附件)
-    for file in files_fujian:
-        # 找出伪删除的对象并从表中删除
-        if file.operation_state == 2:
-            file.delete()
-            url = '{}{}{}'.format(relative_path, file.path,file.file_name)
+    if files_fujian:
+        # 遍历所有状态下的对象(附件)
+        for file in files_fujian:
+            # 找出伪删除的对象并从表中删除
+            if file.operation_state == 2:
+                file.delete()
+                url = '{}{}{}'.format(relative_path, file.path,file.file_name)
 
-            # 找出该路径下是否有文件并删除
-            if os.path.exists(url):
-                os.remove(url)
-        else:
+                # 找出该路径下是否有文件并删除
+                if os.path.exists(url):
+                    os.remove(url)
+            else:
 
-            # 将状态改为审核通过
-            file.operation_state = 3
-            file.save()
-            # 将临时文件转为正式文件
-            url_j_c = '{}{}{}'.format(absolute_path, file.path,file.file_name)
-            if os.path.exists(url_j_c):
-
-                #更新file.path中的ecode为统一的ecode
-                file_path = file.path[:-1]
-                file_list = file_path.split('/')
-                path_ecode = file_list.pop()
-                file_list.append(ecode)
-                file.path = '/'.join(file_list) + '/'
+                # 将状态改为审核通过
+                file.operation_state = 3
                 file.save()
+                # 将临时文件转为正式文件
+                url_j_c = '{}{}{}'.format(absolute_path, file.path,file.file_name)
+                if os.path.exists(url_j_c):
 
-                #更新绝对路径并转移文件
-                url_j = url_j_c.replace(path_ecode,ecode)
-                url_x = url_j.replace(absolute_path, relative_path)
-                shutil.move(url_j_c, url_x)
+                    #更新file.path中的ecode为统一的ecode
+                    file_path = file.path[:-1]
+                    file_list = file_path.split('/')
+                    path_ecode = file_list.pop()
+                    file_list.append(ecode)
+                    file.path = '/'.join(file_list) + '/'
+                    file.save()
 
-                #删除临时目录
-                url_j_c_list = url_j_c.split('/')
-                del url_j_c_list[-1]
-                url_j_c_s = '/'.join(url_j_c_list)
-                os.rmdir(url_j_c_s)
+                    #更新绝对路径并转移文件
+                    url_x = '{}{}'.format(relative_path, file.path)
+                    if not os.path.exists(url_x):
+                        os.mkdir(url_x)
+                    url_x = url_x + file.file_name
+                    shutil.move(url_j_c, url_x)
 
-                # 给前端抛路径以及状态
-                url_x_q = url_x.replace(relative_path, relative_path_front)
-                if url_x_q.endswith('pdf') or url_x_q.endswith('jpg'):
-                    dict[url_x_q] = file.operation_state
+                    #删除临时目录
+                    url_j_c_list = url_j_c.split('/')
+                    del url_j_c_list[-1]
+                    url_j_c_s = '/'.join(url_j_c_list)
+                    os.rmdir(url_j_c_s)
+
+                    # 给前端抛路径以及状态
+                    url_x_q = url_x.replace(relative_path, relative_path_front)
+                    if url_x_q.endswith('pdf') or url_x_q.endswith('jpg'):
+                        dict[url_x_q] = file.operation_state
     return dict
 
 def move_single(tname_singgle,ecode):
@@ -175,45 +178,48 @@ def move_single(tname_singgle,ecode):
     files_dange = AttachmentFileinfo.objects.filter(tcode=tcode_single, ecode=ecode, state=1)
     dict = {}
     # 遍历所有状态下的对象(单个文件)
-    for file in files_dange:
-        # 找出伪删除的对象并从表中删除
-        if file.operation_state == 2:
-            file.delete()
-            url = '{}{}{}'.format(relative_path, file.path,file.file_name)
+    if files_dange:
+        for file in files_dange:
+            # 找出伪删除的对象并从表中删除
+            if file.operation_state == 2:
+                file.delete()
+                url = '{}{}{}'.format(relative_path, file.path,file.file_name)
 
-            # 找出该路径下是否有文件并删除
-            if os.path.exists(url):
-                os.remove(url)
-        else:
-            # 将状态改为审核通过
-            file.operation_state = 3
-            file.save()
-            # 将临时文件转为正式文件
-            url_j_c = '{}{}{}'.format(absolute_path, file.path, file.file_name)
-            if os.path.exists(url_j_c):
-                # 更新file.path中的ecode为统一的ecode
-                file_path = file.path[:-1]
-                file_list = file_path.split('/')
-                path_ecode = file_list.pop()
-                file_list.append(ecode)
-                file.path = '/'.join(file_list) + '/'
+                # 找出该路径下是否有文件并删除
+                if os.path.exists(url):
+                    os.remove(url)
+            else:
+                # 将状态改为审核通过
+                file.operation_state = 3
                 file.save()
+                # 将临时文件转为正式文件
+                url_j_c = '{}{}{}'.format(absolute_path, file.path, file.file_name)
+                if os.path.exists(url_j_c):
+                    # 更新file.path中的ecode为统一的ecode
+                    file_path = file.path[:-1]
+                    file_list = file_path.split('/')
+                    path_ecode = file_list.pop()
+                    file_list.append(ecode)
+                    file.path = '/'.join(file_list) + '/'
+                    file.save()
 
-                # 更新绝对路径并转移文件
-                url_j = url_j_c.replace(path_ecode, ecode)
-                url_x = url_j.replace(absolute_path, relative_path)
-                shutil.move(url_j_c, url_x)
+                    # 更新绝对路径并转移文件
+                    url_x = '{}{}'.format(relative_path, file.path)
+                    if not os.path.exists(url_x):
+                        os.mkdir(url_x)
+                    url_x = url_x + file.file_name
+                    shutil.move(url_j_c, url_x)
 
-                # 删除临时目录
-                url_j_c_list = url_j_c.split('/')
-                del url_j_c_list[-1]
-                url_j_c_s = '/'.join(url_j_c_list)
-                os.rmdir(url_j_c_s)
+                    # 删除临时目录
+                    url_j_c_list = url_j_c.split('/')
+                    del url_j_c_list[-1]
+                    url_j_c_s = '/'.join(url_j_c_list)
+                    os.rmdir(url_j_c_s)
 
-                # 给前端抛路径以及状态
-                url_x_q = url_x.replace(relative_path, relative_path_front)
-                if url_x_q.endswith('pdf') or url_x_q.endswith('jpg'):
-                    dict[url_x_q] = file.operation_state
+                    # 给前端抛路径以及状态
+                    url_x_q = url_x.replace(relative_path, relative_path_front)
+                    if url_x_q.endswith('pdf') or url_x_q.endswith('jpg'):
+                        dict[url_x_q] = file.operation_state
     return dict
 
 
