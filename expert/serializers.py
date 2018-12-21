@@ -358,6 +358,11 @@ class TeamBaseinfoSerializers(serializers.ModelSerializer):
     major = serializers.ListField(read_only=True)
     dept_code = serializers.CharField(read_only=True)
     city = serializers.CharField(read_only=True)
+    idfornt = serializers.CharField(read_only=True)
+    idback = serializers.CharField(read_only=True)
+    idphoto = serializers.CharField(read_only=True)
+    logo = serializers.CharField(read_only=True)
+    promotional = serializers.CharField(read_only=True)
 
     class Meta:
         model = ProjectTeamBaseinfo
