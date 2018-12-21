@@ -81,22 +81,31 @@ def get_attachment(tname_attachment,ecode):
     list_look = []
     list_down = []
     if files:
-
         for file in files:
-            url = '{}{}{}'.format(absolute_path,file.path,file.file_name)
-            if not os.path.exists(url):
-                continue
-            if url.endswith('pdf') or url.endswith('jpg'):
-                url = url.replace(absolute_path, absolute_path_front)
-                operation_state = file.operation_state
-                list_look.append(url)
-                # list.append(operation_state)
-                #dict[url] = operation_state
+            #新增待审和状态
+            if file.operation_state == 1:
+                url = '{}{}{}'.format(absolute_path,file.path,file.file_name)
+                if not os.path.exists(url):
+                    continue
+                if url.endswith('pdf') or url.endswith('jpg'):
+                    url = url.replace(absolute_path, absolute_path_front)
+                    operation_state = file.operation_state
+                    list_look.append(url)
+                else:
+                    url = url.replace(absolute_path, absolute_path_front)
+                    list_down.append(url)
+                dict['look'] = list_look
+                dict['down'] = list_down
+            #审核通过状态
             else:
-                url = url.replace(absolute_path, absolute_path_front)
-                list_down.append(url)
-        dict['look']=list_look
-        dict['down']=list_down
+                url = '{}{}{}'.format(relative_path, file.path, file.file_name)
+                if not os.path.exists(url):
+                    continue
+                if url.endswith('pdf') or url.endswith('jpg'):
+                    url = url.replace(relative_path, relative_path_front)
+                    operation_state = file.operation_state
+                    list_look.append(url)
+                    dict['look'] = list_look
     return dict
 def get_single(tname_single,ecode):
     absolute_path = ParamInfo.objects.get(param_code=1).param_value
@@ -107,11 +116,20 @@ def get_single(tname_single,ecode):
     ecode = ecode
     try:
         file = AttachmentFileinfo.objects.get(tcode=tcode_single, ecode=ecode, operation_state__in=[1,3], state=1)
-        url = '{}{}{}'.format(absolute_path, file.path,file.file_name)
-        if not os.path.exists(url):
-                return ''
-        url = url.replace(absolute_path,absolute_path_front)
-        return url
+        #新增待审和状态
+        if file.operation_state == 1:
+            url = '{}{}{}'.format(absolute_path, file.path,file.file_name)
+            if not os.path.exists(url):
+                    return ''
+            url = url.replace(absolute_path, absolute_path_front)
+            return url
+        #审核通过状态
+        else:
+            url = '{}{}{}'.format(relative_path, file.path, file.file_name)
+            if not os.path.exists(url):
+                    return ''
+            url = url.replace(relative_path, relative_path_front)
+            return url
     except Exception as e:
         return ''
 
