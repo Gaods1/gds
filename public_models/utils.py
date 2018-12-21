@@ -105,21 +105,14 @@ def get_single(tname_single,ecode):
     relative_path_front = ParamInfo.objects.get(param_code=4).param_value
     tcode_single = AttachmentFileType.objects.get(tname=tname_single).tcode
     ecode = ecode
-    files = AttachmentFileinfo.objects.filter(tcode=tcode_single, ecode=ecode, operation_state__in=[1,3], state=1)
-    dict = {}
-    if files:
-        for file in files:
-            url = '{}{}{}'.format(absolute_path, file.path,file.file_name)
-            if not os.path.exists(url):
-                continue
-            if url.endswith('pdf') or url.endswith('jpg'):
-                url = url.replace(absolute_path, absolute_path_front)
-                dict['look'] = url
-            else:
-                url = url.replace(absolute_path, absolute_path_front)
-                dict['down'] = url
-
-    return dict
+    try:
+        file = AttachmentFileinfo.objects.get(tcode=tcode_single, ecode=ecode, operation_state__in=[1,3], state=1)
+        url = '{}{}{}'.format(absolute_path, file.path,file.file_name)
+        if not os.path.exists(url):
+                return ''
+        return url
+    except Exception as e:
+        return ''
 
 def move_attachment(tname_attachment,ecode):
     absolute_path = ParamInfo.objects.get(param_code=1).param_value
