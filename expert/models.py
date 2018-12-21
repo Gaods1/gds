@@ -130,7 +130,7 @@ class ExpertBaseinfo(models.Model):
 
     # 身份证正面
     @property
-    def idfornt(self):
+    def idfront(self):
         return get_single('identityFront', self.expert_code)
 
     # 身份证反面
@@ -249,7 +249,7 @@ class BrokerBaseinfo(models.Model):
 
     # 身份证正面
     @property
-    def idfornt(self):
+    def idfront(self):
         return get_single('identityFront', self.broker_code)
 
     # 身份证反面
@@ -353,7 +353,7 @@ class CollectorBaseinfo(models.Model):
 
     # 身份证正面
     @property
-    def idfornt(self):
+    def idfront(self):
         return get_single('identityFront', self.collector_code)
 
     # 身份证反面
@@ -465,7 +465,7 @@ class ResultOwnerpBaseinfo(models.Model):
 
     # 身份证前面
     @property
-    def idfornt(self):
+    def idfront(self):
         return get_single("identityFront", self.owner_code)
 
     # 身份证反面
@@ -582,7 +582,7 @@ class ResultOwnereBaseinfo(models.Model):
 
     # 法人身份证正面
     @property
-    def idfornt(self):
+    def idfront(self):
         return get_single("identityFront", self.owner_code)
 
     # 法人身份证反面
@@ -640,7 +640,7 @@ class ProjectTeamBaseinfo(models.Model):
     pt_describe = models.TextField(blank=True, null=True)                           # 描述
 
     pt_integral = models.IntegerField(default=0)
-    state = models.IntegerField(blank=True, null=True)
+    state = models.IntegerField(default=1)
     account_code = models.CharField(max_length=64, blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
@@ -655,12 +655,22 @@ class ProjectTeamBaseinfo(models.Model):
         return AccountInfo.objects.get(account_code=self.account_code).dept_code
 
     @property
+    def account(self):
+        account = AccountInfo.objects.get(account_code=self.account_code)
+        return account.account if account.account else account.user_name
+
+    @property
+    def creater_username(self):
+        account = AccountInfo.objects.get(account_code=self.creater)
+        return account.account if account.account else account.user_name
+
+    @property
     def major(self):
         return get_major(2, self.pt_code)
 
     # 管理人员身份证正面
     @property
-    def idfornt(self):
+    def idfront(self):
         return get_single("identityFront", self.pt_code)
 
     # 管理人员身份证反面

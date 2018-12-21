@@ -77,7 +77,6 @@ def update_baseinfo(obj, code, data):
 
 # 获取领域
 def get_major(user_type, user_code):
-    mcode = [i['mcode'] for i in
-             MajorUserinfo.objects.values('mcode').filter(mtype=2, user_type=user_type, user_code=user_code)]
-    mname = [i['mname'] for i in MajorInfo.objects.values('mname').filter(mcode__in=mcode, state=1)]
+    mcode = MajorUserinfo.objects.values_list('mcode', flat=True).filter(mtype=2, user_type=user_type, user_code=user_code)
+    mname = MajorInfo.objects.values_list('mname', flat=True).filter(mcode__in=mcode, state=1)
     return mname

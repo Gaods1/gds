@@ -9,7 +9,7 @@ class ExpertBaseInfoSerializers(serializers.ModelSerializer):
     major = serializers.ListField(read_only=True)
     enterprise = serializers.CharField(read_only=True)
     head = serializers.CharField(read_only=True)
-    idfornt = serializers.CharField(read_only=True)
+    idfront = serializers.CharField(read_only=True)
     idback = serializers.CharField(read_only=True)
     idphoto = serializers.CharField(read_only=True)
     dept_code = serializers.CharField(read_only=True)
@@ -32,7 +32,7 @@ class ExpertBaseInfoSerializers(serializers.ModelSerializer):
             'expert_abstract',  # 简介
 
             'head',     # 头像
-            'idfornt',  # 证件照正面
+            'idfront',  # 证件照正面
             'idback',     # 证件照反面
             'idphoto',  # 手持证件照
 
@@ -84,7 +84,7 @@ class BrokerBaseInfoSerializers(serializers.ModelSerializer):
     major = serializers.ListField(read_only=True)
     enterprise = serializers.CharField(read_only=True)
     head = serializers.CharField(read_only=True)
-    idfornt = serializers.CharField(read_only=True)
+    idfront = serializers.CharField(read_only=True)
     idback = serializers.CharField(read_only=True)
     idphoto = serializers.CharField(read_only=True)
     dept_code = serializers.CharField(read_only=True)
@@ -107,7 +107,7 @@ class BrokerBaseInfoSerializers(serializers.ModelSerializer):
             'broker_abstract',  # 简介
 
             'head',     # 头像
-            'idfornt',  # 证件照正面
+            'idfront',  # 证件照正面
             'idback',     # 证件照反面
             'idphoto',  # 手持证件照
 
@@ -158,7 +158,7 @@ class CollectorBaseInfoSerializers(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     city = serializers.CharField(read_only=True)
     head = serializers.CharField(read_only=True)
-    idfornt = serializers.CharField(read_only=True)
+    idfront = serializers.CharField(read_only=True)
     idback = serializers.CharField(read_only=True)
     idphoto = serializers.CharField(read_only=True)
     dept_code = serializers.CharField(read_only=True)
@@ -188,7 +188,7 @@ class CollectorBaseInfoSerializers(serializers.ModelSerializer):
             'creater',
             'insert_time',
             'head',
-            'idfornt',  # 证件照正面
+            'idfront',  # 证件照正面
             'idback',  # 证件照反面
             'idphoto',  # 手持证件照
             'dept_code',
@@ -223,7 +223,7 @@ class ResultOwnerpSerializers(serializers.ModelSerializer):
     city = serializers.CharField(read_only=True)
     major = serializers.ListField(read_only=True)
     head = serializers.CharField(read_only=True)
-    idfornt = serializers.CharField(read_only=True)
+    idfront = serializers.CharField(read_only=True)
     idback = serializers.CharField(read_only=True)
     idphoto = serializers.CharField(read_only=True)
     dept_code = serializers.CharField(read_only=True)
@@ -255,7 +255,7 @@ class ResultOwnerpSerializers(serializers.ModelSerializer):
             'university',
             'profession',
             'head',
-            'idfornt',  # 证件照正面
+            'idfront',  # 证件照正面
             'idback',  # 证件照反面
             'idphoto',  # 手持证件照
             'dept_code'
@@ -288,7 +288,7 @@ class ResultOwnereSerializers(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     city = serializers.CharField(read_only=True)
     major = serializers.ListField(read_only=True)
-    idfornt = serializers.CharField(read_only=True)
+    idfront = serializers.CharField(read_only=True)
     idback = serializers.CharField(read_only=True)
     idphoto = serializers.CharField(read_only=True)
     license = serializers.CharField(read_only=True)
@@ -323,7 +323,7 @@ class ResultOwnereSerializers(serializers.ModelSerializer):
             'legal_person',
             'owner_id',
             'owner_idtype',
-            'idfornt',  # 证件照正面
+            'idfront',  # 证件照正面
             'idback',  # 证件照反面
             'idphoto',  # 手持证件照
             'license',  # 营业执照
@@ -358,6 +358,11 @@ class TeamBaseinfoSerializers(serializers.ModelSerializer):
     major = serializers.ListField(read_only=True)
     dept_code = serializers.CharField(read_only=True)
     city = serializers.CharField(read_only=True)
+    idfront = serializers.CharField(read_only=True)
+    idback = serializers.CharField(read_only=True)
+    idphoto = serializers.CharField(read_only=True)
+    logo = serializers.CharField(read_only=True)
+    promotional = serializers.CharField(read_only=True)
 
     class Meta:
         model = ProjectTeamBaseinfo
@@ -382,9 +387,11 @@ class TeamBaseinfoSerializers(serializers.ModelSerializer):
             'pt_integral',     # 积分
             'state',  # 信息状态。1：正常；2：暂停；3：伪删除
             'account_code',    # 系统账号
+            'account',
             'creater',   #录入者
+            'creater_username',
             'insert_time',  # 创建时间
-            'idfornt',
+            'idfront',
             'idback',
             'idphoto',
             'logo',
