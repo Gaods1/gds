@@ -92,28 +92,28 @@ class RequirementsInfo(models.Model):
 
     @property
     def Cover(self):
-        dict = get_single('coverImg',self.req_code)
-        return dict
+        str = get_single('coverImg',self.req_code)
+        return str
 
     @property
     def AgencyImg(self):
-        dict = get_single('agreement', self.req_code)
-        return dict
+        str = get_single('agreement', self.req_code)
+        return str
 
     @property
     def PerIdFront(self):
-        dict = get_single('identityFront', self.req_code)
-        return dict
+        str = get_single('identityFront', self.req_code)
+        return str
 
     @property
     def PerIdBack(self):
-        dict = get_single('identityBack', self.req_code)
-        return dict
+        str = get_single('identityBack', self.req_code)
+        return str
 
     @property
     def PerHandId(self):
-        dict = get_single('handIdentityPhoto', self.req_code)
-        return dict
+        str = get_single('handIdentityPhoto', self.req_code)
+        return str
 
     @property
     def mcode(self):
@@ -169,28 +169,28 @@ class ResultsInfo(models.Model):
 
     @property
     def Cover(self):
-        dict = get_single('coverImg',self.r_code)
-        return dict
+        str = get_single('coverImg',self.r_code)
+        return str
 
     @property
     def AgencyImg(self):
-        dict = get_single('agreement', self.r_code)
-        return dict
+        str = get_single('agreement', self.r_code)
+        return str
 
     @property
     def PerIdFront(self):
-        dict = get_single('identityFront', self.r_code)
-        return dict
+        str = get_single('identityFront', self.r_code)
+        return str
 
     @property
     def PerIdBack(self):
-        dict = get_single('identityBack', self.r_code)
-        return dict
+        str = get_single('identityBack', self.r_code)
+        return str
 
     @property
     def PerHandId(self):
-        dict = get_single('handIdentityPhoto', self.r_code)
-        return dict
+        str = get_single('handIdentityPhoto', self.r_code)
+        return str
 
     @property
     def mcode(self):

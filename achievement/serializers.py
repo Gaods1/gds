@@ -60,11 +60,11 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
     mcode = serializers.ListField(max_length=16, read_only=True)
     mname = serializers.ListField(max_length=16, read_only=True)
     Attach = serializers.DictField(read_only=True)
-    Cover = serializers.DictField(read_only=True)
-    AgencyImg = serializers.DictField(read_only=True)
-    PerIdFront = serializers.DictField(read_only=True)
-    PerIdBack = serializers.DictField(read_only=True)
-    PerHandId = serializers.DictField(read_only=True)
+    Cover = serializers.CharField(read_only=True)
+    AgencyImg = serializers.CharField(read_only=True)
+    PerIdFront = serializers.CharField(read_only=True)
+    PerIdBack = serializers.CharField(read_only=True)
+    PerHandId = serializers.CharField(read_only=True)
     class Meta:
         model = ResultsInfo
         fields = ['serial',
@@ -109,11 +109,11 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
     mcode = serializers.ListField(max_length=16, read_only=True)
     mname = serializers.ListField(max_length=16, read_only=True)
     Attach = serializers.DictField(read_only=True)
-    Cover = serializers.DictField(read_only=True)
-    AgencyImg = serializers.DictField(read_only=True)
-    PerIdFront = serializers.DictField(read_only=True)
-    PerIdBack = serializers.DictField(read_only=True)
-    PerHandId = serializers.DictField(read_only=True)
+    Cover = serializers.CharField(read_only=True)
+    AgencyImg = serializers.CharField(read_only=True)
+    PerIdFront = serializers.CharField(read_only=True)
+    PerIdBack = serializers.CharField(read_only=True)
+    PerHandId = serializers.CharField(read_only=True)
 
     class Meta:
         model = RequirementsInfo
