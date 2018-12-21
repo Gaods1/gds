@@ -130,7 +130,7 @@ class ExpertBaseinfo(models.Model):
 
     # 身份证正面
     @property
-    def idfornt(self):
+    def idfront(self):
         return get_single('identityFront', self.expert_code)
 
     # 身份证反面
@@ -249,7 +249,7 @@ class BrokerBaseinfo(models.Model):
 
     # 身份证正面
     @property
-    def idfornt(self):
+    def idfront(self):
         return get_single('identityFront', self.broker_code)
 
     # 身份证反面
@@ -353,7 +353,7 @@ class CollectorBaseinfo(models.Model):
 
     # 身份证正面
     @property
-    def idfornt(self):
+    def idfront(self):
         return get_single('identityFront', self.collector_code)
 
     # 身份证反面
@@ -465,7 +465,7 @@ class ResultOwnerpBaseinfo(models.Model):
 
     # 身份证前面
     @property
-    def idfornt(self):
+    def idfront(self):
         return get_single("identityFront", self.owner_code)
 
     # 身份证反面
@@ -582,7 +582,7 @@ class ResultOwnereBaseinfo(models.Model):
 
     # 法人身份证正面
     @property
-    def idfornt(self):
+    def idfront(self):
         return get_single("identityFront", self.owner_code)
 
     # 法人身份证反面
@@ -670,7 +670,7 @@ class ProjectTeamBaseinfo(models.Model):
 
     # 管理人员身份证正面
     @property
-    def idfornt(self):
+    def idfront(self):
         return get_single("identityFront", self.pt_code)
 
     # 管理人员身份证反面
