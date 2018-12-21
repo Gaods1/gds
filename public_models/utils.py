@@ -110,6 +110,7 @@ def get_single(tname_single,ecode):
         url = '{}{}{}'.format(absolute_path, file.path,file.file_name)
         if not os.path.exists(url):
                 return ''
+        url = url.replace(absolute_path,absolute_path_front)
         return url
     except Exception as e:
         return ''
@@ -210,7 +211,7 @@ def move_single(tname_singgle,ecode):
                     url_x = url_x + file.file_name
                     shutil.move(url_j_c, url_x)
 
-                    # 删除临时目录
+                    # 删除临时目录c
                     url_j_c_list = url_j_c.split('/')
                     del url_j_c_list[-1]
                     url_j_c_s = '/'.join(url_j_c_list)
