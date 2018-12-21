@@ -74,10 +74,9 @@ def get_attachment(tname_attachment,ecode):
     absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
     relative_path = ParamInfo.objects.get(param_code=2).param_value
     relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-    #canshu = canshu
     tcode_attachment = AttachmentFileType.objects.get(tname=tname_attachment).tcode
     ecode = ecode
-    files = AttachmentFileinfo.objects.filter(tcode=tcode_attachment, ecode=ecode, operation_state=1, state=1)
+    files = AttachmentFileinfo.objects.filter(tcode=tcode_attachment, ecode=ecode, operation_state__in=[1,3], state=1)
     dict = {}
     list_look = []
     list_down = []
@@ -106,7 +105,7 @@ def get_single(tname_single,ecode):
     relative_path_front = ParamInfo.objects.get(param_code=4).param_value
     tcode_single = AttachmentFileType.objects.get(tname=tname_single).tcode
     ecode = ecode
-    files = AttachmentFileinfo.objects.filter(tcode=tcode_single, ecode=ecode, operation_state=1, state=1)
+    files = AttachmentFileinfo.objects.filter(tcode=tcode_single, ecode=ecode, operation_state__in=[1,3], state=1)
     dict = {}
     if files:
         for file in files:
@@ -129,7 +128,7 @@ def move_attachment(tname_attachment,ecode):
     relative_path_front = ParamInfo.objects.get(param_code=4).param_value
     tcode_attachment = AttachmentFileType.objects.get(tname=tname_attachment).tcode
     files_fujian = AttachmentFileinfo.objects.filter(tcode=tcode_attachment, ecode=ecode, state=1)
-    dict = {'xiaofan':123}
+    dict = {}
     # 遍历所有状态下的对象(附件)
     for file in files_fujian:
         # 找出伪删除的对象并从表中删除
@@ -181,7 +180,7 @@ def move_single(tname_singgle,ecode):
     relative_path_front = ParamInfo.objects.get(param_code=4).param_value
     tcode_single = AttachmentFileType.objects.get(tname=tname_singgle).tcode
     files_dange = AttachmentFileinfo.objects.filter(tcode=tcode_single, ecode=ecode, state=1)
-    dict = {'xiaofan':123}
+    dict = {}
     # 遍历所有状态下的对象(单个文件)
     for file in files_dange:
         # 找出伪删除的对象并从表中删除
