@@ -11,6 +11,7 @@ from django.http import JsonResponse
 from django.shortcuts import render
 
 # Create your views here.
+from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.utils import json
@@ -23,6 +24,7 @@ from python_backend import settings
 
 
 class PublicInfo(APIView,FileStorage):
+    queryset = AttachmentFileinfo.objects.all()
 
     def post(self, request):
         absolute_path = ParamInfo.objects.get(param_code=1).param_value
@@ -30,11 +32,13 @@ class PublicInfo(APIView,FileStorage):
             return JsonResponse({"error": u"不支持此种请求"}, safe=False)
 
         files = request.FILES.getlist('file',None)
-        if not files:
+        flag = request.POST.get('flag',None)
+
+        if not files or not flag:
             return HttpResponse('上传失败')
-        if len(files)!=1:
-            list_url_show = []
-            list_url_down = []
+        if flag == 'attachment':
+            pdf_and_jpg = []
+            doc_and_xls = []
             dict = {}
             # 建立事物机制
             with transaction.atomic():
@@ -63,19 +67,22 @@ class PublicInfo(APIView,FileStorage):
                             # 给前端抛出pdf路径
                             u_z = url_pdf.split('/')[-1]
                             url_front = settings.media_root_front + u_z
-                            list_url_show.append(url_front)
+                            pdf_and_jpg.append(url_front)
 
-                        # 给前端的路径
                         u_z = url.split('/')[-1]
                         url_front = settings.media_root_front + u_z
-                        list_url_down.append(url_front)
+                        if url.endswith('jpg'):
+                            pdf_and_jpg.append(url_front)
+                        else:
+                            doc_and_xls.append(url_front)
+
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('上传失败' % str(e))
 
-                dict['attachment_show'] = list_url_show
-                dict['attachment_down'] = list_url_down
+                dict['attachment_pdf_and_jpg'] = pdf_and_jpg
+                dict['attachment_doc_and_xls'] = doc_and_xls
                 transaction.savepoint_commit(save_id)
                 return Response(dict)
         else:
@@ -104,13 +111,13 @@ class PublicInfo(APIView,FileStorage):
                             url_pdf = os.path.splitext(url)[0] + '.pdf'
                             # 给前端抛出pdf路径
                             u_z = url_pdf.split('/')[-1]
-                            url_front = settings.media_root_front + u_z
-                            dict['single_show'] = url_front
+                            pdf = settings.media_root_front + u_z
+                            dict['single_pdf'] = pdf
 
                         # 给前端抛出office文件路径
                         u_z = url.split('/')[-1]
-                        url_front = settings.media_root_front + u_z
-                        dict['single_down'] = url_front
+                        jpg = settings.media_root_front + u_z
+                        dict['single_jpg'] = jpg
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('上传失败' % str(e))
@@ -159,7 +166,6 @@ class PublicInfo(APIView,FileStorage):
                     # 拼接地址
                     relative_path = ParamInfo.objects.get(param_code=2).param_value
                     path = AttachmentFileinfo.objects.get(file_name=name).path
-                    # url = '/home/python/Desktop/temporary/' + name  测试数据
                     url = '{}{}{}'.format(relative_path, path, name)
                     # 创建对象
                     a = FileStorage()
