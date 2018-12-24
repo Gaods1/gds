@@ -1,14 +1,16 @@
 from .models import *
 from .serializers import *
 from rest_framework import viewsets
-from rest_framework import filters
+from rest_framework import filters,status
 import django_filters
 from rest_framework.response import Response
 from django.db import transaction
 from django.http import JsonResponse
 from .utils import *
 import datetime, threading
-from public_models.utils import move_single
+from public_models.utils import move_single,get_detcode_str
+from django.db.models.query import QuerySet
+from public_models.models import IdentityAuthorizationInfo
 
 
 # 领域专家管理
@@ -142,6 +144,46 @@ class BrokerViewSet(viewsets.ModelViewSet):
     ordering_fields = ("insert_time", "broker_level", "credit_value", "broker_integral", "work_type")
     filter_fields = ("state", "creater", "broker_id", "broker_city", "ecode", "work_type")
     search_fields = ("broker_name", "broker_id", "broker_mobile", "ecode", "work_type", "broker_abbr")
+
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        dept_codes_str = get_detcode_str(self.request.user.dept_code)
+        if dept_codes_str:
+            raw_queryset = BrokerBaseinfo.objects.raw("select b.serial  from broker_baseinfo as b left join account_info as ai on  b.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
+            queryset = BrokerBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
+        else:
+            queryset = self.queryset
+
+        if isinstance(queryset, QuerySet):
+            # Ensure queryset is re-evaluated on each request.
+            queryset = queryset.all()
+        return queryset
+
+    #创建技术经纪人
+    def create(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                account_code = request.data.get('account_code')
+                #1 创建broker_baseinfo技术经济人基本信息
+                broker_baseinfo_data = request.data.get('broker_baseinfo')
+                broker_baseinfo_data['account_code'] = account_code
+                # broker_baseinfo = BrokerBaseinfo.objects.create(**broker_baseinfo_data)
+                serializer = self.get_serializer(data=broker_baseinfo_data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
+                #2 创建identity_authorization_info信息
+                identity_authorizationinfo_data = request.data.get('identity_authorization_info')
+                identity_authorizationinfo_data['account_code'] = account_code
+                IdentityAuthorizationInfo.objects.create(**identity_authorizationinfo_data)
+        except Exception as e:
+            fail_msg = "创建失败%s" % str(e)
+            return JsonResponse({"state": 0, "msg": fail_msg})
+
+        return JsonResponse({"state": 1, "msg": "创建成功"})
 
 
 # 技术经纪人申请视图

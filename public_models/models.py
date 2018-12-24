@@ -1,5 +1,6 @@
 from django.db import models
 from misc.misc import gen_uuid32
+import time
 
 
 # *******************************django 用户模型相关表， 勿动，如对程序无影响，后续可能删除****************************
@@ -330,3 +331,19 @@ class ParamInfo(models.Model):
 
     def __unicode__(self):
         return self.param_name
+
+
+# 身份授权信息表(前端) 2018/12/24 添加 author:周
+class IdentityAuthorizationInfo(models.Model):
+    serial = models.AutoField(primary_key=True)
+    account_code = models.CharField(unique=True, max_length=32, default=gen_uuid32)
+    identity_code = models.IntegerField(default=0)
+    iab_time = models.DateTimeField(blank=True, null=True,default=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    iae_time = models.DateTimeField(blank=True, null=True)
+    state = models.IntegerField(default=2)
+    creater = models.CharField(max_length=64, blank=True, null=True)
+    insert_time = models.DateTimeField(blank=True, null=True,default=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+
+    class Meta:
+        managed = True
+        db_table = 'identity_authorization_info'
