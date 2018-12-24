@@ -240,8 +240,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         dict_z = {}
                         ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
 
-                        # 判断是否待审和状态
-                        if ownerp.state == 1:
+                        # 判断是否待审和状态或以通过状态
+                        if ownerp.state in [1,2]:
                             ownerp.state=2
                             ownerp.save()
 
@@ -448,7 +448,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     try:
                         #dict_z = {}
                         ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
-                        if ownerp.state == 1:
+                        # 判断是否待审和状态或以通过状态
+                        if ownerp.state in [1, 2]:
                             ownerp.state = 3
                             ownerp.save()
 
@@ -698,7 +699,8 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     try:
                         dict_z = {}
                         ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
-                        if ownerp.state == 1:
+                        # 判断是否待审和状态或以通过状态
+                        if ownerp.state in [1, 2]:
                             ownerp.state = 2
                             ownerp.save()
 
@@ -901,7 +903,8 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
                     try:
                         ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
-                        if ownerp.state == 1:
+                        # 判断是否待审和状态或以通过状态
+                        if ownerp.state in [1, 2]:
                             ownerp.state = 3
                             ownerp.save()
 
