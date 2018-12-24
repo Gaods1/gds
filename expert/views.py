@@ -28,6 +28,46 @@ class ExpertViewSet(viewsets.ModelViewSet):
     filter_fields = ("state", "creater", "expert_id", "expert_city", "ecode")
     search_fields = ("expert_name", "expert_id", "expert_mobile", "ecode")
 
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        dept_codes_str = get_detcode_str(self.request.user.dept_code)
+        if dept_codes_str:
+            raw_queryset = ExpertBaseinfo.objects.raw("select e.serial  from expert_baseinfo as e left join account_info as ai on  e.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
+            queryset = ExpertBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
+        else:
+            queryset = self.queryset
+
+        if isinstance(queryset, QuerySet):
+            # Ensure queryset is re-evaluated on each request.
+            queryset = queryset.all()
+        return queryset
+
+    # 创建领域专家 2018/12/24  author:周
+    def create(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                account_code = request.data.get('account_code')
+                # 1 创建expert_baseinfo领域专家基本信息
+                expert_baseinfo_data = request.data.get('expert_baseinfo')
+                expert_baseinfo_data['account_code'] = account_code
+                # expert_baseinfo = ExpertBaseinfo.objects.create(**expert_baseinfo_data)
+                serializer = self.get_serializer(data=expert_baseinfo_data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
+                # 2 创建identity_authorization_info信息
+                identity_authorizationinfo_data = request.data.get('identity_authorization_info')
+                identity_authorizationinfo_data['account_code'] = account_code
+                IdentityAuthorizationInfo.objects.create(**identity_authorizationinfo_data)
+        except Exception as e:
+            fail_msg = "创建失败%s" % str(e)
+            return JsonResponse({"state": 0, "msg": fail_msg})
+
+        return JsonResponse({"state": 1, "msg": "创建成功"})
+
 
 # 领域专家申请视图
 class ExpertApplyViewSet(viewsets.ModelViewSet):
@@ -163,7 +203,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
             queryset = queryset.all()
         return queryset
 
-    #创建技术经纪人
+    #创建技术经纪人 2018/12/24 author:周
     def create(self, request, *args, **kwargs):
         try:
             with transaction.atomic():
@@ -906,6 +946,47 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
     ordering_fields = ("insert_time", "pt_level", "credit_value","pt_integral")
     filter_fields = ("state", "creater", "pt_people_id", "pt_city",)
     search_fields = ("pt_name", "pt_people_id", "pt_people_tel", "pt_abbreviation")
+
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        dept_codes_str = get_detcode_str(self.request.user.dept_code)
+        if dept_codes_str:
+            raw_queryset = ProjectTeamBaseinfo.objects.raw("select p.serial  from project_team_baseinfo as p left join account_info as ai on  p.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
+            queryset = ProjectTeamBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
+        else:
+            queryset = self.queryset
+
+        if isinstance(queryset, QuerySet):
+            # Ensure queryset is re-evaluated on each request.
+            queryset = queryset.all()
+        return queryset
+
+    # 创建技术团队 2018/12/24  author:周
+    def create(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                account_code = request.data.get('account_code')
+                # 1 创建project_team_baseinfo技术团队基本信息
+                team_baseinfo_data = request.data.get('team_baseinfo')
+                team_baseinfo_data['account_code'] = account_code
+                # team_baseinfo = ProjectTeamBaseinfo.objects.create(**team_baseinfo_data)
+                serializer = self.get_serializer(data=team_baseinfo_data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
+                # 2 创建identity_authorization_info信息
+                identity_authorizationinfo_data = request.data.get('identity_authorization_info')
+                identity_authorizationinfo_data['account_code'] = account_code
+                IdentityAuthorizationInfo.objects.create(**identity_authorizationinfo_data)
+        except Exception as e:
+            fail_msg = "创建失败%s" % str(e)
+            return JsonResponse({"state": 0, "msg": fail_msg})
+
+        return JsonResponse({"state": 1, "msg": "创建成功"})
+
 
 
 # 技术团队申请视图
