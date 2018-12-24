@@ -3,7 +3,7 @@ from django.db.models import QuerySet
 from .models import *
 from .serializers import *
 from rest_framework import viewsets
-from rest_framework import filters
+from rest_framework import filters,status
 import django_filters
 from rest_framework.response import Response
 from django.db import transaction
@@ -11,6 +11,9 @@ from django.http import JsonResponse
 from .utils import *
 import datetime, threading
 from public_models.utils import move_single, get_detcode_str
+from public_models.utils import move_single,get_detcode_str
+from django.db.models.query import QuerySet
+from public_models.models import IdentityAuthorizationInfo
 
 
 # 领域专家管理
@@ -637,29 +640,6 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
     filter_fields = ("state", "owner_code", "account_code")
     search_fields = ("account_code", "apply_code")
 
-    def get_queryset(self):
-        dept_code = self.request.user.dept_code
-        dept_code_str = get_detcode_str(dept_code)
-        if dept_code_str:
-            #SQL = "select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.dept_code in ("+dept_code_str+") and rr_apply_history.type=1"
-            SQL = "select result_ownerp_baseinfo.* \
-            		from result_ownerp_baseinfo \
-            		inner join account_info \
-            		on account_info.account_code=result_ownerp_baseinfo.account_code \
-            		where account_info.dept_code in ({dept_s}) \
-            		and result_ownerp_baseinfo.type=2"
-
-            raw_queryset = ResultOwnerpBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
-            owner_reply_set = OwnerApplyHistory.objects.filter(owner_code__in=[i.owner_code for i in raw_queryset]).order_by('state')
-
-            return owner_reply_set
-        else:
-            queryset = self.queryset
-            if isinstance(queryset, QuerySet):
-                # Ensure queryset is re-evaluated on each request.
-                queryset = queryset.all()
-            return queryset
-
     def update(self, request, *args, **kwargs):
         try:
             with transaction.atomic():
@@ -778,30 +758,6 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code")
     search_fields = ("apply_code",)
-
-    def get_queryset(self):
-        dept_code = self.request.user.dept_code
-        dept_code_str = get_detcode_str(dept_code)
-        if dept_code_str:
-            #SQL = "select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.dept_code in ("+dept_code_str+") and rr_apply_history.type=1"
-            SQL = "select result_ownere_baseinfo.* \
-            		from result_ownere_baseinfo \
-            		inner join account_info \
-            		on account_info.account_code=result_ownere_baseinfo.account_code \
-            		where account_info.dept_code in ({dept_s}) \
-            		and result_ownere_baseinfo.type=2"
-
-            raw_queryset = ResultOwnereBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
-            ownere_reply_set = OwnereApplyHistory.objects.filter(owner_code__in=[i.owner_code for i in raw_queryset]).order_by('state')
-
-            return ownere_reply_set
-        else:
-            queryset = self.queryset
-            if isinstance(queryset, QuerySet):
-                # Ensure queryset is re-evaluated on each request.
-                queryset = queryset.all()
-            return queryset
-
 
     def update(self, request, *args, **kwargs):
         try:
