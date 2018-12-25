@@ -10,7 +10,7 @@ from .models import *
 
 # 成果/需求合作信息序列化
 class ResultsCooperationTypeInfoSerializer(serializers.ModelSerializer):
-    #update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     class Meta:
         model = ResultsCooperationTypeInfo
         fields = ['serial',
@@ -38,6 +38,28 @@ class ResultsOwnerInfoSerializer(serializers.ModelSerializer):
                   'insert_time',
                   ]
 
+# 成果/需求持有人个人基本信息序列化
+class PersonalInfoSerializer(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+
+    class Meta:
+        model = PersonalInfo
+        fields = ['serial',
+                  'pcode',
+                  'pname',
+                  'psex',
+                  'pid_type',
+                  'pid',
+                  'pmobile',
+                  'ptel',
+                  'pemail',
+                  'peducation',
+                  'pabstract',
+                  'state',
+                  'creater',
+                  'insert_time',
+                  'account_code',
+                  ]
 
 # 成果/需求的检索关键字序列化
 class KeywordsInfoSerializer(serializers.ModelSerializer):
@@ -162,6 +184,7 @@ class RrApplyHistorySerializer(serializers.ModelSerializer):
     Requirements = RequirementsInfoSerializer(read_only=True)
     Cooperation = ResultsCooperationTypeInfoSerializer(read_only=True)
     Owner = ResultsOwnerInfoSerializer(read_only=True)
+    Personal = PersonalInfoSerializer(read_only=True)
     Keywords = KeywordsInfoSerializer(many=True,read_only=True)
 
     class Meta:
@@ -178,6 +201,7 @@ class RrApplyHistorySerializer(serializers.ModelSerializer):
                   'Requirements',
                   'Cooperation',
                   'Owner',
+                  'Personal',
                   'Keywords',
                   'apply_time',
                   ]
