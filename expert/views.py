@@ -708,6 +708,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
     search_fields = ("owner_name", "owner_id", "owner_mobile")
 
 
+
 # 需求持有人申请视图
 class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
     queryset = OwnerApplyHistory.objects.filter(owner_code__in=[i.owner_code for i in ResultOwnerpBaseinfo.objects.filter(type=2)]).order_by('state')
