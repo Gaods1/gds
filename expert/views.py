@@ -19,7 +19,7 @@ from public_models.models import IdentityAuthorizationInfo
 # 领域专家管理
 class ExpertViewSet(viewsets.ModelViewSet):
     queryset = ExpertBaseinfo.objects.all().order_by('state', '-serial')
-    serializer_class = ExpertBaseInfoSerializers
+    serializer_class =ExpertBaseInfoSerializers
 
     filter_backends = (
         filters.SearchFilter,
