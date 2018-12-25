@@ -31,6 +31,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
     filter_fields = ("state", "creater", "expert_id", "expert_city", "ecode")
     search_fields = ("expert_name", "expert_id", "expert_mobile", "ecode")
 
+
     def get_queryset(self):
         assert self.queryset is not None, (
             "'%s' should either include a `queryset` attribute, "
@@ -48,6 +49,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
             # Ensure queryset is re-evaluated on each request.
             queryset = queryset.all()
         return queryset
+    
 
     # 创建领域专家 2018/12/24  author:周
     def create(self, request, *args, **kwargs):
