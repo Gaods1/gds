@@ -726,6 +726,8 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
     filter_fields = ("state", "owner_code", "account_code")
     search_fields = ("account_code", "apply_code")
 
+
+
     def update(self, request, *args, **kwargs):
         try:
             with transaction.atomic():
