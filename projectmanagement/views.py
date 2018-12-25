@@ -229,11 +229,12 @@ def getCheckInfo(self,request, step_code, substep_code):
     projectcheckinfos = ProjectCheckInfo.objects.filter(~Q(substep_serial=0), Q(cstate=0), Q(step_code=step_code),
                                                         Q(substep_code=substep_code)).order_by("-p_serial")
     project_codes = [check.project_code for check in projectcheckinfos]
-    q = queryset.filter(project_code__in=project_codes)
-    if q != None and len(q) > 0:
-        queryset = self.filter_queryset(q)
-    else:
-        queryset = []
+    if queryset != None and len(queryset) > 0:
+        q = queryset.filter(project_code__in=project_codes)
+        if q != None and len(q) > 0:
+            queryset = self.filter_queryset(q)
+        else:
+            queryset = []
 
     page = self.paginate_queryset(queryset)
     if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
