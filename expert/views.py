@@ -1,3 +1,6 @@
+
+
+
 from django.db.models import QuerySet
 
 from .models import *
@@ -19,7 +22,7 @@ from public_models.models import IdentityAuthorizationInfo
 # 领域专家管理
 class ExpertViewSet(viewsets.ModelViewSet):
     queryset = ExpertBaseinfo.objects.all().order_by('state', '-serial')
-    serializer_class =ExpertBaseInfoSerializers
+    serializer_class = ExpertBaseInfoSerializers
 
     filter_backends = (
         filters.SearchFilter,
@@ -725,6 +728,8 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code", "account_code")
     search_fields = ("account_code", "apply_code")
+
+
 
     def update(self, request, *args, **kwargs):
         try:
