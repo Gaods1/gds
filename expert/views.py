@@ -735,6 +735,25 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                 queryset = queryset.all()
             return queryset
 
+    # 创建需求持有人 2018/12/26 author:范
+    def create(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                #创建需求持有人
+                account_code = request.data.get('account_code')
+                serializer = self.get_serializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
+                # 2 创建identity_authorization_info信息
+                identity_authorizationinfo_data = request.data.get('identity_authorization_info')
+                identity_authorizationinfo_data['account_code'] = account_code
+                IdentityAuthorizationInfo.objects.create(**identity_authorizationinfo_data)
+        except Exception as e:
+            fail_msg = "创建失败%s" % str(e)
+            return JsonResponse({"state": 0, "msg": fail_msg})
+
+        return JsonResponse({"state": 1, "msg": "创建成功"})
+
 # 需求持有人申请视图
 class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
     queryset = OwnerApplyHistory.objects.filter(owner_code__in=[i.owner_code for i in ResultOwnerpBaseinfo.objects.filter(type=2)]).order_by('state')
