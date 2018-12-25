@@ -713,7 +713,27 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
     search_fields = ("owner_name", "owner_id", "owner_mobile")
 
 
+    def get_queryset(self):
+        dept_code = self.request.user.dept_code
+        dept_code_str = get_detcode_str(dept_code)
+        if dept_code_str:
+            # SQL = "select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.dept_code in ("+dept_code_str+") and rr_apply_history.type=1"
+            SQL = "select ResultOwnerpBaseinfo.* \
+                    from ResultOwnerpBaseinfo \
+                    inner join account_info \
+                    on account_info.account_code=ResultOwnerpBaseinfo.account_code \
+                    where account_info.dept_code in ({dept_s}) \
+                    and ResultOwnerpBaseinfo.type=2"
 
+            raw_queryset = ResultOwnerpBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
+            consult_reply_set = ResultOwnerpBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset])
+            return consult_reply_set
+        else:
+            queryset = self.queryset
+            if isinstance(queryset, QuerySet):
+                # Ensure queryset is re-evaluated on each request.
+                queryset = queryset.all()
+            return queryset
 
 # 需求持有人申请视图
 class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
