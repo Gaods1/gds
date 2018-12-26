@@ -94,7 +94,9 @@ class AccountInfoSerializer(serializers.ModelSerializer):
         if not hasattr(self, '_errors'):
             msg = 'You must call `.is_valid()` before accessing `.errors`.'
             raise AssertionError(msg)
-        return {'detail':self._errors}
+        if self._errors:
+            return {'detail': self._errors}
+        return self._errors
 
     class Meta:
         model = AccountInfo
