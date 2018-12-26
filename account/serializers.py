@@ -89,6 +89,13 @@ class AccountInfoSerializer(serializers.ModelSerializer):
     func = serializers.ListField(read_only=True)
     authorized_func = serializers.ListField(read_only=True)
 
+    @property
+    def errors(self):
+        if not hasattr(self, '_errors'):
+            msg = 'You must call `.is_valid()` before accessing `.errors`.'
+            raise AssertionError(msg)
+        return {'detail':self._errors}
+
     class Meta:
         model = AccountInfo
         fields = ['serial',
