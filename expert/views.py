@@ -875,6 +875,48 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
     search_fields = ("owner_name", "owner_id", "owner_mobile", "owner_license", "legal_person")
 
 
+    def get_queryset(self):
+        dept_code = self.request.user.dept_code
+        dept_code_str = get_detcode_str(dept_code)
+        if dept_code_str:
+            SQL = "select ResultOwnereBaseinfo.* \
+                    from ResultOwnereBaseinfo \
+                    inner join account_info \
+                    on account_info.account_code=ResultOwnereBaseinfo.account_code \
+                    where account_info.dept_code in ({dept_s}) \
+                    and ResultOwnereBaseinfo.type=2"
+
+            raw_queryset = ResultOwnereBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
+            consult_reply_set = ResultOwnereBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset])
+            return consult_reply_set
+        else:
+            queryset = self.queryset
+            if isinstance(queryset, QuerySet):
+                # Ensure queryset is re-evaluated on each request.
+                queryset = queryset.all()
+            return queryset
+
+
+    # 创建需求持有人 2018/12/26 author:范
+    def create(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                # 创建需求持有人
+                account_code = request.data.get('account_code')
+                serializer = self.get_serializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
+                # 2 创建identity_authorization_info信息
+                identity_authorizationinfo_data = request.data.get('identity_authorization_info')
+                identity_authorizationinfo_data['account_code'] = account_code
+                IdentityAuthorizationInfo.objects.create(**identity_authorizationinfo_data)
+        except Exception as e:
+            fail_msg = "创建失败%s" % str(e)
+            return JsonResponse({"state": 0, "msg": fail_msg})
+
+        return JsonResponse({"state": 1, "msg": "创建成功"})
+
+
 # 需求持有企业申请视图
 class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
     queryset = OwnereApplyHistory.objects.filter(owner_code__in=[i.owner_code for i in ResultOwnereBaseinfo.objects.filter(type=2)]).order_by('state')
