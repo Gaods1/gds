@@ -105,18 +105,18 @@ class PublicInfo(APIView,FileStorage):
                         if url.endswith('doc') or url.endswith('xls'):
 
                             # 转换office文件为pdf文件
-                            child = subprocess.Popen('lowriter --pt pdf ' + url, stdout=subprocess.PIPE,shell=True)
+                            child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + settings.MEDIA_ROOT + ' ' + url, stdout=subprocess.PIPE,shell=True)
                             # 拼接转换pdf后的路径
                             url_pdf = os.path.splitext(url)[0] + '.pdf'
                             # 给前端抛出pdf路径
                             u_z = url_pdf.split('/')[-1]
                             pdf = settings.media_root_front + u_z
-                            dict['single_pdf'] = pdf
+                            dict[flag] = pdf
 
                         # 给前端抛出office文件路径
                         u_z = url.split('/')[-1]
                         jpg = settings.media_root_front + u_z
-                        dict['single_jpg'] = jpg
+                        dict[flag] = jpg
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('上传失败' % str(e))
