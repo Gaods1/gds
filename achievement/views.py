@@ -20,7 +20,7 @@ import shutil
 from django.db import connection  # django封装好的方法
 
 from public_models.utils import  move_attachment, move_single, get_detcode_str
-from account.models import Deptinfo, AccountInfo
+from account.models import Deptinfo, AccountInfo, IdentityAuthorizationInfo
 from python_backend import settings
 from .serializers import *
 from .models import *
@@ -76,7 +76,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
             		and rr_apply_history.type=1"
 
             raw_queryset = RrApplyHistory.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset])
+            consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state')
             return consult_reply_set
         else:
             queryset = self.queryset
@@ -419,7 +419,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
             		and rr_apply_history.type=2"
 
             raw_queryset = RrApplyHistory.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset])
+            consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state')
             return consult_reply_set
         else:
             return self.queryset
@@ -712,7 +712,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
 
 class ManagementpViewSet(viewsets.ModelViewSet):
-    queryset = ResultsInfo.objects.all().order_by('-serial')
+    queryset = ResultsInfo.objects.filter(show_state__in=[1,2,3]).order_by('-show_state')
     serializer_class = ResultsInfoSerializer
     filter_backends = (
         filters.SearchFilter,
@@ -724,6 +724,28 @@ class ManagementpViewSet(viewsets.ModelViewSet):
     filter_fields = ("r_name", "account_code", "r_name")
     search_fields = ("r_name",)
 
+    def get_queryset(self):
+        dept_code = self.request.user.dept_code
+        dept_code_str = get_detcode_str(dept_code)
+        if dept_code_str:
+            #SQL = "select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.dept_code in ("+dept_code_str+") and rr_apply_history.type=1"
+            SQL = "select results_info.* \
+            		from results_info \
+            		inner join account_info \
+            		on account_info.account_code=results_info.account_code \
+            		where account_info.dept_code in ({dept_s}) \
+            		and results_info.show_state in [1,2,3]"
+
+            raw_queryset = ResultsInfo.objects.raw(SQL.format(dept_s=dept_code_str))
+            consult_reply_set = ResultsInfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('-show_state')
+            return consult_reply_set
+        else:
+            queryset = self.queryset
+            if isinstance(queryset, QuerySet):
+                # Ensure queryset is re-evaluated on each request.
+                queryset = queryset.all()
+            return queryset
+
     def create(self, request, *args, **kwargs):
         # 建立事物机制
         with transaction.atomic():
@@ -733,7 +755,17 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 data = request.data
                 single_list = request.data.pop('single', None)
                 attachment_list = request.data.pop('attachment', None)
+                mcode_list = request.data.pop('mcode',None)
 
+                if not mcode_list:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('请完善相关信息')
+
+                if not single_list and not attachment_list:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('请先上传相关文件')
+
+                # 1 创建需求
                 data['creater'] = request.user.account
                 serializer = self.get_serializer(data=data)
                 serializer.is_valid(raise_exception=True)
@@ -741,10 +773,13 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 serializer_ecode = serializer.data['r_code']
 
-                if not single_list and not attachment_list:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请先上传相关文件')
+                # 2 创建所属领域
+                major_list = []
+                for mcode in mcode_list:
+                    major_list.append(MajorUserinfo(mcode=mcode,user_type=4,user_code=serializer_ecode,mtype=2))
+                MajorUserinfo.objects.bulk_create(major_list)
 
+                # 3 转移附件创建ecode表
                 absolute_path = ParamInfo.objects.get(param_code=1).param_value
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
                 relative_path_front = ParamInfo.objects.get(param_code=4).param_value
@@ -821,11 +856,26 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 data = request.data
                 single_list = request.data.pop('single', None)
                 attachment_list = request.data.pop('attachment', None)
+                mcode_list = request.data.pop('mcode',None)
+
+                if not mcode_list:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('请完善相关信息')
 
                 if not single_list and not attachment_list:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('请先上传相关文件')
 
+                # 1 删除原有记录
+                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
+
+                # 2 创建新纪录
+                major_list = []
+                for mcode in mcode_list:
+                    major_list.append(MajorUserinfo(mcode=mcode, user_type=4, user_code=serializer_ecode, mtype=2))
+                MajorUserinfo.objects.bulk_create(major_list)
+
+                # 3 转移附件创建ecode表
                 absolute_path = ParamInfo.objects.get(param_code=1).param_value
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
                 relative_path_front = ParamInfo.objects.get(param_code=4).param_value
@@ -902,6 +952,11 @@ class ManagementpViewSet(viewsets.ModelViewSet):
             try:
                 instance = self.get_object()
                 serializer_ecode = instance.r_code
+
+                # 1 删除所属领域表记录
+                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
+
+                # 2 删除文件以及ecode表记录
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
                 obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
                 # url = '/home/python/Desktop/temporary/' + name  测试数据
@@ -928,7 +983,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
 
 class ManagementrViewSet(viewsets.ModelViewSet):
-    queryset = RequirementsInfo.objects.all().order_by('-serial')
+    queryset = RequirementsInfo.objects.filter(show_state__in=[1,2,3]).order_by('-show_state')
     serializer_class = RequirementsInfoSerializer
     filter_backends = (
         filters.SearchFilter,
@@ -940,6 +995,28 @@ class ManagementrViewSet(viewsets.ModelViewSet):
     filter_fields = ("req_name", "account_code", "req_name")
     search_fields = ("req_name",)
 
+    def get_queryset(self):
+        dept_code = self.request.user.dept_code
+        dept_code_str = get_detcode_str(dept_code)
+        if dept_code_str:
+            # SQL = "select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.dept_code in ("+dept_code_str+") and rr_apply_history.type=1"
+            SQL = "select requirements_info.* \
+            		from requirements_info \
+            		inner join account_info \
+            		on account_info.account_code=requirements_info.account_code \
+            		where account_info.dept_code in ({dept_s}) \
+            		and requirements_info.show_state in [1,2,3]"
+
+            raw_queryset = RequirementsInfo.objects.raw(SQL.format(dept_s=dept_code_str))
+            consult_reply_set = RequirementsInfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('-show_state')
+            return consult_reply_set
+        else:
+            queryset = self.queryset
+            if isinstance(queryset, QuerySet):
+                # Ensure queryset is re-evaluated on each request.
+                queryset = queryset.all()
+            return queryset
+
     def create(self, request, *args, **kwargs):
         # 建立事物机制
         with transaction.atomic():
@@ -949,7 +1026,17 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 data = request.data
                 single_list = request.data.pop('single', None)
                 attachment_list = request.data.pop('attachment', None)
+                mcode_list = request.data.pop('mcode', None)
 
+                if not mcode_list:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('请完善相关信息')
+
+                if not single_list and not attachment_list:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('请先上传相关文件')
+
+                # 1 创建需求
                 data['creater'] = request.user.account
                 serializer = self.get_serializer(data=data)
                 serializer.is_valid(raise_exception=True)
@@ -957,10 +1044,13 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 serializer_ecode = serializer.data['req_code']
 
-                if not single_list and not attachment_list:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请先上传相关文件')
+                # 2 创建所属领域
+                major_list = []
+                for mcode in mcode_list:
+                    major_list.append(MajorUserinfo(mcode=mcode, user_type=5, user_code=serializer_ecode, mtype=2))
+                MajorUserinfo.objects.bulk_create(major_list)
 
+                # 3 转移附件创建ecode表
                 absolute_path = ParamInfo.objects.get(param_code=1).param_value
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
                 relative_path_front = ParamInfo.objects.get(param_code=4).param_value
@@ -976,16 +1066,18 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         url_file = url_l[-1]
 
                         url_j = settings.MEDIA_ROOT + url_file
-                        #url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
-                        url_x = '{}{}/{}/{}/{}'.format(relative_path,param_value,tcode_single, serializer_ecode, url_file)
+                        # url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
+                        url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_single, serializer_ecode,
+                                                       url_file)
 
                         # 拼接给前端的的地址
-                        url_x_f = url_x.replace(relative_path,relative_path_front)
+                        url_x_f = url_x.replace(relative_path, relative_path_front)
                         list2.append(url_x_f)
 
                         # 拼接ecode表中的path
-                        path = '{}/{}/{}/'.format(param_value,tcode_single,serializer_ecode)
-                        list1.append(AttachmentFileinfo(tcode=tcode_single,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1))
+                        path = '{}/{}/{}/'.format(param_value, tcode_single, serializer_ecode)
+                        list1.append(AttachmentFileinfo(tcode=tcode_single, ecode=serializer_ecode, file_name=url_file,
+                                                        path=path, operation_state=3, state=1))
 
                         # 将临时目录转移到正式目录
                         shutil.move(url_j, url_x)
@@ -994,15 +1086,17 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         url_l = attachment.split('/')
                         url_file = url_l[-1]
                         url_j = settings.MEDIA_ROOT + url_file
-                        #url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
-                        url_x = '{}{}/{}/{}/{}'.format(relative_path,param_value,tcode_attachment, serializer_ecode, url_file)
+                        # url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
+                        url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode,
+                                                       url_file)
 
                         url_x_f = url_x.replace(relative_path, relative_path_front)
                         list2.append(url_x_f)
 
                         path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
                         list1.append(
-                            AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,
+                            AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file,
+                                               path=path,
                                                operation_state=3, state=1))
                         # 将临时目录转移到正式目录
                         shutil.move(url_j, url_x)
@@ -1017,7 +1111,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 dict['url'] = list2
 
                 headers = self.get_success_headers(serializer.data)
-                #return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
+                # return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
             except Exception as e:
                 transaction.savepoint_rollback(save_id)
                 return HttpResponse('创建失败%s' % str(e))
@@ -1037,11 +1131,26 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 data = request.data
                 single_list = request.data.pop('single', None)
                 attachment_list = request.data.pop('attachment', None)
+                mcode_list = request.data.pop('mcode', None)
+
+                if not mcode_list:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('请完善相关信息')
 
                 if not single_list and not attachment_list:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('请先上传相关文件')
 
+                # 1 删除原有记录
+                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
+
+                # 2 创建新纪录
+                major_list = []
+                for mcode in mcode_list:
+                    major_list.append(MajorUserinfo(mcode=mcode, user_type=5, user_code=serializer_ecode, mtype=2))
+                MajorUserinfo.objects.bulk_create(major_list)
+
+                # 3 转移附件创建ecode表
                 absolute_path = ParamInfo.objects.get(param_code=1).param_value
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
                 relative_path_front = ParamInfo.objects.get(param_code=4).param_value
@@ -1057,16 +1166,18 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         url_file = url_l[-1]
 
                         url_j = settings.MEDIA_ROOT + url_file
-                        #url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
-                        url_x = '{}{}/{}/{}/{}'.format(relative_path,param_value,tcode_single, serializer_ecode, url_file)
+                        # url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
+                        url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_single, serializer_ecode,
+                                                       url_file)
 
                         # 拼接给前端的的地址
-                        url_x_f = url_x.replace(relative_path,relative_path_front)
+                        url_x_f = url_x.replace(relative_path, relative_path_front)
                         list2.append(url_x_f)
 
                         # 拼接ecode表中的path
-                        path = '{}/{}/{}/'.format(param_value,tcode_single,serializer_ecode)
-                        list1.append(AttachmentFileinfo(tcode=tcode_single,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1))
+                        path = '{}/{}/{}/'.format(param_value, tcode_single, serializer_ecode)
+                        list1.append(AttachmentFileinfo(tcode=tcode_single, ecode=serializer_ecode, file_name=url_file,
+                                                        path=path, operation_state=3, state=1))
 
                         # 将临时目录转移到正式目录
                         shutil.move(url_j, url_x)
@@ -1075,15 +1186,17 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         url_l = attachment.split('/')
                         url_file = url_l[-1]
                         url_j = settings.MEDIA_ROOT + url_file
-                        #url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
-                        url_x = '{}{}/{}/{}/{}'.format(relative_path,param_value,tcode_attachment, serializer_ecode, url_file)
+                        # url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
+                        url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode,
+                                                       url_file)
 
                         url_x_f = url_x.replace(relative_path, relative_path_front)
                         list2.append(url_x_f)
 
                         path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
                         list1.append(
-                            AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,
+                            AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file,
+                                               path=path,
                                                operation_state=3, state=1))
                         # 将临时目录转移到正式目录
                         shutil.move(url_j, url_x)
@@ -1118,6 +1231,11 @@ class ManagementrViewSet(viewsets.ModelViewSet):
             try:
                 instance = self.get_object()
                 serializer_ecode = instance.req_code
+
+                # 1 删除所属领域表记录
+                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
+
+                # 2 删除文件以及ecode表记录
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
                 obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
                 # url = '/home/python/Desktop/temporary/' + name  测试数据
