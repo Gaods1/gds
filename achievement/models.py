@@ -46,8 +46,14 @@ class RrApplyHistory(models.Model):
     def Owner(self):
         #Results = ResultsInfo.objects.filter(r_code=self.rr_code)
         Owner = ResultsOwnerInfo.objects.get(r_code=self.rr_code)
-        Personal = PersonalInfo.objects.get(pcode=Owner.owner_code)
         return Owner
+
+    @property
+    def Personal(self):
+        # Results = ResultsInfo.objects.filter(r_code=self.rr_code)
+        Owner = ResultsOwnerInfo.objects.get(r_code=self.rr_code)
+        Personal = PersonalInfo.objects.get(pcode=Owner.owner_code)
+        return Personal
 
     @property
     def Keywords(self):

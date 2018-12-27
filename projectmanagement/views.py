@@ -225,15 +225,17 @@ def getCheckInfo(self,request, step_code, substep_code):
     # 获取我所在的机构下的项目
     queryset = getProjectByDept(self, request)
 
-    # Q(cstate=0) 测试时可以先去掉条件 不然界面上没数据
-    projectcheckinfos = ProjectCheckInfo.objects.filter(~Q(substep_serial=0), Q(cstate=0), Q(step_code=step_code),
-                                                        Q(substep_code=substep_code)).order_by("-p_serial")
-    project_codes = [check.project_code for check in projectcheckinfos]
-    q = queryset.filter(project_code__in=project_codes)
-    if q != None and len(q) > 0:
-        queryset = self.filter_queryset(q)
-    else:
-        queryset = []
+    if queryset != None and len(queryset) > 0:
+        # Q(cstate=0) 测试时可以先去掉条件 不然界面上没数据
+        projectcheckinfos = ProjectCheckInfo.objects.filter(~Q(substep_serial=0), Q(cstate=0), Q(step_code=step_code),
+                                                            Q(substep_code=substep_code)).order_by("-p_serial")
+        project_codes = [check.project_code for check in projectcheckinfos]
+
+        q = queryset.filter(project_code__in=project_codes)
+        if q != None and len(q) > 0:
+            queryset = self.filter_queryset(q)
+        else:
+            queryset = []
 
     page = self.paginate_queryset(queryset)
     if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
