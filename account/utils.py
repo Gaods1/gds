@@ -31,7 +31,7 @@ def validate_email(value):
 
 # 验证账号
 def validate_account(value):
-    if not re.match(r'^[a-zA-z]\w{6,32}$', value):
+    if not re.match(r'^[a-zA-z]\w{5,32}$', value):
         raise ValidationError('账号格式有误，字母开头，字母和数字下划线组合的6-32位字符串')
 
 
@@ -39,3 +39,9 @@ def validate_account(value):
 def validate_tel(value):
     if not re.match(r'^\d{3,4}-\d{7,8}$', value):
         raise ValidationError('电话号码格式错误')
+
+
+# 验证身份证
+def validate_id(value):
+    if not re.match(r'[^\d{15}$),(^\d{18}$),(^\d{17}(\d|X|x)$)]', value):
+        raise ValidationError('身份证号码格式错误')
