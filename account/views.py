@@ -81,7 +81,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         if 'admin' in request.query_params and request.query_params['admin'] == 'True':
             q = q.exclude(account=None).order_by('-serial')
         elif 'admin' in request.query_params and request.query_params['admin'] == 'False':
-            q = q.filter(account=None).order_by('-serial')
+            q = q.exclude(user_mobile=None).order_by('-serial')
 
         queryset = self.filter_queryset(q)
 

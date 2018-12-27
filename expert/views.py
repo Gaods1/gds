@@ -156,7 +156,7 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
                     # 更新账号绑定角色状态
                     if expert.account_code:
                         IdentityAuthorizationInfo.objects.filter(account_code=expert.account_code,
-                                                                 identity_code=IdentityInfo.objects.get(identity_name='expert').identity_code).update(state=apply_state)
+                                                                 identity_code=IdentityInfo.objects.get(identity_name='expert').identity_code).update(state=apply_state, iab_time=datetime.datetime.now())
 
                     # 发送信息
                     send_msg(expert.expert_mobile, '领域专家', apply_state, expert.account_code, request.user.account)
@@ -312,7 +312,7 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                     # 更新账号绑定角色状态
                     if baseinfo.account_code:
                         IdentityAuthorizationInfo.objects.filter(account_code=baseinfo.account_code,
-                                                                 identity_code=IdentityInfo.objects.get(identity_name='broker').identity_code).update(state=apply_state)
+                                                                 identity_code=IdentityInfo.objects.get(identity_name='broker').identity_code).update(state=apply_state, iab_time=datetime.datetime.now())
 
                     # 发送信息
                     send_msg(baseinfo.broker_mobile, '技术经纪人', apply_state, baseinfo.account_code, request.user.account)
@@ -428,7 +428,7 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
                     # 更新账号绑定角色状态
                     if baseinfo.account_code:
                         IdentityAuthorizationInfo.objects.filter(account_code=baseinfo.account_code,
-                                                                 identity_code=IdentityInfo.objects.get(identity_name='collector').identity_code).update(state=apply_state)
+                                                                 identity_code=IdentityInfo.objects.get(identity_name='collector').identity_code).update(state=apply_state, iab_time=datetime.datetime.now())
 
                     # 发送信息
                     send_msg(baseinfo.collector_mobile, '采集员', apply_state, baseinfo.account_code, request.user.account)
@@ -470,7 +470,7 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
 
 # 成果持有人申请视图
 class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
-    queryset = OwnerApplyHistory.objects.filter(owner_code__in=[i.owner_code for i in ResultOwnerpBaseinfo.objects.filter(type=1)]).order_by('state')
+    queryset = OwnerApplyHistory.objects.all().order_by('state')
     serializer_class = OwnerApplySerializers
 
     filter_backends = (
@@ -481,6 +481,17 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code", "account_code")
     search_fields = ("account_code", "apply_code")
+
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        queryset = self.queryset.filter(owner_code__in=ResultOwnerpBaseinfo.objects.values_list('owner_code').filter(type=1))
+        if isinstance(queryset, QuerySet):
+            queryset = queryset.all()
+        return queryset
 
     def update(self, request, *args, **kwargs):
         try:
@@ -545,7 +556,7 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
                     # 更新账号绑定角色状态
                     if baseinfo.account_code:
                         IdentityAuthorizationInfo.objects.filter(account_code=baseinfo.account_code,
-                                                                 identity_code=IdentityInfo.objects.get(identity_name='result_personal_owner').identity_code).update(state=apply_state)
+                                                                 identity_code=IdentityInfo.objects.get(identity_name='result_personal_owner').identity_code).update(state=apply_state, iab_time=datetime.datetime.now())
 
                     # 发送信息
                     send_msg(baseinfo.owner_mobile, '成果持有人', apply_state, baseinfo.account_code, request.user.account)
@@ -587,7 +598,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
 
 # 成果持有人（企业）申请视图
 class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
-    queryset = OwnereApplyHistory.objects.filter(owner_code__in=[i.owner_code for i in ResultOwnereBaseinfo.objects.filter(type=1)]).order_by('state')
+    queryset = OwnereApplyHistory.objects.all().order_by('state')
     serializer_class = OwnereApplySerializers
 
     filter_backends = (
@@ -598,6 +609,17 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code")
     search_fields = ("apply_code",)
+
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        queryset = self.queryset.filter(owner_code__in=ResultOwnereBaseinfo.objects.values_list('owner_code').filter(type=1))
+        if isinstance(queryset, QuerySet):
+            queryset = queryset.all()
+        return queryset
 
     def update(self, request, *args, **kwargs):
         try:
@@ -672,7 +694,7 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
                     # 更新账号绑定角色状态
                     if baseinfo.account_code:
                         IdentityAuthorizationInfo.objects.filter(account_code=baseinfo.account_code,
-                                                                 identity_code=IdentityInfo.objects.get(identity_name='result_enterprise_owner').identity_code).update(state=apply_state)
+                                                                 identity_code=IdentityInfo.objects.get(identity_name='result_enterprise_owner').identity_code).update(state=apply_state, iab_time=datetime.datetime.now())
 
                     # 发送信息
                     t1 = threading.Thread(target=send_msg, args=(baseinfo.owner_mobile, '成果持有企业', apply_state, baseinfo.account_code, request.user.account))
@@ -756,7 +778,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
 
 # 需求持有人申请视图
 class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
-    queryset = OwnerApplyHistory.objects.filter(owner_code__in=[i.owner_code for i in ResultOwnerpBaseinfo.objects.filter(type=2)]).order_by('state')
+    queryset = OwnerApplyHistory.objects.all().order_by('state')
     serializer_class = OwnerApplySerializers
 
     filter_backends = (
@@ -768,7 +790,16 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
     filter_fields = ("state", "owner_code", "account_code")
     search_fields = ("account_code", "apply_code")
 
-
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        queryset = self.queryset.filter(owner_code__in=ResultOwnerpBaseinfo.objects.values_list('owner_code').filter(type=2))
+        if isinstance(queryset, QuerySet):
+            queryset = queryset.all()
+        return queryset
 
     def update(self, request, *args, **kwargs):
         try:
@@ -834,7 +865,7 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
                     # 更新账号绑定角色状态
                     if baseinfo.account_code:
                         IdentityAuthorizationInfo.objects.filter(account_code=baseinfo.account_code,
-                                                                 identity_code=IdentityInfo.objects.get(identity_name='requirement_personal_owner').identity_code).update(state=apply_state)
+                                                                 identity_code=IdentityInfo.objects.get(identity_name='requirement_personal_owner').identity_code).update(state=apply_state, iab_time=datetime.datetime.now())
 
 
                     # 发送信息
@@ -919,7 +950,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
 
 # 需求持有企业申请视图
 class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
-    queryset = OwnereApplyHistory.objects.filter(owner_code__in=[i.owner_code for i in ResultOwnereBaseinfo.objects.filter(type=2)]).order_by('state')
+    queryset = OwnereApplyHistory.objects.all().order_by('state')
     serializer_class = OwnereApplySerializers
 
     filter_backends = (
@@ -930,6 +961,17 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code")
     search_fields = ("apply_code",)
+
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        queryset = self.queryset.filter(owner_code__in=ResultOwnereBaseinfo.objects.values_list('owner_code').filter(type=2))
+        if isinstance(queryset, QuerySet):
+            queryset = queryset.all()
+        return queryset
 
     def update(self, request, *args, **kwargs):
         try:
@@ -1002,7 +1044,7 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                     # 更新账号绑定角色状态
                     if baseinfo.account_code:
                         IdentityAuthorizationInfo.objects.filter(account_code=baseinfo.account_code,
-                                                                 identity_code=IdentityInfo.objects.get(identity_name='requirement_enterprise_owner').identity_code).update(state=apply_state)
+                                                                 identity_code=IdentityInfo.objects.get(identity_name='requirement_enterprise_owner').identity_code).update(state=apply_state, iab_time=datetime.datetime.now())
 
                     # 发送信息
                     t1 = threading.Thread(target=send_msg, args=(baseinfo.owner_mobile, '需求持有企业', apply_state, baseinfo.account_code, request.user.account))
@@ -1163,7 +1205,7 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
 
                 #更新前台角色授权状态(审核通过未通过都更新)
                 IdentityAuthorizationInfo.objects.filter(account_code=apply_team_baseinfo.team_baseinfo.account_code,
-                                                         identity_code=IdentityInfo.objects.get(identity_name='team').identity_code).update(state=check_state)
+                                                         identity_code=IdentityInfo.objects.get(identity_name='team').identity_code).update(state=check_state, iab_time=datetime.datetime.now())
 
                 # 5 发送短信通知
                 account_info = AccountInfo.objects.get(account_code=apply_team_baseinfo.team_baseinfo.account_code)

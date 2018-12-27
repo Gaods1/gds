@@ -4,6 +4,7 @@ from public_models.models import *
 from public_models.utils import get_single
 from .utils import get_major
 from account.models import AccountInfo
+from account.utils import validate_email, validate_mobile, validate_tel
 # Create your models here.
 
 
@@ -80,9 +81,9 @@ class ExpertBaseinfo(models.Model):
     expert_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     pcode = models.CharField(max_length=64, blank=True, null=True)
     expert_name = models.CharField(max_length=64)
-    expert_tel = models.CharField(max_length=16, blank=True, null=True)
-    expert_mobile = models.CharField(max_length=16, blank=True, null=True)
-    expert_email = models.CharField(max_length=64, blank=True, null=True)
+    expert_tel = models.CharField(max_length=16, blank=True, null=True, validators=[validate_tel])
+    expert_mobile = models.CharField(max_length=16, blank=True, null=True, validators=[validate_mobile])
+    expert_email = models.CharField(max_length=64, blank=True, null=True, validators=[validate_email])
     expert_id_type = models.IntegerField(default=1)     # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
     expert_id = models.CharField(max_length=32, blank=True, null=True)
     expert_abstract = models.TextField(blank=True, null=True)
@@ -93,7 +94,7 @@ class ExpertBaseinfo(models.Model):
     expert_major = models.CharField(max_length=64, blank=True, null=True)   # 所属院系
 
     expert_caption = models.CharField(max_length=32, blank=True, null=True)     # 专家头衔
-    homepage = models.CharField(max_length=128, blank=True, null=True)
+    homepage = models.URLField(max_length=128, blank=True, null=True)
     expert_addr = models.CharField(max_length=255, blank=True, null=True)
     ecode = models.CharField(max_length=64, blank=True, null=True)
     expert_level = models.IntegerField(default=1)
