@@ -977,9 +977,6 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                 handIdentityPhoto_tcode = AttachmentFileType.objects.get(tname='handIdentityPhoto').tcode
                 headPhoto_tcode = AttachmentFileType.objects.get(tname='headPhoto').tcode
                 param_value = ParamInfo.objects.get(param_code=11).param_value
-                dict = {}
-                list1 = []
-                list2 = []
 
                 url_x_f = '{}{}/{}/{}'.format(relative_path, param_value, identityFront_tcode, serializer_ecode)
                 url_x_b = '{}{}/{}/{}'.format(relative_path, param_value, identityBack_tcode, serializer_ecode)
@@ -995,14 +992,30 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                 if not os.path.exists(url_x_h):
                     os.makedirs(url_x_h)
 
+                if len(single_dict)!=4:
+                    return HttpResponse('请将证件照全部上传')
+
+                dict = {}
+                list1 = []
+                list2 = []
+
                 for key,value in single_dict.items():
+                    # 判断各个图片类型是否正确
+                    if key not in ['identityFront','identityBack','handIdentityPhoto','headPhoto']:
+                        return HttpResponse('某个图片所属类型不正确')
+
                     url_l = value.split('/')
                     url_file = url_l[-1]
 
+                    # 判断该临时路径下的文件是否正确
                     url_j = settings.MEDIA_ROOT + url_file
+                    if not os.path.exists(url_j):
+                        return HttpResponse('该临时路径下不存在该文件,可能文件名称错误')
+
+                    # 通过key值拿取相应的tcode
                     tcode = AttachmentFileType.objects.get(tname=key).tcode
 
-                    # url_j = '{}{}{}{}'.format(absolute_path, tcode_attachment, serializer_ecode, url_z)
+                    # 拼接正式路径
                     url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
                                                    url_file)
 
@@ -1022,7 +1035,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                 AttachmentFileinfo.objects.bulk_create(list1)
 
                 # 删除临时目录
-                shutil.rmtree(settings.MEDIA_ROOT)
+                shutil.rmtree(settings.MEDIA_ROOT,ignore_errors=True)
 
                 # 给前端抛正式目录
                 dict['url'] = list2

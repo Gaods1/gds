@@ -21,7 +21,13 @@ from backends import FileStorage
 from misc.misc import gen_uuid32
 from public_models.models import AttachmentFileType, ParamInfo, AttachmentFileinfo
 from python_backend import settings
-
+"""
+此接口为附件或单个证件照片上传接口,分为附件和单个证件照两种, 表单附件可以一次上传一个或多个,表单证件照一次只能上传一个
+1 #上传 post: 上传时前端需要在表单中给后端传一个flag标志位,此flag为tcode表中的tname,用于区分
+    每种图片所属的图片类型.例如：上传附件flag='attachment',上传封面flag='coverImg'.另外图片的key值为file.
+2 # delete: 删除时有两种情况,一种是提交前删除,一种是提交之后删除,提交之前删除只需在地址栏中给后端传要删除的文件的名称
+    即可,如果是提交之后删除,地址栏传参要另外多传一个serial标志,用于区分是提交之前还是之后,因为路径已经发生变化.
+"""
 
 class PublicInfo(APIView,FileStorage):
     queryset = AttachmentFileinfo.objects.all()
@@ -49,7 +55,7 @@ class PublicInfo(APIView,FileStorage):
                         # 拼接地址
                         url = settings.MEDIA_ROOT
                         if not os.path.exists(url):
-                            os.mkdir(url)
+                            os.makedirs(url)
                         #上传服务器的路径
                         url = url + file.name
 
@@ -85,6 +91,8 @@ class PublicInfo(APIView,FileStorage):
                 transaction.savepoint_commit(save_id)
                 return Response(dict)
         else:
+            if len(files)!=1:
+                return HttpResponse('图片只能上传一张')
             # 建立事物机制
             with transaction.atomic():
                 # 创建一个保存点
@@ -92,10 +100,9 @@ class PublicInfo(APIView,FileStorage):
                 dict = {}
                 try:
                     for file in files:
-
                         url = settings.MEDIA_ROOT
                         if not os.path.exists(url):
-                            os.mkdir(url)
+                            os.makedirs(url)
                         url = url + file.name
                         # 创建对象
                         a = FileStorage()
@@ -137,6 +144,9 @@ class PublicInfo(APIView,FileStorage):
             # 拼接地址
             url = settings.MEDIA_ROOT
             url = url + name
+            # 判断此路径下是否有文件
+            if not os.path.exists(url):
+                return HttpResponse('该临时路径下没有该文件')
             # 建立事物机制
             with transaction.atomic():
                 # 创建一个保存点
@@ -166,6 +176,10 @@ class PublicInfo(APIView,FileStorage):
                     relative_path = ParamInfo.objects.get(param_code=2).param_value
                     path = AttachmentFileinfo.objects.get(file_name=name).path
                     url = '{}{}{}'.format(relative_path, path, name)
+                    # 判断该路径下是否有该文件
+                    if not os.path.exists(url):
+                        transaction.savepoint_rollback(save_id)
+                        return HttpResponse('该正式路径下不存在该文件')
                     # 创建对象
                     a = FileStorage()
                     # 删除文件
