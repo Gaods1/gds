@@ -25,8 +25,13 @@ from python_backend import settings
 此接口为附件或单个证件照片上传接口,分为附件和单个证件照两种, 表单附件可以一次上传一个或多个,表单证件照一次只能上传一个
 1 #上传 post: 上传时前端需要在表单中给后端传一个flag标志位,此flag为tcode表中的tname,用于区分
     每种图片所属的图片类型.例如：上传附件flag='attachment',上传封面flag='coverImg'.另外图片的key值为file.
-2 # delete: 删除时有两种情况,一种是提交前删除,一种是提交之后删除,提交之前删除只需在地址栏中给后端传要删除的文件的名称
+2 #删除 delete: 删除时有两种情况,一种是提交前删除,一种是提交之后删除,提交之前删除只需在地址栏中给后端传要删除的文件的名称
     即可,如果是提交之后删除,地址栏传参要另外多传一个serial标志,用于区分是提交之前还是之后,因为路径已经发生变化.
+3 #后端给前端抛出的路径格式为：1附件：一个字典两个键值对,键为'attachment_pdf_and_jpg'和'attachment_doc_and_xls'用来区分
+    是要展示的还是要下载的,值为文件所在的临时路径,两个值都时列表,在创建科技人才管理或需求成果管理时,前端在此表单中需要将
+    两个列表合并成一个列表,并以key为'attachment'重新组成一个json传给后端.  2证件照：每一个证件照为一个键值对的字典,key为flag,
+    value为文件所在临时路径，创建科技人才管理或需求成果管理时，将每个小字典合并成一个大字典,并以key为'single'重新组成一个json传给后端.
+
 """
 
 class PublicInfo(APIView,FileStorage):
@@ -92,7 +97,7 @@ class PublicInfo(APIView,FileStorage):
                 return Response(dict)
         else:
             if len(files)!=1:
-                return HttpResponse('图片只能上传一张')
+                return HttpResponse('证件照只能上传一张')
             # 建立事物机制
             with transaction.atomic():
                 # 创建一个保存点
