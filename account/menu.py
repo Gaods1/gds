@@ -45,6 +45,12 @@ main_menu = {
         'index': "requirement_info",
         'title': "需求信息管理",
         'subs': []
+    },
+    '领域类型信息管理': {
+        'icon': "el-icon-lx-edit",
+        'index': "major",
+        'title': "领域类型信息管理",
+        'subs': []
     }
 }
 
@@ -204,5 +210,9 @@ sub_menu = {
     '需求信息管理':{
         'title': "需求信息管理",
         'index': "requirement"
+    },
+    '领域类型管理':{
+        'title':"领域类型管理",
+        'index':"major_info"
     }
 }

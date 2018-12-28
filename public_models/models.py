@@ -133,14 +133,19 @@ class InterestInfo(models.Model):
 class MajorInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     mtype = models.IntegerField(default=2)
-    mcode = models.CharField(unique=True, max_length=16, default=gen_uuid32)
-    pmcode = models.CharField(max_length=16, blank=True, null=True)
+    mcode = models.CharField(unique=True, max_length=32, default=gen_uuid32)
+    pmcode = models.CharField(max_length=32, blank=True, null=True,default=-1)
     mname = models.CharField(max_length=64, blank=True, null=True)
     mabbr = models.CharField(max_length=32, blank=True, null=True)
     mlevel = models.IntegerField(blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
+    state = models.IntegerField(blank=True, null=True,default=1)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def pmname(self):
+        major_info = MajorInfo.objects.get(mcode=self.pmcode, state=1)
+        return major_info.mname
 
     class Meta:
         managed = False
