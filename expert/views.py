@@ -483,7 +483,7 @@ def get_queryset(self):
                 and result_ownerp_baseinfo.type=1"
 
         raw_queryset = ResultOwnerpBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
-        consult_reply_set = ResultOwnerpBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset])
+        consult_reply_set = ResultOwnerpBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state', '-serial')
         return consult_reply_set
     else:
         queryset = self.queryset
@@ -534,7 +534,7 @@ def create(self, request, *args, **kwargs):
 
             # 3 创建identity_authorization_info信息
             IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
-                                                     state=3, creater=request.user.account)
+                                                     state=2, creater=request.user.account)
 
             # 4 转移附件创建ecode表
             absolute_path = ParamInfo.objects.get(param_code=1).param_value
@@ -657,7 +657,7 @@ def update(self, request, *args, **kwargs):
 
             IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
 
-                                                     state=3, creater=request.user.account)
+                                                     state=2, creater=request.user.account)
             # 3 转移附件创建ecode表
             absolute_path = ParamInfo.objects.get(param_code=1).param_value
             relative_path = ParamInfo.objects.get(param_code=2).param_value
@@ -916,7 +916,6 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
         dept_code = self.request.user.dept_code
         dept_code_str = get_detcode_str(dept_code)
         if dept_code_str:
-            # SQL = "select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.dept_code in ("+dept_code_str+") and rr_apply_history.type=1"
             SQL = "select result_ownere_baseinfo.* \
                     from result_ownere_baseinfo \
                     inner join account_info \
@@ -925,7 +924,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                     and result_ownere_baseinfo.type=2"
 
             raw_queryset = ResultOwnereBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = ResultOwnereBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset])
+            consult_reply_set = ResultOwnereBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state', '-serial')
             return consult_reply_set
         else:
             queryset = self.queryset
@@ -976,7 +975,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
 
                 # 3 创建identity_authorization_info信息
                 IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
-                                                         state=3, creater=request.user.account)
+                                                         state=2, creater=request.user.account)
 
                 # 4 转移附件创建ecode表
                 absolute_path = ParamInfo.objects.get(param_code=1).param_value
@@ -1099,7 +1098,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
 
                 IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
 
-                                                         state=3, creater=request.user.account)
+                                                         state=2, creater=request.user.account)
                 # 3 转移附件创建ecode表
                 absolute_path = ParamInfo.objects.get(param_code=1).param_value
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
@@ -1376,7 +1375,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                     and result_ownerp_baseinfo.type=2"
 
             raw_queryset = ResultOwnerpBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = ResultOwnerpBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset])
+            consult_reply_set = ResultOwnerpBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state', '-serial')
             return consult_reply_set
         else:
             queryset = self.queryset
@@ -1426,7 +1425,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
 
                 # 3 创建identity_authorization_info信息
                 IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
-                                                         state=3, creater=request.user.account)
+                                                         state=2, creater=request.user.account)
 
                 # 4 转移附件创建ecode表
                 absolute_path = ParamInfo.objects.get(param_code=1).param_value
@@ -1548,7 +1547,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
 
                 IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
 
-                                                         state=3, creater=request.user.account)
+                                                         state=2, creater=request.user.account)
                 # 3 转移附件创建ecode表
                 absolute_path = ParamInfo.objects.get(param_code=1).param_value
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
@@ -1865,7 +1864,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                 MajorUserinfo.objects.bulk_create(major_list)
 
                 # 3 创建identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.create(account_code=account_code,identity_code=identity_code,state=3,creater=request.user.account)
+                IdentityAuthorizationInfo.objects.create(account_code=account_code,identity_code=identity_code,state=2,creater=request.user.account)
 
                 # 4 转移附件创建ecode表
                 absolute_path = ParamInfo.objects.get(param_code=1).param_value
@@ -1987,7 +1986,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
 
                 IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
 
-                                                             state=3, creater=request.user.account)
+                                                             state=2, creater=request.user.account)
                 # 3 转移附件创建ecode表
                 absolute_path = ParamInfo.objects.get(param_code=1).param_value
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
