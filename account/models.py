@@ -6,7 +6,7 @@ from misc.para_info import state_map
 from public_models.models import *
 from .menu import *
 import copy
-from .utils import validate_mobile, validate_account, validate_email
+from .utils import validate_mobile, validate_account, validate_email, validate_id
 
 
 # 机构部门表
@@ -78,7 +78,7 @@ class AccountInfo(AbstractBaseUser):
     dept_code = models.CharField(max_length=32, blank=True, null=True)
     account_memo = models.CharField(max_length=255, blank=True, null=True)
     user_name = models.CharField(max_length=64, blank=True, null=True)
-    account_id = models.CharField(unique=True, max_length=32, blank=True, null=True)
+    account_id = models.CharField(unique=True, max_length=32, blank=True, null=True, validators=[validate_id])
     user_mobile = models.CharField(unique=True, max_length=16, blank=True, null=True, validators=[validate_mobile])
     user_email = models.CharField(unique=True, max_length=128, blank=True, null=True, validators=[validate_email])
     creater = models.CharField(max_length=32, blank=True, null=True)

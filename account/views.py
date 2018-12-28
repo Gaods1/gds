@@ -10,6 +10,7 @@ from rest_framework import filters
 import django_filters
 from django.db.models.query import QuerySet
 from public_models.utils import get_dept_codes,get_detcode_str
+from .utils import *
 # Create your views here.
 
 
@@ -100,6 +101,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         data['creater'] = request.user.account
         password = data.get("password")
         if password:
+            validate_password(password)
             data['password'] = genearteMD5(password)
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
@@ -112,6 +114,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         data = request.data
         password = data.get("password")
         if password and password != instance.password:
+            validate_password(password)
             data['password'] = genearteMD5(password)
 
         partial = kwargs.pop('partial', False)
