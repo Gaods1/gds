@@ -354,6 +354,303 @@ class CollectorViewSet(viewsets.ModelViewSet):
     filter_fields = ("state", "creater", "collector_id", "collector_city",)
     search_fields = ("collector_name", "collector_id", "collector_mobile",)
 
+    def get_queryset(self):
+        dept_code = self.request.user.dept_code
+        dept_code_str = get_detcode_str(dept_code)
+        if dept_code_str:
+            SQL = "select collector_baseinfo.* \
+                    from collector_baseinfo \
+                    inner join account_info \
+                    on account_info.account_code=collector_baseinfo.account_code \
+                    where account_info.dept_code in ({dept_s})"
+
+
+            raw_queryset = CollectorBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
+            consult_reply_set = CollectorBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state', '-serial')
+            return consult_reply_set
+        else:
+            queryset = self.queryset
+            if isinstance(queryset, QuerySet):
+                # Ensure queryset is re-evaluated on each request.
+                queryset = queryset.all()
+            return queryset
+
+
+    # 创建采集员  author:范
+    def create(self, request, *args, **kwargs):
+        # 建立事物机制
+        with transaction.atomic():
+            # 创建一个保存点
+            save_id = transaction.savepoint()
+            try:
+                data = request.data
+                account_code = request.data('account_code', None)
+                single_dict = request.data.pop('single', None)
+                identity_code = request.data.pop('identity_code', None)
+
+                if not account_code or not identity_code:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('请完善相关信息')
+
+                if not single_dict:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('请先上传相关文件')
+
+                if len(single_dict) != 4:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('证件照需要上传4张')
+
+                # 1 创建采集员表
+                data['creater'] = request.user.account
+                serializer = self.get_serializer(data=data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
+
+                serializer_ecode = serializer.data['collector_code']
+
+                # 2 创建identity_authorization_info信息
+                IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
+                                                         state=2, creater=request.user.account)
+
+                # 3 转移附件创建ecode表
+                absolute_path = ParamInfo.objects.get(param_code=1).param_value
+                relative_path = ParamInfo.objects.get(param_code=2).param_value
+                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
+                identityFront_tcode = AttachmentFileType.objects.get(tname='identityFront').tcode
+                identityBack_tcode = AttachmentFileType.objects.get(tname='identityBack').tcode
+                handIdentityPhoto_tcode = AttachmentFileType.objects.get(tname='handIdentityPhoto').tcode
+                headPhoto_tcode = AttachmentFileType.objects.get(tname='headPhoto').tcode
+                param_value = ParamInfo.objects.get(param_code=15).param_value
+
+                url_x_f = '{}{}/{}/{}'.format(relative_path, param_value, identityFront_tcode, serializer_ecode)
+                url_x_b = '{}{}/{}/{}'.format(relative_path, param_value, identityBack_tcode, serializer_ecode)
+                url_x_p = '{}{}/{}/{}'.format(relative_path, param_value, handIdentityPhoto_tcode, serializer_ecode)
+                url_x_h = '{}{}/{}/{}'.format(relative_path, param_value, headPhoto_tcode, serializer_ecode)
+
+                if not os.path.exists(url_x_f):
+                    os.makedirs(url_x_f)
+                if not os.path.exists(url_x_b):
+                    os.makedirs(url_x_b)
+                if not os.path.exists(url_x_p):
+                    os.makedirs(url_x_p)
+                if not os.path.exists(url_x_h):
+                    os.makedirs(url_x_h)
+
+                dict = {}
+                list1 = []
+                list2 = []
+
+                for key, value in single_dict.items():
+                    # 判断各个图片类型是否正确
+                    if key not in ['identityFront', 'identityBack', 'handIdentityPhoto', 'headPhoto']:
+                        transaction.savepoint_rollback(save_id)
+                        return HttpResponse('某个图片所属类型不正确')
+
+                    url_l = value.split('/')
+                    url_file = url_l[-1]
+
+                    # 判断该临时路径下的文件是否正确
+                    url_j = settings.MEDIA_ROOT + url_file
+                    if not os.path.exists(url_j):
+                        transaction.savepoint_rollback(save_id)
+                        return HttpResponse('该临时路径下不存在该文件,可能文件名称错误')
+
+                    # 通过key值拿取相应的tcode
+                    tcode = AttachmentFileType.objects.get(tname=key).tcode
+
+                    # 拼接正式路径
+                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
+                                                   url_file)
+
+                    # 拼接给前端的的地址
+                    url_x_f = url_x.replace(relative_path, relative_path_front)
+                    list2.append(url_x_f)
+
+                    # 拼接ecode表中的path
+                    path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
+                    list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file,
+                                                    path=path, operation_state=3, state=1))
+
+                    # 将临时目录转移到正式目录
+                    shutil.move(url_j, url_x)
+
+                # 创建atachmentinfo表
+                AttachmentFileinfo.objects.bulk_create(list1)
+
+                # 删除临时目录
+                shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+
+                # 给前端抛正式目录
+                dict['url'] = list2
+
+                headers = self.get_success_headers(serializer.data)
+                # return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return HttpResponse('创建失败%s' % str(e))
+            transaction.savepoint_commit(save_id)
+            return Response(dict)
+
+
+    def update(self, request, *args, **kwargs):
+        # 建立事物机制
+        with transaction.atomic():
+            # 创建一个保存点
+            save_id = transaction.savepoint()
+            try:
+                partial = kwargs.pop('partial', False)
+                instance = self.get_object()
+                serializer_ecode = instance.collector_code
+                account_code = instance.account_code
+
+                data = request.data
+                single_dict = request.data.pop('single', None)
+                mcode_list = request.data.pop('mcode', None)
+                identity_code = request.data.pop('identity_code', None)
+
+                if not mcode_list or not identity_code:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('请完善相关信息')
+
+                if not single_dict:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('请先上传相关文件')
+
+                if len(single_dict) != 4:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('证件照需要上传4张')
+
+                # 1 更新identity_authorization_info信息
+                IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
+
+                IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
+
+                                                         state=2, creater=request.user.account)
+                # 2 转移附件创建ecode表
+                absolute_path = ParamInfo.objects.get(param_code=1).param_value
+                relative_path = ParamInfo.objects.get(param_code=2).param_value
+                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
+                identityFront_tcode = AttachmentFileType.objects.get(tname='identityFront').tcode
+                identityBack_tcode = AttachmentFileType.objects.get(tname='identityBack').tcode
+                handIdentityPhoto_tcode = AttachmentFileType.objects.get(tname='handIdentityPhoto').tcode
+                headPhoto_tcode = AttachmentFileType.objects.get(tname='headPhoto').tcode
+                param_value = ParamInfo.objects.get(param_code=15).param_value
+
+                url_x_f = '{}{}/{}/{}'.format(relative_path, param_value, identityFront_tcode, serializer_ecode)
+                url_x_b = '{}{}/{}/{}'.format(relative_path, param_value, identityBack_tcode, serializer_ecode)
+                url_x_p = '{}{}/{}/{}'.format(relative_path, param_value, handIdentityPhoto_tcode, serializer_ecode)
+                url_x_h = '{}{}/{}/{}'.format(relative_path, param_value, headPhoto_tcode, serializer_ecode)
+
+                if not os.path.exists(url_x_f):
+                    os.makedirs(url_x_f)
+                if not os.path.exists(url_x_b):
+                    os.makedirs(url_x_b)
+                if not os.path.exists(url_x_p):
+                    os.makedirs(url_x_p)
+                if not os.path.exists(url_x_h):
+                    os.makedirs(url_x_h)
+
+                dict = {}
+                list1 = []
+                list2 = []
+
+                for key, value in single_dict.items():
+                    # 判断各个图片类型是否正确
+                    if key not in ['identityFront', 'identityBack', 'handIdentityPhoto', 'headPhoto']:
+                        transaction.savepoint_rollback(save_id)
+                        return HttpResponse('某个图片所属类型不正确')
+
+                    url_l = value.split('/')
+                    url_file = url_l[-1]
+
+                    # 判断该临时路径下的文件是否正确
+                    url_j = settings.MEDIA_ROOT + url_file
+                    if not os.path.exists(url_j):
+                        transaction.savepoint_rollback(save_id)
+                        return HttpResponse('该临时路径下不存在该文件,可能文件名称错误')
+
+                    # 通过key值拿取相应的tcode
+                    tcode = AttachmentFileType.objects.get(tname=key).tcode
+
+                    # 拼接正式路径
+                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
+                                                   url_file)
+
+                    # 拼接给前端的的地址
+                    url_x_f = url_x.replace(relative_path, relative_path_front)
+                    list2.append(url_x_f)
+
+                    # 拼接ecode表中的path
+                    path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
+                    list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file,
+                                                    path=path, operation_state=3, state=1))
+
+                    # 将临时目录转移到正式目录
+                    shutil.move(url_j, url_x)
+
+                # 创建atachmentinfo表
+                AttachmentFileinfo.objects.bulk_create(list1)
+
+                # 删除临时目录
+                shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+
+                # 给前端抛正式目录
+                dict['url'] = list2
+
+                serializer = self.get_serializer(instance, data=request.data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+
+                if getattr(instance, '_prefetched_objects_cache', None):
+                    # If 'prefetch_related' has been applied to a queryset, we need to
+                    # forcibly invalidate the prefetch cache on the instance.
+                    instance._prefetched_objects_cache = {}
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return HttpResponse('创建失败%s' % str(e))
+            transaction.savepoint_commit(save_id)
+            return Response(dict)
+
+
+    def destroy(self, request, *args, **kwargs):
+        with transaction.atomic():
+            save_id = transaction.savepoint()
+
+            try:
+                instance = self.get_object()
+                serializer_ecode = instance.collector_code
+                account_code = instance.account_code
+
+                # 1 删除所属领域表记录
+                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
+
+                # 2 删除identity_authorization_info信息
+                IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
+
+                # 3 删除文件以及ecode表记录
+                relative_path = ParamInfo.objects.get(param_code=2).param_value
+                obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
+                if obj:
+                    try:
+                        for i in obj:
+                            url = '{}{}{}'.format(relative_path, i.path, i.file_name)
+                            # 创建对象
+                            a = FileStorage()
+                            # 删除文件
+                            a.delete(url)
+                            # 删除表记录
+                            i.delete()
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return HttpResponse('删除失败' % str(e))
+
+                self.perform_destroy(instance)
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return HttpResponse('删除失败%s' % str(e))
+            transaction.savepoint_commit(save_id)
+            return HttpResponse('OK')
+
 
 # 采集员申请视图
 class CollectorApplyViewSet(viewsets.ModelViewSet):
@@ -750,7 +1047,7 @@ def destroy(self, request, *args, **kwargs):
 
         try:
             instance = self.get_object()
-            serializer_ecode = instance.r_code
+            serializer_ecode = instance.owner_code
             account_code = instance.account_code
 
             # 1 删除所属领域表记录
@@ -1191,7 +1488,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
 
             try:
                 instance = self.get_object()
-                serializer_ecode = instance.r_code
+                serializer_ecode = instance.owner_code
                 account_code = instance.account_code
 
                 # 1 删除所属领域表记录
@@ -1639,7 +1936,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
 
             try:
                 instance = self.get_object()
-                serializer_ecode = instance.r_code
+                serializer_ecode = instance.owner_code
                 account_code = instance.account_code
 
                 # 1 删除所属领域表记录
@@ -2078,7 +2375,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
 
             try:
                 instance = self.get_object()
-                serializer_ecode = instance.r_code
+                serializer_ecode = instance.owner_code
                 account_code = instance.account_code
 
                 # 1 删除所属领域表记录
