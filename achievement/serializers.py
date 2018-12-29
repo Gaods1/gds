@@ -78,7 +78,12 @@ class KeywordsInfoSerializer(serializers.ModelSerializer):
 
 # 成果信息表序列化
 class ResultsInfoSerializer(serializers.ModelSerializer):
-    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    expiry_dateb = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    expiry_datee = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    rexpiry_dateb = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    rexpiry_datee = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    sniff_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
     mcode = serializers.ListField(max_length=16, read_only=True)
     mname = serializers.ListField(max_length=16, read_only=True)
     Attach = serializers.DictField(read_only=True)
@@ -114,7 +119,6 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
                   'insert_time',
                   'account_code',
                   'r_abstract_detail',
-                  'update_time',
                   'mcode',
                   'mname',
                   'Attach',
@@ -127,7 +131,10 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
 
 # 需求信息表序列化
 class RequirementsInfoSerializer(serializers.ModelSerializer):
-    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    expiry_dateb = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    expiry_datee = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    sniff_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
     mcode = serializers.ListField(max_length=16, read_only=True)
     mname = serializers.ListField(max_length=16, read_only=True)
     Attach = serializers.DictField(read_only=True)
@@ -163,7 +170,6 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
             'sniff_time',
             'creater',
             'insert_time',
-            'update_time',
             'account_code',
             'r_abstract_detail',
             'mcode',
