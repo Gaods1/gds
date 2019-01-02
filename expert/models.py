@@ -4,6 +4,7 @@ from public_models.models import *
 from public_models.utils import get_single
 from .utils import get_major
 from account.models import AccountInfo
+from account.utils import validate_email, validate_mobile, validate_tel, validate_license
 # Create your models here.
 
 
@@ -80,9 +81,9 @@ class ExpertBaseinfo(models.Model):
     expert_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     pcode = models.CharField(max_length=64, blank=True, null=True)
     expert_name = models.CharField(max_length=64)
-    expert_tel = models.CharField(max_length=16, blank=True, null=True)
-    expert_mobile = models.CharField(max_length=16, blank=True, null=True)
-    expert_email = models.CharField(max_length=64, blank=True, null=True)
+    expert_tel = models.CharField(max_length=16, blank=True, null=True, validators=[validate_tel])
+    expert_mobile = models.CharField(max_length=16, blank=True, null=True, validators=[validate_mobile])
+    expert_email = models.CharField(max_length=64, blank=True, null=True, validators=[validate_email])
     expert_id_type = models.IntegerField(default=1)     # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
     expert_id = models.CharField(max_length=32, blank=True, null=True)
     expert_abstract = models.TextField(blank=True, null=True)
@@ -93,7 +94,7 @@ class ExpertBaseinfo(models.Model):
     expert_major = models.CharField(max_length=64, blank=True, null=True)   # 所属院系
 
     expert_caption = models.CharField(max_length=32, blank=True, null=True)     # 专家头衔
-    homepage = models.CharField(max_length=128, blank=True, null=True)
+    homepage = models.URLField(max_length=128, blank=True, null=True)
     expert_addr = models.CharField(max_length=255, blank=True, null=True)
     ecode = models.CharField(max_length=64, blank=True, null=True)
     expert_level = models.IntegerField(default=1)
@@ -199,9 +200,9 @@ class BrokerBaseinfo(models.Model):
     broker_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     pcode = models.CharField(max_length=64, blank=True, null=True)
     broker_name = models.CharField(max_length=64, blank=True, null=True)
-    broker_tel = models.CharField(max_length=16, blank=True, null=True)
-    broker_mobile = models.CharField(max_length=16, blank=True, null=True)
-    broker_email = models.CharField(max_length=64, blank=True, null=True)
+    broker_tel = models.CharField(max_length=16, blank=True, null=True, validators=[validate_tel])
+    broker_mobile = models.CharField(max_length=16, blank=True, null=True, validators=[validate_mobile])
+    broker_email = models.CharField(max_length=64, blank=True, null=True, validators=[validate_email])
     broker_id_type = models.IntegerField(default=1)     # 技术经纪人证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
     broker_id = models.CharField(max_length=32, blank=True, null=True)
 
@@ -318,9 +319,9 @@ class CollectorBaseinfo(models.Model):
     collector_code = models.CharField(max_length=64, default=gen_uuid32)
     pcode = models.CharField(max_length=64, blank=True, null=True)      # 与个人基本信息表关联字段
     collector_name = models.CharField(max_length=64, blank=True, null=True)
-    collector_tel = models.CharField(max_length=16, blank=True, null=True)
-    collector_mobile = models.CharField(max_length=16, blank=True, null=True)
-    collector_email = models.CharField(max_length=64, blank=True, null=True)
+    collector_tel = models.CharField(max_length=16, blank=True, null=True, validators=[validate_tel])
+    collector_mobile = models.CharField(max_length=16, blank=True, null=True, validators=[validate_mobile])
+    collector_email = models.CharField(max_length=64, blank=True, null=True, validators=[validate_email])
     collector_idtype = models.IntegerField(default=1)   # 采集员证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
     collector_id = models.CharField(max_length=32, blank=True, null=True)
 
@@ -423,9 +424,9 @@ class ResultOwnerpBaseinfo(models.Model):
     pcode = models.CharField(max_length=64, blank=True, null=True)              # 与个人基本信息表关联字段
     type = models.IntegerField(blank=True, null=True)           # 申请类型      1： 成果持有人， 2： 需求持有人
     owner_name = models.CharField(max_length=64, blank=True, null=True)
-    owner_tel = models.CharField(max_length=16, blank=True, null=True)
-    owner_mobile = models.CharField(max_length=16, blank=True, null=True)
-    owner_email = models.CharField(max_length=64, blank=True, null=True)
+    owner_tel = models.CharField(max_length=16, blank=True, null=True, validators=[validate_tel])
+    owner_mobile = models.CharField(max_length=16, blank=True, null=True, validators=[validate_mobile])
+    owner_email = models.CharField(max_length=64, blank=True, null=True, validators=[validate_email])
     owner_idtype = models.IntegerField(default=1)       # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
     owner_id = models.CharField(max_length=32, blank=True, null=True)           # 证件号码
     owner_abstract = models.TextField(blank=True, null=True)
@@ -544,12 +545,12 @@ class ResultOwnereBaseinfo(models.Model):
     ecode = models.CharField(max_length=64, blank=True, null=True)      # 与企业基本信息表关联字段
     type = models.IntegerField(blank=True, null=True)                   # 持有人类型 1：成果持有人， 2：需求持有人
     owner_name = models.CharField(max_length=64, blank=True, null=True)
-    owner_tel = models.CharField(max_length=16, blank=True, null=True)
-    owner_mobile = models.CharField(max_length=16, blank=True, null=True)
-    owner_email = models.CharField(max_length=64, blank=True, null=True)
-    owner_license = models.CharField(max_length=64, blank=True, null=True)
+    owner_tel = models.CharField(max_length=16, blank=True, null=True, validators=[validate_tel])
+    owner_mobile = models.CharField(max_length=16, blank=True, null=True, validators=[validate_mobile])
+    owner_email = models.CharField(max_length=64, blank=True, null=True, validators=[validate_email])
+    owner_license = models.CharField(max_length=64, blank=True, null=True, validators=[validate_license])
     owner_abstract = models.TextField(blank=True, null=True)              # 企业简述
-    homepage = models.CharField(max_length=128, blank=True, null=True)
+    homepage = models.URLField(max_length=128, blank=True, null=True)
     creditvalue = models.IntegerField(default=0)                            # 企业信用值。
     state = models.IntegerField(blank=True, null=True)                      # '持有人信息状态1：正常；2：暂停；3：伪删除'
     account_code = models.CharField(max_length=64, blank=True, null=True)
@@ -624,7 +625,7 @@ class ProjectTeamBaseinfo(models.Model):
     pt_abbreviation = models.CharField(max_length=255, blank=True, null=True)   # 团队简称
 
     pt_abstract = models.TextField(blank=True, null=True)
-    pt_homepage = models.CharField(max_length=128, blank=True, null=True)
+    pt_homepage = models.URLField(max_length=128, blank=True, null=True)
     pt_type = models.IntegerField(blank=True, null=True)        # 团队种类（0：企业、1：个人、2：组合、等等）
 
     pt_city = models.IntegerField(blank=True, null=True)
@@ -634,7 +635,7 @@ class ProjectTeamBaseinfo(models.Model):
     credit_value = models.IntegerField(default=0)
 
     pt_people_name = models.CharField(max_length=255, blank=True, null=True)        # 姓名（团队联系人）
-    pt_people_tel = models.CharField(max_length=255, blank=True, null=True)
+    pt_people_tel = models.CharField(max_length=255, blank=True, null=True, validators=[validate_mobile])
     pt_people_type = models.IntegerField(default=1)        # 证件类型
     pt_people_id = models.CharField(max_length=32, blank=True, null=True)           # 证件号码
     pt_describe = models.TextField(blank=True, null=True)                           # 描述
@@ -702,19 +703,19 @@ class ProjectTeamBaseinfo(models.Model):
 class ProjectTeamMember(models.Model):
     serial = models.AutoField(primary_key=True)
     pt_code = models.CharField(max_length=64, blank=True, null=True)
-    ptm_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    ptm_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     ptmcaption = models.CharField(max_length=32, blank=True, null=True)
     pcode = models.CharField(max_length=64, blank=True, null=True)
     ptm_name = models.CharField(max_length=32, blank=True, null=True)
-    ptm_tel = models.CharField(max_length=16, blank=True, null=True)
-    ptm_mobile = models.CharField(max_length=16, blank=True, null=True)
-    ptm_email = models.CharField(max_length=64, blank=True, null=True)
+    ptm_tel = models.CharField(max_length=16, blank=True, null=True, validators=[validate_tel])
+    ptm_mobile = models.CharField(max_length=16, blank=True, null=True, validators=[validate_mobile])
+    ptm_email = models.CharField(max_length=64, blank=True, null=True, validators=[validate_email])
     ptm_idtype = models.IntegerField(default=1)
     ptm_id = models.CharField(max_length=32, blank=True, null=True)
     ptm_education = models.CharField(max_length=8, blank=True, null=True)
     ptm_abstract = models.TextField(blank=True, null=True)
     ptm_leader = models.IntegerField(default=0)     # 是否团队领导者。1：是；0：不是    同一个团队中允许出现一个以上的领导者
-    state = models.IntegerField(blank=True, null=True)  # 持有人信息状态1：正常；2：暂停；3：伪删除
+    state = models.IntegerField(default=1)  # 持有人信息状态1：正常；2：暂停；3：伪删除
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
 

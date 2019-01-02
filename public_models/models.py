@@ -1,6 +1,7 @@
 from django.db import models
 from misc.misc import gen_uuid32
 import time
+from account.utils import *
 
 
 # *******************************django 用户模型相关表， 勿动，如对程序无影响，后续可能删除****************************
@@ -133,14 +134,19 @@ class InterestInfo(models.Model):
 class MajorInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     mtype = models.IntegerField(default=2)
-    mcode = models.CharField(unique=True, max_length=16, default=gen_uuid32)
-    pmcode = models.CharField(max_length=16, blank=True, null=True)
+    mcode = models.CharField(unique=True, max_length=32, default=gen_uuid32)
+    pmcode = models.CharField(max_length=32, blank=True, null=True,default=-1)
     mname = models.CharField(max_length=64, blank=True, null=True)
     mabbr = models.CharField(max_length=32, blank=True, null=True)
     mlevel = models.IntegerField(blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
+    state = models.IntegerField(blank=True, null=True,default=1)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def pmname(self):
+        major_info = MajorInfo.objects.get(mcode=self.pmcode, state=1)
+        return major_info.mname
 
     class Meta:
         managed = False
@@ -264,9 +270,9 @@ class PersonalInfo(models.Model):
     psex = models.IntegerField(default=0)
     pid_type = models.IntegerField(default=1)
     pid = models.CharField(max_length=32)
-    pmobile = models.CharField(max_length=16, blank=True, null=True)
-    ptel = models.CharField(max_length=16, blank=True, null=True)
-    pemail = models.CharField(max_length=64, blank=True, null=True)
+    pmobile = models.CharField(max_length=16, blank=True, null=True, validators=[validate_mobile])
+    ptel = models.CharField(max_length=16, blank=True, null=True, validators=[validate_tel])
+    pemail = models.CharField(max_length=64, blank=True, null=True, validators=[validate_email])
     peducation = models.CharField(max_length=8, default="本科")   # 学历信息；本:研:博:大专:中专：mba：emba：其他
     pabstract = models.TextField(blank=True, null=True)
     state = models.IntegerField(default=2)          # '状态；1：提交等待审核；2：审核通过；3：审核未通过；4：暂停；5：伪删除'
@@ -285,16 +291,16 @@ class EnterpriseBaseinfo(models.Model):
     ecode = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     ename = models.CharField(max_length=64, blank=True, null=True)
     eabbr = models.CharField(max_length=32, blank=True, null=True)
-    business_license = models.CharField(max_length=64,)
+    business_license = models.CharField(max_length=64,blank=True, null=True, validators=[validate_license])
     eabstract = models.TextField(blank=True, null=True)
     eabstract_detail = models.TextField(blank=True, null=True)
-    homepage = models.CharField(max_length=128, blank=True, null=True)
-    etel = models.CharField(max_length=16, blank=True, null=True)
+    homepage = models.URLField(max_length=128, blank=True, null=True)
+    etel = models.CharField(max_length=16, blank=True, null=True, validators=[validate_tel])
     manager = models.CharField(max_length=16, blank=True, null=True)
-    emobile = models.CharField(max_length=16, blank=True, null=True)
-    eemail = models.CharField(max_length=16, blank=True, null=True)
+    emobile = models.CharField(max_length=16, blank=True, null=True, validators=[validate_mobile])
+    eemail = models.CharField(max_length=16, blank=True, null=True, validators=[validate_email])
     addr = models.CharField(max_length=255, blank=True, null=True)
-    zipcode = models.CharField(max_length=8, blank=True, null=True)
+    zipcode = models.CharField(max_length=8, blank=True, null=True, validators=[validate_zipcode])
     elevel = models.IntegerField(default=1)
     credi_tvalue = models.IntegerField(default=0)
     state = models.IntegerField(blank=True, null=True)      # 企业信息状态。1：提交等待审核；2：审核通过；3：审核未通过；4：暂停；5：伪删除

@@ -10,7 +10,7 @@ from .models import *
 
 # 成果/需求合作信息序列化
 class ResultsCooperationTypeInfoSerializer(serializers.ModelSerializer):
-    #update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     class Meta:
         model = ResultsCooperationTypeInfo
         fields = ['serial',
@@ -38,6 +38,28 @@ class ResultsOwnerInfoSerializer(serializers.ModelSerializer):
                   'insert_time',
                   ]
 
+# 成果/需求持有人个人基本信息序列化
+class PersonalInfoSerializer(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+
+    class Meta:
+        model = PersonalInfo
+        fields = ['serial',
+                  'pcode',
+                  'pname',
+                  'psex',
+                  'pid_type',
+                  'pid',
+                  'pmobile',
+                  'ptel',
+                  'pemail',
+                  'peducation',
+                  'pabstract',
+                  'state',
+                  'creater',
+                  'insert_time',
+                  'account_code',
+                  ]
 
 # 成果/需求的检索关键字序列化
 class KeywordsInfoSerializer(serializers.ModelSerializer):
@@ -56,7 +78,12 @@ class KeywordsInfoSerializer(serializers.ModelSerializer):
 
 # 成果信息表序列化
 class ResultsInfoSerializer(serializers.ModelSerializer):
-    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    expiry_dateb = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    expiry_datee = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    rexpiry_dateb = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    rexpiry_datee = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    sniff_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
     mcode = serializers.ListField(max_length=16, read_only=True)
     mname = serializers.ListField(max_length=16, read_only=True)
     Attach = serializers.DictField(read_only=True)
@@ -92,7 +119,6 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
                   'insert_time',
                   'account_code',
                   'r_abstract_detail',
-                  'update_time',
                   'mcode',
                   'mname',
                   'Attach',
@@ -105,7 +131,10 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
 
 # 需求信息表序列化
 class RequirementsInfoSerializer(serializers.ModelSerializer):
-    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    expiry_dateb = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    expiry_datee = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    sniff_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
     mcode = serializers.ListField(max_length=16, read_only=True)
     mname = serializers.ListField(max_length=16, read_only=True)
     Attach = serializers.DictField(read_only=True)
@@ -141,7 +170,6 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
             'sniff_time',
             'creater',
             'insert_time',
-            'update_time',
             'account_code',
             'r_abstract_detail',
             'mcode',
@@ -162,6 +190,7 @@ class RrApplyHistorySerializer(serializers.ModelSerializer):
     Requirements = RequirementsInfoSerializer(read_only=True)
     Cooperation = ResultsCooperationTypeInfoSerializer(read_only=True)
     Owner = ResultsOwnerInfoSerializer(read_only=True)
+    Personal = PersonalInfoSerializer(read_only=True)
     Keywords = KeywordsInfoSerializer(many=True,read_only=True)
 
     class Meta:
@@ -178,6 +207,7 @@ class RrApplyHistorySerializer(serializers.ModelSerializer):
                   'Requirements',
                   'Cooperation',
                   'Owner',
+                  'Personal',
                   'Keywords',
                   'apply_time',
                   ]

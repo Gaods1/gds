@@ -46,8 +46,14 @@ class RrApplyHistory(models.Model):
     def Owner(self):
         #Results = ResultsInfo.objects.filter(r_code=self.rr_code)
         Owner = ResultsOwnerInfo.objects.get(r_code=self.rr_code)
-        Personal = PersonalInfo.objects.get(pcode=Owner.owner_code)
         return Owner
+
+    @property
+    def Personal(self):
+        # Results = ResultsInfo.objects.filter(r_code=self.rr_code)
+        Owner = ResultsOwnerInfo.objects.get(r_code=self.rr_code)
+        Personal = PersonalInfo.objects.get(pcode=Owner.owner_code)
+        return Personal
 
     @property
     def Keywords(self):
@@ -83,7 +89,7 @@ class RequirementsInfo(models.Model):
     sniff_state = models.IntegerField(blank=True, null=True)
     sniff_time = models.DateTimeField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
+    insert_time = models.DateTimeField(blank=True, null=True,auto_now=True)
     account_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
     r_abstract_detail = models.TextField(blank=True, null=True)
     @property
@@ -118,15 +124,12 @@ class RequirementsInfo(models.Model):
 
     @property
     def mcode(self):
-        # Results = ResultsInfo.objects.filter(r_code=self.rr_code)
-        mcode = [major_userinfo.mcode for major_userinfo in
-              MajorUserinfo.objects.filter(user_type=5, user_code=self.req_code)]
+        mcode = MajorUserinfo.objects.values_list('mcode',flat=True).filter(user_type=5, user_code=self.req_code)
         return mcode
     @property
     def mname(self):
-        mcode = [major_userinfo.mcode for major_userinfo in
-                 MajorUserinfo.objects.filter(user_type=5, user_code=self.req_code)]
-        mname = [i.mname for i in MajorInfo.objects.filter(mcode__in=mcode)]
+        mcode = MajorUserinfo.objects.values_list('mcode',flat=True).filter(user_type=5, user_code=self.req_code)
+        mname = MajorInfo.objects.values_list('mname',flat=True).filter(mcode__in=mcode)
         return mname
 
     class Meta:
@@ -158,7 +161,7 @@ class ResultsInfo(models.Model):
     sniff_state = models.IntegerField(blank=True, null=True)
     sniff_time = models.DateTimeField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True)
+    insert_time = models.DateTimeField(blank=True, null=True,auto_now=True)
     account_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
     r_abstract_detail = models.TextField(blank=True, null=True)
     patent_number = models.CharField(max_length=64, blank=True, null=True)
@@ -195,16 +198,13 @@ class ResultsInfo(models.Model):
 
     @property
     def mcode(self):
-        # Results = ResultsInfo.objects.filter(r_code=self.rr_code)
-        mcode = [major_userinfo.mcode for major_userinfo in
-              MajorUserinfo.objects.filter(user_type=4, user_code=self.r_code)]
+        mcode = MajorUserinfo.objects.values_list('mcode',flat=True).filter(user_type=4, user_code=self.r_code)
         return mcode
 
     @property
     def mname(self):
-        mcode = [major_userinfo.mcode for major_userinfo in
-                 MajorUserinfo.objects.filter(user_type=4, user_code=self.r_code)]
-        mname = [i.mname for i in MajorInfo.objects.filter(mcode__in=mcode)]
+        mcode = MajorUserinfo.objects.values_list('mcode',flat=True).filter(user_type=4, user_code=self.r_code)
+        mname = MajorInfo.objects.values_list('mname',flat=True).filter(mcode__in=mcode)
         return mname
 
     class Meta:

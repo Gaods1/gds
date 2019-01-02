@@ -105,6 +105,8 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
             consult_info = self.get_object()
             if check_state !=1 and check_state !=2 :
                 return JsonResponse({'state':0,'msg':'请确认审核是否通过'})
+            if consult_info.consult_state != 0:
+                return JsonResponse({'state': 0, 'msg': '非待审核状态不允许审核'})
             try:
                 with transaction.atomic():
                     # 1 更新征询表状态(共通)
@@ -313,6 +315,8 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
             reply_info = self.get_object()
             if check_state !=3 and check_state !=4 :
                 return JsonResponse({'state':0,'msg':'请确认审核是否通过'})
+            if reply_info.reply_state  != 1:
+                return JsonResponse({'state': 0, 'msg': '非待审核状态不允许审核'})
             try:
                 with transaction.atomic():
                     #1 生成征询回复记录

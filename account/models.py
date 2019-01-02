@@ -6,6 +6,8 @@ from misc.para_info import state_map
 from public_models.models import *
 from .menu import *
 import copy
+from .utils import validate_mobile, validate_account, validate_email, validate_id
+
 
 
 # 机构部门表
@@ -72,14 +74,14 @@ class AccountInfoManager(BaseUserManager):
 class AccountInfo(AbstractBaseUser):
     serial = models.AutoField(primary_key=True)
     account_code = models.CharField(unique=True, max_length=32, default=gen_uuid32)
-    account = models.CharField(max_length=32, unique=True)
+    account = models.CharField(max_length=32, unique=True, blank=True, null=True, validators=[validate_account])
     state = models.IntegerField(default=1)
     dept_code = models.CharField(max_length=32, blank=True, null=True)
     account_memo = models.CharField(max_length=255, blank=True, null=True)
     user_name = models.CharField(max_length=64, blank=True, null=True)
-    account_id = models.CharField(unique=True, max_length=32, blank=True, null=True)
-    user_mobile = models.CharField(unique=True, max_length=16, blank=True, null=True)
-    user_email = models.CharField(unique=True, max_length=128, blank=True, null=True)
+    account_id = models.CharField(unique=True, max_length=32, blank=True, null=True, validators=[validate_id])
+    user_mobile = models.CharField(unique=True, max_length=16, blank=True, null=True, validators=[validate_mobile])
+    user_email = models.CharField(unique=True, max_length=128, blank=True, null=True, validators=[validate_email])
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
     update_time = models.DateTimeField(auto_now=True)
@@ -107,10 +109,10 @@ class AccountInfo(AbstractBaseUser):
         for f in func_obj:
             pfunc_code = f['pfunc_code']
             pfunc = FunctionInfo.objects.values('func_name').get(func_code=pfunc_code)['func_name']
-            if pfunc not in pfunc_list:
-                func_dict[pfunc] = copy.deepcopy(main_menu[pfunc])
-                pfunc_list.append(pfunc)
             try:
+                if pfunc not in pfunc_list:
+                    func_dict[pfunc] = copy.deepcopy(main_menu[pfunc])
+                    pfunc_list.append(pfunc)
                 sub = sub_menu[f['func_name']]
             except Exception as e :
                 continue
