@@ -765,6 +765,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('请先上传相关文件')
 
+                if len(single_dict) != 1:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('封面只能上传一张')
+
                 # 1 创建需求
                 data['creater'] = request.user.account
                 serializer = self.get_serializer(data=data)
@@ -794,8 +798,6 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     os.makedirs(url_x_a)
                 if not os.path.exists(url_x_c):
                     os.makedirs(url_x_a)
-                if len(single_dict) != 1:
-                    return HttpResponse('封面只能上传一张')
 
                 dict = {}
                 list1 = []
@@ -805,6 +807,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 for key, value in single_dict.items():
 
                     if key != 'coverImg':
+                        transaction.savepoint_rollback(save_id)
                         return HttpResponse('封面代名不正确')
 
                     url_l = value.split('/')
@@ -812,6 +815,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                     url_j = settings.MEDIA_ROOT + url_file
                     if not os.path.exists(url_j):
+                        transaction.savepoint_rollback(save_id)
                         return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
 
                     url_x = '{}{}/{}/{}/{}'.format(relative_path,param_value,single_dict, serializer_ecode, url_file)
@@ -832,6 +836,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                     url_j = settings.MEDIA_ROOT + url_file
                     if not os.path.exists(url_j):
+                        transaction.savepoint_rollback(save_id)
                         return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
 
                     url_x = '{}{}/{}/{}/{}'.format(relative_path,param_value,tcode_attachment, serializer_ecode, url_file)
@@ -863,6 +868,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
             transaction.savepoint_commit(save_id)
             return Response(dict)
 
+
+
     def update(self, request, *args, **kwargs):
         # 建立事物机制
         with transaction.atomic():
@@ -885,6 +892,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 if not single_dict or not attachment_list:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('请先上传相关文件')
+
+                if len(single_dict) != 1:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('封面只能上传一张')
 
                 # 1 删除原有记录
                 MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
@@ -910,8 +921,6 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     os.makedirs(url_x_a)
                 if not os.path.exists(url_x_c):
                     os.makedirs(url_x_a)
-                if len(single_dict) != 1:
-                    return HttpResponse('封面只能上传一张')
 
                 dict = {}
                 list1 = []
@@ -921,6 +930,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 for key, value in single_dict.items():
 
                     if key != 'coverImg':
+                        transaction.savepoint_rollback(save_id)
                         return HttpResponse('封面代名不正确')
 
                     url_l = value.split('/')
@@ -928,6 +938,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                     url_j = settings.MEDIA_ROOT + url_file
                     if not os.path.exists(url_j):
+                        transaction.savepoint_rollback(save_id)
                         return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
 
                     url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, single_dict, serializer_ecode, url_file)
@@ -951,6 +962,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                     url_j = settings.MEDIA_ROOT + url_file
                     if not os.path.exists(url_j):
+                        transaction.savepoint_rollback(save_id)
                         return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
 
                     url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode,
@@ -1080,6 +1092,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('请先上传相关文件')
 
+                if len(single_dict)!=1:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('封面只能上传一张')
+
                 # 1 创建需求
                 data['creater'] = request.user.account
                 serializer = self.get_serializer(data=data)
@@ -1109,8 +1125,6 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     os.makedirs(url_x_a)
                 if not os.path.exists(url_x_c):
                     os.makedirs(url_x_a)
-                if len(single_dict)!=1:
-                    return HttpResponse('封面只能上传一张')
 
                 dict = {}
                 list1 = []
@@ -1120,6 +1134,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 for key,value in single_dict.items():
 
                     if key != 'coverImg':
+                        transaction.savepoint_rollback(save_id)
                         return HttpResponse('封面代名不正确')
 
                     url_l = value.split('/')
@@ -1127,6 +1142,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                     url_j = settings.MEDIA_ROOT + url_file
                     if not os.path.exists(url_j):
+                        transaction.savepoint_rollback(save_id)
                         return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
 
                     url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_coverImg, serializer_ecode,
@@ -1151,6 +1167,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                     url_j = settings.MEDIA_ROOT + url_file
                     if not os.path.exists(url_j):
+                        transaction.savepoint_rollback(save_id)
                         return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
 
                     url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode,
@@ -1207,6 +1224,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('请先上传相关文件')
 
+                if len(single_dict) != 1:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('封面只能上传一张')
+
                 # 1 删除原有记录
                 MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
 
@@ -1236,13 +1257,11 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 list1 = []
                 list2 = []
 
-                if len(single_dict) != 1:
-                    return HttpResponse('封面只能上传一张')
-
                 # 封面
                 for key, value in single_dict.items():
 
                     if key != 'coverImg':
+                        transaction.savepoint_rollback(save_id)
                         return HttpResponse('封面代名不正确')
 
                     url_l = value.split('/')
@@ -1250,6 +1269,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                     url_j = settings.MEDIA_ROOT + url_file
                     if not os.path.exists(url_j):
+                        transaction.savepoint_rollback(save_id)
                         return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
 
                     url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_coverImg, serializer_ecode,
@@ -1274,6 +1294,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                     url_j = settings.MEDIA_ROOT + url_file
                     if not os.path.exists(url_j):
+                        transaction.savepoint_rollback(save_id)
                         return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
 
                     url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode,

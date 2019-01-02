@@ -9,6 +9,7 @@ import copy
 from .utils import validate_mobile, validate_account, validate_email, validate_id
 
 
+
 # 机构部门表
 class Deptinfo(models.Model):
     serial = models.AutoField(primary_key=True)

@@ -142,10 +142,11 @@ class PublicInfo(APIView,FileStorage):
 
         name = request.query_params.get('name',None)
         serial = request.query_params.get('serial',None)
+
+        if not name:
+            return HttpResponse('请添加要删除的文件名称')
         # 在提交之前的删除
         if not serial:
-            if not name:
-                return HttpResponse('删除失败')
             # 拼接地址
             url = settings.MEDIA_ROOT
             url = url + name
@@ -168,10 +169,8 @@ class PublicInfo(APIView,FileStorage):
                 transaction.savepoint_commit(save_id)
                 return HttpResponse('ok')
 
-            # 在提交之后的删除
+        # 在提交之后的删除
         else:
-            if not name:
-                return HttpResponse('删除失败')
             # 建立事物机制
             with transaction.atomic():
                 # 创建一个保存点
