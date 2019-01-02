@@ -6,7 +6,7 @@ class ConsultInfoSerializer(serializers.ModelSerializer):
     consult_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     consult_endtime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    rr = serializers.ListField(required=False)
+    rr = serializers.CharField(required=False)
     cover_img = serializers.CharField(read_only=True)
     attachments = serializers.DictField(read_only=True)
 
