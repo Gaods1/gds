@@ -2,7 +2,7 @@ import os
 import shutil
 
 from django.db.models import QuerySet
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 
 from backends import FileStorage
 from python_backend import settings
@@ -136,9 +136,10 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
                             'account_code': expert.account_code
                         }
                         pcode = update_or_crete_person(expert.pcode, pinfo)
+                        ecode = create_enterprise(expert.ecode)
 
                         # 更新专家基本信息表
-                        update_baseinfo(ExpertBaseinfo, {'expert_code': expert.expert_code}, {'state': 1, 'pcode': pcode})
+                        update_baseinfo(ExpertBaseinfo, {'expert_code': expert.expert_code}, {'state': 1, 'pcode': pcode, 'ecode':ecode})
 
                         # 给账号绑定角色
                         # IdentityAuthorizationInfo.objects.create(account_code=expert.account_code,
@@ -178,7 +179,7 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return JsonResponse({"detail":"审核失败：%s" % str(e)})
+            return Response({"detail":"审核失败：%s" % str(e)}, status=400)
 
         return Response(serializer.data)
 

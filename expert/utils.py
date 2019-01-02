@@ -2,6 +2,7 @@ from public_models.models import PersonalInfo, Message, EnterpriseBaseinfo
 import time,requests
 from .models import *
 import datetime
+from django.db.models import Q
 
 
 # 更新或创建个人信息
@@ -18,6 +19,17 @@ def update_or_crete_person(pcode, info):
         pcode = person.pcode
 
     return pcode
+
+
+# 创建企业信息（如果只有企业名的话）
+def create_enterprise(ecode):
+    if ecode:
+        try:
+            e = EnterpriseBaseinfo.objects.values_list('ecode', flat=True).get(Q(ecode=ecode)|Q(ename=ecode))
+        except :
+            e = EnterpriseBaseinfo.objects.create(ename=ecode).ecode
+        return e
+    return None
 
 
 #   更新或创建企业信息

@@ -121,8 +121,8 @@ class ExpertBaseinfo(models.Model):
 
     @property
     def enterprise(self):
-        e = EnterpriseBaseinfo.objects.get(ecode=self.ecode)
-        return e.ename
+        e = EnterpriseBaseinfo.objects.values_list('ename', flat=True).get(ecode=self.ecode)
+        return e if e else self.ecode
 
     # 头像
     @property
