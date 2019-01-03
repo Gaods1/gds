@@ -13,13 +13,14 @@ class ProjectInfo(models.Model):
     pserial = models.AutoField(primary_key=True)
     project_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
     project_name = models.CharField(max_length=255, blank=True, null=True)
+    project_start_time = models.DateTimeField(blank=True, null=True)
     project_from = models.IntegerField(blank=True, null=True)
     from_code = models.CharField(max_length=64, blank=True, null=True)
     project_state = models.IntegerField(blank=True, null=True)
     project_sub_state = models.IntegerField(blank=True, null=True)
-    start_time = models.DateTimeField(blank=True, null=True)
     last_time = models.DateTimeField(blank=True, null=True)
     project_desc = models.TextField(blank=True, null=True)
+    state = models.IntegerField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True)
 
@@ -42,7 +43,7 @@ class ProjectInfo(models.Model):
     # 项目子步骤流水
     @property
     def substep_serial_info(self):
-        q = ProjectSubstepSerialInfo.objects.filter(project_code=self.project_code,substep_code=self.project_sub_state).order_by('-substep_serial')
+        q = ProjectSubstepSerialInfo.objects.filter(project_code=self.project_code,step_code=self.project_state,substep_code=self.project_sub_state).order_by('-p_serial')
         if q != None and len(q)>0:
             substep_serial_info = q[0]
         else:
@@ -52,7 +53,7 @@ class ProjectInfo(models.Model):
     # 项目审核信息
     @property
     def check_info(self):
-        q = ProjectCheckInfo.objects.filter(Q(project_code=self.project_code),~Q(substep_serial = 0)).order_by('-substep_serial')
+        q = ProjectCheckInfo.objects.filter(Q(project_code=self.project_code),~Q(substep_serial = 0)).order_by('-p_serial')
         if q != None and len(q)>0:
             check_info = q[0]
         else:
@@ -126,7 +127,7 @@ class ProjectSubstepInfo(models.Model):
     substep_code = models.IntegerField(blank=True, null=True)
     btime = models.DateTimeField(blank=True, null=True)
     etime = models.DateTimeField(blank=True, null=True)
-    step_state = models.IntegerField(blank=True, null=True)
+    substep_state = models.IntegerField(blank=True, null=True)
     step_msg = models.CharField(max_length=255,blank=True, null=True)
 
     class Meta:
@@ -142,8 +143,8 @@ class ProjectSubstepSerialInfo(models.Model):
     substep_code = models.IntegerField(blank=True, null=True)
     substep_serial = models.CharField(max_length=64, blank=True, null=True)
     submit_time = models.DateTimeField(blank=True, null=True)
-    etime = models.DateTimeField(blank=True, null=True)
-    substep_state = models.IntegerField(blank=True, null=True)
+    substep_serial_type = models.IntegerField(blank=True, null=True)
+    substep_serial_state = models.IntegerField(blank=True, null=True)
     step_msg = models.CharField(max_length=255,blank=True, null=True)
 
     class Meta:
@@ -160,7 +161,11 @@ class ProjectSubstepDetailInfo(models.Model):
     substep_code = models.IntegerField(blank=True, null=True)
     substep_serial = models.CharField(max_length=64, blank=True, null=True)
     submit_time = models.DateTimeField(blank=True, null=True)
+    submit_user = models.CharField(max_length=64, blank=True, null=True)
+    substep_serial_type = models.IntegerField(blank=True, null=True)
+    substep_serial_state = models.IntegerField(blank=True, null=True)
     # 不定长字段暂时没有加
+    # ...
     step_msg = models.CharField(max_length=255,blank=True, null=True)
 
     class Meta:
@@ -174,6 +179,7 @@ class ProjectRrInfo(models.Model):
     p_serial = models.AutoField(primary_key=True)
     project_code = models.CharField(max_length=64, blank=True, null=True)
     rr_type = models.IntegerField(blank=True, null=True)
+    rr_main = models.IntegerField(blank=True, null=True)
     rr_code = models.CharField(max_length=64, blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True)

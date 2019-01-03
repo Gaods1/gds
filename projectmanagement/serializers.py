@@ -36,7 +36,7 @@ class ProjectSubstepInfoSerializer(serializers.ModelSerializer):
             'substep_code',
             'btime',
             'etime',
-            'step_state',
+            'substep_state',
             'step_msg'
         ]
 
@@ -44,7 +44,6 @@ class ProjectSubstepInfoSerializer(serializers.ModelSerializer):
 # 项目子步骤流水信息表
 class ProjectSubstepSerialInfoSerializer(serializers.ModelSerializer):
     submit_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    etime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
 
     class Meta:
         model = ProjectSubstepSerialInfo
@@ -54,8 +53,8 @@ class ProjectSubstepSerialInfoSerializer(serializers.ModelSerializer):
                   'substep_code',
                   'substep_serial',
                   'submit_time',
-                  'etime',
-                  'substep_state',
+                  'substep_serial_type',
+                  'substep_serial_state',
                   'step_msg']
 
 
@@ -81,7 +80,7 @@ class ProjectBrokerInfoSerializer(serializers.ModelSerializer):
 
 # 项目表序列化
 class ProjectInfoSerializer(serializers.ModelSerializer):
-    start_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    project_start_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     last_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     from_code_info = RrApplyHistorySerializer(many=True)
@@ -96,13 +95,14 @@ class ProjectInfoSerializer(serializers.ModelSerializer):
             'pserial',
             'project_code',
             'project_name',
+            'project_start_time',
             'project_from',
             'from_code',
             'project_state',
             'project_sub_state',
-            'start_time',
             'last_time',
             'project_desc',
+            'state',
             'creater',
             'insert_time',
             'from_code_info',
