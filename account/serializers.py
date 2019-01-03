@@ -2,8 +2,19 @@ from account.models import *
 from rest_framework import serializers
 
 
+class PatclubModelSerializer(serializers.ModelSerializer):
+    @property
+    def errors(self):
+        if not hasattr(self, '_errors'):
+            msg = 'You must call `.is_valid()` before accessing `.errors`.'
+            raise AssertionError(msg)
+        if self._errors:
+            return {'detail': self._errors}
+        return self._errors
+
+
 # 区域表序列化
-class SystemDistrictSerializer(serializers.ModelSerializer):
+class SystemDistrictSerializer(PatclubModelSerializer):
     create_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     parent_district = serializers.CharField(read_only=True)
 
@@ -24,7 +35,7 @@ class SystemDistrictSerializer(serializers.ModelSerializer):
 
 
 # 机构部门序列化
-class DeptinfoSerializer(serializers.ModelSerializer):
+class DeptinfoSerializer(PatclubModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     region_name = serializers.CharField(read_only=True)
     pdept = serializers.CharField(read_only=True)
@@ -49,7 +60,7 @@ class DeptinfoSerializer(serializers.ModelSerializer):
 
 
 # 功能点序列
-class FunctionInfoSerializer(serializers.ModelSerializer):
+class FunctionInfoSerializer(PatclubModelSerializer):
     pfunc = serializers.CharField(read_only=True)
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
@@ -81,22 +92,13 @@ class FunctionInfoSerializer(serializers.ModelSerializer):
 
 
 # 账号序列
-class AccountInfoSerializer(serializers.ModelSerializer):
+class AccountInfoSerializer(PatclubModelSerializer):
     dept = serializers.CharField(read_only=True)
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     cstate = serializers.CharField(read_only=True)
     func = serializers.ListField(read_only=True)
     authorized_func = serializers.ListField(read_only=True)
-
-    @property
-    def errors(self):
-        if not hasattr(self, '_errors'):
-            msg = 'You must call `.is_valid()` before accessing `.errors`.'
-            raise AssertionError(msg)
-        if self._errors:
-            return {'detail': self._errors}
-        return self._errors
 
     class Meta:
         model = AccountInfo
@@ -122,7 +124,7 @@ class AccountInfoSerializer(serializers.ModelSerializer):
 
 
 # 角色序列
-class RoleInfoSerializer(serializers.ModelSerializer):
+class RoleInfoSerializer(PatclubModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     cstate = serializers.CharField(read_only=True)
@@ -143,7 +145,7 @@ class RoleInfoSerializer(serializers.ModelSerializer):
 
 
 # 账号禁权表
-class AccountDisableFuncinfoSerializer(serializers.ModelSerializer):
+class AccountDisableFuncinfoSerializer(PatclubModelSerializer):
     func = serializers.CharField(read_only=True)
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     cstate = serializers.CharField(read_only=True)
@@ -161,7 +163,7 @@ class AccountDisableFuncinfoSerializer(serializers.ModelSerializer):
 
 
 # 账号角色授权序列
-class AccountRoleInfoSerializer(serializers.HyperlinkedModelSerializer):
+class AccountRoleInfoSerializer(PatclubModelSerializer):
     role = serializers.CharField(read_only=True)
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
     update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
@@ -182,7 +184,7 @@ class AccountRoleInfoSerializer(serializers.HyperlinkedModelSerializer):
 
 
 # 角色功能点序列
-class RoleFuncInfoSerializer(serializers.ModelSerializer):
+class RoleFuncInfoSerializer(PatclubModelSerializer):
     role = serializers.CharField(read_only=True)
     func = serializers.CharField(read_only=True)
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
@@ -204,7 +206,7 @@ class RoleFuncInfoSerializer(serializers.ModelSerializer):
 
 
 # 系统参数序列化
-class ParamInfoSerializer(serializers.ModelSerializer):
+class ParamInfoSerializer(PatclubModelSerializer):
     pparam = serializers.CharField(read_only=True)
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
 
