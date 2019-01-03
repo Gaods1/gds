@@ -283,15 +283,16 @@ class PersonalInfo(models.Model):
     class Meta:
         managed = True
         db_table = 'personal_info'
+        unique_together = (('pid_type', 'pid'),)
 
 
 # 企业基本信息表 *
 class EnterpriseBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     ecode = models.CharField(unique=True, max_length=64, default=gen_uuid32)
-    ename = models.CharField(max_length=64, blank=True, null=True)
+    ename = models.CharField(max_length=64, blank=True, null=True, unique=True)
     eabbr = models.CharField(max_length=32, blank=True, null=True)
-    business_license = models.CharField(max_length=64,blank=True, null=True, validators=[validate_license])
+    business_license = models.CharField(max_length=64,blank=True, null=True, validators=[validate_license], unique=True)
     eabstract = models.TextField(blank=True, null=True)
     eabstract_detail = models.TextField(blank=True, null=True)
     homepage = models.URLField(max_length=128, blank=True, null=True)

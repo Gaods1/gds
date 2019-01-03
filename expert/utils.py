@@ -7,18 +7,26 @@ from django.db.models import Q
 
 # 更新或创建个人信息
 def update_or_crete_person(pcode, info):
-    ap = PersonalInfo.objects.filter(account_code=info['account_code'])
-    pp = PersonalInfo.objects.filter(pcode=pcode)
-    if pcode and pp:
-        pp.update(**info)
-    elif info['account_code'] and ap:
-        ap.update(**info)
-        pcode = ap[0].pcode
-    else:
-        person = PersonalInfo.objects.create(**info)
-        pcode = person.pcode
+    try:
+        id_person = PersonalInfo.objects.get(pid_type=info['pid_type'], pid=info['pid'])
+    except:
+        id_person = None
 
-    return pcode
+    if id_person and id_person.account_code != info['account_code']:
+            raise ValueError('此证件号码已经被其他账号注册')
+
+    pp = PersonalInfo.objects.filter(pcode=pcode, account_code=info['account_code'])
+    if pp and pcode:
+        pp.update(**info)
+        return pcode
+
+    ap = PersonalInfo.objects.filter(account_code=info['account_code'])
+    if ap:
+        ap.update(**info)
+        return ap[0].pcode
+
+    person_info = PersonalInfo.objects.create(**info)
+    return person_info.pcode
 
 
 # 创建企业信息（如果只有企业名的话）
@@ -34,8 +42,15 @@ def create_enterprise(ecode):
 
 #   更新或创建企业信息
 def update_or_crete_enterprise(ecode, info):
+    try:
+        enterprise = EnterpriseBaseinfo.objects.get(business_license=info['business_license'])
+    except:
+        enterprise = None
+    if enterprise and enterprise.account_code != info['account_code']:
+        raise ValueError('此同一社会信用码已经被其他账号注册')
+
     ap = EnterpriseBaseinfo.objects.filter(account_code=info['account_code'])
-    pp = EnterpriseBaseinfo.objects.filter(ecode=ecode)
+    pp = EnterpriseBaseinfo.objects.filter(ecode=ecode, account_code=info['account_code'])
     if ecode and pp:
         pp.update(**info)
     elif info['account_code'] and ap:
