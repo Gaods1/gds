@@ -103,7 +103,7 @@ class ProjectInfoViewSet(viewsets.ReadOnlyModelViewSet):
 
 class ProjectCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,viewsets.GenericViewSet):
     """
-    项目8步审核
+    项目4步审核
 
     ==================================================
     ## 项目立项审核
@@ -124,15 +124,15 @@ class ProjectCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,view
     router.register(r'project_end_cer', ProjectCheckInfoViewSet)
 
     ==================================================
-    需要审核的有8个子步骤
-    项目立项审核 step_code:1  substep_code:12
-    上传合同审核 step_code:2  substep_code:21
-    签约合同审核 step_code:2  substep_code:22
-    项目标书审核 step_code:3  substep_code:32
-    中标签约审核 step_code:3  substep_code:311
-    项目固化审核 step_code:4  substep_code:45
-    项目结案审核 step_code:7  substep_code:71
-    项目终止审核 step_code:9  substep_code:91
+    # 需要审核的有8个子步骤
+    # 项目立项审核 step_code:1  substep_code:12
+    # 上传合同审核 step_code:2  substep_code:21
+    # 签约合同审核 step_code:2  substep_code:22
+    # 项目标书审核 step_code:3  substep_code:32
+    # 中标签约审核 step_code:3  substep_code:311
+    # 项目固化审核 step_code:4  substep_code:45
+    # 项目结案审核 step_code:7  substep_code:71
+    # 项目终止审核 step_code:9  substep_code:91
 
     ==================================================
     GET 参数说明 json
@@ -164,9 +164,6 @@ class ProjectCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,view
     filter_fields = ("project_code", "project_name", "project_state", "project_sub_state")
     search_fields = ("project_name", "project_state", "project_sub_state")
 
-    # 需要审核的子步骤
-    need_check_substep_codes = ('12', '21', '22', '32', '311', '45', '71')
-
 
     def list(self, request, *args, **kwargs):
         # 检测 状态在
@@ -178,11 +175,11 @@ class ProjectCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,view
             serializer = self.get_serializer(queryset, many=True)
             return self.get_paginated_response(serializer.data)
 
-        if substep_code not in self.need_check_substep_codes:
-            queryset = []
-            page = self.paginate_queryset(queryset)  # 不能省略
-            serializer = self.get_serializer(queryset, many=True)
-            return self.get_paginated_response(serializer.data)
+        # if substep_code not in self.need_check_substep_codes:
+        #     queryset = []
+        #     page = self.paginate_queryset(queryset)  # 不能省略
+        #     serializer = self.get_serializer(queryset, many=True)
+        #     return self.get_paginated_response(serializer.data)
 
         return getCheckInfo(self,request, step_code, substep_code)
 
@@ -249,7 +246,7 @@ def getCheckInfo(self,request, step_code, substep_code):
 
 def upCheckinfo(self, request):
     data = request.data
-    cstate = data['cstate']
+    cstate = data['cstate'] # 1:审核通过 -1:审核不通过
     if cstate != 1 and cstate != -1:
         return JsonResponse({'state': 0, 'msg': '请确认审核是否通过'})
 
@@ -257,7 +254,14 @@ def upCheckinfo(self, request):
     step_code = data['step_code']
     substep_code = data['substep_code']
     substep_serial = data['substep_serial']
+    substep_serial_type = data['substep_serial_type']
     cmsg = data['cmsg']
+
+    # 这里只判断一次，后面可以借用
+    if cstate == 1:
+        substep_serial_state = 3
+    else:
+        substep_serial_state = 4
 
     # 建立事物机制
     with transaction.atomic():
@@ -275,12 +279,24 @@ def upCheckinfo(self, request):
             projectcheckinfo.save()
 
             # 项目子步骤流水信息表
-            pssi = ProjectSubstepSerialInfo.objects.get(project_code=project_code, substep_serial=substep_serial)
-            pssi.substep_state = cstate;
-            # if cstate == 1:
-            pssi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            pssi = ProjectSubstepSerialInfo.objects.get(project_code=project_code,
+                                                        step_code=step_code, substep_code=substep_code,
+                                                        substep_serial=substep_serial, substep_serial_type=substep_serial_type)
+
+
+            pssi.substep_serial_state = substep_serial_state;
+            # pssi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) # 前端删除了数据库中的该字段
             pssi.step_msg = cmsg
             pssi.save()
+
+            # 项目子步骤流水详情信息表
+            psdi = ProjectSubstepDetailInfo.objects.get(project_code=project_code,
+                                                           step_code=step_code,substep_code=substep_code,
+                                                           substep_serial=substep_serial,substep_serial_type=substep_serial_type)
+            psdi.substep_serial_state = substep_serial_state;
+            psdi.submit_user = request.user.account
+            psdi.step_msg = cmsg
+            psdi.save()
 
             # 项目子步骤流水详情信息表
             # 每一个项目的每一个子步骤还将创建一个substep_serial=0的记录，用来保存已经审核通过的数据（审核通过后将内容拷贝到该记录中）
@@ -288,35 +304,35 @@ def upCheckinfo(self, request):
 
             # 重复审核时 清空上次审核的记录  主要是方便测试
             psdi_old = ProjectSubstepDetailInfo.objects.filter(project_code=project_code, step_code=step_code,
-                                                               substep_code=substep_code, substep_serial=0)
+                                                               substep_code=substep_code, substep_serial_type=substep_serial_type,
+                                                               substep_serial=0)
             if psdi_old != None and len(psdi_old) > 0:
                 psdi_old[0].delete()
 
             if cstate == 1:
                 psdis = ProjectSubstepDetailInfo.objects.filter(project_code=project_code, step_code=step_code,
-                                                                substep_code=substep_code,
+                                                                substep_code=substep_code,substep_serial_type=substep_serial_type,
                                                                 substep_serial=substep_serial)
                 if psdis != None and len(psdis) > 0:
                     psdi = psdis[0]
                     psdi.p_serial = None
                     psdi.substep_serial = 0
                     psdi.submit_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                    psdi.submit_user = request.user.account
+                    psdi.substep_serial_state = substep_serial_state
                     psdi.step_msg = cmsg
                     psdi.save()
 
             # 项目子步骤信息表
             psi = ProjectSubstepInfo.objects.get(project_code=project_code, step_code=step_code,
                                                  substep_code=substep_code)
-            psi.step_state = cstate;
-            # if cstate == 1:
+            psi.substep_state = substep_serial_state;
             psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             psi.step_msg = cmsg
             psi.save()
 
             # 判断主步骤是否结束
-            # substep_codes = (12,21,22,32,311,45,71)
-            substep_codes = (12, 22, 311)
-            if cstate == 1 and (substep_code in substep_codes):
+            if step_code == 1 and substep_code == 1 and substep_serial_type == 1:
                 # 项目步骤信息表
                 psi = ProjectStepInfo.objects.get(project_code=project_code, step_code=step_code)
                 psi.step_state = cstate;
