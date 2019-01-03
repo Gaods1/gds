@@ -219,4 +219,5 @@ class ParamInfoSerializer(PatclubModelSerializer):
                   'param_name',
                   'param_memo',
                   'param_value',
-                  'insert_time']
+                  'insert_time',
+                  'creater']
