@@ -76,7 +76,7 @@ class AccountInfo(AbstractBaseUser):
     account_code = models.CharField(unique=True, max_length=32, default=gen_uuid32)
     account = models.CharField(max_length=32, unique=True, blank=True, null=True, validators=[validate_account])
     state = models.IntegerField(default=1)
-    dept_code = models.CharField(max_length=32, blank=True, null=True)
+    dept_code = models.CharField(max_length=32)
     account_memo = models.CharField(max_length=255, blank=True, null=True)
     user_name = models.CharField(max_length=64, blank=True, null=True)
     account_id = models.CharField(unique=True, max_length=32, blank=True, null=True, validators=[validate_id])

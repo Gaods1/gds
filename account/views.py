@@ -102,7 +102,10 @@ class AccountViewSet(viewsets.ModelViewSet):
         data = update_data(data, ['account', 'user_mobile', 'user_email', 'account_id'])
         password = data.get("password")
         if password:
-            validate_password(password)
+            try:
+                validate_password(password)
+            except Exception as e:
+                return Response({"detail": e}, status=400)
             data['password'] = genearteMD5(password)
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
