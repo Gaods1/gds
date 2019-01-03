@@ -118,8 +118,11 @@ class AccountViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         data = request.data
+        data = update_data(data, ['account', 'user_mobile', 'user_email', 'account_id'])
         if instance.account and instance.account != data.get("account"):
             return Response({"detail": "账号不允许修改"}, status=400)
+        if not data['account'] and not data['user_mobile']:
+            return Response({"detail":"账号和手机号不能同时为空"})
         password = data.get("password")
         if password and password != instance.password:
             validate_password(password)
