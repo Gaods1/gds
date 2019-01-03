@@ -329,6 +329,8 @@ class ParamInfo(models.Model):
 
     @property
     def pparam(self):
+        if self.pparam_code == "0":
+            return '一级分类'
         pparam = ParamInfo.objects.get(param_code=self.pparam_code)
         return pparam.param_name
 
