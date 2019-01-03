@@ -99,6 +99,7 @@ class AccountViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         data =request.data
         data['creater'] = request.user.account
+        data = update_data(data, ['account', 'user_mobile', 'user_email', 'account_id'])
         password = data.get("password")
         if password:
             validate_password(password)
@@ -112,6 +113,8 @@ class AccountViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         data = request.data
+        if instance.account and instance.account != data.get("account"):
+            Response({"detail": "账号不允许修改"}, status=400)
         password = data.get("password")
         if password and password != instance.password:
             validate_password(password)
