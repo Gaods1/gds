@@ -185,6 +185,7 @@ class CollectorBaseInfoSerializers(serializers.ModelSerializer):
             'owner_zipcode',
             'state',
             'account_code',
+            'account',
             'creater',
             'insert_time',
             'head',
