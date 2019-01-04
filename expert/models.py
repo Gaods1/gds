@@ -304,10 +304,7 @@ class CollectorApplyHistory(models.Model):
             opinion = history.order_by('-check_time')[0].opinion
         return opinion
 
-    @property
-    def account(self):
-        return AccountInfo.objects.get(account_code=self.account_code).user_name
-
+    
     class Meta:
         managed = False
         db_table = 'collector_apply_history'
@@ -346,6 +343,10 @@ class CollectorBaseinfo(models.Model):
     def city(self):
         region_info = SystemDistrict.objects.get(district_id=self.collector_city)
         return region_info.district_name
+
+    @property
+    def account(self):
+        return AccountInfo.objects.get(account_code=self.account_code).user_name
 
     # 头像
     @property
