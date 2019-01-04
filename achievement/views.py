@@ -728,7 +728,6 @@ class ManagementpViewSet(viewsets.ModelViewSet):
         dept_code = self.request.user.dept_code
         dept_code_str = get_detcode_str(dept_code)
         if dept_code_str:
-            #SQL = "select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.dept_code in ("+dept_code_str+") and rr_apply_history.type=1"
             SQL = "select results_info.* \
             		from results_info \
             		inner join account_info \
@@ -1055,7 +1054,6 @@ class ManagementrViewSet(viewsets.ModelViewSet):
         dept_code = self.request.user.dept_code
         dept_code_str = get_detcode_str(dept_code)
         if dept_code_str:
-            # SQL = "select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.dept_code in ("+dept_code_str+") and rr_apply_history.type=1"
             SQL = "select requirements_info.* \
             		from requirements_info \
             		inner join account_info \
