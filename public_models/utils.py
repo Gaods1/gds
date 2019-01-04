@@ -115,7 +115,7 @@ def get_single(tname_single,ecode):
     tcode_single = AttachmentFileType.objects.get(tname=tname_single).tcode
     ecode = ecode
     try:
-        file = AttachmentFileinfo.objects.get(tcode=tcode_single, ecode=ecode, operation_state__in=[1,3], state=1)
+        file = AttachmentFileinfo.objects.filter(tcode=tcode_single, ecode=ecode, operation_state__in=[1,3], state=1).order_by('-insert_time')[0]
         #新增待审和状态
         if file.operation_state == 1:
             url = '{}{}{}'.format(absolute_path, file.path,file.file_name)
