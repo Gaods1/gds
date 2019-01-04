@@ -184,7 +184,7 @@ def move_attachment(tname_attachment,ecode):
 
                     # 给前端抛路径以及状态
                     url_x_q = url_x.replace(relative_path, relative_path_front)
-                    if url_x_q.endswith('pdf') or url.endswith('jpg') or url.endswith('png') or url.endswith('jpeg') or url.endswith('bmp') or url.endswith('gif'):
+                    if url_x_q.endswith('pdf') or url_x_q.endswith('jpg') or url_x_q.endswith('png') or url_x_q.endswith('jpeg') or url_x_q.endswith('bmp') or url_x_q.endswith('gif'):
                         dict[url_x_q] = file.operation_state
     return dict
 
@@ -237,7 +237,7 @@ def move_single(tname_singgle,ecode):
 
                     # 给前端抛路径以及状态
                     url_x_q = url_x.replace(relative_path, relative_path_front)
-                    if url_x_q.endswith('pdf') or url.endswith('jpg') or url.endswith('png') or url.endswith('jpeg') or url.endswith('bmp') or url.endswith('gif'):
+                    if url_x_q.endswith('pdf') or url_x_q.endswith('jpg') or url_x_q.endswith('png') or url_x_q.endswith('jpeg') or url_x_q.endswith('bmp') or url_x_q.endswith('gif'):
                         dict[url_x_q] = file.operation_state
     return dict
 
