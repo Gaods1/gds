@@ -173,7 +173,23 @@ def move_attachment(tname_attachment,ecode):
                     url_x = '{}{}'.format(relative_path, file.path)
                     if not os.path.exists(url_x):
                         os.makedirs(url_x)
+
                     url_x = url_x + file.file_name
+
+                    if url_x.endswith('doc') or url_x.endswith('doc') or url_x.endswith('doc') or url_x.endswith('doc'):
+                        url_j_c_list = url_j_c.split('.')
+                        url_j_c_office = url_j_c_list.pop()
+                        url_j_c_list.append('pdf')
+                        url_j_c_pdf = '.'.join(url_j_c_list)
+
+
+                        url_x_pdf_list = url_x.split('.')
+                        url_x_office = url_x_pdf_list.pop()
+                        url_x_pdf_list.append('pdf')
+                        url_x_pdf = '.'.join(url_x_pdf_list)
+
+
+                        shutil.move(url_j_c_pdf, url_x_pdf)
                     shutil.move(url_j_c, url_x)
 
                     #删除临时目录
