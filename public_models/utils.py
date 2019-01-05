@@ -81,63 +81,68 @@ def get_attachment(tname_attachment,ecode):
     list_look = []
     list_down = []
     if files:
-        for file in files:
-            #新增待审和状态
-            if file.operation_state == 1:
-                url = '{}{}{}'.format(absolute_path,file.path,file.file_name)
-                if not os.path.exists(url):
-                    continue
-
-                # 如果是office文件，则同路径下有pdf文件
-                if url.endswith('doc') or url.endswith('docx') or url.endswith('xls') or url.endswith('xlsx'):
-                    url_pdf_list = url.split('.')
-                    url_office = url_pdf_list.pop()
-                    url_pdf_list.append('pdf')
-                    url_pdf = '.'.join(url_pdf_list)
-
-                    if not os.path.exists(url_pdf):
+        try:
+            for file in files:
+                #新增待审和状态
+                if file.operation_state == 1:
+                    url = '{}{}{}'.format(absolute_path,file.path,file.file_name)
+                    if not os.path.exists(url):
                         continue
 
-                    url_pdf = url_pdf.replace(absolute_path, absolute_path_front)
-                    list_look.append(url_pdf)
+                    # 如果是office文件，则同路径下有pdf文件
+                    if url.endswith('doc') or url.endswith('docx') or url.endswith('xls') or url.endswith('xlsx'):
+                        url_pdf_list = url.split('.')
+                        url_office = url_pdf_list.pop()
+                        url_pdf_list.append('pdf')
+                        url_pdf = '.'.join(url_pdf_list)
 
-                # 如果是图片
-                if url.endswith('jpg') or url.endswith('png') or url.endswith('jpeg') or url.endswith('bmp') or url.endswith('gif'):
-                    url = url.replace(absolute_path, absolute_path_front)
-                    list_look.append(url)
+                        if not os.path.exists(url_pdf):
+                            continue
 
-                # 如果是office文件
+                        url_pdf = url_pdf.replace(absolute_path, absolute_path_front)
+                        list_look.append(url_pdf)
+
+                    # 如果是图片
+                    if url.endswith('jpg') or url.endswith('png') or url.endswith('jpeg') or url.endswith('bmp') or url.endswith('gif'):
+                        url = url.replace(absolute_path, absolute_path_front)
+                        list_look.append(url)
+
+                    # 如果是office文件
+                    else:
+                        url = url.replace(absolute_path, absolute_path_front)
+                        list_down.append(url)
+
+
+                #审核通过状态
                 else:
-                    url = url.replace(absolute_path, absolute_path_front)
-                    list_down.append(url)
-                dict['look'] = list_look
-                dict['down'] = list_down
-
-            #审核通过状态
-            else:
-                url = '{}{}{}'.format(relative_path, file.path, file.file_name)
-                if not os.path.exists(url):
-                    continue
-
-                # 如果是office文件，则同路径下有pdf文件
-                if url.endswith('doc') or url.endswith('docx') or url.endswith('xls') or url.endswith('xlsx'):
-                    url_pdf_list = url.split('.')
-                    url_office = url_pdf_list.pop()
-                    url_pdf_list.append('pdf')
-                    url_pdf = '.'.join(url_pdf_list)
-
-                    if not os.path.exists(url_pdf):
+                    url = '{}{}{}'.format(relative_path, file.path, file.file_name)
+                    if not os.path.exists(url):
                         continue
 
-                    url_pdf = url_pdf.replace(relative_path, relative_path_front)
-                    list_look.append(url_pdf)
+                    # 如果是office文件，则同路径下有pdf文件
+                    if url.endswith('doc') or url.endswith('docx') or url.endswith('xls') or url.endswith('xlsx'):
+                        url_pdf_list = url.split('.')
+                        url_office = url_pdf_list.pop()
+                        url_pdf_list.append('pdf')
+                        url_pdf = '.'.join(url_pdf_list)
 
-                # 如果是图片
-                if url.endswith('jpg') or url.endswith('png') or url.endswith('jpeg') or url.endswith(
-                        'bmp') or url.endswith('gif'):
-                    url = url.replace(relative_path, relative_path_front)
-                    list_look.append(url)
-                dict['look'] = list_look
+                        if not os.path.exists(url_pdf):
+                            continue
+
+                        url_pdf = url_pdf.replace(relative_path, relative_path_front)
+                        list_look.append(url_pdf)
+
+                    # 如果是图片
+                    if url.endswith('jpg') or url.endswith('png') or url.endswith('jpeg') or url.endswith(
+                            'bmp') or url.endswith('gif'):
+                        url = url.replace(relative_path, relative_path_front)
+                        list_look.append(url)
+        except Exception as e:
+            return dict
+
+    dict['look'] = list_look
+    dict['down'] = list_down
+
     return dict
 def get_single(tname_single,ecode):
     absolute_path = ParamInfo.objects.get(param_code=1).param_value
@@ -181,6 +186,15 @@ def move_attachment(tname_attachment,ecode):
                 file.delete()
                 url = '{}{}{}'.format(relative_path, file.path,file.file_name)
 
+                if url.endswith('doc') or url.endswith('docx') or url.endswith('xls') or url.endswith('xlsx'):
+                    # 拼接相同路径下的pdf路径
+                    url_list = url.split('.')
+                    url_office = url_j_c_list.pop()
+                    url_list.append('pdf')
+                    url_pdf = '.'.join(url_j_c_list)
+
+                    if os.path.exists(url_pdf):
+                        os.remove(url_pdf)
                 # 找出该路径下是否有文件并删除
                 if os.path.exists(url):
                     os.remove(url)
@@ -230,12 +244,6 @@ def move_attachment(tname_attachment,ecode):
                     url_j_c_s = '/'.join(url_j_c_list)
                     os.rmdir(url_j_c_s)
 
-                    # 给前端抛路径以及状态
-                    url_x_q = url_x.replace(relative_path, relative_path_front)
-                    if url_x_q.endswith('pdf') or url_x_q.endswith('jpg') or url_x_q.endswith('png') or url_x_q.endswith('jpeg') or url_x_q.endswith('bmp') or url_x_q.endswith('gif'):
-                        dict[url_x_q] = file.operation_state
-    return dict
-
 def move_single(tname_singgle,ecode):
     absolute_path = ParamInfo.objects.get(param_code=1).param_value
     absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
@@ -277,16 +285,11 @@ def move_single(tname_singgle,ecode):
                     url_x = url_x + file.file_name
                     shutil.move(url_j_c, url_x)
 
-                    # 删除临时目录c
+                    # 删除临时目录
                     url_j_c_list = url_j_c.split('/')
                     del url_j_c_list[-1]
                     url_j_c_s = '/'.join(url_j_c_list)
                     os.rmdir(url_j_c_s)
 
-                    # 给前端抛路径以及状态
-                    url_x_q = url_x.replace(relative_path, relative_path_front)
-                    if url_x_q.endswith('pdf') or url_x_q.endswith('jpg') or url_x_q.endswith('png') or url_x_q.endswith('jpeg') or url_x_q.endswith('bmp') or url_x_q.endswith('gif'):
-                        dict[url_x_q] = file.operation_state
-    return dict
 
 
