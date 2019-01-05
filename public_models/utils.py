@@ -238,11 +238,10 @@ def move_attachment(tname_attachment,ecode):
                         shutil.move(url_j_c_pdf, url_x_pdf)
                     shutil.move(url_j_c, url_x)
 
-                    #删除临时目录
-                    url_j_c_list = url_j_c.split('/')
-                    del url_j_c_list[-1]
-                    url_j_c_s = '/'.join(url_j_c_list)
-                    os.rmdir(url_j_c_s)
+        # 删除临时目录
+        url_j_d = '{}{}'.format(absolute_path, files_fujian[0].path)
+        if not os.listdir(url_j_d):
+            os.rmdir(url_j_d)
 
 def move_single(tname_singgle,ecode):
     absolute_path = ParamInfo.objects.get(param_code=1).param_value
@@ -284,12 +283,10 @@ def move_single(tname_singgle,ecode):
                         os.makedirs(url_x)
                     url_x = url_x + file.file_name
                     shutil.move(url_j_c, url_x)
-
-                    # 删除临时目录
-                    url_j_c_list = url_j_c.split('/')
-                    del url_j_c_list[-1]
-                    url_j_c_s = '/'.join(url_j_c_list)
-                    os.rmdir(url_j_c_s)
+        # 删除临时目录
+        url_j_d = '{}{}'.format(absolute_path, files_dange[0].path)
+        if not os.listdir(url_j_d):
+            os.rmdir(url_j_d)
 
 
 
