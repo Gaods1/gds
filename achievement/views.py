@@ -197,12 +197,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             transaction.savepoint_rollback(save_id)
                             return HttpResponse('请先通过成果持有人(企业)审核')
 
-                    # 返回相对路径
-                    dict_attachment = move_attachment('attachment', instance.rr_code)
-                    dict_single = move_single('coverImg', instance.rr_code)
-
-                    dict_z['Attach'] = dict_attachment
-                    dict_z['Cover'] = dict_single
+                    # 附件与封面
+                    move_attachment('attachment', instance.rr_code)
+                    move_single('coverImg', instance.rr_code)
 
                     # 创建推送表
                     mm = Message.objects.create(**{
@@ -231,9 +228,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         # forcibly invalidate the prefetch cache on the instance.
                         instance._prefetched_objects_cache = {}
                 except Exception as e:
+                    transaction.savepoint_rollback(save_id)
                     return HttpResponse('申请表更新失败%s' % str(e))
                 transaction.savepoint_commit(save_id)
-                return Response(dict_z)
+                return Response({'message':'审核通过'})
 
         else:
             # 建立事物机制
@@ -370,9 +368,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         # forcibly invalidate the prefetch cache on the instance.
                         instance._prefetched_objects_cache = {}
                 except Exception as e:
+                    transaction.savepoint_rollback(save_id)
                     return HttpResponse('申请表更新失败%s' % str(e))
                 transaction.savepoint_commit(save_id)
-                return Response({'messege':'审核不通过'})
+                return Response({'message':'审核不通过'})
 
 # 需求
 class RequirementViewSet(viewsets.ModelViewSet):
@@ -568,9 +567,10 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         # forcibly invalidate the prefetch cache on the instance.
                         instance._prefetched_objects_cache = {}
                 except Exception as e:
+                    transaction.savepoint_rollback(save_id)
                     return HttpResponse('申请表更新失败%s' % str(e))
                 transaction.savepoint_commit(save_id)
-                return Response(dict_z)
+                return Response({'message':'审核通过'})
 
         else:
             # 建立事物机制
@@ -706,6 +706,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         # forcibly invalidate the prefetch cache on the instance.
                         instance._prefetched_objects_cache = {}
                 except Exception as e:
+                    transaction.savepoint_rollback(save_id)
                     return HttpResponse('申请表更新失败%s' % str(e))
                 transaction.savepoint_commit(save_id)
                 return Response({'messege':'审核不通过'})
