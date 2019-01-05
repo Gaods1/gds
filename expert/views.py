@@ -147,7 +147,7 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
                         #                                          iab_time=datetime.datetime.now(),
                         #                                          creater=request.user.account)
                         # 申请类型新增或修改时 更新account_info表dept_code
-                        if data.get('dept_code') and expert.dept_code is None:
+                        if data.get('dept_code') and not expert.dept_code:
                             AccountInfo.objects.filter(account_code=instance.expert.account_code).update(dept_code=data.get('dept_code'))
 
                         # 移动相关附件
@@ -304,7 +304,7 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                         #                                          iab_time=datetime.datetime.now(),
                         #                                          creater=request.user.account)
                         # 申请类型新增或修改时 更新account_info表dept_code
-                        if data.get('dept_code') and baseinfo.dept_code is None:
+                        if data.get('dept_code') and not baseinfo.dept_code:
                             AccountInfo.objects.filter(account_code=instance.broker.account_code).update(dept_code=data.get('dept_code'))
 
                         # 移动相关附件
@@ -717,7 +717,7 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
                         #                                          iab_time=datetime.datetime.now(),
                         #                                          creater=request.user.account)
                         # 申请类型新增或修改时 更新account_info表dept_code
-                        if data.get('dept_code') and baseinfo.dept_code is None:
+                        if data.get('dept_code') and not baseinfo.dept_code:
                             AccountInfo.objects.filter(account_code=instance.collector.account_code).update(dept_code=data.get('dept_code'))
 
                         # 移动相关附件
@@ -1158,7 +1158,7 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
                         #                                              iab_time=datetime.datetime.now(),
                         #                                              creater=request.user.account)
                         # 申请类型新增或修改时 更新account_info表dept_code
-                        if data.get('dept_code') and baseinfo.dept_code is None:
+                        if data.get('dept_code') and not baseinfo.dept_code:
                             AccountInfo.objects.filter(account_code=instance.owner.account_code).update(dept_code=data.get('dept_code'))
 
                         # 移动相关附件
@@ -1604,7 +1604,7 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
                         #                                              creater=request.user.account)
 
                         # 申请类型新增或修改时 更新account_info表dept_code
-                        if data.get('dept_code') and baseinfo.dept_code is None:
+                        if data.get('dept_code') and not baseinfo.dept_code:
                             AccountInfo.objects.filter(account_code=instance.owner.account_code).update(dept_code=data.get('dept_code'))
 
                         # 移动相关附件
@@ -2047,7 +2047,7 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
                         #                                              iab_time=datetime.datetime.now(),
                         #                                              creater=request.user.account)
                         # 申请类型新增或修改时 更新account_info表dept_code
-                        if data.get('dept_code') and baseinfo.dept_code is None:
+                        if data.get('dept_code') and not baseinfo.dept_code:
                             AccountInfo.objects.filter(account_code=instance.owner.account_code).update(dept_code=data.get('dept_code'))
 
                         # 移动相关附件
@@ -2491,7 +2491,7 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                         #                                              iab_time=datetime.datetime.now(),
                         #                                              creater=request.user.account)
                         # 申请类型新增或修改时 更新account_info表dept_code
-                        if data.get('dept_code') and baseinfo.dept_code is None:
+                        if data.get('dept_code') and not baseinfo.dept_code:
                             AccountInfo.objects.filter(account_code=instance.owner.account_code).update(dept_code=data.get('dept_code'))
 
                         # 移动相关附件
@@ -2636,7 +2636,7 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                 ProjectTeamBaseinfo.objects.filter(serial=apply_team_baseinfo.team_baseinfo.serial).update(state=baseinfo_state)
 
                 # 申请类型新增或修改时 更新account_info表dept_code
-                if request.data.get('dept_code') and check_state == 2  and apply_team_baseinfo.team_baseinfo.dept_code is None:
+                if request.data.get('dept_code') and check_state == 2  and not apply_team_baseinfo.team_baseinfo.dept_code:
                     AccountInfo.objects.filter(account_code=apply_team_baseinfo.team_baseinfo.account_code).update(dept_code=request.data.get('dept_code'))
 
                 # 3 新增tema_check_history表记录
