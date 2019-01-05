@@ -177,7 +177,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             t1.start()
                         else:
                             transaction.savepoint_rollback(save_id)
-                            return HttpResponse('请先通过成果持有人(个人)审核')
+                            return Response({"detail": {"detail": ['请先通过成果持有人(个人)审核']}}, status=400)
+
                     else:
                         ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
 
@@ -197,7 +198,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             t1.start()
                         else:
                             transaction.savepoint_rollback(save_id)
-                            return HttpResponse('请先通过成果持有人(企业)审核')
+                            return Response({"detail": {"detail": ['请先通过成果持有人(企业)审核']}}, status=400)
 
                     # 附件与封面
                     move_attachment('attachment', instance.rr_code)
@@ -451,7 +452,8 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     del data['opinion']
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('需求审核历史记录创建失败%s' % str(e))
+                    return Response({"detail": {"detail": ['需求审核历史记录创建失败%s' % str(e)]}}, status=400)
+
                 # 更新需求信息表
                 try:
                     Requirements = RequirementsInfo.objects.get(req_code=instance.rr_code)
@@ -459,13 +461,14 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     Requirements.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新需求信息失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新需求信息失败%s' % str(e)]}}, status=400)
+
                 # 更新需求评价信息表
                 try:
                     Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=2)
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新需求评价信息失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新需求评价信息失败%s' % str(e)]}}, status=400)
 
                 # 更新成果合作方式表
 
@@ -474,14 +477,14 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新需求合作方式失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新需求合作方式失败%s' % str(e)]}}, status=400)
 
                 # 更新检索关键字表
                 try:
                     Keywords = KeywordsInfo.objects.filter(object_code=instance.rr_code).update(state=1)
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新检索关键字失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新检索关键字失败%s' % str(e)]}}, status=400)
 
                 # 更新成果持有人表
 
@@ -491,8 +494,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     owner.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新需求持有人表失败%s' % str(e))
-
+                    return Response({"detail": {"detail": ['更新需求持有人表失败%s' % str(e)]}}, status=400)
                 try:
                     dict_z = {}
                     # 如果是个人或者团队
@@ -516,7 +518,8 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             t1.start()
                         else:
                             transaction.savepoint_rollback(save_id)
-                            return HttpResponse('请先通过需求持有人(个人)审核')
+                            return Response({"detail": {"detail": ['请先通过需求持有人(个人)审核']}}, status=400)
+
 
                     else:
                         # 企业送短信
@@ -538,7 +541,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             t1.start()
                         else:
                             transaction.savepoint_rollback(save_id)
-                            return HttpResponse('请先通过需求持有人(企业)审核')
+                            return Response({"detail": {"detail": ['请先通过需求持有人(企业)审核']}}, status=400)
 
                     # 返回相对路径
                     dict_attachment = move_attachment('attachment', instance.rr_code)
@@ -575,7 +578,8 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         instance._prefetched_objects_cache = {}
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('申请表更新失败%s' % str(e))
+                    return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
+
                 transaction.savepoint_commit(save_id)
                 return Response({'message':'审核通过'})
 
@@ -597,7 +601,8 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     del data['opinion']
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('需求审核历史记录创建失败%s' % str(e))
+                    return Response({"detail": {"detail": ['需求审核历史记录创建失败%s' % str(e)]}}, status=400)
+
                 # 更新需求信息表
                 try:
                     Requirements = RequirementsInfo.objects.get(req_code=instance.rr_code)
@@ -605,13 +610,14 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     Requirements.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新需求信息失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新需求信息失败%s' % str(e)]}}, status=400)
+
                 # 更新需求评价信息表
                 try:
                     Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=3)
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新需求评价信息失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新需求评价信息失败%s' % str(e)]}}, status=400)
 
                 # 更新成果合作方式表
 
@@ -621,14 +627,14 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     cooperation.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('需求成果合作方式失败%s' % str(e))
+                    return Response({"detail": {"detail": ['需求成果合作方式失败%s' % str(e)]}}, status=400)
 
                 # 更新检索关键字表
                 try:
                     Keywords = KeywordsInfo.objects.filter(object_code=instance.rr_code).update(state=2)
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新检索关键字失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新检索关键字失败%s' % str(e)]}}, status=400)
 
                 # 更新成果持有人表
 
@@ -638,7 +644,8 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     owner.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新需求持有人表失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新需求持有人表失败%s']}}, status=400)
+
 
                 try:
                     if owner.owner_type != 2:
@@ -662,6 +669,8 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         else:
                             transaction.savepoint_rollback(save_id)
                             return HttpResponse('请先通过需求持有人(个人)审核')
+                            return Response({"detail": {"detail": ['请先通过需求持有人(个人)审核']}}, status=400)
+
 
                     else:
                         # 更新企业信息并发送短信
@@ -714,7 +723,8 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         instance._prefetched_objects_cache = {}
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('申请表更新失败%s' % str(e))
+                    return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
+
                 transaction.savepoint_commit(save_id)
                 return Response({'messege':'审核不通过'})
 
