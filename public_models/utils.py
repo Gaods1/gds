@@ -87,25 +87,57 @@ def get_attachment(tname_attachment,ecode):
                 url = '{}{}{}'.format(absolute_path,file.path,file.file_name)
                 if not os.path.exists(url):
                     continue
-                if url.endswith('pdf') or url.endswith('jpg') or url.endswith('png') or url.endswith('jpeg') or url.endswith('bmp') or url.endswith('gif'):
+
+                # 如果是office文件，则同路径下有pdf文件
+                if url.endswith('doc') or url.endswith('docx') or url.endswith('xls') or url.endswith('xlsx'):
+                    url_pdf_list = url.split('.')
+                    url_office = url_pdf_list.pop()
+                    url_pdf_list.append('pdf')
+                    url_pdf = '.'.join(url_pdf_list)
+
+                    if not os.path.exists(url_pdf):
+                        continue
+
+                    url_pdf = url_pdf.replace(absolute_path, absolute_path_front)
+                    list_look.append(url_pdf)
+
+                # 如果是图片
+                if url.endswith('jpg') or url.endswith('png') or url.endswith('jpeg') or url.endswith('bmp') or url.endswith('gif'):
                     url = url.replace(absolute_path, absolute_path_front)
-                    operation_state = file.operation_state
                     list_look.append(url)
+
+                # 如果是office文件
                 else:
                     url = url.replace(absolute_path, absolute_path_front)
                     list_down.append(url)
                 dict['look'] = list_look
                 dict['down'] = list_down
+
             #审核通过状态
             else:
                 url = '{}{}{}'.format(relative_path, file.path, file.file_name)
                 if not os.path.exists(url):
                     continue
-                if url.endswith('pdf') or url.endswith('jpg') or url.endswith('png') or url.endswith('jpeg') or url.endswith('bmp') or url.endswith('gif'):
+
+                # 如果是office文件，则同路径下有pdf文件
+                if url.endswith('doc') or url.endswith('docx') or url.endswith('xls') or url.endswith('xlsx'):
+                    url_pdf_list = url.split('.')
+                    url_office = url_pdf_list.pop()
+                    url_pdf_list.append('pdf')
+                    url_pdf = '.'.join(url_pdf_list)
+
+                    if not os.path.exists(url_pdf):
+                        continue
+
+                    url_pdf = url_pdf.replace(relative_path, relative_path_front)
+                    list_look.append(url_pdf)
+
+                # 如果是图片
+                if url.endswith('jpg') or url.endswith('png') or url.endswith('jpeg') or url.endswith(
+                        'bmp') or url.endswith('gif'):
                     url = url.replace(relative_path, relative_path_front)
-                    operation_state = file.operation_state
                     list_look.append(url)
-                    dict['look'] = list_look
+                dict['look'] = list_look
     return dict
 def get_single(tname_single,ecode):
     absolute_path = ParamInfo.objects.get(param_code=1).param_value
@@ -169,11 +201,27 @@ def move_attachment(tname_attachment,ecode):
                     file.path = '/'.join(file_list) + '/'
                     file.save()
 
-                    #更新绝对路径并转移文件
+                    #更新正式路径并转移文件
                     url_x = '{}{}'.format(relative_path, file.path)
                     if not os.path.exists(url_x):
                         os.makedirs(url_x)
+
                     url_x = url_x + file.file_name
+
+                    if url_x.endswith('doc') or url_x.endswith('docx') or url_x.endswith('xls') or url_x.endswith('xlsx'):
+                        #拼接临时路径下的pdf
+                        url_j_c_list = url_j_c.split('.')
+                        url_j_c_office = url_j_c_list.pop()
+                        url_j_c_list.append('pdf')
+                        url_j_c_pdf = '.'.join(url_j_c_list)
+
+                        #拼接正式路径下的pdf
+                        url_x_pdf_list = url_x.split('.')
+                        url_x_office = url_x_pdf_list.pop()
+                        url_x_pdf_list.append('pdf')
+                        url_x_pdf = '.'.join(url_x_pdf_list)
+
+                        shutil.move(url_j_c_pdf, url_x_pdf)
                     shutil.move(url_j_c, url_x)
 
                     #删除临时目录
