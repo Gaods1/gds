@@ -88,6 +88,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         data = request.data
+
+        if instance.state != 1:
+            return Response({"detail": {"detail": ['该成果信息已审核']}}, status=400)
+
         state = data['state']
         if state == 2:
 
@@ -434,6 +438,10 @@ class RequirementViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         data = request.data
+
+        if instance.state != 1:
+            return Response({"detail": {"detail": ['该需求信息已审核']}}, status=400)
+
         state = data['state']
         if state == 2:
             # 建立事物机制
