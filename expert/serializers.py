@@ -218,7 +218,7 @@ class CollectorApplySerializers(serializers.ModelSerializer):
                   ]
 
 
-# 成果/需求基本信息表序列
+# 成果/需求持有人（个人）基本信息表序列
 class ResultOwnerpSerializers(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     city = serializers.CharField(read_only=True)
@@ -248,6 +248,7 @@ class ResultOwnerpSerializers(serializers.ModelSerializer):
             'owner_zipcode',
             'state',
             'account_code',
+            'account',
             'creater',
             'insert_time',
             'owner_city',
@@ -284,7 +285,7 @@ class OwnerApplySerializers(serializers.ModelSerializer):
                   ]
 
 
-# 成果/需求（企业）基本信息表序列
+# 成果/需求持有人（企业）基本信息表序列
 class ResultOwnereSerializers(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     city = serializers.CharField(read_only=True)
