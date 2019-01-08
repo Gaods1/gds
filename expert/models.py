@@ -409,10 +409,6 @@ class OwnerApplyHistory(models.Model):
             opinion = history.order_by('-check_time')[0].opinion
         return opinion
 
-    @property
-    def account(self):
-        return AccountInfo.objects.get(account_code=self.account_code).user_name
-
     class Meta:
         managed = False
         db_table = 'owner_apply_history'
@@ -459,6 +455,10 @@ class ResultOwnerpBaseinfo(models.Model):
             return get_major(8, self.owner_code)
         else:
             return get_major(9, self.owner_code)
+
+    @property
+    def account(self):
+        return AccountInfo.objects.get(account_code=self.account_code).user_name
 
     # 头像
     @property
