@@ -92,6 +92,7 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
     PerIdFront = serializers.CharField(read_only=True)
     PerIdBack = serializers.CharField(read_only=True)
     PerHandId = serializers.CharField(read_only=True)
+    EntLicense = serializers.CharField(read_only=True)
     class Meta:
         model = ResultsInfo
         fields = ['serial',
@@ -127,6 +128,7 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
                   'PerIdFront',
                   'PerIdBack',
                   'PerHandId',
+                  'EntLicense',
                   ]
 
 # 需求信息表序列化
@@ -143,6 +145,7 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
     PerIdFront = serializers.CharField(read_only=True)
     PerIdBack = serializers.CharField(read_only=True)
     PerHandId = serializers.CharField(read_only=True)
+    EntLicense = serializers.CharField(read_only=True)
 
     class Meta:
         model = RequirementsInfo
@@ -180,6 +183,7 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
             'PerIdFront',
             'PerIdBack',
             'PerHandId',
+            'EntLicense',
         ]
 
 

@@ -123,6 +123,11 @@ class RequirementsInfo(models.Model):
         return str
 
     @property
+    def EntLicense(self):
+        str = get_single('entLicense', self.req_code)
+        return str
+
+    @property
     def mcode(self):
         mcode = MajorUserinfo.objects.values_list('mcode',flat=True).filter(user_type=5, user_code=self.req_code)
         return mcode
@@ -194,6 +199,11 @@ class ResultsInfo(models.Model):
     @property
     def PerHandId(self):
         str = get_single('handIdentityPhoto', self.r_code)
+        return str
+
+    @property
+    def EntLicense(self):
+        str = get_single('entLicense', self.r_code)
         return str
 
     @property
