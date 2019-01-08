@@ -28,13 +28,19 @@ class RrApplyHistory(models.Model):
 
     @property
     def Results(self):
-        Results = ResultsInfo.objects.get(r_code=self.rr_code)
-        return Results
+        if self.type == 1:
+            Results = ResultsInfo.objects.get(r_code=self.rr_code)
+            return Results
+        else:
+            return None
 
     @property
     def Requirements(self):
-        Requirements = RequirementsInfo.objects.get(req_code=self.rr_code)
-        return Requirements
+        if self.type == 2:
+            Requirements = RequirementsInfo.objects.get(req_code=self.rr_code)
+            return Requirements
+        else:
+            return None
 
     @property
     def Cooperation(self):
