@@ -50,6 +50,7 @@ class ExpertBaseInfoSerializers(serializers.ModelSerializer):
             'state',    # 1 正常， 2 暂停 3 伪删除
             'creater',  # 创建者
             'account_code',  # 关联账号
+            'account',
             'insert_time',  # 创建时间
             'dept_code',
         ]
@@ -126,6 +127,7 @@ class BrokerBaseInfoSerializers(serializers.ModelSerializer):
             'state',    # 1 正常， 2 暂停 3 伪删除
             'creater',  # 创建者
             'account_code',  # 关联账号
+            'account',
             'insert_time',  # 创建时间
             'dept_code',
         ]
@@ -315,6 +317,7 @@ class ResultOwnereSerializers(serializers.ModelSerializer):
             'creditvalue',
             'state',
             'account_code',
+            'account',
             'creater',
             'insert_time',
             'owner_name_abbr',
