@@ -101,6 +101,8 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
             with transaction.atomic():
                 # 获取单个记录
                 instance = self.get_object()
+                if instance.state != 1:
+                    raise ValueError('该信息已被审核')
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
@@ -262,7 +264,8 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                 partial = kwargs.pop('partial', False)
                 # 获取更新记录
                 instance = self.get_object()
-
+                if instance.state != 1:
+                    raise ValueError('该信息已被审核')
                 # 获取基本信息
                 baseinfo = instance.broker
                 # 获取审核意见
@@ -674,6 +677,8 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
             with transaction.atomic():
                 # 获取单个信息
                 instance = self.get_object()
+                if instance.state != 1:
+                    raise ValueError('该信息已被审核')
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
@@ -1111,6 +1116,8 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
             with transaction.atomic():
                 # 获取单个信息
                 instance = self.get_object()
+                if instance.state != 1:
+                    raise ValueError('该信息已被审核')
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
@@ -1553,6 +1560,10 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
             with transaction.atomic():
                 # 获取单个信息、
                 instance = self.get_object()
+
+                if instance.state != 1:
+                    raise ValueError('该信息已被审核')
+
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
@@ -2002,6 +2013,9 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
                 # 获取单个记录
                 instance = self.get_object()
 
+                if instance.state != 1:
+                    raise ValueError('该信息已被审核')
+
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
@@ -2401,7 +2415,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                             i.delete()
                     except Exception as e:
                         transaction.savepoint_rollback(save_id)
-                        return HttpResponse('删除失败' % str(e))
+                        return HttpResponse('删除失败%s' % str(e))
 
                 self.perform_destroy(instance)
             except Exception as e:
@@ -2431,7 +2445,9 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
             "or override the `get_queryset()` method."
             % self.__class__.__name__
         )
-        queryset = self.queryset.filter(owner_code__in=ResultOwnereBaseinfo.objects.values_list('owner_code').filter(type=2))
+        queryset = self.queryset.filter(
+            owner_code__in=ResultOwnereBaseinfo.objects.values_list('owner_code').filter(type=2)
+        )
         if isinstance(queryset, QuerySet):
             queryset = queryset.all()
         return queryset
@@ -2441,6 +2457,8 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
             with transaction.atomic():
                 # 获取单个信息
                 instance = self.get_object()
+                if instance.state != 1:
+                    raise ValueError('该信息已被审核')
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
@@ -2484,7 +2502,8 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                         ecode = update_or_crete_enterprise(baseinfo.ecode, einfo)
 
                         # 更新角色基本信息表
-                        update_baseinfo(ResultOwnereBaseinfo, {'owner_code': baseinfo.owner_code}, {'state': 1, 'ecode': ecode})
+                        update_baseinfo(ResultOwnereBaseinfo,
+                                        {'owner_code': baseinfo.owner_code}, {'state': 1, 'ecode': ecode})
 
                         # 给账号绑定角色
                         # if baseinfo.account_code:
@@ -2494,7 +2513,9 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                         #                                              creater=request.user.account)
                         # 申请类型新增或修改时 更新account_info表dept_code
                         if data.get('dept_code') and not baseinfo.dept_code:
-                            AccountInfo.objects.filter(account_code=instance.owner.account_code).update(dept_code=data.get('dept_code'))
+                            AccountInfo.objects.filter(
+                                account_code=instance.owner.account_code
+                            ).update(dept_code=data.get('dept_code'))
 
                         # 移动相关附件
                         move_single('identityFront', baseinfo.owner_code)
@@ -2507,7 +2528,11 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                     # 更新账号绑定角色状态
                     if baseinfo.account_code:
                         IdentityAuthorizationInfo.objects.filter(account_code=baseinfo.account_code,
-                                                                 identity_code=IdentityInfo.objects.get(identity_name='requirement_enterprise_owner').identity_code).update(state=apply_state, iab_time=datetime.datetime.now())
+                                                                 identity_code=IdentityInfo.objects.get(
+                                                                     identity_name='requirement_enterprise_owner'
+                                                                 ).identity_code
+                                                                 ).update(state=apply_state,
+                                                                          iab_time=datetime.datetime.now())
 
                     # 发送信息
                     t1 = threading.Thread(target=send_msg, args=(baseinfo.owner_mobile, '需求持有企业', apply_state, baseinfo.account_code, request.user.account))

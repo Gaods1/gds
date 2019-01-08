@@ -218,10 +218,38 @@ def getCheckInfo(self,request, step_code, substep_code):
     # 获取我所在的机构下的项目
     queryset = getProjectByDept(self, request)
 
+    step_code = int(step_code)
+    substep_code = int(substep_code)
+
     if queryset != None and len(queryset) > 0:
-        # Q(cstate=0) 测试时可以先去掉条件 不然界面上没数据
-        projectcheckinfos = ProjectCheckInfo.objects.filter(~Q(substep_serial=0), Q(cstate=0), Q(step_code=step_code),
-                                                            Q(substep_code=substep_code)).order_by("-p_serial")
+        # 判断是否终止项目
+        if step_code > 0 and substep_code > 0:
+            # Q(cstate=0) 测试时可以先去掉条件 不然界面上没数据
+            # projectcheckinfos = ProjectCheckInfo.objects.filter(~Q(substep_serial=0), Q(cstate=0),
+            #                                                     Q(step_code=step_code),
+            #                                                     Q(substep_code=substep_code)).order_by("-p_serial")
+            sql = """
+            select AA.*
+            from (
+            select a.* from project_check_info as a,project_substep_info as b,project_substep_serial_info as c
+            where a.project_code=b.project_code and a.step_code=b.step_code and a.substep_code=b.substep_code
+            and b.substep_state<>-11 and a.substep_serial=c.substep_serial
+            and a.cstate=0 and a.step_code={} and a.substep_code={}
+            order by c.p_serial desc
+            ) as AA
+            group by AA.project_code,AA.step_code,AA.substep_code
+            """
+            sql = sql.format(step_code, substep_code)
+        else:
+            sql = """
+            select a.* from project_check_info as a,project_substep_info as b
+            where a.project_code=b.project_code and a.step_code=b.step_code and a.substep_code=b.substep_code
+            and b.substep_state=-11
+            and a.cstate=0
+            """
+        raw_queryset = ProjectCheckInfo.objects.raw(sql)
+        projectcheckinfos = ProjectCheckInfo.objects.filter(p_serial__in=[i.p_serial for i in raw_queryset]).order_by("-p_serial")
+
         project_codes = [check.project_code for check in projectcheckinfos]
 
         q = queryset.filter(project_code__in=project_codes)
@@ -254,10 +282,18 @@ def upCheckinfo(self, request):
     cmsg = data['cmsg']
 
     # 这里只判断一次，后面可以借用
-    if cstate == 1:
-        substep_serial_state = 3
+    if step_code > 0 and substep_code > 0:
+        # 普通步骤
+        if cstate == 1:
+            substep_serial_state = 3
+        else:
+            substep_serial_state = 4
     else:
-        substep_serial_state = 4
+        # 终止
+        if cstate == 1:
+            substep_serial_state = -1
+        else:
+            substep_serial_state = -12
 
 
     # 建立事物机制
@@ -275,57 +311,31 @@ def upCheckinfo(self, request):
             projectcheckinfo.cmsg = cmsg
             projectcheckinfo.save()
 
-            # 项目子步骤流水信息表
-            pssi = ProjectSubstepSerialInfo.objects.get(project_code=project_code,
-                                                        step_code=step_code, substep_code=substep_code,
-                                                        substep_serial=substep_serial, substep_serial_type=substep_serial_type)
+            if step_code > 0 and substep_code > 0: # 普通步骤
+                # 项目子步骤流水信息表
+                pssi = ProjectSubstepSerialInfo.objects.get(project_code=project_code,
+                                                            step_code=step_code, substep_code=substep_code,
+                                                            substep_serial=substep_serial, substep_serial_type=substep_serial_type)
 
 
-            pssi.substep_serial_state = substep_serial_state;
-            # pssi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) # 前端删除了数据库中的该字段
-            pssi.step_msg = cmsg
-            pssi.save()
+                pssi.substep_serial_state = substep_serial_state;
+                # pssi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) # 前端删除了数据库中的该字段
+                pssi.step_msg = cmsg
+                pssi.save()
 
-            # 项目子步骤流水详情信息表
-            psdi = ProjectSubstepDetailInfo.objects.get(project_code=project_code,
-                                                           step_code=step_code,substep_code=substep_code,
-                                                           substep_serial=substep_serial,substep_serial_type=substep_serial_type)
-            psdi.substep_serial_state = substep_serial_state;
-            psdi.submit_user = request.user.account
-            psdi.step_msg = cmsg
-            psdi.save()
-
-
-            # 不增加substep_serial=0为记录了
-            # 项目子步骤流水详情信息表
-            # 每一个项目的每一个子步骤还将创建一个substep_serial=0的记录，用来保存已经审核通过的数据（审核通过后将内容拷贝到该记录中）
-            # 这种做法是为了便于显示的时候快速查找
-            # 重复审核时 清空上次审核的记录  主要是方便测试
-            # psdi_old = ProjectSubstepDetailInfo.objects.filter(project_code=project_code, step_code=step_code,
-            #                                                    substep_code=substep_code, substep_serial_type=substep_serial_type,
-            #                                                    substep_serial=0)
-            # if psdi_old != None and len(psdi_old) > 0:
-            #     psdi_old[0].delete()
-            #
-            # if cstate == 1:
-            #     # 审核通过时 创建一个substep_serial=0的记录
-            #     psdis = ProjectSubstepDetailInfo.objects.filter(project_code=project_code, step_code=step_code,
-            #                                                     substep_code=substep_code,substep_serial_type=substep_serial_type,
-            #                                                     substep_serial=substep_serial)
-            #     if psdis != None and len(psdis) > 0:
-            #         psdi = psdis[0]
-            #         psdi.p_serial = None
-            #         psdi.substep_serial = 0
-            #         psdi.submit_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-            #         psdi.submit_user = request.user.account
-            #         psdi.substep_serial_state = substep_serial_state
-            #         psdi.step_msg = cmsg
-            #         psdi.save()
+                # 项目子步骤流水详情信息表
+                psdi = ProjectSubstepDetailInfo.objects.get(project_code=project_code,
+                                                               step_code=step_code,substep_code=substep_code,
+                                                               substep_serial=substep_serial,substep_serial_type=substep_serial_type)
+                psdi.substep_serial_state = substep_serial_state;
+                psdi.submit_user = request.user.account
+                psdi.step_msg = cmsg
+                psdi.save()
 
 
-            if cstate == 1:
-                # 审核通过时处理上传的附件
-                move_project_file(project_code,step_code,substep_code,substep_serial)
+                if cstate == 1:
+                    # 审核通过时处理上传的附件
+                    move_project_file(project_code,step_code,substep_code,substep_serial)
 
 
             # 项目子步骤信息表
@@ -340,7 +350,14 @@ def upCheckinfo(self, request):
             if step_code == 1 and substep_code == 1 and substep_serial_type == 1:
                 # 项目步骤信息表
                 psi = ProjectStepInfo.objects.get(project_code=project_code, step_code=step_code)
-                psi.step_state = cstate;
+
+                # 终止时需要单独判断
+                if step_code > 0 and substep_code > 0:
+                    step_state = cstate
+                else:
+                    step_state = -1
+
+                psi.step_state = step_state
                 psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 psi.step_msg = cmsg
                 psi.save()
@@ -395,6 +412,13 @@ def upCheckinfo(self, request):
                         type = '项目产品固话'
                         if cstate == 1:
                             message_content = message_content_pass.format(type,project.project_name)
+                        else:
+                            message_content = message_content_unpass.format(type, project.project_name)
+                    elif step_code == 0 and substep_code == 0: # 项目终止
+                        message_title = '项目终止审核通知'
+                        type = '项目终止'
+                        if cstate == 1:
+                            message_content = message_content_pass.format(type, project.project_name)
                         else:
                             message_content = message_content_unpass.format(type, project.project_name)
 

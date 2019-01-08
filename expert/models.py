@@ -66,10 +66,6 @@ class ExpertApplyHistory(models.Model):
             opinion = history.order_by('-check_time')[0].opinion
         return opinion
 
-    @property
-    def account(self):
-        return AccountInfo.objects.get(account_code=self.account_code).user_name
-
     class Meta:
         managed = True
         db_table = 'expert_apply_history'
@@ -123,6 +119,10 @@ class ExpertBaseinfo(models.Model):
     def enterprise(self):
         e = EnterpriseBaseinfo.objects.values_list('ename', flat=True).get(ecode=self.ecode)
         return e if e else self.ecode
+
+    @property
+    def account(self):
+        return AccountInfo.objects.get(account_code=self.account_code).user_name
 
     # 头像
     @property
@@ -185,10 +185,6 @@ class BrokerApplyHistory(models.Model):
             opinion = history.order_by('-check_time')[0].opinion
         return opinion
 
-    @property
-    def account(self):
-        return AccountInfo.objects.get(account_code=self.account_code).user_name
-
     class Meta:
         managed = False
         db_table = 'broker_apply_history'
@@ -242,6 +238,10 @@ class BrokerBaseinfo(models.Model):
     def enterprise(self):
         e = EnterpriseBaseinfo.objects.get(ecode=self.ecode)
         return e.ename
+
+    @property
+    def account(self):
+        return AccountInfo.objects.get(account_code=self.account_code).user_name
 
     # 头像
     @property
@@ -409,10 +409,6 @@ class OwnerApplyHistory(models.Model):
             opinion = history.order_by('-check_time')[0].opinion
         return opinion
 
-    @property
-    def account(self):
-        return AccountInfo.objects.get(account_code=self.account_code).user_name
-
     class Meta:
         managed = False
         db_table = 'owner_apply_history'
@@ -459,6 +455,10 @@ class ResultOwnerpBaseinfo(models.Model):
             return get_major(8, self.owner_code)
         else:
             return get_major(9, self.owner_code)
+
+    @property
+    def account(self):
+        return AccountInfo.objects.get(account_code=self.account_code).user_name
 
     # 头像
     @property
@@ -576,6 +576,10 @@ class ResultOwnereBaseinfo(models.Model):
         return region_info.district_name
 
     @property
+    def account(self):
+        return AccountInfo.objects.get(account_code=self.account_code).user_name
+
+    @property
     def major(self):
         if self.type == 1:
             return get_major(6, self.owner_code)
@@ -658,8 +662,7 @@ class ProjectTeamBaseinfo(models.Model):
 
     @property
     def account(self):
-        account = AccountInfo.objects.get(account_code=self.account_code)
-        return account.account if account.account else account.user_name
+        return AccountInfo.objects.get(account_code=self.account_code).user_name
 
     @property
     def creater_username(self):
