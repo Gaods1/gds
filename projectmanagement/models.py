@@ -84,13 +84,17 @@ class ProjectInfo(models.Model):
             team_info = {}
         return team_info
 
-    # @property
-    # def rr(self):
-    #     result_codes = [r.rr_code for r in ProjectRrInfo.objects.filter(project_code=self.consult_code, rrtype=1)]
-    #     requirement_codes = [r.rr_code for r in ProjectRrInfo.objects.filter(project_code=self.consult_code, rrtype=2)]
-    #     results = [r.r_name for r in ResultsInfo.objects.filter(r_code__in=result_codes)]
-    #     requirements = [r.req_name for r in RequirementsInfo.objects.filter(req_code__in=requirement_codes)]
-    #     return results + requirements
+    @property
+    def rr_result(self):
+        result_codes = [r.rr_code for r in ProjectRrInfo.objects.filter(project_code=self.project_code, rr_type=1)]
+        results = [r.r_name for r in ResultsInfo.objects.filter(r_code__in=result_codes)]
+        return results
+
+    @property
+    def rr_requirement(self):
+        requirement_codes = [r.rr_code for r in ProjectRrInfo.objects.filter(project_code=self.project_code, rr_type=2)]
+        requirements = [r.req_name for r in RequirementsInfo.objects.filter(req_code__in=requirement_codes)]
+        return requirements
 
 
     class Meta:

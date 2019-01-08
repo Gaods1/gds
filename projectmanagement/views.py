@@ -311,6 +311,8 @@ def upCheckinfo(self, request):
             projectcheckinfo.cmsg = cmsg
             projectcheckinfo.save()
 
+
+
             if step_code > 0 and substep_code > 0: # 普通步骤
                 # 项目子步骤流水信息表
                 pssi = ProjectSubstepSerialInfo.objects.get(project_code=project_code,
@@ -318,7 +320,7 @@ def upCheckinfo(self, request):
                                                             substep_serial=substep_serial, substep_serial_type=substep_serial_type)
 
 
-                pssi.substep_serial_state = substep_serial_state;
+                pssi.substep_serial_state = substep_serial_state
                 # pssi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) # 前端删除了数据库中的该字段
                 pssi.step_msg = cmsg
                 pssi.save()
@@ -327,21 +329,28 @@ def upCheckinfo(self, request):
                 psdi = ProjectSubstepDetailInfo.objects.get(project_code=project_code,
                                                                step_code=step_code,substep_code=substep_code,
                                                                substep_serial=substep_serial,substep_serial_type=substep_serial_type)
-                psdi.substep_serial_state = substep_serial_state;
-                psdi.submit_user = request.user.account
+                psdi.substep_serial_state = substep_serial_state
+                # psdi.submit_user = request.user.account
                 psdi.step_msg = cmsg
                 psdi.save()
 
-
-                if cstate == 1:
-                    # 审核通过时处理上传的附件
-                    move_project_file(project_code,step_code,substep_code,substep_serial)
+                if step_code > 0 and substep_code > 0:
+                    if cstate == 1:
+                        # 审核通过时处理上传的附件
+                        move_project_file(project_code,step_code,substep_code,substep_serial)
 
 
             # 项目子步骤信息表
             psi = ProjectSubstepInfo.objects.get(project_code=project_code, step_code=step_code,
                                                  substep_code=substep_code)
-            psi.substep_state = substep_serial_state;
+            # 固化清单时这个状态要单独处理
+            substep_state = substep_serial_state
+            if step_code == 4 and substep_code == 2 and substep_serial_type == 1:
+                if cstate == 1:
+                    substep_state = 1
+                else:
+                    substep_state = 0
+            psi.substep_state = substep_state
             psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             psi.step_msg = cmsg
             psi.save()
@@ -361,6 +370,12 @@ def upCheckinfo(self, request):
                 psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 psi.step_msg = cmsg
                 psi.save()
+
+                # 只有立项成功时才更新该时间
+                if cstate == 1:
+                    pi = ProjectInfo.objects.get(project_code=project_code)
+                    pi.project_start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                    pi.save()
             else:
                 psi = ProjectStepInfo.objects.get(project_code=project_code, step_code=step_code)
                 psi.step_msg = cmsg
@@ -456,8 +471,8 @@ def upCheckinfo(self, request):
                     }
                     # 测试时先不发
                     # requests.post(sms_url, data=sms_data, headers=headers)
-                    sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
-                    # sms_ret = 1
+                    # sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
+                    sms_ret = 1
                     # 保存短信发送记录
                     if int(sms_ret) == 1:
                         Message.objects.bulk_create(message_list)

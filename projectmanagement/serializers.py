@@ -136,6 +136,9 @@ class ProjectInfoSerializer(serializers.ModelSerializer):
     broker_info = ProjectBrokerInfoSerializer(read_only=True)
     team_info = ProjectTeamInfoSerializer(read_only=True)
 
+    rr_result = serializers.ListField(required=False)
+    rr_requirement = serializers.ListField(required=False)
+
     class Meta:
         model = ProjectInfo
         fields = [
@@ -157,7 +160,9 @@ class ProjectInfoSerializer(serializers.ModelSerializer):
             'substep_serial_info',
             'check_info',
             'broker_info',
-            'team_info'
+            'team_info',
+            'rr_requirement',
+            'rr_result',
         ]
 
 

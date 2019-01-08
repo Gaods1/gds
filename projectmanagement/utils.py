@@ -21,12 +21,19 @@ def move_project_file(project_code,step_code,substep_code,substep_serial):
     relative_path = ParamInfo.objects.get(param_code=2).param_value
     relative_path_front = ParamInfo.objects.get(param_code=4).param_value
 
+
+
     # 临时文件
     oldpath = '{}{}/{}/{}/{}/'.format(absolute_path, 'project', project_code, step_code,
                                       substep_code) + substep_serial + '/'
     # 正式文件
     newpath = '{}{}/{}/{}/{}/'.format(relative_path, 'project', project_code, step_code,
                                       substep_code) + substep_serial + '/'
+
+    # 文件不存在
+    if os.path.exists(oldpath) == False:
+        return
+
 
     psfis = ProjectSubstepFileInfo.objects.filter(project_code=project_code, step_code=step_code,
                                                   substep_code=substep_code, substep_serial=substep_serial)
