@@ -2641,8 +2641,8 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
         try:
             with transaction.atomic():
                 apply_team_baseinfo = self.get_object()
-                if apply_team_baseinfo.state == 2:
-                    return JsonResponse({"state":0,"msg":"审核已通过无需再审核"})
+                if apply_team_baseinfo.state != 1:
+                    raise ValueError('该信息已被审核')
 
                 check_state = request.data.get('state')
                 opinion = request.data.get('opinion')
@@ -2676,20 +2676,12 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                 }
                 TeamCheckHistory.objects.create(**team_checkinfo_data)
                 # 4 新增前台角色授权记录 identity_authorization_info   变为移动附件
-                if check_state == 2:
-                    # identity_authorization_data = {
-                    #     'account_code': apply_team_baseinfo.team_baseinfo.account_code,
-                    #     'identity_code':3,
-                    #     'state': 1,
-                    #     'insert_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                    #     'creater': request.user.account
-                    # }
-                    # IdentityAuthorizationInfo.objects.create(**identity_authorization_data)
-                    move_single('identityFront', apply_team_baseinfo.team_baseinfo.pt_code)
-                    move_single('identityBack', apply_team_baseinfo.team_baseinfo.pt_code)
-                    move_single('handIdentityPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
-                    move_single('logoPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
-                    move_single('Propaganda', apply_team_baseinfo.team_baseinfo.pt_code)
+                # if check_state == 2:
+                #     move_single('identityFront', apply_team_baseinfo.team_baseinfo.pt_code)
+                #     move_single('identityBack', apply_team_baseinfo.team_baseinfo.pt_code)
+                #     move_single('handIdentityPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
+                #     move_single('logoPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
+                #     move_single('Propaganda', apply_team_baseinfo.team_baseinfo.pt_code)
 
                 #更新前台角色授权状态(审核通过未通过都更新)
                 if apply_team_baseinfo.team_baseinfo.pt_type == 0:
@@ -2737,4 +2729,11 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
             return Response({"detail":{
                 "detail":["审核失败：%s" % str(e)]}}, status=400)
 
+        # 移动附件逻辑改为  数据库事务执行成功再移动附件
+        if check_state == 2:
+            move_single('identityFront', apply_team_baseinfo.team_baseinfo.pt_code)
+            move_single('identityBack', apply_team_baseinfo.team_baseinfo.pt_code)
+            move_single('handIdentityPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
+            move_single('logoPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
+            move_single('Propaganda', apply_team_baseinfo.team_baseinfo.pt_code)
         return JsonResponse({"state":1,"msg":"审核成功"})
