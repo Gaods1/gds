@@ -92,7 +92,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
         if instance.state != 1:
             return Response({"detail": {"detail": ['该成果信息已审核']}}, status=400)
 
+        if not data.get('state',None) or not data.get('opinion',None):
+            return Response({"detail": {"detail": ['状态和审核意见是必填项']}}, status=400)
+
         state = data['state']
+
         if state == 2:
 
             #file = ResultsInfo.objects.filter(show_state=2)
@@ -603,6 +607,9 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
         if instance.state != 1:
             return Response({"detail": {"detail": ['该需求信息已审核']}}, status=400)
+
+        if not data.get('state',None) or not data.get('opinion',None):
+            return Response({"detail": {"detail": ['状态和审核意见是必填项']}}, status=400)
 
         state = data['state']
         if state == 2:
