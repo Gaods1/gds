@@ -23,8 +23,8 @@ from public_models.models import AttachmentFileType, ParamInfo, AttachmentFilein
 from public_tools import constants
 from python_backend import settings
 
-#from django_redis import get_redis_connection
-#from .captcha.captcha import captcha
+from django_redis import get_redis_connection
+from .captcha.captcha import captcha
 
 """
 此接口为附件或单个证件照片上传接口,分为附件和单个证件照两种, 表单附件可以一次上传一个或多个,表单证件照一次只能上传一个
@@ -202,18 +202,18 @@ class PublicInfo(APIView,FileStorage):
                 return HttpResponse('ok')
 
 # 前端访问地址 120.77.58.203:8765/public/image_codes/(?P<image_code_id>[\w-]+)
-"""
+
 class ImageCodeView(APIView):
 
     def get(self,request,image_code_id):
 
-        #text,image = captcha.generate_captcha()
+        text,image = captcha.generate_captcha()
         redis_conn = get_redis_connection('default')
         redis_conn.setex('image_%s' % image_code_id,300,text)
 
         return HttpResponse(image, content_type='image/jpg')
 
-"""
+
 
 
 
