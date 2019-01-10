@@ -195,13 +195,15 @@ def getProjectByDept(self, request):
     # 当前部门所有账号
     if dept_codes == None or len(dept_codes) == 0:
         account_codes = [account.account_code for account in
-                         AccountInfo.objects.only('dept_code').filter()]
+                         AccountInfo.objects.only('dept_code').filter(state=1)]
+        # queryset = self.get_queryset()
     else:
         account_codes = [account.account_code for account in
-                         AccountInfo.objects.only('dept_code').filter(dept_code__in=dept_codes)]
+                         AccountInfo.objects.only('dept_code').filter(dept_code__in=dept_codes, state=1)]
+
 
     # 当前部门账号相关的技术经济人代码
-    brokers = [broker.broker_code for broker in BrokerBaseinfo.objects.filter(account_code__in=account_codes)]
+    brokers = [broker.broker_code for broker in BrokerBaseinfo.objects.filter(account_code__in=account_codes, state=1)]
     # 技术经济人相关的项目
     project_codes = [projectbrokerinfo.project_code for projectbrokerinfo in
                      ProjectBrokerInfo.objects.filter(broker_code__in=brokers)]

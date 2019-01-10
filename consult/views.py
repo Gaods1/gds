@@ -16,6 +16,7 @@ import random,requests,time,json
 from django.http import HttpResponse,JsonResponse
 from public_models.utils import move_attachment,move_single,get_detcode_str,get_dept_codes
 from django.db.models.query import QuerySet
+import re
 
 
 # Create your views here.
@@ -105,6 +106,13 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
             consult_info = self.get_object()
             if check_state !=1 and check_state !=2 :
                 return JsonResponse({'state':0,'msg':'请确认审核是否通过'})
+
+            if consult_info.consult_state != 0 :
+                return JsonResponse({'state':0,'msg':'非待审核状态不允许审核'})
+
+            if  not data.get('check_memo').strip():
+                return JsonResponse({'state': 0, 'msg': '审核意见为必填项'})
+
             try:
                 with transaction.atomic():
                     # 1 更新征询表状态(共通)
@@ -205,6 +213,7 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
             partial = kwargs.pop('partial', False)
             instance = self.get_object()
             del request.data['rr']
+            print(request.data)
             serializer = self.get_serializer(instance, data=request.data, partial=partial)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
