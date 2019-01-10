@@ -51,17 +51,17 @@ class ProfileViewSet(viewsets.ModelViewSet):
         opinion（text）:审核意见,
     }
     """
-    queryset = RrApplyHistory.objects.filter(type=1).order_by('state')
+    queryset = RrApplyHistory.objects.filter(type=1,state=1).order_by('-apply_time')
 
     serializer_class = RrApplyHistorySerializer
     filter_backends = (
-        filters.SearchFilter,
+        #filters.SearchFilter,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
-    ordering_fields = ("account_code","a_code","rr_code")
-    filter_fields = ("account_code", "rr_code","a_code")
-    search_fields = ("rr_code","account_code","a_code")
+    ordering_fields = ("r_name","key_info")
+    filter_fields = ("r_name","key_info")
+    #search_fields = ("r_name","key_info")
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
@@ -73,10 +73,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
             		inner join account_info \
             		on account_info.account_code=rr_apply_history.account_code \
             		where account_info.dept_code in ({dept_s}) \
-            		and rr_apply_history.type=1"
+            		and rr_apply_history.type=1 and rr_apply_history.state=1"
 
             raw_queryset = RrApplyHistory.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state')
+            consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('-apply_time')
             return consult_reply_set
         else:
             queryset = self.queryset
@@ -84,6 +84,19 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 # Ensure queryset is re-evaluated on each request.
                 queryset = queryset.all()
             return queryset
+        
+    def list(self, request, *args, **kwargs):
+        search = request.query_param.get('search', None)
+        q = self.get_queryset().values_list('rr_code')
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -572,7 +585,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
         opinion（text）:审核意见,
     }
     """
-    queryset = RrApplyHistory.objects.filter(type=2).order_by('state')
+    queryset = RrApplyHistory.objects.filter(type=2,state=1).order_by('-apply_time')
     serializer_class = RrApplyHistorySerializer
     filter_backends = (
         filters.SearchFilter,
@@ -593,10 +606,10 @@ class RequirementViewSet(viewsets.ModelViewSet):
             		inner join account_info \
             		on account_info.account_code=rr_apply_history.account_code \
             		where account_info.dept_code in ({dept_s}) \
-            		and rr_apply_history.type=2"
+            		and rr_apply_history.type=2 and rr_apply_history.state=1"
 
             raw_queryset = RrApplyHistory.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state')
+            consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('-apply_time')
             return consult_reply_set
         else:
             return self.queryset
