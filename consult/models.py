@@ -53,6 +53,10 @@ class ConsultInfo(models.Model):
         requirements = [r.req_name for r in RequirementsInfo.objects.filter(req_code__in=requirement_codes)]
         return results + requirements;
 
+    @property
+    def account(self):
+        return AccountInfo.objects.get(account_code=self.consulter).user_name
+
     class Meta:
         managed = False
         db_table = 'consult_info'
