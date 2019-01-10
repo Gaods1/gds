@@ -9,6 +9,7 @@ class ConsultInfoSerializer(serializers.ModelSerializer):
     rr = serializers.ListField(required=False)
     cover_img = serializers.CharField(read_only=True)
     attachments = serializers.DictField(read_only=True)
+    account = serializers.CharField(read_only=True)
 
     class Meta:
         model = ConsultInfo
@@ -23,6 +24,7 @@ class ConsultInfoSerializer(serializers.ModelSerializer):
                   'consult_state',
                   'insert_time',
                   'creater',
+                  'account',
                   'rr',
                   'cover_img',
                   'attachments']
