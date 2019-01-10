@@ -25,6 +25,7 @@ from python_backend import settings
 from .serializers import *
 from .models import *
 from .utils import massege, diedai
+from django.db.models import Q
 
 
 # Create your views here.
@@ -51,17 +52,18 @@ class ProfileViewSet(viewsets.ModelViewSet):
         opinion（text）:审核意见,
     }
     """
-    queryset = RrApplyHistory.objects.filter(type=1).order_by('state')
+    queryset = RrApplyHistory.objects.filter(type=1,state=1).order_by('-apply_time')
 
     serializer_class = RrApplyHistorySerializer
     filter_backends = (
-        filters.SearchFilter,
+        # filters.SearchFilter,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("account_code","a_code","rr_code")
     filter_fields = ("account_code", "rr_code","a_code")
-    search_fields = ("rr_code","account_code","a_code")
+    # search_fields = ("rr_code","account_code","a_code")
+
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
@@ -73,10 +75,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
             		inner join account_info \
             		on account_info.account_code=rr_apply_history.account_code \
             		where account_info.dept_code in ({dept_s}) \
-            		and rr_apply_history.type=1"
+            		and rr_apply_history.type=1 and rr_apply_history.state=1"
 
             raw_queryset = RrApplyHistory.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state')
+            consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('-apply_time')
             return consult_reply_set
         else:
             queryset = self.queryset
@@ -85,6 +87,26 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 queryset = queryset.all()
             return queryset
 
+    def list(self, request, *args, **kwargs):
+        search = request.query_params.get('search', None)
+        if search:
+            rq = ResultsInfo.objects.values_list('r_code').filter(r_code__in=self.get_queryset().values_list('rr_code'),
+                                                                  r_name__icontains=search)
+            kq = KeywordsInfo.objects.values_list('object_code').filter(object_code__in=self.get_queryset().values_list('rr_code'),
+                                                                        key_info__icontains=search)
+            queryset = self.get_queryset().filter(Q(rr_code__in=rq) | Q(rr_code__in=kq))
+        else:
+            queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         data = request.data
@@ -92,7 +114,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
         if instance.state != 1:
             return Response({"detail": {"detail": ['该成果信息已审核']}}, status=400)
 
+        if not data.get('state',None) or not data.get('opinion',None):
+            return Response({"detail": {"detail": ['状态和审核意见是必填项']}}, status=400)
+
         state = data['state']
+
         if state == 2:
 
             #file = ResultsInfo.objects.filter(show_state=2)
@@ -568,16 +594,16 @@ class RequirementViewSet(viewsets.ModelViewSet):
         opinion（text）:审核意见,
     }
     """
-    queryset = RrApplyHistory.objects.filter(type=2).order_by('state')
+    queryset = RrApplyHistory.objects.filter(type=2,state=1).order_by('-apply_time')
     serializer_class = RrApplyHistorySerializer
     filter_backends = (
-        filters.SearchFilter,
+        # filters.SearchFilter,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("account_code","a_code","rr_code")
     filter_fields = ("account_code", "rr_code","a_code")
-    search_fields = ("rr_code","account_code","a_code")
+    # search_fields = ("rr_code","account_code","a_code")
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
@@ -589,13 +615,33 @@ class RequirementViewSet(viewsets.ModelViewSet):
             		inner join account_info \
             		on account_info.account_code=rr_apply_history.account_code \
             		where account_info.dept_code in ({dept_s}) \
-            		and rr_apply_history.type=2"
+            		and rr_apply_history.type=2 and rr_apply_history.state=1"
 
             raw_queryset = RrApplyHistory.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state')
+            consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('-apply_time')
             return consult_reply_set
         else:
             return self.queryset
+
+    def list(self, request, *args, **kwargs):
+        search = request.query_params.get('search', None)
+        if search:
+            rq = RequirementsInfo.objects.values_list('req_code').filter(req_code__in=self.get_queryset().values_list('rr_code'),
+                                                                  req_name__icontains=search)
+            kq = KeywordsInfo.objects.values_list('object_code').filter(object_code__in=self.get_queryset().values_list('rr_code'),
+                                                                        key_info__icontains=search)
+            queryset = self.get_queryset().filter(Q(rr_code__in=rq) | Q(rr_code__in=kq))
+        else:
+            queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -603,6 +649,9 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
         if instance.state != 1:
             return Response({"detail": {"detail": ['该需求信息已审核']}}, status=400)
+
+        if not data.get('state',None) or not data.get('opinion',None):
+            return Response({"detail": {"detail": ['状态和审核意见是必填项']}}, status=400)
 
         state = data['state']
         if state == 2:

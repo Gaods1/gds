@@ -84,7 +84,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
 
 # 领域专家申请视图
 class ExpertApplyViewSet(viewsets.ModelViewSet):
-    queryset = ExpertApplyHistory.objects.all().order_by('state')
+    queryset = ExpertApplyHistory.objects.filter(state=1).order_by('-apply_time')
     serializer_class = ExpertApplySerializers
 
     filter_backends = (
@@ -245,7 +245,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
 
 # 技术经纪人申请视图
 class BrokerApplyViewSet(viewsets.ModelViewSet):
-    queryset = BrokerApplyHistory.objects.all().order_by('state')
+    queryset = BrokerApplyHistory.objects.filter(state=1).order_by('-apply_time')
     serializer_class = BrokerApplySerializers
 
     filter_backends = (
@@ -660,7 +660,7 @@ class CollectorViewSet(viewsets.ModelViewSet):
 
 # 采集员申请视图
 class CollectorApplyViewSet(viewsets.ModelViewSet):
-    queryset = CollectorApplyHistory.objects.all().order_by('state')
+    queryset = CollectorApplyHistory.objects.filter(state=1).order_by('-apply_time')
     serializer_class = CollectorApplySerializers
 
     filter_backends = (
@@ -1088,7 +1088,7 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
 
 # 成果持有人申请视图
 class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
-    queryset = OwnerApplyHistory.objects.all().order_by('state')
+    queryset = OwnerApplyHistory.objects.filter(state=1).order_by('-apply_time')
     serializer_class = OwnerApplySerializers
 
     filter_backends = (
@@ -1532,7 +1532,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
 
 # 成果持有人（企业）申请视图
 class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
-    queryset = OwnereApplyHistory.objects.all().order_by('state')
+    queryset = OwnereApplyHistory.objects.filter(state=1).order_by('-apply_time')
     serializer_class = OwnereApplySerializers
 
     filter_backends = (
@@ -1984,7 +1984,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
 
 # 需求持有人申请视图
 class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
-    queryset = OwnerApplyHistory.objects.all().order_by('state')
+    queryset = OwnerApplyHistory.objects.filter(state=1).order_by('-apply_time')
     serializer_class = OwnerApplySerializers
 
     filter_backends = (
@@ -2427,7 +2427,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
 
 # 需求持有企业申请视图
 class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
-    queryset = OwnereApplyHistory.objects.all().order_by('state')
+    queryset = OwnereApplyHistory.objects.filter(state=1).order_by('-apply_time')
     serializer_class = OwnereApplySerializers
 
     filter_backends = (
@@ -2615,7 +2615,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
 
 # 技术团队申请视图
 class TeamApplyViewSet(viewsets.ModelViewSet):
-    queryset = TeamApplyHistory.objects.all().order_by('state')
+    queryset = TeamApplyHistory.objects.filter(state=1).order_by('-apply_time')
     serializer_class = TeamApplySerializers
 
     filter_backends = (
