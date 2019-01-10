@@ -23,7 +23,7 @@ from public_models.models import AttachmentFileType, ParamInfo, AttachmentFilein
 from public_tools import constants
 from python_backend import settings
 
-from django_redis import get_redis_connection
+#from django_redis import get_redis_connection
 #from .captcha.captcha import captcha
 
 """
@@ -202,6 +202,7 @@ class PublicInfo(APIView,FileStorage):
                 return HttpResponse('ok')
 
 # 前端访问地址 120.77.58.203:8765/public/image_codes/(?P<image_code_id>[\w-]+)
+"""
 class ImageCodeView(APIView):
 
     def get(self,request,image_code_id):
@@ -212,6 +213,7 @@ class ImageCodeView(APIView):
 
         return HttpResponse(image, content_type='image/jpg')
 
+"""
 
 
 

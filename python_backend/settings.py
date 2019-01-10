@@ -180,6 +180,7 @@ DATABASES = {
 }
 
 # redis 数据库默认1号
+"""
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
@@ -192,6 +193,7 @@ CACHES = {
 }
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 #SESSION_CACHE_ALIAS = "session"
+"""
 
 
 # Password validation
