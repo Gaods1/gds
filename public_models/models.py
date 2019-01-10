@@ -290,7 +290,7 @@ class PersonalInfo(models.Model):
 class EnterpriseBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     ecode = models.CharField(unique=True, max_length=64, default=gen_uuid32)
-    ename = models.CharField(max_length=64, blank=True, null=True, unique=True)
+    ename = models.CharField(max_length=64, blank=True, null=True)
     eabbr = models.CharField(max_length=32, blank=True, null=True)
     business_license = models.CharField(max_length=64,blank=True, null=True, validators=[validate_license], unique=True)
     eabstract = models.TextField(blank=True, null=True)
