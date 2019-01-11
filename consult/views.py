@@ -322,11 +322,18 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
             reply_info = self.get_object()
             if check_state !=3 and check_state !=4 :
                 return JsonResponse({'state':0,'msg':'请确认审核是否通过'})
+
+            if reply_info.reply_state != 1 :
+                return JsonResponse({'state':0,'msg':'非待审核状态不允许审核'})
+
+            if  not checkinfo_data.get('check_memo').strip():
+                return JsonResponse({'state': 0, 'msg': '审核意见为必填项'})
+
             try:
                 with transaction.atomic():
                     #1 生成征询回复记录
                     reply_checkinfo_data = {
-                        'reply_code': gen_uuid32(),
+                        'reply_code': reply_info.reply_code,
                         'check_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                         'check_memo': checkinfo_data.get('check_memo'),
                         'check_state': check_state,
