@@ -35,10 +35,17 @@ class ConsultInfo(models.Model):
     insert_time = models.DateTimeField(blank=True, null=True)
     creater = models.CharField(max_length=64, blank=True, null=True)
 
+    # @property
+    # def attachments(self):
+    #     attachments = get_attachment('consultEditor', self.consult_code)
+    #     return attachments
     @property
-    def attachments(self):
-        attachments = get_attachment('consultEditor', self.consult_code)
-        return attachments
+    def check_memo(self):
+        check_info =  ConsultCheckinfo.objects.filter(consult_code=self.consult_code).order_by('-check_time')
+        if check_info:
+            return check_info[0].check_memo
+        return None
+
 
     @property
     def cover_img(self):
@@ -99,6 +106,13 @@ class ConsultReplyInfo(models.Model):
     reply_state = models.IntegerField(blank=True, null=True)
     accept_time = models.DateTimeField(blank=True,null=True)
     reply_time = models.DateTimeField(blank=True, null=True)
+
+    @property
+    def check_memo(self):
+        reply_check_info = ConsultReplyCheckinfo.objects.filter(reply_code=self.reply_code).order_by('-check_time')
+        if reply_check_info:
+            return reply_check_info[0].check_memo
+        return None
 
     #检索征询名称
     @property
