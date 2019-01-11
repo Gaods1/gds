@@ -21,7 +21,7 @@ from rest_framework_swagger.renderers import SwaggerUIRenderer, OpenAPIRenderer
 from django.views.generic import TemplateView
 
 from rest_framework_jwt.views import obtain_jwt_token
-from python_backend.certification import get_jwt_token
+#from python_backend.certification import get_jwt_token
 from python_backend.imagecodes import get_image_code
 
 schema_view = get_schema_view(title='科技成果转化管理系统 API', renderer_classes=[OpenAPIRenderer, SwaggerUIRenderer])
