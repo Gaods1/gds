@@ -29,7 +29,7 @@ from public_tools.captcha.captcha import captcha
 
 import uuid
 
-# 前端访问地址 120.77.58.203:8765/public/image_codes
+# 前端访问地址 120.77.58.203:8765/imagecodes
 
 class ImageCodeView(APIView):
     permission_classes = ()

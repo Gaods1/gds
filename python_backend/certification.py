@@ -27,7 +27,6 @@ class GetJSONWebTokenSerializer(JSONWebTokenSerializer):
             'text': attrs.get('text')
         }
         if all(credentials.values()):
-            user = self.authenticate(**credentials)
 
             try:
                 image_code_id = credentials.get('image_code_id')
@@ -36,7 +35,6 @@ class GetJSONWebTokenSerializer(JSONWebTokenSerializer):
                 if not image_code_id or not text:
                     raise serializers.ValidationError('请输入图片验证码')
 
-                #if not re.match(r"(//w{8}(-//w{4}){3}-//w{12}?)",image_code_id) or len(text) != 4:
                 if len(text) != 4:
                     raise serializers.ValidationError('图片验证码不正确')
 
@@ -57,6 +55,9 @@ class GetJSONWebTokenSerializer(JSONWebTokenSerializer):
                     raise serializers.ValidationError('输入图片验证码有误')
             except Exception as e:
                 raise serializers.ValidationError(e)
+
+            user = self.authenticate(**credentials)
+
             if user:
                 if not user.is_active:
                     msg = _('User account is disabled.')
