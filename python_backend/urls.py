@@ -20,6 +20,7 @@ from .certification import get_jwt_token
 from rest_framework.schemas import get_schema_view
 from rest_framework_swagger.renderers import SwaggerUIRenderer, OpenAPIRenderer
 from django.views.generic import TemplateView
+from python_backend.imagecodes import get_image_code
 import os
 
 api_token_auth = obtain_jwt_token if os.environ.get('TOKEN_DEBUG') else get_jwt_token
@@ -39,4 +40,5 @@ urlpatterns = [
     path('consult/', include('consult.urls')),
     path('public/', include('public_tools.urls')),
     path('major/', include('public_models.urls')),
+    path('imagecodes/', get_image_code,name='imagecodes'),
 ]
