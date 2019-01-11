@@ -1,8 +1,13 @@
+import re
+
+from redis import RedisError
 from rest_framework_jwt.views import JSONWebTokenAPIView
 from rest_framework_jwt.serializers import JSONWebTokenSerializer
 from rest_framework import serializers
 from django.utils.translation import ugettext as _
 from rest_framework_jwt.settings import api_settings
+from django_redis import get_redis_connection
+
 
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
 jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
@@ -11,20 +16,47 @@ jwt_get_username_from_payload = api_settings.JWT_PAYLOAD_GET_USERNAME_HANDLER
 
 
 class GetJSONWebTokenSerializer(JSONWebTokenSerializer):
-    img_code = serializers.CharField()
+    image_code_id = serializers.UUIDField()
     text = serializers.CharField()
-    pass
 
     def validate(self, attrs):
         credentials = {
             self.username_field: attrs.get(self.username_field),
             'password': attrs.get('password'),
-            'img_code': attrs.get('img_code'),
+            'image_code_id': attrs.get('image_code_id'),
             'text': attrs.get('text')
         }
         if all(credentials.values()):
             user = self.authenticate(**credentials)
 
+            try:
+                image_code_id = credentials.get('image_code_id')
+                text = credentials.get('text')
+
+                if not image_code_id or not text:
+                    raise serializers.ValidationError('请输入图片验证码')
+
+                #if not re.match(r"(//w{8}(-//w{4}){3}-//w{12}?)",image_code_id) or len(text) != 4:
+                if len(text) != 4:
+                    raise serializers.ValidationError('图片验证码不正确')
+
+
+                redis_conn = get_redis_connection('default')
+
+                image_code_server = redis_conn.get(str(image_code_id))
+                if image_code_server is None:
+                    raise serializers.ValidationError('无效图片验证码')
+                try:
+                    redis_conn.delete(str(image_code_id))
+                except RedisError as e:
+                    raise serializers.ValidationError('数据库错误%s' % str(e))
+
+                image_code_server = image_code_server.decode()
+
+                if text.lower() != image_code_server.lower():
+                    raise serializers.ValidationError('输入图片验证码有误')
+            except Exception as e:
+                raise serializers.ValidationError(e)
             if user:
                 if not user.is_active:
                     msg = _('User account is disabled.')

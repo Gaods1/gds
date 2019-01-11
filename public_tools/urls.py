@@ -9,5 +9,4 @@ from django.urls import path, include, re_path
 
 urlpatterns = [
     re_path(r'^uploadment', views.PublicInfo.as_view()),
-    #re_path(r'^image_codes/(?P<image_code_id>[\w-]+)/$', views.ImageCodeView.as_view()),
 ]
