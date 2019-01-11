@@ -1,7 +1,9 @@
 import os
 import subprocess
+import base64
 
 import shutil
+from misc.misc import gen_uuid32
 
 import time
 from django.core.files.storage import FileSystemStorage
@@ -20,7 +22,6 @@ from rest_framework.views import APIView
 from backends import FileStorage
 from misc.misc import gen_uuid32
 from public_models.models import AttachmentFileType, ParamInfo, AttachmentFileinfo
-from public_tools import constants
 from python_backend import settings
 
 from django_redis import get_redis_connection
@@ -201,17 +202,7 @@ class PublicInfo(APIView,FileStorage):
                 transaction.savepoint_commit(save_id)
                 return HttpResponse('ok')
 
-# 前端访问地址 120.77.58.203:8765/public/image_codes/(?P<image_code_id>[\w-]+)
 
-class ImageCodeView(APIView):
-
-    def get(self,request,image_code_id):
-
-        text,image = captcha.generate_captcha()
-        redis_conn = get_redis_connection('default')
-        redis_conn.setex('image_%s' % image_code_id,300,text)
-
-        return HttpResponse(image, content_type='image/jpg')
 
 
 
