@@ -25,7 +25,6 @@ from public_models.models import AttachmentFileType, ParamInfo, AttachmentFilein
 from python_backend import settings
 
 from django_redis import get_redis_connection
-from .captcha.captcha import captcha
 
 """
 此接口为附件或单个证件照片上传接口,分为附件和单个证件照两种, 表单附件可以一次上传一个或多个,表单证件照一次只能上传一个

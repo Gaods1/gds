@@ -25,7 +25,7 @@ from public_models.models import AttachmentFileType, ParamInfo, AttachmentFilein
 from python_backend import settings
 
 from django_redis import get_redis_connection
-from public_tools.captcha.captcha import captcha
+#from public_tools.captcha.captcha import captcha
 
 import uuid
 
@@ -38,15 +38,16 @@ class ImageCodeView(APIView):
     def get(self,request):
 
         #image_code_id = gen_uuid32()
-        image_code_id = str(uuid.uuid1())
+        #image_code_id = str(uuid.uuid1())
 
-        text,image = captcha.generate_captcha()
+        #text,image = captcha.generate_captcha()
 
-        image_str = base64.b64encode(image)
+        #image_str = base64.b64encode(image)
 
-        redis_conn = get_redis_connection('default')
-        redis_conn.setex(image_code_id,300,text)
+        #redis_conn = get_redis_connection('default')
+        #redis_conn.setex(image_code_id,300,text)
 
-        return Response({image_code_id:image_str})
+        #return Response({image_code_id:image_str})
+        return Response({'nihao':'nihao'})
 
 get_image_code = ImageCodeView.as_view()
