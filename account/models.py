@@ -141,23 +141,23 @@ class AccountInfo(AbstractBaseUser):
 
     def check_password(self, raw_password):
         if self.state != 1:
-            return False
+            raise ValidationError('此账号已被禁用')
 
         # 验证密码
         if not check_md5_password(raw_password, self.password):
-            return False
+            raise ValidationError('密码不正确')
 
         # 验证角色
         role_codes = AccountRoleInfo.objects.values_list('role_code', flat=True).filter(account=self.account, state=1)
         roles = RoleInfo.objects.filter(role_code__in=role_codes, state=1)
         if not roles:
-            return False
+            raise ValidationError('账号未绑定角色，请联系管理员')
 
         # 验证机构部门
         try:
             Deptinfo.objects.get(dept_code=self.dept_code, state=1)
         except Exception:
-            return False
+            raise ValidationError('账号分配机构部门，请联系管理员')
 
         return True
 

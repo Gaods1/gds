@@ -16,6 +16,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include, re_path
 from rest_framework_jwt.views import obtain_jwt_token
+from .certification import get_jwt_token
 from rest_framework.schemas import get_schema_view
 from rest_framework_swagger.renderers import SwaggerUIRenderer, OpenAPIRenderer
 from django.views.generic import TemplateView
@@ -27,7 +28,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('rest_framework.urls', namespace='rest_framework')),
     path('docs/', schema_view, name="docs"),
-    path('api-token-auth/', obtain_jwt_token, name='auth-jwt-get'),
+    path('api-token-auth/', get_jwt_token, name='auth-jwt-get'),
     path('system/', include('account.urls')),
     path('certified/', include('expert.urls')),
     path('achievement/', include('achievement.urls')),
