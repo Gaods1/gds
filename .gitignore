@@ -15,6 +15,7 @@ uwsgi.*
 *.db
 db.sqlite3
 
+
 newras.bashrc
 
 filecache/caches/
