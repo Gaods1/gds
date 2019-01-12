@@ -85,6 +85,7 @@ INSTALLED_APPS = [
     'rest_framework_jwt',
     'django_filters',
     'rest_framework_swagger',
+    'gunicorn', # 中间件
     'corsheaders',# 跨域(以后删除)
     'projectmanagement',#项目管理
     'consult',#征询管理
