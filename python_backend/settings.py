@@ -52,6 +52,8 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
+
+    'NON_FIELD_ERRORS_KEY': 'non_field_errors',
 }
 
 JWT_AUTH = {

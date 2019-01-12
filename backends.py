@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.backends import ModelBackend
 
 from django.core.files.storage import FileSystemStorage
+from django.core.exceptions import ValidationError
 from django.conf import settings
 import os, time, random
 
@@ -18,10 +19,10 @@ class AccountBackend(ModelBackend):
     def authenticate(self, request, username=None, password=None, **kwargs):
         try:
             user = User.objects.get(account=username)
-            if user.check_password(password):
-                return user
-        except Exception as e:
-            return None
+        except Exception as e :
+            raise ValidationError("此账号不存在")
+        if user.check_password(password):
+            return user
 
 
 class FileStorage(FileSystemStorage):
