@@ -46,7 +46,7 @@ class ImageCodeView(APIView):
         redis_conn = get_redis_connection('default')
         redis_conn.setex(image_code_id,300,text)
 
-        return Response({image_code_id:image_str})
+        return Response({'image_code_id':image_code_id,'image_str':image_str})
         #return Response({'nihao':'nihao'})
 
 get_image_code = ImageCodeView.as_view()
