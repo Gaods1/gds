@@ -8,6 +8,7 @@ from django.db import transaction
 import time
 import requests
 import re
+import sys
 
 from .serializers import *
 from django.db import connection, transaction
@@ -19,6 +20,8 @@ from public_models.utils import get_dept_codes,get_detcode_str
 from public_models.models import Message
 
 from .utils import *
+
+from public_tools.utils import writeLog
 
 
 
@@ -189,6 +192,8 @@ def getProjectByDept(self, request):
 
     # 只要返回空列表我就认为你的部门是一级部门
     dept_codes = get_dept_codes(dept_code)
+    writeLog('yzw_py.log', 'getProjectByDept', sys._getframe().f_code.co_filename, str(sys._getframe().f_lineno))
+
 
     # 此处可以继续优化，但是数据关系不完整，暂时不做优化
     # TODO...
