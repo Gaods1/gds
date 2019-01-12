@@ -39,8 +39,9 @@ class ImageCodeView(APIView):
 
         image_code_id = gen_uuid32()
         image_code_id = str(uuid.uuid1())
-
+        print(image_code_id+"1111111")
         text,image = captcha.generate_captcha()
+        print(image_code_id+"22222222")
 
         image_str = base64.b64encode(image)
 
