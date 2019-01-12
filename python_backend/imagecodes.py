@@ -37,7 +37,7 @@ class ImageCodeView(APIView):
 
     def get(self,request):
 
-        image_code_id = gen_uuid32()
+        #image_code_id = gen_uuid32()
         image_code_id = str(uuid.uuid1())
         text,image = captcha.generate_captcha()
 
