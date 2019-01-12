@@ -42,11 +42,18 @@ class ImageCodeView(APIView):
         text,image = captcha.generate_captcha()
 
         image_str = base64.b64encode(image)
+        #print(image_str)
+        #image_str = base64(image)
+        #with open("C:\\Users\\Administrator\\Desktop\\ww\\1.jpg", 'rb') as f:
+        image_str = base64.b64encode(image)
+        s = image_str.decode()
+        ss = 'data:image/jpeg;base64,%s' % s
+        print(ss)
 
         redis_conn = get_redis_connection('default')
         redis_conn.setex(image_code_id,300,text)
 
-        return Response({'image_code_id':image_code_id,'image_str':image_str})
+        return Response({'image_code_id':image_code_id,'image_str':ss})
         #return Response({'nihao':'nihao'})
 
 get_image_code = ImageCodeView.as_view()

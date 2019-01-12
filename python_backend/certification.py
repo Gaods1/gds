@@ -17,25 +17,25 @@ jwt_get_username_from_payload = api_settings.JWT_PAYLOAD_GET_USERNAME_HANDLER
 
 class GetJSONWebTokenSerializer(JSONWebTokenSerializer):
     image_code_id = serializers.UUIDField()
-    text = serializers.CharField()
+    checkcode = serializers.CharField()
 
     def validate(self, attrs):
         credentials = {
             self.username_field: attrs.get(self.username_field),
             'password': attrs.get('password'),
             'image_code_id': attrs.get('image_code_id'),
-            'text': attrs.get('text')
+            'checkcode': attrs.get('checkcode')
         }
         if all(credentials.values()):
 
             try:
                 image_code_id = credentials.get('image_code_id')
-                text = credentials.get('text')
+                checkcode = credentials.get('checkcode')
 
-                if not image_code_id or not text:
+                if not image_code_id or not checkcode:
                     raise serializers.ValidationError('请输入图片验证码')
 
-                if len(text) != 4:
+                if len(checkcode) != 4:
                     raise serializers.ValidationError('图片验证码不正确')
 
 
@@ -51,7 +51,7 @@ class GetJSONWebTokenSerializer(JSONWebTokenSerializer):
 
                 image_code_server = image_code_server.decode()
 
-                if text.lower() != image_code_server.lower():
+                if checkcode.lower() != image_code_server.lower():
                     raise serializers.ValidationError('输入图片验证码有误')
             except Exception as e:
                 raise serializers.ValidationError(e)
