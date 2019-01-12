@@ -15,14 +15,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include, re_path
-from rest_framework_jwt.views import obtain_jwt_token
 from .certification import get_jwt_token
 from rest_framework.schemas import get_schema_view
 from rest_framework_swagger.renderers import SwaggerUIRenderer, OpenAPIRenderer
 from django.views.generic import TemplateView
 
 from rest_framework_jwt.views import obtain_jwt_token
-#from python_backend.certification import get_jwt_token
 from python_backend.imagecodes import get_image_code
 import os
 
