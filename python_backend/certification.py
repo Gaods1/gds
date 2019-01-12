@@ -23,38 +23,35 @@ class GetJSONWebTokenSerializer(JSONWebTokenSerializer):
         credentials = {
             self.username_field: attrs.get(self.username_field),
             'password': attrs.get('password'),
-            'image_code_id': attrs.get('image_code_id'),
-            'checkcode': attrs.get('checkcode')
+            'image_code_id': attrs.get('image_code_id',None),
+            'checkcode': attrs.get('checkcode',None)
         }
         if all(credentials.values()):
 
+            image_code_id = credentials.get('image_code_id')
+            checkcode = credentials.get('checkcode')
+
+            if not image_code_id or not checkcode:
+                raise serializers.ValidationError('请输入图片验证码')
+
+            if len(checkcode) != 4:
+                raise serializers.ValidationError('图片验证码不正确')
+
+            redis_conn = get_redis_connection('default')
+
+            image_code_server = redis_conn.get(str(image_code_id))
+            if image_code_server is None:
+                raise serializers.ValidationError('无效图片验证码')
             try:
-                image_code_id = credentials.get('image_code_id')
-                checkcode = credentials.get('checkcode')
+                redis_conn.delete(str(image_code_id))
+            except RedisError as e:
+                raise serializers.ValidationError('数据库错误%s' % str(e))
 
-                if not image_code_id or not checkcode:
-                    raise serializers.ValidationError('请输入图片验证码')
+            image_code_server = image_code_server.decode()
 
-                if len(checkcode) != 4:
-                    raise serializers.ValidationError('图片验证码不正确')
+            if checkcode.lower() != image_code_server.lower():
+                raise serializers.ValidationError('输入图片验证码有误')
 
-
-                redis_conn = get_redis_connection('default')
-
-                image_code_server = redis_conn.get(str(image_code_id))
-                if image_code_server is None:
-                    raise serializers.ValidationError('无效图片验证码')
-                try:
-                    redis_conn.delete(str(image_code_id))
-                except RedisError as e:
-                    raise serializers.ValidationError('数据库错误%s' % str(e))
-
-                image_code_server = image_code_server.decode()
-
-                if checkcode.lower() != image_code_server.lower():
-                    raise serializers.ValidationError('输入图片验证码有误')
-            except Exception as e:
-                raise serializers.ValidationError(e)
 
             user = self.authenticate(**credentials)
 
