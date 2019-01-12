@@ -93,6 +93,8 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
     PerIdBack = serializers.CharField(read_only=True)
     PerHandId = serializers.CharField(read_only=True)
     EntLicense = serializers.CharField(read_only=True)
+
+
     class Meta:
         model = ResultsInfo
         fields = ['serial',
@@ -147,6 +149,7 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
     PerHandId = serializers.CharField(read_only=True)
     EntLicense = serializers.CharField(read_only=True)
 
+
     class Meta:
         model = RequirementsInfo
         fields = [
@@ -184,6 +187,7 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
             'PerIdBack',
             'PerHandId',
             'EntLicense',
+
         ]
 
 
@@ -195,7 +199,8 @@ class RrApplyHistorySerializer(serializers.ModelSerializer):
     Cooperation = ResultsCooperationTypeInfoSerializer(read_only=True)
     Owner = ResultsOwnerInfoSerializer(read_only=True)
     Personal = PersonalInfoSerializer(read_only=True)
-    Keywords = KeywordsInfoSerializer(many=True,read_only=True)
+    Keywords = serializers.ListField(read_only=True)
+    opinion = serializers.CharField(read_only=True)
 
     class Meta:
         model = RrApplyHistory
@@ -214,4 +219,5 @@ class RrApplyHistorySerializer(serializers.ModelSerializer):
                   'Personal',
                   'Keywords',
                   'apply_time',
+                  'opinion',
                   ]

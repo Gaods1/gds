@@ -64,8 +64,16 @@ class RrApplyHistory(models.Model):
     @property
     def Keywords(self):
         #Results = ResultsInfo.objects.filter(r_code=self.rr_code)
-        Keywords = KeywordsInfo.objects.filter(object_code=self.rr_code)
+        Keywords = KeywordsInfo.objects.values_list('key_info',flat=True).filter(object_code=self.rr_code)
         return Keywords
+
+    @property
+    def opinion(self):
+        opinion = ResultCheckHistory.objects.values_list('opinion',flat=True).filter(apply_code=self.a_code)
+        if opinion:
+            return opinion.order_by('-check_time')[0]
+        else:
+            return None
 
     class Meta:
         managed = False
