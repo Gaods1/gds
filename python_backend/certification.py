@@ -39,10 +39,10 @@ class GetJSONWebTokenSerializer(JSONWebTokenSerializer):
 
             if len(checkcode) != 4:
                 raise serializers.ValidationError('图片验证码不正确')
-
-            redis_conn = get_redis_connection('default')
             writeLog('login_py.log', 'testimgcode1', sys._getframe().f_code.co_filename,
                      str(sys._getframe().f_lineno))
+            redis_conn = get_redis_connection('default')
+
             image_code_server = redis_conn.get(str(image_code_id))
             if image_code_server is None:
                 raise serializers.ValidationError('无效图片验证码')
