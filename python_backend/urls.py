@@ -33,7 +33,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('rest_framework.urls', namespace='rest_framework')),
     path('docs/', schema_view, name="docs"),
-    path('api-token-auth/', api_token_auth, name='auth-jwt-get'),
+    path('api-token-auth/', obtain_jwt_token, name='auth-jwt-get'),
     path('system/', include('account.urls')),
     path('certified/', include('expert.urls')),
     path('achievement/', include('achievement.urls')),
