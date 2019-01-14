@@ -8,8 +8,11 @@
 *.tar.gz
 *.tgz
 *.rar
-uwsgi.*
+uwsgi.ini
+uwsgi.log
+uwsgi.pid
 *.ttc
+
 
 # Database
 *.db
