@@ -7,6 +7,8 @@ from rest_framework import serializers
 from django.utils.translation import ugettext as _
 from rest_framework_jwt.settings import api_settings
 from django_redis import get_redis_connection
+from public_tools.utils import writeLog
+import sys
 
 
 jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
@@ -30,7 +32,8 @@ class GetJSONWebTokenSerializer(JSONWebTokenSerializer):
 
             image_code_id = credentials.get('image_code_id')
             checkcode = credentials.get('checkcode')
-
+            writeLog('login_py.log', 'testimgcode', sys._getframe().f_code.co_filename,
+                     str(sys._getframe().f_lineno))
             if not image_code_id or not checkcode:
                 raise serializers.ValidationError('请输入图片验证码')
 
@@ -38,7 +41,8 @@ class GetJSONWebTokenSerializer(JSONWebTokenSerializer):
                 raise serializers.ValidationError('图片验证码不正确')
 
             redis_conn = get_redis_connection('default')
-
+            writeLog('login_py.log', 'testimgcode1', sys._getframe().f_code.co_filename,
+                     str(sys._getframe().f_lineno))
             image_code_server = redis_conn.get(str(image_code_id))
             if image_code_server is None:
                 raise serializers.ValidationError('无效图片验证码')
@@ -47,10 +51,15 @@ class GetJSONWebTokenSerializer(JSONWebTokenSerializer):
             except RedisError as e:
                 raise serializers.ValidationError('数据库错误%s' % str(e))
 
+            writeLog('login_py.log', 'testimgcode2', sys._getframe().f_code.co_filename,
+                     str(sys._getframe().f_lineno))
+
             image_code_server = image_code_server.decode()
 
             if checkcode.lower() != image_code_server.lower():
                 raise serializers.ValidationError('输入图片验证码有误')
+            writeLog('login_py.log', 'testimgcode3', sys._getframe().f_code.co_filename,
+                     str(sys._getframe().f_lineno))
 
 
             user = self.authenticate(**credentials)
