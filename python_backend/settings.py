@@ -122,7 +122,7 @@ CORS_ALLOW_METHODS = (
 )
 #跨域(以后删除)
 CORS_ALLOW_HEADERS = (
-    'XMLHttpRequest',
+    # 'XMLHttpRequest',
     'X_FILENAME',
     'accept-encoding',
     'authorization',
