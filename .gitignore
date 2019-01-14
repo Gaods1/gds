@@ -8,7 +8,6 @@
 *.tar.gz
 *.tgz
 *.rar
-uwsgi.*
 *.ttc
 
 # Database
