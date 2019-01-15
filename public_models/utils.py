@@ -97,17 +97,14 @@ def get_content_type(path,path_front,file):
         type = 'excel' if url.endswith('xls') or url.endswith('xlsx') else 'doc'
         dict_office = content_type(type, file.file_name, url_pdf, url)
 
-        url_pdf_name = url_pdf.split('/')[-1]
-        dict_pdf = content_type('pdf', url_pdf_name, url_pdf, url_pdf)
-
         list_a.append(dict_office)
-        list_a.append(dict_pdf)
 
-    # 如果是图片
+    # 如果是图片或者是pdf
     elif url.endswith('jpg') or url.endswith('png') or url.endswith('jpeg') or url.endswith('bmp') or url.endswith(
-            'gif'):
-        url_jpg = url.replace(path, path_front)
-        dict = content_type('image', file.file_name, url_jpg, url_jpg)
+            'gif') or url.endswith('pdf'):
+        type = 'pdf' if url.endswith('pdf') else 'image'
+        url_jpg_pdf = url.replace(path, path_front)
+        dict = content_type(type, file.file_name, url_jpg_pdf, url_jpg_pdf)
         list_a.append(dict)
 
     # 如果是txt或者zip
