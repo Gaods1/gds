@@ -91,7 +91,7 @@ def get_attachment(tname_attachment,ecode):
                         continue
 
                     # 如果是office文件，则同路径下有pdf文件
-                    if url.endswith('doc') or url.endswith('docx') or url.endswith('xls') or url.endswith('xlsx'):
+                    if url.endswith('xls') or url.endswith('xlsx') or url.endswith('doc') or url.endswith('docx'):
                         url_pdf_list = url.split('.')
                         url_office_type = url_pdf_list.pop()
                         url_pdf_list.append('pdf')
@@ -106,12 +106,13 @@ def get_attachment(tname_attachment,ecode):
 
                         dict = {}
 
-                        dict['type'] = url_office_type
+                        dict['type'] = 'xls' if url.endswith('xls') or url.endswith('xlsx') else 'doc'
                         dict['name'] = file.file_name
                         dict['look'] = url_pdf
                         dict['down'] = url
 
                         list_a.append(dict)
+
 
                     # 如果是图片
                     elif url.endswith('jpg') or url.endswith('png') or url.endswith('jpeg') or url.endswith('bmp') or url.endswith('gif'):
@@ -126,6 +127,7 @@ def get_attachment(tname_attachment,ecode):
 
                         list_a.append(dict)
 
+                    # 如果是其他
                     else:
                         url_other_type = url.split('.')[-1]
                         url_other = url.replace(absolute_path, absolute_path_front)
@@ -169,7 +171,7 @@ def get_attachment(tname_attachment,ecode):
 
                         dict = {}
 
-                        dict['type'] = url_office_type
+                        dict['type'] = 'doc' if url.endswith('doc') or url.endswith('docx') else 'xls'
                         dict['name'] = file.file_name
                         dict['look'] = url_pdf
                         dict['down'] = url
@@ -193,6 +195,7 @@ def get_attachment(tname_attachment,ecode):
 
                         list_a.append(dict)
 
+                    # 如果是其他
                     else:
                         url_other_type = url.split('.')[-1]
                         url_other = url.replace(relative_path, relative_path_front)
