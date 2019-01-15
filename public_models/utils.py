@@ -100,17 +100,21 @@ def get_attachment(tname_attachment,ecode):
                             continue
 
                         url_pdf = url_pdf.replace(absolute_path, absolute_path_front)
-                        list_look.append(url_pdf)
+                        #list_look.append(url_pdf)
+                        url = url.replace(absolute_path,absolute_path_front)
+                        dict[url_pdf] = url
 
                     # 如果是图片
                     if url.endswith('jpg') or url.endswith('png') or url.endswith('jpeg') or url.endswith('bmp') or url.endswith('gif'):
-                        url = url.replace(absolute_path, absolute_path_front)
-                        list_look.append(url)
+                        url_jpg = url.replace(absolute_path, absolute_path_front)
+                        #list_look.append(url)
+                        dict["url_jpg"] = url_jpg
+
 
                     # 如果是office文件
-                    else:
-                        url = url.replace(absolute_path, absolute_path_front)
-                        list_down.append(url)
+                    #else:
+                        #url = url.replace(absolute_path, absolute_path_front)
+                        #list_down.append(url)
 
 
                 #审核通过状态
@@ -130,23 +134,28 @@ def get_attachment(tname_attachment,ecode):
                             continue
 
                         url_pdf = url_pdf.replace(relative_path, relative_path_front)
-                        list_look.append(url_pdf)
+                        #list_look.append(url_pdf)
+                        url = url.replace(relative_path,relative_path_front)
+                        dict[url_pdf]=url
 
                     # 如果是图片
                     if url.endswith('jpg') or url.endswith('png') or url.endswith('jpeg') or url.endswith(
                             'bmp') or url.endswith('gif'):
-                        url = url.replace(relative_path, relative_path_front)
-                        list_look.append(url)
+
+                        url_jpg = url.replace(relative_path, relative_path_front)
+                        #list_look.append(url_jpg)
+                        dict["url_jpg"] = url_jpg
 
                     # 如果是office文件
-                    else:
-                        url = url.replace(absolute_path, absolute_path_front)
-                        list_down.append(url)
-        except Exception as e:
+                    #else:
+                        #url = url.replace(absolute_path, absolute_path_front)
+                        #list_down.append(url)
             return dict
+        except Exception as e:
+            return {}
 
-    dict['look'] = list_look
-    dict['down'] = list_down
+    #dict['look'] = list_look
+    #dict['down'] = list_down
 
     return dict
 def get_single(tname_single,ecode):
