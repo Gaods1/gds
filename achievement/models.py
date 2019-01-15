@@ -160,7 +160,7 @@ class RequirementsInfo(models.Model):
 
     @property
     def username(self):
-        username = AccountInfo.objects.values_list('username', flat=True).get(account_code=self.account_code)
+        username = AccountInfo.objects.values_list('user_name', flat=True).get(account_code=self.account_code)
         return username
 
     class Meta:
@@ -245,7 +245,7 @@ class ResultsInfo(models.Model):
 
     @property
     def username(self):
-        username = AccountInfo.objects.values_list('username', flat=True).get(account_code=self.account_code,state=1)
+        username = AccountInfo.objects.values_list('user_name', flat=True).get(account_code=self.account_code,state=1)
         return username
 
     class Meta:
