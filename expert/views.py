@@ -2684,12 +2684,8 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                 #     move_single('Propaganda', apply_team_baseinfo.team_baseinfo.pt_code)
 
                 #更新前台角色授权状态(审核通过未通过都更新)
-                if apply_team_baseinfo.team_baseinfo.pt_type == 0:
-                    identity_name = 'enterprise_team'
-                else:
-                    identity_name = 'personal_team'
                 IdentityAuthorizationInfo.objects.filter(account_code=apply_team_baseinfo.team_baseinfo.account_code,
-                                                         identity_code=IdentityInfo.objects.get(identity_name=identity_name).identity_code).update(state=check_state, iab_time=datetime.datetime.now())
+                                                         identity_code=IdentityInfo.objects.get(identity_name='team').identity_code).update(state=check_state, iab_time=datetime.datetime.now())
 
                 # 5 发送短信通知
                 account_info = AccountInfo.objects.get(account_code=apply_team_baseinfo.team_baseinfo.account_code)
