@@ -67,6 +67,65 @@ def get_detcode_str(code):
 
 """
 
+def content_type(a,b,c,d):
+    dict ={}
+    dict['type'] = a
+    dict['name'] = b
+    dict['look'] = c
+    dict['down'] = d
+    return dict
+
+def get_content_type(path,path_front,file):
+    list_a = []
+
+    url = '{}{}{}'.format(path, file.path, file.file_name)
+    if not os.path.exists(url):
+        return None
+    # 如果是office文件，则同路径下有pdf文件
+    if url.endswith('xls') or url.endswith('xlsx') or url.endswith('doc') or url.endswith('docx'):
+        url_pdf_list = url.split('.')
+        url_office_type = url_pdf_list.pop()
+        url_pdf_list.append('pdf')
+        url_pdf = '.'.join(url_pdf_list)
+
+        if not os.path.exists(url_pdf):
+            return None
+
+        url_pdf = url_pdf.replace(path, path_front)
+        url = url.replace(path, path_front)
+
+        type = 'excel' if url.endswith('xls') or url.endswith('xlsx') else 'doc'
+        dict_office = content_type(type, file.file_name, url_pdf, url)
+
+        url_pdf_name = url_pdf.split('/')[-1]
+        dict_pdf = content_type('pdf', url_pdf_name, url_pdf, url_pdf)
+
+        list_a.append(dict_office)
+        list_a.append(dict_pdf)
+
+    # 如果是图片
+    elif url.endswith('jpg') or url.endswith('png') or url.endswith('jpeg') or url.endswith('bmp') or url.endswith(
+            'gif'):
+        url_jpg = url.replace(path, path_front)
+        dict = content_type('image', file.file_name, url_jpg, url_jpg)
+        list_a.append(dict)
+
+    # 如果是txt或者zip
+    elif url.endswith('txt') or url.endswith('zip'):
+        url_t_z = url.replace(path, path_front)
+        type = 'txt' if url.endswith('txt') else 'zip'
+        dict = content_type(type, file.file_name, url_t_z, url_t_z)
+        list_a.append(dict)
+
+    # 如果是其他
+    else:
+        url_other_type = url.split('.')[-1]
+        url_other = url.replace(path, path_front)
+        dict = content_type(url_other_type, file.file_name, url_other, url_other)
+        list_a.append(dict)
+
+    return list_a
+
 
 # operation_state_list = [file.operation_state for file in files]
 def get_attachment(tname_attachment,ecode):
@@ -77,149 +136,22 @@ def get_attachment(tname_attachment,ecode):
     tcode_attachment = AttachmentFileType.objects.get(tname=tname_attachment).tcode
     ecode = ecode
     files = AttachmentFileinfo.objects.filter(tcode=tcode_attachment, ecode=ecode, operation_state__in=[1,3], state=1)
-    #dict = {}
-    #list_look = []
-    #list_down = []
     list_a = []
     if files:
         try:
             for file in files:
                 #新增待审和状态
                 if file.operation_state == 1:
-                    url = '{}{}{}'.format(absolute_path,file.path,file.file_name)
-                    if not os.path.exists(url):
-                        continue
-
-                    # 如果是office文件，则同路径下有pdf文件
-                    if url.endswith('xls') or url.endswith('xlsx') or url.endswith('doc') or url.endswith('docx'):
-                        url_pdf_list = url.split('.')
-                        url_office_type = url_pdf_list.pop()
-                        url_pdf_list.append('pdf')
-                        url_pdf = '.'.join(url_pdf_list)
-
-                        if not os.path.exists(url_pdf):
-                            continue
-
-                        url_pdf = url_pdf.replace(absolute_path, absolute_path_front)
-                        #list_look.append(url_pdf)
-                        url = url.replace(absolute_path,absolute_path_front)
-
-                        dict = {}
-
-                        dict['type'] = 'xls' if url.endswith('xls') or url.endswith('xlsx') else 'doc'
-                        dict['name'] = file.file_name
-                        dict['look'] = url_pdf
-                        dict['down'] = url
-
-                        list_a.append(dict)
-
-
-                    # 如果是图片
-                    elif url.endswith('jpg') or url.endswith('png') or url.endswith('jpeg') or url.endswith('bmp') or url.endswith('gif'):
-                        url_jpg_type = url.split('.')[-1]
-                        url_jpg = url.replace(absolute_path, absolute_path_front)
-                        #list_look.append(url)
-
-                        dict = {}
-                        dict['type'] = url_jpg_type
-                        dict['name'] = file.file_name
-                        dict["look"] = url_jpg
-
-                        list_a.append(dict)
-
-                    # 如果是其他
-                    else:
-                        url_other_type = url.split('.')[-1]
-                        url_other = url.replace(absolute_path, absolute_path_front)
-
-                        dict = {}
-                        dict['type'] = url_other_type
-                        dict['name'] = file.file_name
-                        dict["down"] = url_other
-
-                        list_a.append(dict)
-
-
-
-
-                    # 如果是office文件
-                    #else:
-                        #url = url.replace(absolute_path, absolute_path_front)
-                        #list_down.append(url)
-
+                    list_a = get_content_type(absolute_path,absolute_path_front,file)
 
                 #审核通过状态
                 else:
-                    url = '{}{}{}'.format(relative_path, file.path, file.file_name)
-                    if not os.path.exists(url):
-                        continue
+                    list_a = get_content_type(relative_path,relative_path_front,file)
 
-                    # 如果是office文件，则同路径下有pdf文件
-                    if url.endswith('doc') or url.endswith('docx') or url.endswith('xls') or url.endswith('xlsx'):
-                        url_pdf_list = url.split('.')
-                        url_office_type = url_pdf_list.pop()
-                        url_pdf_list.append('pdf')
-                        url_pdf = '.'.join(url_pdf_list)
-
-                        if not os.path.exists(url_pdf):
-                            continue
-
-                        url_pdf = url_pdf.replace(relative_path, relative_path_front)
-                        #list_look.append(url_pdf)
-                        url = url.replace(relative_path,relative_path_front)
-                        #dict[url_pdf]=url
-
-                        dict = {}
-
-                        dict['type'] = 'doc' if url.endswith('doc') or url.endswith('docx') else 'xls'
-                        dict['name'] = file.file_name
-                        dict['look'] = url_pdf
-                        dict['down'] = url
-
-                        list_a.append(dict)
-
-                    # 如果是图片
-                    elif url.endswith('jpg') or url.endswith('png') or url.endswith('jpeg') or url.endswith(
-                            'bmp') or url.endswith('gif'):
-
-                        url_jpg_type = url.split('.')[-1]
-                        url_jpg = url.replace(relative_path, relative_path_front)
-                        #list_look.append(url_jpg)
-                        #dict["url_jpg"] = url_jpg
-                        # list_look.append(url)
-
-                        dict = {}
-                        dict['type'] = url_jpg_type
-                        dict['name'] = file.file_name
-                        dict["look"] = url_jpg
-
-                        list_a.append(dict)
-
-                    # 如果是其他
-                    else:
-                        url_other_type = url.split('.')[-1]
-                        url_other = url.replace(relative_path, relative_path_front)
-
-                        dict = {}
-                        dict['type'] = url_other_type
-                        dict['name'] = file.file_name
-                        dict["down"] = url_other
-
-                        list_a.append(dict)
-
-
-                    # 如果是office文件
-                    #else:
-                        #url = url.replace(absolute_path, absolute_path_front)
-                        #list_down.append(url)
             return list_a
         except Exception as e:
-            return []
+            return None
 
-    #dict['look'] = list_look
-    #dict['down'] = list_down
-
-    #return dict
 def get_single(tname_single,ecode):
     absolute_path = ParamInfo.objects.get(param_code=1).param_value
     absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
