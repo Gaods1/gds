@@ -26,7 +26,7 @@ def writeLog(logFileName, msg, filename, lineno):
     """
     usePlatform = getUsePlatform()
     if usePlatform == 1:
-        logFileName = 'c:\\' + logFileName
+        logFileName = 'd:\\' + logFileName
     elif usePlatform == 2:
         logFileName = '/tmp/' + logFileName
 
