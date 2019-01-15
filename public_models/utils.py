@@ -157,7 +157,7 @@ def get_attachment(tname_attachment,ecode):
     #dict['look'] = list_look
     #dict['down'] = list_down
 
-    return dict
+    #return dict
 def get_single(tname_single,ecode):
     absolute_path = ParamInfo.objects.get(param_code=1).param_value
     absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
