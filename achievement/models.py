@@ -115,8 +115,8 @@ class RequirementsInfo(models.Model):
     r_abstract_detail = models.TextField(blank=True, null=True)
     @property
     def Attach(self):
-        dict = get_attachment('attachment',self.req_code)
-        return dict
+        list = get_attachment('attachment',self.req_code)
+        return list
 
     @property
     def Cover(self):
@@ -199,8 +199,8 @@ class ResultsInfo(models.Model):
 
     @property
     def Attach(self):
-        dict = get_attachment('attachment',self.r_code)
-        return dict
+        list = get_attachment('attachment',self.r_code)
+        return list
 
     @property
     def Cover(self):
