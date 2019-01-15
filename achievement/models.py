@@ -1,5 +1,7 @@
 import os
 import re
+
+from account.models import AccountInfo
 from misc.misc import gen_uuid32, genearteMD5
 from _mysql_exceptions import DatabaseError
 
@@ -56,10 +58,15 @@ class RrApplyHistory(models.Model):
 
     @property
     def Personal(self):
-        # Results = ResultsInfo.objects.filter(r_code=self.rr_code)
-        Owner = ResultsOwnerInfo.objects.get(r_code=self.rr_code)
-        Personal = PersonalInfo.objects.get(pcode=Owner.owner_code)
+        owner_code = ResultsOwnerInfo.objects.get(r_code=self.rr_code).owner_code
+        Personal = PersonalInfo.objects.values_list('pname',flat=True).get(pcode=owner_code)
         return Personal
+
+    @property
+    def Enterprise(self):
+        owner_code = ResultsOwnerInfo.objects.get(r_code=self.rr_code).owner_code
+        Enterprise = EnterpriseBaseinfo.objects.values_list('ename',flat=True).get(ecode=owner_code)
+        return Enterprise
 
     @property
     def Keywords(self):
@@ -151,6 +158,11 @@ class RequirementsInfo(models.Model):
         mname = MajorInfo.objects.values_list('mname',flat=True).filter(mcode__in=mcode)
         return mname
 
+    @property
+    def username(self):
+        username = AccountInfo.objects.values_list('username', flat=True).get(account_code=self.account_code)
+        return username
+
     class Meta:
         managed = False
         db_table = 'requirements_info'
@@ -230,6 +242,11 @@ class ResultsInfo(models.Model):
         mcode = MajorUserinfo.objects.values_list('mcode',flat=True).filter(user_type=4, user_code=self.r_code)
         mname = MajorInfo.objects.values_list('mname',flat=True).filter(mcode__in=mcode)
         return mname
+
+    @property
+    def username(self):
+        username = AccountInfo.objects.values_list('username', flat=True).get(account_code=self.account_code,state=1)
+        return username
 
     class Meta:
         managed =False

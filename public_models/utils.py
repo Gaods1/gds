@@ -137,6 +137,11 @@ def get_attachment(tname_attachment,ecode):
                             'bmp') or url.endswith('gif'):
                         url = url.replace(relative_path, relative_path_front)
                         list_look.append(url)
+
+                    # 如果是office文件
+                    else:
+                        url = url.replace(absolute_path, absolute_path_front)
+                        list_down.append(url)
         except Exception as e:
             return dict
 
