@@ -361,7 +361,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     return Response({'message': '审核通过'})
 
 
-
         else:
             # 建立事物机制
             with transaction.atomic():

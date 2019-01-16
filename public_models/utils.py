@@ -113,12 +113,13 @@ def get_content_type(path,path_front,file):
         type = 'txt' if url.endswith('txt') else 'zip'
         dict = content_type(type, file.file_name, url_t_z, url_t_z)
         list_a.append(dict)
-
-    # 如果是其他
+    
+    # 如果是ppt或者其他
     else:
         url_other_type = url.split('.')[-1]
         url_other = url.replace(path, path_front)
-        dict = content_type(url_other_type, file.file_name, url_other, url_other)
+        type = 'ppt' if url_other_type == 'ppt' else url_other_type
+        dict = content_type(type, file.file_name, url_other, url_other)
         list_a.append(dict)
 
     return list_a
