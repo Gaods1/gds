@@ -152,9 +152,9 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                             user_code = list(set(user_code_list))
 
                             #领域专家不能回复自己创建的征询
-                            consult_expert_info = ExpertBaseinfo.objects.get(account_code=consult_info.consulter)
-                            if consult_expert_info.expert_code in user_code:
-                                user_code.remove(consult_expert_info.expert_code)
+                            consult_expert_info = ExpertBaseinfo.objects.filter(account_code=consult_info.consulter)
+                            if consult_expert_info:
+                                user_code.remove(consult_expert_info[0].expert_code)
 
                             if len(user_code) >= 10:
                                 user_codes = random.sample(user_code, 10)
