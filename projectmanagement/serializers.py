@@ -53,7 +53,7 @@ class ProjectSubstepInfoSerializer(serializers.ModelSerializer):
     btime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     etime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     # 附件
-    substep_file_info = ProjectSubstepFileInfoSerializer(many=True)
+    substep_file_info = ProjectSubstepFileInfoSerializer(many=True, read_only=True)
 
     class Meta:
         model = ProjectSubstepInfo

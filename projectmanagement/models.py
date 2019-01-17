@@ -41,7 +41,7 @@ class ProjectInfo(models.Model):
         if q != None and len(q)>0:
             substep_info = q[0]
         else:
-            substep_info = []
+            substep_info = {}
         return substep_info
 
     # 项目当前子步骤流水
@@ -154,7 +154,9 @@ class ProjectSubstepInfo(models.Model):
     @property
     def substep_file_info(self):
         fjs = ProjectSubstepFileInfo.objects.filter(project_code=self.project_code,step_code=self.step_code,substep_code=self.substep_code)
-        return fjs;
+        if fjs == None:
+            fjs = []
+        return fjs
 
     class Meta:
         managed = False

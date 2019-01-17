@@ -241,7 +241,7 @@ def getCheckInfo(self,request, step_code, substep_code):
             select a.* from project_check_info as a,project_substep_info as b,project_substep_serial_info as c
             where a.project_code=b.project_code and a.step_code=b.step_code and a.substep_code=b.substep_code
             and b.substep_state<>-11 and a.substep_serial=c.substep_serial
-            and a.cstate=0 and a.step_code={} and a.substep_code={}
+            and a.cstate=1 and a.step_code={} and a.substep_code={}
             order by c.p_serial desc
             ) as AA
             group by AA.project_code,AA.step_code,AA.substep_code

@@ -30,8 +30,17 @@ def move_project_file(project_code,step_code,substep_code,substep_serial):
     newpath = '{}{}/{}/{}/{}/'.format(relative_path, 'project', project_code, step_code,
                                       substep_code) + substep_serial + '/'
 
+    # # 临时文件
+    # oldpath = '/Users/yzw{}{}/{}/{}/{}/'.format(absolute_path, 'project', project_code, step_code,
+    #                                   substep_code) + substep_serial + '/'
+    # # 正式文件
+    # newpath = '/tmp{}{}/{}/{}/{}/'.format(relative_path, 'project', project_code, step_code,
+    #                                   substep_code) + substep_serial + '/'
+
+
+
     # 文件不存在
-    if os.path.exists(oldpath) == False:
+    if not os.path.exists(oldpath):
         return
 
 
@@ -44,7 +53,7 @@ def move_project_file(project_code,step_code,substep_code,substep_serial):
             psfi.save()
 
             # 移动附件
-            filename = psfi['filename']
+            filename = psfi.filename
 
             # 将临时文件转为正式文件
             url_j_c = '{}{}'.format(oldpath, filename)
