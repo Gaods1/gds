@@ -153,7 +153,27 @@ class ProjectSubstepInfo(models.Model):
     # 子步骤附件 子步骤可能有很多流水(子步骤有多个操作类型) 每条流水有多个附件
     @property
     def substep_file_info(self):
-        fjs = ProjectSubstepFileInfo.objects.filter(project_code=self.project_code,step_code=self.step_code,substep_code=self.substep_code)
+        # 根据子步骤找操作类型的 最后一次流水
+        # pssi = ProjectSubstepSerialInfo.objects.filter(project_code=self.project_code,
+        #                                                step_code=self.step_code,
+        #                                                substep_code=self.substep_code)
+        sql = """
+            select AA.* from 
+            (
+            select a.* from project_substep_serial_info as a
+            where a.project_code='{project_code}' and step_code='{step_code}' and substep_code='{substep_code}'
+            order by a.substep_serial_type asc, a.substep_serial desc
+            ) as AA
+            group by AA.project_code,AA.step_code,AA.substep_code,AA.substep_serial_type
+        """
+        sql = sql.format(project_code=self.project_code,step_code=self.step_code,substep_code=self.substep_code)
+        raw_queryset =  ProjectSubstepSerialInfo.objects.raw(sql)
+
+        fjs = ProjectSubstepFileInfo.objects.filter(substep_serial__in=[i.substep_serial for i in raw_queryset],
+                                                    project_code=self.project_code,
+                                                    step_code=self.step_code,
+                                                    substep_code=self.substep_code)
+        # fjs = ProjectSubstepFileInfo.objects.filter(project_code=self.project_code,step_code=self.step_code,substep_code=self.substep_code)
         if fjs == None:
             fjs = []
         return fjs
