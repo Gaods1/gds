@@ -251,7 +251,7 @@ def getFileUrl(p_serial):
         url = oldpath.replace(absolute_path, absolute_path_front)
     else:
         url = newpath.replace(relative_path, relative_path_front)
-    return url
+    return url + psfi.filename
 
 
 # 项目与成果/需求信息表 *
