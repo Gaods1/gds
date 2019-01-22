@@ -226,45 +226,7 @@ media_root_front = 'http://patclub.for8.cn:8764/temp/uploads/temporary/'#此地�
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'formatters': {
-        'verbose': {
-            'format': '%(levelname)s %(asctime)s %(module)s %(lineno)d %(message)s'
-        },
-        'simple': {
-            'format': '%(levelname)s %(module)s %(lineno)d %(message)s'
-        },
-    },
-    'filters': {
-        'require_debug_true': {
-            '()': 'django.utils.log.RequireDebugTrue',
-        },
-    },
-    'handlers': {
-        'console': {
-            'level': 'DEBUG',
-            'filters': ['require_debug_true'],
-            'class': 'logging.StreamHandler',
-            'formatter': 'simple'
-        },
-        'file': {
-            'level': 'INFO',
-            'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(BASE_DIR, "logs/python_backend.log"),  # 日志文件的位置
-            'maxBytes': 300 * 1024 * 1024,
-            'backupCount': 10,
-            'formatter': 'verbose'
-        },
-    },
-    'loggers': {
-        'django': {  # 定义了一个名为django的日志器
-            'handlers': ['console', 'file'],
-            'propagate': True,
-        },
-    }
-}
+
 
 LANGUAGE_CODE = 'zh-hans'
 
