@@ -18,6 +18,7 @@ uwsgi.pid
 db.sqlite3
 
 
+
 newras.bashrc
 
 filecache/caches/
