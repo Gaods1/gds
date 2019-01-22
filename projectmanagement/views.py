@@ -388,6 +388,10 @@ def upCheckinfo(self, request):
                 psi.step_msg = cmsg
                 psi.save()
 
+            # 修改主表状态 和 子步骤状态一致
+            pi = ProjectInfo.objects.get(project_code=project_code)
+            pi.state = substep_serial_state
+            pi.save()
 
 
             # 组合生成短信消息发送列表
