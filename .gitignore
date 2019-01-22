@@ -17,7 +17,7 @@ uwsgi.pid
 *.db
 db.sqlite3
 
-logs/*.log
+*.log
 
 newras.bashrc
 
