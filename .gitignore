@@ -17,11 +17,12 @@ uwsgi.pid
 *.db
 db.sqlite3
 
+logs/*.log
 
 newras.bashrc
 
 filecache/caches/
-log/
+
 static/login/demo/
 
 /datakeeper

@@ -113,7 +113,7 @@ def get_content_type(path,path_front,file):
         type = 'txt' if url.endswith('txt') else 'zip'
         dict = content_type(type, file.file_name, url_t_z, url_t_z)
         list_a.append(dict)
-    
+
     # 如果是ppt或者其他
     else:
         url_other_type = url.split('.')[-1]
