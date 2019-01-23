@@ -6,7 +6,6 @@ import shutil
 from misc.misc import gen_uuid32
 
 import time
-from django.core.files.storage import FileSystemStorage
 from django.db import transaction
 from django.http import HttpResponse
 from django.http import JsonResponse
@@ -18,11 +17,11 @@ from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.utils import json
 from rest_framework.views import APIView
-
-from backends import FileStorage
 from misc.misc import gen_uuid32
 from public_models.models import AttachmentFileType, ParamInfo, AttachmentFileinfo
 from python_backend import settings
+from django.core.files.storage import FileSystemStorage
+
 
 from django_redis import get_redis_connection
 
@@ -39,7 +38,7 @@ from django_redis import get_redis_connection
 
 """
 
-class PublicInfo(APIView,FileStorage):
+class PublicInfo(APIView,FileSystemStorage):
     queryset = AttachmentFileinfo.objects.all()
 
     def post(self, request):
@@ -70,7 +69,7 @@ class PublicInfo(APIView,FileStorage):
                         url = url + file.name
 
                         # 创建对象
-                        a = FileStorage()
+                        a = FileSystemStorage()
                         # 上传服务器
                         url = a._save(url,file)
                         # 判断如果是office文件
@@ -115,7 +114,7 @@ class PublicInfo(APIView,FileStorage):
                             os.makedirs(url)
                         url = url + file.name
                         # 创建对象
-                        a = FileStorage()
+                        a = FileSystemStorage()
                         # 上传服务器
                         url = a._save(url, file)
                         # 判断如果是office文件
@@ -164,7 +163,7 @@ class PublicInfo(APIView,FileStorage):
                 save_id = transaction.savepoint()
                 try:
                     # 创建对象
-                    a = FileStorage()
+                    a = FileSystemStorage()
                     # 删除
                     a.delete(url)
                 except Exception as e:
@@ -190,7 +189,7 @@ class PublicInfo(APIView,FileStorage):
                         transaction.savepoint_rollback(save_id)
                         return HttpResponse('该正式路径下不存在该文件')
                     # 创建对象
-                    a = FileStorage()
+                    a = FileSystemStorage()
                     # 删除文件
                     a.delete(url)
                     # 删除表记录

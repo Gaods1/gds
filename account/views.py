@@ -1,11 +1,9 @@
-from django.shortcuts import render
 from rest_framework import viewsets
-from account.models import *
 from account.serializers import *
 from rest_framework import status, permissions
-from permissions import ReadOnlyPermission
+from misc.permissions.permissions import ReadOnlyPermission
 from rest_framework.response import Response
-from misc.misc import gen_uuid32, genearteMD5
+from misc.misc import genearteMD5
 from rest_framework import filters
 import django_filters
 from django.db.models.query import QuerySet

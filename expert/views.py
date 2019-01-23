@@ -1,25 +1,26 @@
 import os
 import shutil
 
-from django.db.models import QuerySet
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse
 
-from backends import FileStorage
+from django.core.files.storage import FileSystemStorage
 from python_backend import settings
-from .models import *
 from .serializers import *
 from rest_framework import viewsets
-from rest_framework import filters,status
+from rest_framework import filters
 import django_filters
 from rest_framework.response import Response
 from django.db import transaction
 from django.http import JsonResponse
 from .utils import *
 import datetime, threading
-from public_models.utils import move_single, get_detcode_str
 from public_models.utils import move_single,get_detcode_str
 from django.db.models.query import QuerySet
 from public_models.models import IdentityAuthorizationInfo
+from misc.filter.search import ViewSearch
+import logging
+
+logger = logging.getLogger('django')
 
 
 # 领域专家管理
@@ -530,7 +531,6 @@ class CollectorViewSet(viewsets.ModelViewSet):
                 IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
 
                 IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
-
                                                          state=2, creater=request.user.account)
                 # 2 转移附件创建ecode表
                 absolute_path = ParamInfo.objects.get(param_code=1).param_value
@@ -617,7 +617,6 @@ class CollectorViewSet(viewsets.ModelViewSet):
             transaction.savepoint_commit(save_id)
             return Response(dict)
 
-
     def destroy(self, request, *args, **kwargs):
         with transaction.atomic():
             save_id = transaction.savepoint()
@@ -641,7 +640,7 @@ class CollectorViewSet(viewsets.ModelViewSet):
                         for i in obj:
                             url = '{}{}{}'.format(relative_path, i.path, i.file_name)
                             # 创建对象
-                            a = FileStorage()
+                            a = FileSystemStorage()
                             # 删除文件
                             a.delete(url)
                             # 删除表记录
@@ -664,13 +663,16 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
     serializer_class = CollectorApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "collector_code", "account_code")
-    search_fields = ("account_code", "apply_code")
+    search_fields = ("account_code", "apply_code", "collector.collector_name", "collector.collector_mobile")
+
+    collector_model = CollectorBaseinfo
+    collector_associated_field = ('collector_code', 'collector_code')
 
     def update(self, request, *args, **kwargs):
         try:
@@ -755,6 +757,7 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
+            logger.error(e)
             return Response({"detail":{
                 "detail":["审核失败：%s" % str(e)]}}, status=400)
 
@@ -1069,7 +1072,7 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                         for i in obj:
                             url = '{}{}{}'.format(relative_path, i.path, i.file_name)
                             # 创建对象
-                            a = FileStorage()
+                            a = FileSystemStorage()
                             # 删除文件
                             a.delete(url)
                             # 删除表记录
@@ -1513,7 +1516,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                         for i in obj:
                             url = '{}{}{}'.format(relative_path, i.path, i.file_name)
                             # 创建对象
-                            a = FileStorage()
+                            a = FileSystemStorage()
                             # 删除文件
                             a.delete(url)
                             # 删除表记录
@@ -1965,7 +1968,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                         for i in obj:
                             url = '{}{}{}'.format(relative_path, i.path, i.file_name)
                             # 创建对象
-                            a = FileStorage()
+                            a = FileSystemStorage()
                             # 删除文件
                             a.delete(url)
                             # 删除表记录
@@ -2408,7 +2411,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                         for i in obj:
                             url = '{}{}{}'.format(relative_path, i.path, i.file_name)
                             # 创建对象
-                            a = FileStorage()
+                            a = FileSystemStorage()
                             # 删除文件
                             a.delete(url)
                             # 删除表记录

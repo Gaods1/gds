@@ -1,28 +1,8 @@
-import os
-import subprocess
 import base64
 
-import shutil
-from misc.misc import gen_uuid32
-
-import time
-from django.core.files.storage import FileSystemStorage
-from django.db import transaction
-from django.http import HttpResponse
-from django.http import JsonResponse
-from django.shortcuts import render
-
 # Create your views here.
-from rest_framework import generics
 from rest_framework.response import Response
-from rest_framework import viewsets
-from rest_framework.utils import json
 from rest_framework.views import APIView
-
-from backends import FileStorage
-from misc.misc import gen_uuid32
-from public_models.models import AttachmentFileType, ParamInfo, AttachmentFileinfo
-from python_backend import settings
 
 from django_redis import get_redis_connection
 from public_tools.captcha.captcha import captcha
