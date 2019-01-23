@@ -89,13 +89,20 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
     serializer_class = ExpertApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "expert_code", "account_code")
-    search_fields = ("account_code", "apply_code")
+    search_fields = ("expert.expert_name", "expert.expert_mobile", "expert.expert_id",
+                     "account.user_name")
+
+    expert_model = ExpertBaseinfo
+    expert_associated_field = ('expert_code', 'expert_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def update(self, request, *args, **kwargs):
         try:
@@ -190,6 +197,7 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
 
 # 技术经纪人管理
 class BrokerViewSet(viewsets.ModelViewSet):
+
     queryset = BrokerBaseinfo.objects.all().order_by('state', '-serial')
     serializer_class = BrokerBaseInfoSerializers
 
@@ -250,13 +258,21 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
     serializer_class = BrokerApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "broker_code", "account_code")
-    search_fields = ("account_code", "apply_code")
+
+    search_fields = ("broker.broker_name", "broker.broker_mobile", "broker.broker_id",
+                     "account.user_name")
+
+    broker_model = BrokerBaseinfo
+    broker_associated_field = ('broker_code', 'broker_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def update(self, request, *args, **kwargs):
         try:
@@ -669,10 +685,14 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "collector_code", "account_code")
-    search_fields = ("account_code", "apply_code", "collector.collector_name", "collector.collector_mobile")
+    search_fields = ("collector.collector_name", "collector.collector_mobile", "collector.collector_id",
+                     "account.user_name")
 
     collector_model = CollectorBaseinfo
     collector_associated_field = ('collector_code', 'collector_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def update(self, request, *args, **kwargs):
         try:
@@ -1095,13 +1115,20 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
     serializer_class = OwnerApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code", "account_code")
-    search_fields = ("account_code", "apply_code")
+    search_fields = ("owner.owner_name", "owner.owner_mobile", "owner.owner_id",
+                     "account.user_name")
+
+    owner_model = ResultOwnerpBaseinfo
+    owner_associated_field = ('owner_code', 'owner_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -1539,13 +1566,16 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
     serializer_class = OwnereApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code")
-    search_fields = ("apply_code",)
+    search_fields = ("owner.owner_name", "owner.owner_mobile", "owner.owner_license")
+
+    owner_model = ResultOwnereBaseinfo
+    owner_associated_field = ('owner_code', 'owner_code')
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -1991,13 +2021,20 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
     serializer_class = OwnerApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code", "account_code")
-    search_fields = ("account_code", "apply_code")
+    search_fields = ("owner.owner_name", "owner.owner_mobile", "owner.owner_id",
+                     "account.user_name")
+
+    owner_model = ResultOwnerpBaseinfo
+    owner_associated_field = ('owner_code', 'owner_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -2434,13 +2471,16 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
     serializer_class = OwnereApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code")
-    search_fields = ("apply_code",)
+    search_fields = ("owner.owner_name", "owner.owner_mobile", "owner.owner_license")
+
+    owner_model = ResultOwnereBaseinfo
+    owner_associated_field = ('owner_code', 'owner_code')
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -2622,13 +2662,20 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
     serializer_class = TeamApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "team_code", "account_code")
-    search_fields = ("account_code", "apply_code","team_code")
+    search_fields = ("team_baseinfo.pt_name", "team_baseinfo.pt_people_name", "team_baseinfo.pt_people_tel",
+                     "team_baseinfo.pt_people_id", "team_baseinfo.pt_homepage", "account.user_name")
+
+    owner_model = ProjectTeamBaseinfo
+    owner_associated_field = ('team_code', 'pt_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     '''
     技术团队申请步骤:(涉及表:project_team_baseinfo   team_apply_history team_check_history account_info identity_authorization_info message)
