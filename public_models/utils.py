@@ -1,9 +1,7 @@
 import os
 
 import shutil
-import copy
 
-from backends import FileStorage
 from public_models.models import ParamInfo, AttachmentFileType, AttachmentFileinfo
 from account.models import Deptinfo
 

@@ -1,25 +1,26 @@
 import os
 import shutil
 
-from django.db.models import QuerySet
-from django.http import HttpResponse, HttpResponseBadRequest
+from django.http import HttpResponse
 
-from backends import FileStorage
+from django.core.files.storage import FileSystemStorage
 from python_backend import settings
-from .models import *
 from .serializers import *
 from rest_framework import viewsets
-from rest_framework import filters,status
+from rest_framework import filters
 import django_filters
 from rest_framework.response import Response
 from django.db import transaction
 from django.http import JsonResponse
 from .utils import *
 import datetime, threading
-from public_models.utils import move_single, get_detcode_str
 from public_models.utils import move_single,get_detcode_str
 from django.db.models.query import QuerySet
 from public_models.models import IdentityAuthorizationInfo
+from misc.filter.search import ViewSearch
+import logging
+
+logger = logging.getLogger('django')
 
 
 # 领域专家管理
@@ -88,13 +89,20 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
     serializer_class = ExpertApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "expert_code", "account_code")
-    search_fields = ("account_code", "apply_code")
+    search_fields = ("expert.expert_name", "expert.expert_mobile", "expert.expert_id",
+                     "account.user_name")
+
+    expert_model = ExpertBaseinfo
+    expert_associated_field = ('expert_code', 'expert_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def update(self, request, *args, **kwargs):
         try:
@@ -189,6 +197,7 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
 
 # 技术经纪人管理
 class BrokerViewSet(viewsets.ModelViewSet):
+
     queryset = BrokerBaseinfo.objects.all().order_by('state', '-serial')
     serializer_class = BrokerBaseInfoSerializers
 
@@ -249,13 +258,21 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
     serializer_class = BrokerApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "broker_code", "account_code")
-    search_fields = ("account_code", "apply_code")
+
+    search_fields = ("broker.broker_name", "broker.broker_mobile", "broker.broker_id",
+                     "account.user_name")
+
+    broker_model = BrokerBaseinfo
+    broker_associated_field = ('broker_code', 'broker_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def update(self, request, *args, **kwargs):
         try:
@@ -530,7 +547,6 @@ class CollectorViewSet(viewsets.ModelViewSet):
                 IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
 
                 IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
-
                                                          state=2, creater=request.user.account)
                 # 2 转移附件创建ecode表
                 absolute_path = ParamInfo.objects.get(param_code=1).param_value
@@ -617,7 +633,6 @@ class CollectorViewSet(viewsets.ModelViewSet):
             transaction.savepoint_commit(save_id)
             return Response(dict)
 
-
     def destroy(self, request, *args, **kwargs):
         with transaction.atomic():
             save_id = transaction.savepoint()
@@ -641,7 +656,7 @@ class CollectorViewSet(viewsets.ModelViewSet):
                         for i in obj:
                             url = '{}{}{}'.format(relative_path, i.path, i.file_name)
                             # 创建对象
-                            a = FileStorage()
+                            a = FileSystemStorage()
                             # 删除文件
                             a.delete(url)
                             # 删除表记录
@@ -664,13 +679,20 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
     serializer_class = CollectorApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "collector_code", "account_code")
-    search_fields = ("account_code", "apply_code")
+    search_fields = ("collector.collector_name", "collector.collector_mobile", "collector.collector_id",
+                     "account.user_name")
+
+    collector_model = CollectorBaseinfo
+    collector_associated_field = ('collector_code', 'collector_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def update(self, request, *args, **kwargs):
         try:
@@ -755,6 +777,7 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
+            logger.error(e)
             return Response({"detail":{
                 "detail":["审核失败：%s" % str(e)]}}, status=400)
 
@@ -1069,7 +1092,7 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                         for i in obj:
                             url = '{}{}{}'.format(relative_path, i.path, i.file_name)
                             # 创建对象
-                            a = FileStorage()
+                            a = FileSystemStorage()
                             # 删除文件
                             a.delete(url)
                             # 删除表记录
@@ -1092,13 +1115,20 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
     serializer_class = OwnerApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code", "account_code")
-    search_fields = ("account_code", "apply_code")
+    search_fields = ("owner.owner_name", "owner.owner_mobile", "owner.owner_id",
+                     "account.user_name")
+
+    owner_model = ResultOwnerpBaseinfo
+    owner_associated_field = ('owner_code', 'owner_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -1513,7 +1543,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                         for i in obj:
                             url = '{}{}{}'.format(relative_path, i.path, i.file_name)
                             # 创建对象
-                            a = FileStorage()
+                            a = FileSystemStorage()
                             # 删除文件
                             a.delete(url)
                             # 删除表记录
@@ -1536,13 +1566,16 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
     serializer_class = OwnereApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code")
-    search_fields = ("apply_code",)
+    search_fields = ("owner.owner_name", "owner.owner_mobile", "owner.owner_license")
+
+    owner_model = ResultOwnereBaseinfo
+    owner_associated_field = ('owner_code', 'owner_code')
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -1965,7 +1998,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                         for i in obj:
                             url = '{}{}{}'.format(relative_path, i.path, i.file_name)
                             # 创建对象
-                            a = FileStorage()
+                            a = FileSystemStorage()
                             # 删除文件
                             a.delete(url)
                             # 删除表记录
@@ -1988,13 +2021,20 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
     serializer_class = OwnerApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code", "account_code")
-    search_fields = ("account_code", "apply_code")
+    search_fields = ("owner.owner_name", "owner.owner_mobile", "owner.owner_id",
+                     "account.user_name")
+
+    owner_model = ResultOwnerpBaseinfo
+    owner_associated_field = ('owner_code', 'owner_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -2408,7 +2448,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                         for i in obj:
                             url = '{}{}{}'.format(relative_path, i.path, i.file_name)
                             # 创建对象
-                            a = FileStorage()
+                            a = FileSystemStorage()
                             # 删除文件
                             a.delete(url)
                             # 删除表记录
@@ -2431,13 +2471,16 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
     serializer_class = OwnereApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code")
-    search_fields = ("apply_code",)
+    search_fields = ("owner.owner_name", "owner.owner_mobile", "owner.owner_license")
+
+    owner_model = ResultOwnereBaseinfo
+    owner_associated_field = ('owner_code', 'owner_code')
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -2619,13 +2662,20 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
     serializer_class = TeamApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "team_code", "account_code")
-    search_fields = ("account_code", "apply_code","team_code")
+    search_fields = ("team_baseinfo.pt_name", "team_baseinfo.pt_people_name", "team_baseinfo.pt_people_tel",
+                     "team_baseinfo.pt_people_id", "team_baseinfo.pt_homepage", "account.user_name")
+
+    owner_model = ProjectTeamBaseinfo
+    owner_associated_field = ('team_code', 'pt_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     '''
     技术团队申请步骤:(涉及表:project_team_baseinfo   team_apply_history team_check_history account_info identity_authorization_info message)

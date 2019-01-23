@@ -1,30 +1,20 @@
-from django.core.files.storage import FileSystemStorage
 from django.db.models import QuerySet
-from django.shortcuts import render
-from django.http import HttpResponse
-from django.db import transaction
 
 from rest_framework import viewsets
-from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import filters
 
-from backends import FileStorage
-from misc.misc import gen_uuid32, genearteMD5
+from django.core.files.storage import FileSystemStorage
 import django_filters
 import threading
-import requests
-import json
 import time
 import shutil
-from django.db import connection  # django封装好的方法
 
 from public_models.utils import  move_attachment, move_single, get_detcode_str
-from account.models import Deptinfo, AccountInfo, IdentityAuthorizationInfo
 from python_backend import settings
 from .serializers import *
 from .models import *
-from .utils import massege, diedai
+from .utils import massege
 from django.db.models import Q
 
 import logging
@@ -1455,7 +1445,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         for i in obj:
                             url = '{}{}{}'.format(relative_path, i.path, i.file_name)
                             # 创建对象
-                            a = FileStorage()
+                            a = FileSystemStorage()
                             # 删除文件
                             a.delete(url)
                             # 删除表记录
@@ -1786,7 +1776,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         for i in obj:
                             url = '{}{}{}'.format(relative_path, i.path, i.file_name)
                             # 创建对象
-                            a = FileStorage()
+                            a = FileSystemStorage()
                             # 删除文件
                             a.delete(url)
                             # 删除表记录

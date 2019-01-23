@@ -162,7 +162,7 @@ class ProjectSubstepInfo(models.Model):
             (
             select a.* from project_substep_serial_info as a
             where a.project_code='{project_code}' and step_code='{step_code}' and substep_code='{substep_code}'
-            order by a.substep_serial_type asc, a.substep_serial desc
+            order by a.substep_serial_type asc, a.p_serial desc
             ) as AA
             group by AA.project_code,AA.step_code,AA.substep_code,AA.substep_serial_type
         """

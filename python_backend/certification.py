@@ -30,38 +30,12 @@ class GetJSONWebTokenSerializer(JSONWebTokenSerializer):
         }
         if all(credentials.values()):
 
+            # 校验验证码
             image_code_id = credentials.get('image_code_id')
             checkcode = credentials.get('checkcode')
-            writeLog('login_py.log', 'testimgcode', sys._getframe().f_code.co_filename,
-                     str(sys._getframe().f_lineno))
-            if not image_code_id or not checkcode:
-                raise serializers.ValidationError('请输入图片验证码')
+            self.verify_img_code(image_code_id=image_code_id, checkcode=checkcode)
 
-            if len(checkcode) != 4:
-                raise serializers.ValidationError('图片验证码不正确')
-            writeLog('login_py.log', 'testimgcode1', sys._getframe().f_code.co_filename,
-                     str(sys._getframe().f_lineno))
-            redis_conn = get_redis_connection('default')
-
-            image_code_server = redis_conn.get(str(image_code_id))
-            if image_code_server is None:
-                raise serializers.ValidationError('无效图片验证码')
-            try:
-                redis_conn.delete(str(image_code_id))
-            except RedisError as e:
-                raise serializers.ValidationError('数据库错误%s' % str(e))
-
-            writeLog('login_py.log', 'testimgcode2', sys._getframe().f_code.co_filename,
-                     str(sys._getframe().f_lineno))
-
-            image_code_server = image_code_server.decode()
-
-            if checkcode.lower() != image_code_server.lower():
-                raise serializers.ValidationError('输入图片验证码有误')
-            writeLog('login_py.log', 'testimgcode3', sys._getframe().f_code.co_filename,
-                     str(sys._getframe().f_lineno))
-
-
+            # 校验用户
             user = self.authenticate(**credentials)
 
             if user:
@@ -82,6 +56,36 @@ class GetJSONWebTokenSerializer(JSONWebTokenSerializer):
             msg = _('Must include "{username_field}" and "password".')
             msg = msg.format(username_field=self.username_field)
             raise serializers.ValidationError(msg)
+
+    def verify_img_code(self, image_code_id, checkcode):
+        writeLog('login_py.log', 'testimgcode', sys._getframe().f_code.co_filename,
+                 str(sys._getframe().f_lineno))
+        if not image_code_id or not checkcode:
+            raise serializers.ValidationError('请输入图片验证码')
+
+        if len(checkcode) != 4:
+            raise serializers.ValidationError('图片验证码不正确')
+        writeLog('login_py.log', 'testimgcode1', sys._getframe().f_code.co_filename,
+                 str(sys._getframe().f_lineno))
+        redis_conn = get_redis_connection('default')
+
+        image_code_server = redis_conn.get(str(image_code_id))
+        if image_code_server is None:
+            raise serializers.ValidationError('无效图片验证码')
+        try:
+            redis_conn.delete(str(image_code_id))
+        except RedisError as e:
+            raise serializers.ValidationError('数据库错误%s' % str(e))
+
+        writeLog('login_py.log', 'testimgcode2', sys._getframe().f_code.co_filename,
+                 str(sys._getframe().f_lineno))
+
+        image_code_server = image_code_server.decode()
+
+        if checkcode.lower() != image_code_server.lower():
+            raise serializers.ValidationError('输入图片验证码有误')
+        writeLog('login_py.log', 'testimgcode3', sys._getframe().f_code.co_filename,
+                 str(sys._getframe().f_lineno))
 
 
 class GetJSONWebToken(JSONWebTokenAPIView):

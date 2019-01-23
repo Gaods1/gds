@@ -34,13 +34,13 @@ ALLOWED_HOSTS = ['*']
 AUTH_USER_MODEL = 'account.AccountInfo'
 
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'python_backend.pagenumber.MyPageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': 'misc.pagenumber.pagenumber.MyPageNumberPagination',
     'PAGE_SIZE': 10,
 
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-        'permissions.FuncPermission',
-        'permissions.DontCheckRoot'
+        'misc.permissions.permissions.FuncPermission',
+        'misc.permissions.permissions.DontCheckRoot'
     ),
 
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -64,7 +64,7 @@ JWT_AUTH = {
 }
 
 AUTHENTICATION_BACKENDS = {
-    'backends.AccountBackend',
+    'misc.backends.backends.AccountBackend',
 }
 # Application definition
 
