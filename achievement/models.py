@@ -44,44 +44,6 @@ class RrApplyHistory(models.Model):
         else:
             return None
 
-    @property
-    def Cooperation(self):
-        #Results = ResultsInfo.objects.filter(r_code=self.rr_code)
-        Cooperation = ResultsCooperationTypeInfo.objects.get(rr_code=self.rr_code)
-        return Cooperation
-
-    @property
-    def Owner(self):
-        #Results = ResultsInfo.objects.filter(r_code=self.rr_code)
-        Owner = ResultsOwnerInfo.objects.get(r_code=self.rr_code)
-        return Owner
-
-    @property
-    def Personal(self):
-        owner_code = ResultsOwnerInfo.objects.get(r_code=self.rr_code).owner_code
-        Personal = PersonalInfo.objects.values_list('pname',flat=True).get(pcode=owner_code)
-        return Personal
-
-    @property
-    def Enterprise(self):
-        owner_code = ResultsOwnerInfo.objects.get(r_code=self.rr_code).owner_code
-        Enterprise = EnterpriseBaseinfo.objects.values_list('ename',flat=True).get(ecode=owner_code)
-        return Enterprise
-
-    @property
-    def Keywords(self):
-        #Results = ResultsInfo.objects.filter(r_code=self.rr_code)
-        Keywords = KeywordsInfo.objects.values_list('key_info',flat=True).filter(object_code=self.rr_code)
-        return Keywords
-
-    @property
-    def opinion(self):
-        opinion = ResultCheckHistory.objects.values_list('opinion',flat=True).filter(apply_code=self.a_code)
-        if opinion:
-            return opinion.order_by('-check_time')[0]
-        else:
-            return None
-
     class Meta:
         managed = False
         db_table = 'rr_apply_history'
@@ -162,6 +124,46 @@ class RequirementsInfo(models.Model):
     def username(self):
         username = AccountInfo.objects.values_list('user_name', flat=True).get(account_code=self.account_code)
         return username
+
+    @property
+    def cooperation_name(self):
+        cooperation_name = ResultsCooperationTypeInfo.objects.values_list('cooperation_name',flat=True).get(rr_code=self.req_code)
+        if cooperation_name:
+            return cooperation_name
+        return None
+
+    #@property
+    #def owner_type(self):
+        #owner_type = ResultsOwnerInfo.objects.values_list('owner_type',flat=True).get(r_code=self.req_code)
+        #if owner_type:
+            #return owner_type
+        #return None
+
+    @property
+    def Keywords(self):
+        Keywords = KeywordsInfo.objects.values_list('key_info', flat=True).filter(object_code=self.req_code)
+        return Keywords
+
+    @property
+    def opinion(self):
+        a_code = RrApplyHistory.objects.get(rr_code=self.req_code).a_code
+        opinion = ResultCheckHistory.objects.values_list('opinion', flat=True).filter(apply_code=a_code)
+        if opinion:
+            return opinion.order_by('-check_time')[0]
+        else:
+            return None
+
+    @property
+    def Personal(self):
+        owner_code = ResultsOwnerInfo.objects.get(r_code=self.req_code).owner_code
+        Personal = PersonalInfo.objects.values_list('pname', flat=True).get(pcode=owner_code)
+        return Personal
+
+    @property
+    def Enterprise(self):
+        owner_code = ResultsOwnerInfo.objects.get(r_code=self.req_code).owner_code
+        Enterprise = EnterpriseBaseinfo.objects.values_list('ename', flat=True).get(ecode=owner_code)
+        return Enterprise
 
     class Meta:
         managed = False
@@ -247,6 +249,46 @@ class ResultsInfo(models.Model):
     def username(self):
         username = AccountInfo.objects.values_list('user_name', flat=True).get(account_code=self.account_code,state=1)
         return username
+
+    @property
+    def cooperation_name(self):
+        cooperation_name = ResultsCooperationTypeInfo.objects.values_list('cooperation_name', flat=True).get(rr_code=self.r_code)
+        if cooperation_name:
+            return cooperation_name
+        return None
+
+    #@property
+    #def owner_type(self):
+        #owner_type = ResultsOwnerInfo.objects.values_list('owner_type', flat=True).get(r_code=self.r_code)
+        #if owner_type:
+            #return owner_type
+        #return None
+
+    @property
+    def Keywords(self):
+        Keywords = KeywordsInfo.objects.values_list('key_info', flat=True).filter(object_code=self.r_code)
+        return Keywords
+
+    @property
+    def opinion(self):
+        a_code = RrApplyHistory.objects.get(rr_code=self.r_code).a_code
+        opinion = ResultCheckHistory.objects.values_list('opinion', flat=True).filter(apply_code=a_code)
+        if opinion:
+            return opinion.order_by('-check_time')[0]
+        else:
+            return None
+
+    @property
+    def Personal(self):
+        owner_code = ResultsOwnerInfo.objects.get(r_code=self.r_code).owner_code
+        Personal = PersonalInfo.objects.values_list('pname', flat=True).get(pcode=owner_code)
+        return Personal
+
+    @property
+    def Enterprise(self):
+        owner_code = ResultsOwnerInfo.objects.get(r_code=self.r_code).owner_code
+        Enterprise = EnterpriseBaseinfo.objects.values_list('ename', flat=True).get(ecode=owner_code)
+        return Enterprise
 
     class Meta:
         managed =False
