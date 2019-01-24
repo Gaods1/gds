@@ -3,7 +3,7 @@ from django.db import models
 from django.utils import six
 from functools import reduce
 import operator
-from rest_framework.compat import coreapi, coreschema, distinct, guardian
+from rest_framework.compat import coreapi, coreschema, distinct
 
 
 class ViewSearch(filters.SearchFilter):

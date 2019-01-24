@@ -10,6 +10,7 @@ import threading
 import time
 import shutil
 
+from misc.filter.search import ViewSearch
 from public_models.utils import  move_attachment, move_single, get_detcode_str
 from python_backend import settings
 from .serializers import *
@@ -49,14 +50,19 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     serializer_class = RrApplyHistorySerializer
     filter_backends = (
-        # filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("account_code","a_code","rr_code")
     filter_fields = ("account_code", "rr_code","a_code")
-    # search_fields = ("rr_code","account_code","a_code")
+    search_fields = ("results.r_name","keywords.key_info")
 
+    results_model = ResultsInfo
+    results_associated_field = ('rr_code', 'r_code')
+
+    keywords_model = KeywordsInfo
+    keywords_associated_field = ('rr_code', 'object_code')
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
@@ -79,26 +85,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 # Ensure queryset is re-evaluated on each request.
                 queryset = queryset.all()
             return queryset
-
-    def list(self, request, *args, **kwargs):
-        search = request.query_params.get('search', None)
-        if search:
-            rq = ResultsInfo.objects.values_list('r_code').filter(r_code__in=self.get_queryset().values_list('rr_code'),
-                                                                  r_name__icontains=search)
-            kq = KeywordsInfo.objects.values_list('object_code').filter(object_code__in=self.get_queryset().values_list('rr_code'),
-                                                                        key_info__icontains=search)
-            queryset = self.get_queryset().filter(Q(rr_code__in=rq) | Q(rr_code__in=kq))
-        else:
-            queryset = self.get_queryset()
-        queryset = self.filter_queryset(queryset)
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -607,13 +593,19 @@ class RequirementViewSet(viewsets.ModelViewSet):
     queryset = RrApplyHistory.objects.filter(type=2,state=1).order_by('-apply_time')
     serializer_class = RrApplyHistorySerializer
     filter_backends = (
-        # filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("account_code","a_code","rr_code")
     filter_fields = ("account_code", "rr_code","a_code")
-    # search_fields = ("rr_code","account_code","a_code")
+    search_fields = ("requirements.req_name","keywords.key_info")
+
+    requirements_model = RequirementsInfo
+    requirements_associated_field = ('rr_code', 'req_code')
+
+    keywords_model = KeywordsInfo
+    keywords_associated_field = ('rr_code', 'object_code')
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
