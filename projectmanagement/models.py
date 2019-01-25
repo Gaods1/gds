@@ -96,7 +96,6 @@ class ProjectInfo(models.Model):
         requirements = [r.req_name for r in RequirementsInfo.objects.filter(req_code__in=requirement_codes)]
         return requirements
 
-
     class Meta:
         managed = False
         db_table = 'project_info'
@@ -157,6 +156,7 @@ class ProjectSubstepInfo(models.Model):
         # pssi = ProjectSubstepSerialInfo.objects.filter(project_code=self.project_code,
         #                                                step_code=self.step_code,
         #                                                substep_code=self.substep_code)
+        # fjs = ProjectSubstepFileInfo.objects.filter(project_code=self.project_code,step_code=self.step_code,substep_code=self.substep_code)
         sql = """
             select AA.* from 
             (
@@ -173,7 +173,7 @@ class ProjectSubstepInfo(models.Model):
                                                     project_code=self.project_code,
                                                     step_code=self.step_code,
                                                     substep_code=self.substep_code)
-        # fjs = ProjectSubstepFileInfo.objects.filter(project_code=self.project_code,step_code=self.step_code,substep_code=self.substep_code)
+
         if fjs == None:
             fjs = []
         return fjs

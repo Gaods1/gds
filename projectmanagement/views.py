@@ -27,7 +27,7 @@ from public_tools.utils import writeLog
 
 # Create your views here.
 
-class ProjectInfoViewSet(viewsets.ReadOnlyModelViewSet):
+class ProjectInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,viewsets.GenericViewSet):
     '''项目信息'''
     queryset = ProjectInfo.objects.all().order_by('-pserial')
     serializer_class = ProjectInfoSerializer
@@ -108,7 +108,8 @@ class ProjectInfoViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return self.get_paginated_response(serializer.data)
 
-
+    def update(self, request, *args, **kwargs):
+        return JsonResponse({"state": 1, "msg": "修改成功"})
 
 
 class ProjectCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,viewsets.GenericViewSet):
@@ -192,7 +193,7 @@ def getProjectByDept(self, request):
 
     # 只要返回空列表我就认为你的部门是一级部门
     dept_codes = get_dept_codes(dept_code)
-    writeLog('yzw_py.log', 'getProjectByDept', sys._getframe().f_code.co_filename, str(sys._getframe().f_lineno))
+    # writeLog('yzw_py.log', 'getProjectByDept', sys._getframe().f_code.co_filename, str(sys._getframe().f_lineno))
 
 
     # 此处可以继续优化，但是数据关系不完整，暂时不做优化
