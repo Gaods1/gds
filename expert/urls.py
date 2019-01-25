@@ -1,6 +1,6 @@
 from rest_framework import routers
 from .views import *
-from django.urls import path, include, re_path
+from django.urls import path, include
 
 router = routers.DefaultRouter()
 router.register(r'expert_apply', ExpertApplyViewSet)        # 领域专家申请

@@ -9,6 +9,7 @@ import django_filters
 from django.db.models.query import QuerySet
 from public_models.utils import get_dept_codes,get_detcode_str
 from .utils import *
+from misc.filter.search import ViewSearch
 # Create your views here.
 
 
@@ -50,13 +51,13 @@ class AccountViewSet(viewsets.ModelViewSet):
     queryset = AccountInfo.objects.all().order_by('-serial')
     serializer_class = AccountInfoSerializer
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("account","user_name", "user_email", "dept_code", "insert_time")
     filter_fields = ("state", "dept_code", "creater", "account")
-    search_fields = ("account","user_name", "user_email",)
+    search_fields = ("account","user_name", "user_email", "user_mobile")
 
     def get_queryset(self):
         assert self.queryset is not None, (

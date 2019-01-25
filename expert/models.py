@@ -1,5 +1,3 @@
-from django.db import models
-from misc.misc import gen_uuid32
 from public_models.models import *
 from public_models.utils import get_single
 from .utils import get_major
@@ -304,7 +302,6 @@ class CollectorApplyHistory(models.Model):
             opinion = history.order_by('-check_time')[0].opinion
         return opinion
 
-    
     class Meta:
         managed = False
         db_table = 'collector_apply_history'
@@ -330,7 +327,7 @@ class CollectorBaseinfo(models.Model):
     collector_abstract = models.TextField(blank=True, null=True)
     education = models.CharField(max_length=8, blank=True, null=True)       # 默认本科 中专，大专，本科， 研究生，硕士， 博士，MBA， EMBA
     owner_zipcode = models.CharField(max_length=8, blank=True, null=True)
-    state = models.IntegerField(default=1) # 采集员状态。1：正常；2：暂停；3：伪删除
+    state = models.IntegerField(default=1)   # 采集员状态。1：正常；2：暂停；3：伪删除
     account_code = models.CharField(max_length=64, blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
@@ -568,7 +565,6 @@ class ResultOwnereBaseinfo(models.Model):
     @property
     def dept_code(self):
         return AccountInfo.objects.get(account_code=self.account_code).dept_code
-
 
     @property
     def city(self):
