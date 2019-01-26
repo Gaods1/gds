@@ -3,6 +3,7 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework import filters
 from rest_framework import mixins
+from rest_framework.response import Response
 import django_filters
 from django.db import transaction
 import time
@@ -109,7 +110,24 @@ class ProjectInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,viewsets.
         return self.get_paginated_response(serializer.data)
 
     def update(self, request, *args, **kwargs):
-        return JsonResponse({"state": 1, "msg": "修改成功"})
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        data = request.data
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        # 修改项目的技术经济人
+        broker_code = data['brokers']
+        pbi = ProjectBrokerInfo.objects.get(project_code=instance.project_code)
+        pbi.broker_code = broker_code
+        pbi.save()
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+        # return JsonResponse({"state": 1, "msg": "修改成功"})
 
 
 class ProjectCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,viewsets.GenericViewSet):
