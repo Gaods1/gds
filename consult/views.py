@@ -106,10 +106,6 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
             consult_info = self.get_object()
             if check_state !=1 and check_state !=2 :
                 return JsonResponse({'state':0,'msg':'请确认审核是否通过'})
-<<<<<<< HEAD
-            if consult_info.consult_state != 0:
-                return JsonResponse({'state': 0, 'msg': '非待审核状态不允许审核'})
-=======
 
             if consult_info.consult_state != 0 :
                 return JsonResponse({'state':0,'msg':'非待审核状态不允许审核'})
@@ -117,7 +113,6 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
             if  not data.get('check_memo').strip():
                 return JsonResponse({'state': 0, 'msg': '审核意见为必填项'})
 
->>>>>>> dev_branch
             try:
                 with transaction.atomic():
                     # 1 更新征询表状态(共通)
@@ -340,10 +335,7 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
             reply_info = self.get_object()
             if check_state !=3 and check_state !=4 :
                 return JsonResponse({'state':0,'msg':'请确认审核是否通过'})
-<<<<<<< HEAD
-            if reply_info.reply_state  != 1:
-                return JsonResponse({'state': 0, 'msg': '非待审核状态不允许审核'})
-=======
+
 
             if reply_info.reply_state != 1 :
                 return JsonResponse({'state':0,'msg':'非待审核状态不允许审核'})
@@ -351,7 +343,6 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
             if  not checkinfo_data.get('check_memo').strip():
                 return JsonResponse({'state': 0, 'msg': '审核意见为必填项'})
 
->>>>>>> dev_branch
             try:
                 with transaction.atomic():
                     #1 生成征询回复记录
