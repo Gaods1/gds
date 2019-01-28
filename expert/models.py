@@ -639,7 +639,10 @@ class ProjectTeamBaseinfo(models.Model):
     pt_people_tel = models.CharField(max_length=255, blank=True, null=True, validators=[validate_mobile])
     pt_people_type = models.IntegerField(default=1)        # 证件类型
     pt_people_id = models.CharField(max_length=32, blank=True, null=True)           # 证件号码
-    pt_describe = models.TextField(blank=True, null=True)                           # 描述
+    pt_describe = models.TextField(blank=True, null=True)        # 描述
+
+    comp_name = models.CharField(max_length=255, blank=True, null=True)  # 企业名称
+    owner_license = models.CharField(max_length=255, blank=True, null=True)  # 企业信用代码
 
     pt_integral = models.IntegerField(default=0)
     state = models.IntegerField(default=1)
