@@ -10,12 +10,16 @@ import threading
 import time
 import shutil
 
+from misc.filter.search import ViewSearch
 from public_models.utils import  move_attachment, move_single, get_detcode_str
 from python_backend import settings
 from .serializers import *
 from .models import *
 from .utils import massege
 from django.db.models import Q
+
+import logging
+logger = logging.getLogger('django')
 
 
 # Create your views here.
@@ -46,14 +50,19 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     serializer_class = RrApplyHistorySerializer
     filter_backends = (
-        # filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("account_code","a_code","rr_code")
     filter_fields = ("account_code", "rr_code","a_code")
-    # search_fields = ("rr_code","account_code","a_code")
+    search_fields = ("results.r_name","keywords.key_info")
 
+    results_model = ResultsInfo
+    results_associated_field = ('rr_code', 'r_code')
+
+    keywords_model = KeywordsInfo
+    keywords_associated_field = ('rr_code', 'object_code')
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
@@ -77,34 +86,16 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 queryset = queryset.all()
             return queryset
 
-    def list(self, request, *args, **kwargs):
-        search = request.query_params.get('search', None)
-        if search:
-            rq = ResultsInfo.objects.values_list('r_code').filter(r_code__in=self.get_queryset().values_list('rr_code'),
-                                                                  r_name__icontains=search)
-            kq = KeywordsInfo.objects.values_list('object_code').filter(object_code__in=self.get_queryset().values_list('rr_code'),
-                                                                        key_info__icontains=search)
-            queryset = self.get_queryset().filter(Q(rr_code__in=rq) | Q(rr_code__in=kq))
-        else:
-            queryset = self.get_queryset()
-        queryset = self.filter_queryset(queryset)
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         data = request.data
 
         if instance.state != 1:
+            logger.error('该成果信息已审核')
             return Response({"detail": {"detail": ['该成果信息已审核']}}, status=400)
 
         if not data.get('state',None) or not data.get('opinion',None):
+            logger.error('状态和审核意见是必填项')
             return Response({"detail": {"detail": ['状态和审核意见是必填项']}}, status=400)
 
         state = data['state']
@@ -128,6 +119,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     )
                     del data['opinion']
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['成果审核历史记录创建失败%s' % str(e)]}}, status=400)
 
@@ -136,6 +128,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 try:
                     Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=2)
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新成果评价信息失败%s' % str(e)]}}, status=400)
 
@@ -144,6 +137,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 try:
                     cooperation = ResultsCooperationTypeInfo.objects.filter(rr_code=instance.rr_code).update(state=1)
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新成果合作方式失败%s' % str(e)]}}, status=400)
 
@@ -151,6 +145,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 try:
                     Keywords = KeywordsInfo.objects.filter(object_code=instance.rr_code).update(state=1)
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新检索关键字失败%s' % str(e)]}}, status=400)
 
@@ -160,6 +155,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     Results.show_state = 1
                     Results.save()
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新成果信息失败%s' % str(e)]}}, status=400)
 
@@ -169,6 +165,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     owner.state = 1
                     owner.save()
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新成果持有人表失败%s' % str(e)]}}, status=400)
                 # 如果是采集员
@@ -265,6 +262,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             # forcibly invalidate the prefetch cache on the instance.
                             instance._prefetched_objects_cache = {}
                     except Exception as e:
+                        logger.error(e)
                         transaction.savepoint_rollback(save_id)
                         return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
 
@@ -344,6 +342,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             # forcibly invalidate the prefetch cache on the instance.
                             instance._prefetched_objects_cache = {}
                     except Exception as e:
+                        logger.error(e)
                         transaction.savepoint_rollback(save_id)
                         return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
 
@@ -367,6 +366,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     )
                     del data['opinion']
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['成果审核历史记录创建失败%s' % str(e)]}}, status=400)
 
@@ -376,6 +376,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     Results.show_state = 2
                     Results.save()
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新成果信息失败%s' % str(e)]}}, status=400)
 
@@ -383,6 +384,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 try:
                     Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=3)
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新成果评价信息失败%s' % str(e)]}}, status=400)
 
@@ -393,6 +395,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     cooperation.state = 2
                     cooperation.save()
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新成果合作方式失败%s' % str(e)]}}, status=400)
 
@@ -400,6 +403,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 try:
                     Keywords = KeywordsInfo.objects.filter(object_code=instance.rr_code).update(state=2)
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新检索关键字失败%s' % str(e)]}}, status=400)
 
@@ -410,6 +414,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     owner.state = 2
                     owner.save()
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新成果持有人表失败%s' % str(e)]}}, status=400)
 
@@ -481,6 +486,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             # forcibly invalidate the prefetch cache on the instance.
                             instance._prefetched_objects_cache = {}
                     except Exception as e:
+                        logger.error(e)
                         transaction.savepoint_rollback(save_id)
                         return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
 
@@ -556,6 +562,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             # forcibly invalidate the prefetch cache on the instance.
                             instance._prefetched_objects_cache = {}
                     except Exception as e:
+                        logger.error(e)
                         transaction.savepoint_rollback(save_id)
                         return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
 
@@ -586,13 +593,19 @@ class RequirementViewSet(viewsets.ModelViewSet):
     queryset = RrApplyHistory.objects.filter(type=2,state=1).order_by('-apply_time')
     serializer_class = RrApplyHistorySerializer
     filter_backends = (
-        # filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("account_code","a_code","rr_code")
     filter_fields = ("account_code", "rr_code","a_code")
-    # search_fields = ("rr_code","account_code","a_code")
+    search_fields = ("requirements.req_name","keywords.key_info")
+
+    requirements_model = RequirementsInfo
+    requirements_associated_field = ('rr_code', 'req_code')
+
+    keywords_model = KeywordsInfo
+    keywords_associated_field = ('rr_code', 'object_code')
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
@@ -659,6 +672,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     )
                     del data['opinion']
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['需求审核历史记录创建失败%s' % str(e)]}}, status=400)
 
@@ -668,6 +682,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     Requirements.show_state = 1
                     Requirements.save()
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新需求信息失败%s' % str(e)]}}, status=400)
 
@@ -675,6 +690,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 try:
                     Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=2)
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新需求评价信息失败%s' % str(e)]}}, status=400)
 
@@ -684,6 +700,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     cooperation = ResultsCooperationTypeInfo.objects.filter(rr_code=instance.rr_code).update(state=1)
 
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新需求合作方式失败%s' % str(e)]}}, status=400)
 
@@ -691,6 +708,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 try:
                     Keywords = KeywordsInfo.objects.filter(object_code=instance.rr_code).update(state=1)
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新检索关键字失败%s' % str(e)]}}, status=400)
 
@@ -701,6 +719,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     owner.state = 1
                     owner.save()
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新需求持有人表失败%s' % str(e)]}}, status=400)
 
@@ -798,6 +817,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             # forcibly invalidate the prefetch cache on the instance.
                             instance._prefetched_objects_cache = {}
                     except Exception as e:
+                        logger.error(e)
                         transaction.savepoint_rollback(save_id)
                         return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
 
@@ -877,6 +897,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             # forcibly invalidate the prefetch cache on the instance.
                             instance._prefetched_objects_cache = {}
                     except Exception as e:
+                        logger.error(e)
                         transaction.savepoint_rollback(save_id)
                         return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
 
@@ -901,6 +922,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     )
                     del data['opinion']
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['需求审核历史记录创建失败%s' % str(e)]}}, status=400)
 
@@ -910,6 +932,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     Requirements.show_state = 2
                     Requirements.save()
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新需求信息失败%s' % str(e)]}}, status=400)
 
@@ -917,6 +940,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 try:
                     Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=3)
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新需求评价信息失败%s' % str(e)]}}, status=400)
 
@@ -927,6 +951,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     cooperation.state = 2
                     cooperation.save()
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['需求成果合作方式失败%s' % str(e)]}}, status=400)
 
@@ -934,6 +959,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 try:
                     Keywords = KeywordsInfo.objects.filter(object_code=instance.rr_code).update(state=2)
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新检索关键字失败%s' % str(e)]}}, status=400)
 
@@ -944,6 +970,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     owner.state = 2
                     owner.save()
                 except Exception as e:
+                    logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": {"detail": ['更新需求持有人表失败%s']}}, status=400)
 
@@ -1015,6 +1042,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             # forcibly invalidate the prefetch cache on the instance.
                             instance._prefetched_objects_cache = {}
                     except Exception as e:
+                        logger.error(e)
                         transaction.savepoint_rollback(save_id)
                         return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
 
@@ -1090,6 +1118,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             # forcibly invalidate the prefetch cache on the instance.
                             instance._prefetched_objects_cache = {}
                     except Exception as e:
+                        logger.error(e)
                         transaction.savepoint_rollback(save_id)
                         return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
 
