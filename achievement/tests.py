@@ -337,3 +337,28 @@
                 return Response({'messege':'审核不通过'})
 
 """
+
+
+
+
+"""
+    def list(self, request, *args, **kwargs):
+        search = request.query_params.get('search', None)
+        if search:
+            rq = ResultsInfo.objects.values_list('r_code').filter(r_code__in=self.get_queryset().values_list('rr_code'),
+                                                                  r_name__icontains=search)
+            kq = KeywordsInfo.objects.values_list('object_code').filter(object_code__in=self.get_queryset().values_list('rr_code'),
+                                                                        key_info__icontains=search)
+            queryset = self.get_queryset().filter(Q(rr_code__in=rq) | Q(rr_code__in=kq))
+        else:
+            queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+"""
