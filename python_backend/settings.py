@@ -166,7 +166,7 @@ WSGI_APPLICATION = 'python_backend.wsgi.application'
 if os.environ.get('DATABASE_DEBUG', None):
     database_setting = {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'PatClub',
+        'NAME': 'test_PatClub',
         'HOST': '120.77.58.203',
         'PORT': 3306,
         'USER': 'forcar',
@@ -175,10 +175,10 @@ if os.environ.get('DATABASE_DEBUG', None):
 else:
     database_setting = {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'test_PatClub',
-        'HOST': '120.77.58.203',
+        'NAME': 'PatClub',
+        'HOST': '127.0.0.1',
         'PORT': 3306,
-        'USER': 'forcar',
+        'USER': 'root',
         'PASSWORD': 'l0092687dd'
     }
 
