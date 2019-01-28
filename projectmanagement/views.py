@@ -28,7 +28,7 @@ from public_tools.utils import writeLog
 
 # Create your views here.
 
-class ProjectInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,viewsets.GenericViewSet):
+class ProjectInfoViewSet(viewsets.ModelViewSet):
     '''项目信息'''
     queryset = ProjectInfo.objects.all().order_by('-pserial')
     serializer_class = ProjectInfoSerializer
