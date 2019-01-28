@@ -8,7 +8,9 @@ class ConsultInfoSerializer(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     rr = serializers.CharField(required=False)
     cover_img = serializers.CharField(read_only=True)
-    attachments = serializers.DictField(read_only=True)
+    # attachments = serializers.DictField(read_only=True)
+    account = serializers.CharField(read_only=True)
+    check_memo = serializers.CharField(read_only=True)
 
     class Meta:
         model = ConsultInfo
@@ -23,9 +25,12 @@ class ConsultInfoSerializer(serializers.ModelSerializer):
                   'consult_state',
                   'insert_time',
                   'creater',
+                  'account',
                   'rr',
                   'cover_img',
-                  'attachments']
+                  'check_memo',
+                  # 'attachments'
+                  ]
 
 
 
@@ -50,6 +55,8 @@ class ConsultReplyInfoSerializer(serializers.ModelSerializer):
     reply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     consult_title = serializers.CharField(read_only=True)
     user_name = serializers.CharField(read_only=True)
+    check_memo = serializers.CharField(read_only=True)
+
     class Meta:
         model = ConsultReplyInfo
         fields = ['serial',
@@ -61,7 +68,9 @@ class ConsultReplyInfoSerializer(serializers.ModelSerializer):
                   'accept_time',
                   'reply_state',
                   'consult_title',
-                  'user_name']
+                  'user_name',
+                  'check_memo',
+                  ]
 
 
 

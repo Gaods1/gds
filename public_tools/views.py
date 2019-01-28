@@ -1,10 +1,11 @@
 import os
 import subprocess
+import base64
 
 import shutil
+from misc.misc import gen_uuid32
 
 import time
-from django.core.files.storage import FileSystemStorage
 from django.db import transaction
 from django.http import HttpResponse
 from django.http import JsonResponse
@@ -16,11 +17,14 @@ from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.utils import json
 from rest_framework.views import APIView
-
-from backends import FileStorage
 from misc.misc import gen_uuid32
 from public_models.models import AttachmentFileType, ParamInfo, AttachmentFileinfo
 from python_backend import settings
+from django.core.files.storage import FileSystemStorage
+
+
+from django_redis import get_redis_connection
+
 """
 此接口为附件或单个证件照片上传接口,分为附件和单个证件照两种, 表单附件可以一次上传一个或多个,表单证件照一次只能上传一个
 1 #上传 post: 上传时前端需要在表单中给后端传一个flag标志位,此flag为tcode表中的tname,用于区分
@@ -34,7 +38,7 @@ from python_backend import settings
 
 """
 
-class PublicInfo(APIView,FileStorage):
+class PublicInfo(APIView,FileSystemStorage):
     queryset = AttachmentFileinfo.objects.all()
 
     def post(self, request):
@@ -65,7 +69,7 @@ class PublicInfo(APIView,FileStorage):
                         url = url + file.name
 
                         # 创建对象
-                        a = FileStorage()
+                        a = FileSystemStorage()
                         # 上传服务器
                         url = a._save(url,file)
                         # 判断如果是office文件
@@ -110,7 +114,7 @@ class PublicInfo(APIView,FileStorage):
                             os.makedirs(url)
                         url = url + file.name
                         # 创建对象
-                        a = FileStorage()
+                        a = FileSystemStorage()
                         # 上传服务器
                         url = a._save(url, file)
                         # 判断如果是office文件
@@ -159,7 +163,7 @@ class PublicInfo(APIView,FileStorage):
                 save_id = transaction.savepoint()
                 try:
                     # 创建对象
-                    a = FileStorage()
+                    a = FileSystemStorage()
                     # 删除
                     a.delete(url)
                 except Exception as e:
@@ -185,7 +189,7 @@ class PublicInfo(APIView,FileStorage):
                         transaction.savepoint_rollback(save_id)
                         return HttpResponse('该正式路径下不存在该文件')
                     # 创建对象
-                    a = FileStorage()
+                    a = FileSystemStorage()
                     # 删除文件
                     a.delete(url)
                     # 删除表记录
@@ -195,6 +199,8 @@ class PublicInfo(APIView,FileStorage):
                     return HttpResponse('上传失败' % str(e))
                 transaction.savepoint_commit(save_id)
                 return HttpResponse('ok')
+
+
 
 
 

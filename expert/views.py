@@ -1,25 +1,24 @@
 import os
 import shutil
-
-from django.db.models import QuerySet
 from django.http import HttpResponse
-
-from backends import FileStorage
+from django.core.files.storage import FileSystemStorage
 from python_backend import settings
-from .models import *
 from .serializers import *
 from rest_framework import viewsets
-from rest_framework import filters,status
+from rest_framework import filters
 import django_filters
 from rest_framework.response import Response
 from django.db import transaction
 from django.http import JsonResponse
 from .utils import *
-import datetime, threading
+import threading
 from public_models.utils import move_single, get_detcode_str
-from public_models.utils import move_single,get_detcode_str
 from django.db.models.query import QuerySet
 from public_models.models import IdentityAuthorizationInfo
+from misc.filter.search import ViewSearch
+import logging
+
+logger = logging.getLogger('django')
 
 
 # 领域专家管理
@@ -28,15 +27,23 @@ class ExpertViewSet(viewsets.ModelViewSet):
     serializer_class = ExpertBaseInfoSerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
 
     ordering_fields = ("insert_time", "expert_level", "credit_value", "expert_integral")
     filter_fields = ("state", "creater", "expert_id", "expert_city", "ecode")
-    search_fields = ("expert_name", "expert_id", "expert_mobile", "ecode")
+    search_fields = ("expert_name", "expert_id", "expert_mobile", "major.mname",
+                     "account.user_name")
 
+    major_model = MajorInfo
+    major_intermediate_model = MajorUserinfo
+    major_associated_field = ('expert_code', 'user_code')
+    major_intermediate_associated_field = ('mcode', "mcode")
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -46,7 +53,8 @@ class ExpertViewSet(viewsets.ModelViewSet):
         )
         dept_codes_str = get_detcode_str(self.request.user.dept_code)
         if dept_codes_str:
-            raw_queryset = ExpertBaseinfo.objects.raw("select e.serial  from expert_baseinfo as e left join account_info as ai on  e.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
+            raw_queryset = ExpertBaseinfo.objects.raw(
+                "select e.serial  from expert_baseinfo as e left join account_info as ai on  e.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
             queryset = ExpertBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
         else:
             queryset = self.queryset
@@ -55,9 +63,6 @@ class ExpertViewSet(viewsets.ModelViewSet):
             # Ensure queryset is re-evaluated on each request.
             queryset = queryset.all()
         return queryset
-
-    
-    
 
     # 创建领域专家 2018/12/24  author:周
     def create(self, request, *args, **kwargs):
@@ -84,23 +89,34 @@ class ExpertViewSet(viewsets.ModelViewSet):
 
 # 领域专家申请视图
 class ExpertApplyViewSet(viewsets.ModelViewSet):
-    queryset = ExpertApplyHistory.objects.all().order_by('state')
+    queryset = ExpertApplyHistory.objects.filter(state=1).order_by('-apply_time')
     serializer_class = ExpertApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "expert_code", "account_code")
-    search_fields = ("account_code", "apply_code")
+    search_fields = ("expert.expert_name", "expert.expert_mobile", "expert.expert_id",
+                     "account.user_name")
+
+    expert_model = ExpertBaseinfo
+    expert_associated_field = ('expert_code', 'expert_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('expert_code', 'expert_code')
+    account_intermediate_model = ExpertBaseinfo
+    account_intermediate_associated_field = ('account_code', "account_code")
 
     def update(self, request, *args, **kwargs):
         try:
             with transaction.atomic():
                 # 获取单个记录
                 instance = self.get_object()
+                if instance.state != 1:
+                    raise ValueError('该信息已被审核')
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
@@ -124,9 +140,9 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
                         # 更新或创建个人基本信息表和更新专家基本信息表
                         pinfo = {
                             'pname': expert.expert_name,
-                            'pid_type':expert.expert_id_type,
-                            'pid':expert.expert_id,
-                            'pmobile':expert.expert_mobile,
+                            'pid_type': expert.expert_id_type,
+                            'pid': expert.expert_id,
+                            'pmobile': expert.expert_mobile,
                             'ptel': expert.expert_tel,
                             'pemail': expert.expert_email,
                             'peducation': expert.education,
@@ -136,9 +152,12 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
                             'account_code': expert.account_code
                         }
                         pcode = update_or_crete_person(expert.pcode, pinfo)
+                        ecode = create_enterprise(expert.ecode)
 
                         # 更新专家基本信息表
-                        update_baseinfo(ExpertBaseinfo, {'expert_code': expert.expert_code}, {'state': 1, 'pcode': pcode})
+                        update_baseinfo(ExpertBaseinfo, {'expert_code': expert.expert_code}, {'state': 1,
+                                                                                              'pcode': pcode,
+                                                                                              'ecode': ecode})
 
                         # 给账号绑定角色
                         # IdentityAuthorizationInfo.objects.create(account_code=expert.account_code,
@@ -146,8 +165,9 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
                         #                                          iab_time=datetime.datetime.now(),
                         #                                          creater=request.user.account)
                         # 申请类型新增或修改时 更新account_info表dept_code
-                        if data.get('dept_code') and expert.dept_code is None:
-                            AccountInfo.objects.filter(account_code=instance.expert.account_code).update(dept_code=data.get('dept_code'))
+                        if data.get('dept_code') and not expert.dept_code:
+                            AccountInfo.objects.filter(account_code=instance.expert.account_code).update(
+                                dept_code=data.get('dept_code'))
 
                         # 移动相关附件
                         move_single('headPhoto', expert.expert_code)
@@ -155,11 +175,12 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
                         move_single('identityBack', expert.expert_code)
                         move_single('handIdentityPhoto', expert.expert_code)
 
-
                     # 更新账号绑定角色状态
                     if expert.account_code:
                         IdentityAuthorizationInfo.objects.filter(account_code=expert.account_code,
-                                                                 identity_code=IdentityInfo.objects.get(identity_name='expert').identity_code).update(state=apply_state, iab_time=datetime.datetime.now())
+                                                                 identity_code=IdentityInfo.objects.get(
+                                                                     identity_name='expert').identity_code).update(
+                            state=apply_state, iab_time=datetime.datetime.now())
 
                     # 发送信息
                     send_msg(expert.expert_mobile, '领域专家', apply_state, expert.account_code, request.user.account)
@@ -178,25 +199,36 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return JsonResponse({"detail":"审核失败：%s" % str(e)})
+            return Response({"detail": {
+                "detail": ["审核失败：%s" % str(e)]}}, status=400)
 
         return Response(serializer.data)
 
 
 # 技术经纪人管理
 class BrokerViewSet(viewsets.ModelViewSet):
+
     queryset = BrokerBaseinfo.objects.all().order_by('state', '-serial')
     serializer_class = BrokerBaseInfoSerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
 
     ordering_fields = ("insert_time", "broker_level", "credit_value", "broker_integral", "work_type")
     filter_fields = ("state", "creater", "broker_id", "broker_city", "ecode", "work_type")
-    search_fields = ("broker_name", "broker_id", "broker_mobile", "ecode", "work_type", "broker_abbr")
+    search_fields = ("broker_name", "broker_id", "broker_mobile", "broker_abbr", "major.mname",
+                     "account.user_name")
+
+    major_model = MajorInfo
+    major_intermediate_model = MajorUserinfo
+    major_associated_field = ('broker_code', 'user_code')
+    major_intermediate_associated_field = ('mcode', "mcode")
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -216,19 +248,19 @@ class BrokerViewSet(viewsets.ModelViewSet):
             queryset = queryset.all()
         return queryset
 
-    #创建技术经纪人 2018/12/24 author:周
+    # 创建技术经纪人 2018/12/24 author:周
     def create(self, request, *args, **kwargs):
         try:
             with transaction.atomic():
                 account_code = request.data.get('account_code')
-                #1 创建broker_baseinfo技术经济人基本信息
+                # 1 创建broker_baseinfo技术经济人基本信息
                 broker_baseinfo_data = request.data.get('broker_baseinfo')
                 broker_baseinfo_data['account_code'] = account_code
                 # broker_baseinfo = BrokerBaseinfo.objects.create(**broker_baseinfo_data)
                 serializer = self.get_serializer(data=broker_baseinfo_data)
                 serializer.is_valid(raise_exception=True)
                 self.perform_create(serializer)
-                #2 创建identity_authorization_info信息
+                # 2 创建identity_authorization_info信息
                 identity_authorizationinfo_data = request.data.get('identity_authorization_info')
                 identity_authorizationinfo_data['account_code'] = account_code
                 IdentityAuthorizationInfo.objects.create(**identity_authorizationinfo_data)
@@ -241,17 +273,27 @@ class BrokerViewSet(viewsets.ModelViewSet):
 
 # 技术经纪人申请视图
 class BrokerApplyViewSet(viewsets.ModelViewSet):
-    queryset = BrokerApplyHistory.objects.all().order_by('state')
+    queryset = BrokerApplyHistory.objects.filter(state=1).order_by('-apply_time')
     serializer_class = BrokerApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "broker_code", "account_code")
-    search_fields = ("account_code", "apply_code")
+
+    search_fields = ("broker.broker_name", "broker.broker_mobile", "broker.broker_id",
+                     "account.user_name")
+
+    broker_model = BrokerBaseinfo
+    broker_associated_field = ('broker_code', 'broker_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('broker_code', 'broker_code')
+    account_intermediate_model = BrokerBaseinfo
+    account_intermediate_associated_field = ('account_code', "account_code")
 
     def update(self, request, *args, **kwargs):
         try:
@@ -260,7 +302,8 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                 partial = kwargs.pop('partial', False)
                 # 获取更新记录
                 instance = self.get_object()
-
+                if instance.state != 1:
+                    raise ValueError('该信息已被审核')
                 # 获取基本信息
                 baseinfo = instance.broker
                 # 获取审核意见
@@ -303,7 +346,7 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                         #                                          iab_time=datetime.datetime.now(),
                         #                                          creater=request.user.account)
                         # 申请类型新增或修改时 更新account_info表dept_code
-                        if data.get('dept_code') and baseinfo.dept_code is None:
+                        if data.get('dept_code') and not baseinfo.dept_code:
                             AccountInfo.objects.filter(account_code=instance.broker.account_code).update(dept_code=data.get('dept_code'))
 
                         # 移动相关附件
@@ -334,7 +377,8 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return JsonResponse({"detail":"审核失败：%s" % str(e)})
+            return Response({"detail":{
+                "detail":["审核失败：%s" % str(e)]}}, status=400)
 
         return Response(serializer.data)
 
@@ -345,14 +389,18 @@ class CollectorViewSet(viewsets.ModelViewSet):
     serializer_class = CollectorBaseInfoSerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
 
     ordering_fields = ("insert_time",)
     filter_fields = ("state", "creater", "collector_id", "collector_city",)
-    search_fields = ("collector_name", "collector_id", "collector_mobile",)
+    search_fields = ("collector_name", "collector_id", "collector_mobile",
+                     'account.user_name')
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
@@ -363,7 +411,6 @@ class CollectorViewSet(viewsets.ModelViewSet):
                     inner join account_info \
                     on account_info.account_code=collector_baseinfo.account_code \
                     where account_info.dept_code in ({dept_s})"
-
 
             raw_queryset = CollectorBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
             consult_reply_set = CollectorBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state', '-serial')
@@ -524,7 +571,6 @@ class CollectorViewSet(viewsets.ModelViewSet):
                 IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
 
                 IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
-
                                                          state=2, creater=request.user.account)
                 # 2 转移附件创建ecode表
                 absolute_path = ParamInfo.objects.get(param_code=1).param_value
@@ -611,7 +657,6 @@ class CollectorViewSet(viewsets.ModelViewSet):
             transaction.savepoint_commit(save_id)
             return Response(dict)
 
-
     def destroy(self, request, *args, **kwargs):
         with transaction.atomic():
             save_id = transaction.savepoint()
@@ -635,7 +680,7 @@ class CollectorViewSet(viewsets.ModelViewSet):
                         for i in obj:
                             url = '{}{}{}'.format(relative_path, i.path, i.file_name)
                             # 创建对象
-                            a = FileStorage()
+                            a = FileSystemStorage()
                             # 删除文件
                             a.delete(url)
                             # 删除表记录
@@ -654,23 +699,34 @@ class CollectorViewSet(viewsets.ModelViewSet):
 
 # 采集员申请视图
 class CollectorApplyViewSet(viewsets.ModelViewSet):
-    queryset = CollectorApplyHistory.objects.all().order_by('state')
+    queryset = CollectorApplyHistory.objects.filter(state=1).order_by('-apply_time')
     serializer_class = CollectorApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "collector_code", "account_code")
-    search_fields = ("account_code", "apply_code")
+    search_fields = ("collector.collector_name", "collector.collector_mobile", "collector.collector_id",
+                     "account.user_name")
+
+    collector_model = CollectorBaseinfo
+    collector_associated_field = ('collector_code', 'collector_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('collector_code', 'collector_code')
+    account_intermediate_model = CollectorBaseinfo
+    account_intermediate_associated_field = ('account_code', "account_code")
 
     def update(self, request, *args, **kwargs):
         try:
             with transaction.atomic():
                 # 获取单个信息
                 instance = self.get_object()
+                if instance.state != 1:
+                    raise ValueError('该信息已被审核')
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
@@ -716,7 +772,7 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
                         #                                          iab_time=datetime.datetime.now(),
                         #                                          creater=request.user.account)
                         # 申请类型新增或修改时 更新account_info表dept_code
-                        if data.get('dept_code') and baseinfo.dept_code is None:
+                        if data.get('dept_code') and not baseinfo.dept_code:
                             AccountInfo.objects.filter(account_code=instance.collector.account_code).update(dept_code=data.get('dept_code'))
 
                         # 移动相关附件
@@ -747,7 +803,9 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return JsonResponse({"detail":"审核失败：%s" % str(e)})
+            logger.error(e)
+            return Response({"detail":{
+                "detail":["审核失败：%s" % str(e)]}}, status=400)
 
         return Response(serializer.data)
 
@@ -758,342 +816,356 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
     serializer_class = ResultOwnerpSerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
 
     ordering_fields = ("insert_time",)
     filter_fields = ("state", "creater", "owner_id", "owner_city",)
-    search_fields = ("owner_name", "owner_id", "owner_mobile")
+    search_fields = ("owner_name", "owner_id", "owner_mobile", "major.mname",
+                     "account.username")
 
+    major_model = MajorInfo
+    major_intermediate_model = MajorUserinfo
+    major_associated_field = ('owner_code', 'user_code')
+    major_intermediate_associated_field = ('mcode', "mcode")
 
-def get_queryset(self):
-    dept_code = self.request.user.dept_code
-    dept_code_str = get_detcode_str(dept_code)
-    if dept_code_str:
-        SQL = "select result_ownerp_baseinfo.* \
-                from result_ownerp_baseinfo \
-                inner join account_info \
-                on account_info.account_code=result_ownerp_baseinfo.account_code \
-                where account_info.dept_code in ({dept_s}) \
-                and result_ownerp_baseinfo.type=1"
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
-        raw_queryset = ResultOwnerpBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
-        consult_reply_set = ResultOwnerpBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state', '-serial')
-        return consult_reply_set
-    else:
-        queryset = self.queryset
-        if isinstance(queryset, QuerySet):
-            # Ensure queryset is re-evaluated on each request.
-            queryset = queryset.all()
-        return queryset
+    def get_queryset(self):
+        dept_code = self.request.user.dept_code
+        dept_code_str = get_detcode_str(dept_code)
+        if dept_code_str:
+            SQL = "select result_ownerp_baseinfo.* \
+                    from result_ownerp_baseinfo \
+                    inner join account_info \
+                    on account_info.account_code=result_ownerp_baseinfo.account_code \
+                    where account_info.dept_code in ({dept_s}) \
+                    and result_ownerp_baseinfo.type=1"
 
+            raw_queryset = ResultOwnerpBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
+            consult_reply_set = ResultOwnerpBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state', '-serial')
+            return consult_reply_set
+        else:
+            queryset = self.queryset
+            if isinstance(queryset, QuerySet):
+                # Ensure queryset is re-evaluated on each request.
+                queryset = queryset.all()
+            return queryset
 
-# 创建成果持有人  author:范
-def create(self, request, *args, **kwargs):
-    # 建立事物机制
-    with transaction.atomic():
-        # 创建一个保存点
-        save_id = transaction.savepoint()
-        try:
-            data = request.data
-            account_code = request.data('account_code', None)
-            single_dict = request.data.pop('single', None)
-            mcode_list = request.data.pop('mcode', None)
-            identity_code = request.data.pop('identity_code', None)
+    # 创建成果持有人  author:范
+    def create(self, request, *args, **kwargs):
+        # 建立事物机制
+        with transaction.atomic():
+            # 创建一个保存点
+            save_id = transaction.savepoint()
+            try:
+                data = request.data
+                account_code = request.data('account_code', None)
+                single_dict = request.data.pop('single', None)
+                mcode_list = request.data.pop('mcode', None)
+                identity_code = request.data.pop('identity_code', None)
 
-            if not mcode_list or not account_code or not identity_code:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('请完善相关信息')
-
-            if not single_dict:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('请先上传相关文件')
-
-            if len(single_dict) != 4:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('证件照需要上传4张')
-
-            # 1 创建成果持有人表
-            data['creater'] = request.user.account
-            serializer = self.get_serializer(data=data)
-            serializer.is_valid(raise_exception=True)
-            self.perform_create(serializer)
-
-            serializer_ecode = serializer.data['owner_code']
-
-            # 2 创建所属领域
-            major_list = []
-            for mcode in mcode_list:
-                major_list.append(MajorUserinfo(mcode=mcode, user_type=8, user_code=serializer_ecode, mtype=2))
-            MajorUserinfo.objects.bulk_create(major_list)
-
-            # 3 创建identity_authorization_info信息
-            IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
-                                                     state=2, creater=request.user.account)
-
-            # 4 转移附件创建ecode表
-            absolute_path = ParamInfo.objects.get(param_code=1).param_value
-            relative_path = ParamInfo.objects.get(param_code=2).param_value
-            relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-            identityFront_tcode = AttachmentFileType.objects.get(tname='identityFront').tcode
-            identityBack_tcode = AttachmentFileType.objects.get(tname='identityBack').tcode
-            handIdentityPhoto_tcode = AttachmentFileType.objects.get(tname='handIdentityPhoto').tcode
-            headPhoto_tcode = AttachmentFileType.objects.get(tname='headPhoto').tcode
-            param_value = ParamInfo.objects.get(param_code=8).param_value
-
-            url_x_f = '{}{}/{}/{}'.format(relative_path, param_value, identityFront_tcode, serializer_ecode)
-            url_x_b = '{}{}/{}/{}'.format(relative_path, param_value, identityBack_tcode, serializer_ecode)
-            url_x_p = '{}{}/{}/{}'.format(relative_path, param_value, handIdentityPhoto_tcode, serializer_ecode)
-            url_x_h = '{}{}/{}/{}'.format(relative_path, param_value, headPhoto_tcode, serializer_ecode)
-
-            if not os.path.exists(url_x_f):
-                os.makedirs(url_x_f)
-            if not os.path.exists(url_x_b):
-                os.makedirs(url_x_b)
-            if not os.path.exists(url_x_p):
-                os.makedirs(url_x_p)
-            if not os.path.exists(url_x_h):
-                os.makedirs(url_x_h)
-
-            dict = {}
-            list1 = []
-            list2 = []
-
-            for key, value in single_dict.items():
-                # 判断各个图片类型是否正确
-                if key not in ['identityFront', 'identityBack', 'handIdentityPhoto', 'headPhoto']:
+                if not mcode_list or not account_code or not identity_code:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('某个图片所属类型不正确')
+                    return HttpResponse('请完善相关信息')
 
-                url_l = value.split('/')
-                url_file = url_l[-1]
-
-                # 判断该临时路径下的文件是否正确
-                url_j = settings.MEDIA_ROOT + url_file
-                if not os.path.exists(url_j):
+                if not single_dict:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('该临时路径下不存在该文件,可能文件名称错误')
+                    return HttpResponse('请先上传相关文件')
 
-                # 通过key值拿取相应的tcode
-                tcode = AttachmentFileType.objects.get(tname=key).tcode
+                if len(single_dict) != 4:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('证件照需要上传4张')
 
-                # 拼接正式路径
-                url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
-                                               url_file)
+                # 1 创建成果持有人表
+                data['creater'] = request.user.account
+                serializer = self.get_serializer(data=data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
 
-                # 拼接给前端的的地址
-                url_x_f = url_x.replace(relative_path, relative_path_front)
-                list2.append(url_x_f)
+                serializer_ecode = serializer.data['owner_code']
 
-                # 拼接ecode表中的path
-                path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
-                list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file,
-                                                path=path, operation_state=3, state=1))
+                # 2 创建所属领域
+                major_list = []
+                for mcode in mcode_list:
+                    major_list.append(MajorUserinfo(mcode=mcode, user_type=8, user_code=serializer_ecode, mtype=2))
+                MajorUserinfo.objects.bulk_create(major_list)
 
-                # 将临时目录转移到正式目录
-                shutil.move(url_j, url_x)
+                # 3 创建identity_authorization_info信息
+                IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
+                                                         state=2, creater=request.user.account)
 
-            # 创建atachmentinfo表
-            AttachmentFileinfo.objects.bulk_create(list1)
+                # 4 转移附件创建ecode表
+                absolute_path = ParamInfo.objects.get(param_code=1).param_value
+                relative_path = ParamInfo.objects.get(param_code=2).param_value
+                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
+                identityFront_tcode = AttachmentFileType.objects.get(tname='identityFront').tcode
+                identityBack_tcode = AttachmentFileType.objects.get(tname='identityBack').tcode
+                handIdentityPhoto_tcode = AttachmentFileType.objects.get(tname='handIdentityPhoto').tcode
+                headPhoto_tcode = AttachmentFileType.objects.get(tname='headPhoto').tcode
+                param_value = ParamInfo.objects.get(param_code=8).param_value
 
-            # 删除临时目录
-            shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+                url_x_f = '{}{}/{}/{}'.format(relative_path, param_value, identityFront_tcode, serializer_ecode)
+                url_x_b = '{}{}/{}/{}'.format(relative_path, param_value, identityBack_tcode, serializer_ecode)
+                url_x_p = '{}{}/{}/{}'.format(relative_path, param_value, handIdentityPhoto_tcode, serializer_ecode)
+                url_x_h = '{}{}/{}/{}'.format(relative_path, param_value, headPhoto_tcode, serializer_ecode)
 
-            # 给前端抛正式目录
-            dict['url'] = list2
+                if not os.path.exists(url_x_f):
+                    os.makedirs(url_x_f)
+                if not os.path.exists(url_x_b):
+                    os.makedirs(url_x_b)
+                if not os.path.exists(url_x_p):
+                    os.makedirs(url_x_p)
+                if not os.path.exists(url_x_h):
+                    os.makedirs(url_x_h)
 
-            headers = self.get_success_headers(serializer.data)
-            # return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
-        except Exception as e:
-            transaction.savepoint_rollback(save_id)
-            return HttpResponse('创建失败%s' % str(e))
-        transaction.savepoint_commit(save_id)
-        return Response(dict)
+                dict = {}
+                list1 = []
+                list2 = []
 
+                for key, value in single_dict.items():
+                    # 判断各个图片类型是否正确
+                    if key not in ['identityFront', 'identityBack', 'handIdentityPhoto', 'headPhoto']:
+                        transaction.savepoint_rollback(save_id)
+                        return HttpResponse('某个图片所属类型不正确')
 
-def update(self, request, *args, **kwargs):
-    # 建立事物机制
-    with transaction.atomic():
-        # 创建一个保存点
-        save_id = transaction.savepoint()
-        try:
-            partial = kwargs.pop('partial', False)
-            instance = self.get_object()
-            serializer_ecode = instance.owner_code
-            account_code = instance.account_code
+                    url_l = value.split('/')
+                    url_file = url_l[-1]
 
-            data = request.data
-            single_dict = request.data.pop('single', None)
-            mcode_list = request.data.pop('mcode', None)
-            identity_code = request.data.pop('identity_code', None)
+                    # 判断该临时路径下的文件是否正确
+                    url_j = settings.MEDIA_ROOT + url_file
+                    if not os.path.exists(url_j):
+                        transaction.savepoint_rollback(save_id)
+                        return HttpResponse('该临时路径下不存在该文件,可能文件名称错误')
 
-            if not mcode_list or not identity_code:
+                    # 通过key值拿取相应的tcode
+                    tcode = AttachmentFileType.objects.get(tname=key).tcode
+
+                    # 拼接正式路径
+                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
+                                                   url_file)
+
+                    # 拼接给前端的的地址
+                    url_x_f = url_x.replace(relative_path, relative_path_front)
+                    list2.append(url_x_f)
+
+                    # 拼接ecode表中的path
+                    path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
+                    list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file,
+                                                    path=path, operation_state=3, state=1))
+
+                    # 将临时目录转移到正式目录
+                    shutil.move(url_j, url_x)
+
+                # 创建atachmentinfo表
+                AttachmentFileinfo.objects.bulk_create(list1)
+
+                # 删除临时目录
+                shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+
+                # 给前端抛正式目录
+                dict['url'] = list2
+
+                headers = self.get_success_headers(serializer.data)
+                # return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
+            except Exception as e:
                 transaction.savepoint_rollback(save_id)
-                return HttpResponse('请完善相关信息')
+                return HttpResponse('创建失败%s' % str(e))
+            transaction.savepoint_commit(save_id)
+            return Response(dict)
 
-            if not single_dict:
+    def update(self, request, *args, **kwargs):
+        # 建立事物机制
+        with transaction.atomic():
+            # 创建一个保存点
+            save_id = transaction.savepoint()
+            try:
+                partial = kwargs.pop('partial', False)
+                instance = self.get_object()
+                serializer_ecode = instance.owner_code
+                account_code = instance.account_code
+
+                data = request.data
+                single_dict = request.data.pop('single', None)
+                mcode_list = request.data.pop('mcode', None)
+                identity_code = request.data.pop('identity_code', None)
+
+                if not mcode_list or not identity_code:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('请完善相关信息')
+
+                if not single_dict:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('请先上传相关文件')
+
+                if len(single_dict) != 4:
+                    transaction.savepoint_rollback(save_id)
+                    return HttpResponse('证件照需要上传4张')
+
+                # 1 更新所属领域
+                MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
+
+                major_list = []
+                for mcode in mcode_list:
+                    major_list.append(MajorUserinfo(mcode=mcode, user_type=8, user_code=serializer_ecode, mtype=2))
+                MajorUserinfo.objects.bulk_create(major_list)
+
+                # 2 更新identity_authorization_info信息
+                IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
+
+                IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
+
+                                                         state=2, creater=request.user.account)
+                # 3 转移附件创建ecode表
+                absolute_path = ParamInfo.objects.get(param_code=1).param_value
+                relative_path = ParamInfo.objects.get(param_code=2).param_value
+                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
+                identityFront_tcode = AttachmentFileType.objects.get(tname='identityFront').tcode
+                identityBack_tcode = AttachmentFileType.objects.get(tname='identityBack').tcode
+                handIdentityPhoto_tcode = AttachmentFileType.objects.get(tname='handIdentityPhoto').tcode
+                headPhoto_tcode = AttachmentFileType.objects.get(tname='headPhoto').tcode
+                param_value = ParamInfo.objects.get(param_code=8).param_value
+
+                url_x_f = '{}{}/{}/{}'.format(relative_path, param_value, identityFront_tcode, serializer_ecode)
+                url_x_b = '{}{}/{}/{}'.format(relative_path, param_value, identityBack_tcode, serializer_ecode)
+                url_x_p = '{}{}/{}/{}'.format(relative_path, param_value, handIdentityPhoto_tcode, serializer_ecode)
+                url_x_h = '{}{}/{}/{}'.format(relative_path, param_value, headPhoto_tcode, serializer_ecode)
+
+                if not os.path.exists(url_x_f):
+                    os.makedirs(url_x_f)
+                if not os.path.exists(url_x_b):
+                    os.makedirs(url_x_b)
+                if not os.path.exists(url_x_p):
+                    os.makedirs(url_x_p)
+                if not os.path.exists(url_x_h):
+                    os.makedirs(url_x_h)
+
+                dict = {}
+                list1 = []
+                list2 = []
+
+                for key, value in single_dict.items():
+                    # 判断各个图片类型是否正确
+                    if key not in ['identityFront', 'identityBack', 'handIdentityPhoto', 'headPhoto']:
+                        transaction.savepoint_rollback(save_id)
+                        return HttpResponse('某个图片所属类型不正确')
+
+                    url_l = value.split('/')
+                    url_file = url_l[-1]
+
+                    # 判断该临时路径下的文件是否正确
+                    url_j = settings.MEDIA_ROOT + url_file
+                    if not os.path.exists(url_j):
+                        transaction.savepoint_rollback(save_id)
+                        return HttpResponse('该临时路径下不存在该文件,可能文件名称错误')
+
+                    # 通过key值拿取相应的tcode
+                    tcode = AttachmentFileType.objects.get(tname=key).tcode
+
+                    # 拼接正式路径
+                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
+                                                   url_file)
+
+                    # 拼接给前端的的地址
+                    url_x_f = url_x.replace(relative_path, relative_path_front)
+                    list2.append(url_x_f)
+
+                    # 拼接ecode表中的path
+                    path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
+                    list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file,
+                                                    path=path, operation_state=3, state=1))
+
+                    # 将临时目录转移到正式目录
+                    shutil.move(url_j, url_x)
+
+                # 创建atachmentinfo表
+                AttachmentFileinfo.objects.bulk_create(list1)
+
+                # 删除临时目录
+                shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+
+                # 给前端抛正式目录
+                dict['url'] = list2
+
+                serializer = self.get_serializer(instance, data=request.data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+
+                if getattr(instance, '_prefetched_objects_cache', None):
+                    # If 'prefetch_related' has been applied to a queryset, we need to
+                    # forcibly invalidate the prefetch cache on the instance.
+                    instance._prefetched_objects_cache = {}
+            except Exception as e:
                 transaction.savepoint_rollback(save_id)
-                return HttpResponse('请先上传相关文件')
+                return HttpResponse('创建失败%s' % str(e))
+            transaction.savepoint_commit(save_id)
+            return Response(dict)
 
-            if len(single_dict) != 4:
+    def destroy(self, request, *args, **kwargs):
+        with transaction.atomic():
+            save_id = transaction.savepoint()
+
+            try:
+                instance = self.get_object()
+                serializer_ecode = instance.owner_code
+                account_code = instance.account_code
+
+                # 1 删除所属领域表记录
+                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
+
+                # 2 删除identity_authorization_info信息
+                IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
+
+                # 3 删除文件以及ecode表记录
+                relative_path = ParamInfo.objects.get(param_code=2).param_value
+                obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
+                if obj:
+                    try:
+                        for i in obj:
+                            url = '{}{}{}'.format(relative_path, i.path, i.file_name)
+                            # 创建对象
+                            a = FileSystemStorage()
+                            # 删除文件
+                            a.delete(url)
+                            # 删除表记录
+                            i.delete()
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return HttpResponse('删除失败:%s' % str(e))
+
+                self.perform_destroy(instance)
+            except Exception as e:
                 transaction.savepoint_rollback(save_id)
-                return HttpResponse('证件照需要上传4张')
-
-            # 1 更新所属领域
-            MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
-
-            major_list = []
-            for mcode in mcode_list:
-                major_list.append(MajorUserinfo(mcode=mcode, user_type=8, user_code=serializer_ecode, mtype=2))
-            MajorUserinfo.objects.bulk_create(major_list)
-
-            # 2 更新identity_authorization_info信息
-            IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
-
-            IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
-
-                                                     state=2, creater=request.user.account)
-            # 3 转移附件创建ecode表
-            absolute_path = ParamInfo.objects.get(param_code=1).param_value
-            relative_path = ParamInfo.objects.get(param_code=2).param_value
-            relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-            identityFront_tcode = AttachmentFileType.objects.get(tname='identityFront').tcode
-            identityBack_tcode = AttachmentFileType.objects.get(tname='identityBack').tcode
-            handIdentityPhoto_tcode = AttachmentFileType.objects.get(tname='handIdentityPhoto').tcode
-            headPhoto_tcode = AttachmentFileType.objects.get(tname='headPhoto').tcode
-            param_value = ParamInfo.objects.get(param_code=8).param_value
-
-            url_x_f = '{}{}/{}/{}'.format(relative_path, param_value, identityFront_tcode, serializer_ecode)
-            url_x_b = '{}{}/{}/{}'.format(relative_path, param_value, identityBack_tcode, serializer_ecode)
-            url_x_p = '{}{}/{}/{}'.format(relative_path, param_value, handIdentityPhoto_tcode, serializer_ecode)
-            url_x_h = '{}{}/{}/{}'.format(relative_path, param_value, headPhoto_tcode, serializer_ecode)
-
-            if not os.path.exists(url_x_f):
-                os.makedirs(url_x_f)
-            if not os.path.exists(url_x_b):
-                os.makedirs(url_x_b)
-            if not os.path.exists(url_x_p):
-                os.makedirs(url_x_p)
-            if not os.path.exists(url_x_h):
-                os.makedirs(url_x_h)
-
-            dict = {}
-            list1 = []
-            list2 = []
-
-            for key, value in single_dict.items():
-                # 判断各个图片类型是否正确
-                if key not in ['identityFront', 'identityBack', 'handIdentityPhoto', 'headPhoto']:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('某个图片所属类型不正确')
-
-                url_l = value.split('/')
-                url_file = url_l[-1]
-
-                # 判断该临时路径下的文件是否正确
-                url_j = settings.MEDIA_ROOT + url_file
-                if not os.path.exists(url_j):
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('该临时路径下不存在该文件,可能文件名称错误')
-
-                # 通过key值拿取相应的tcode
-                tcode = AttachmentFileType.objects.get(tname=key).tcode
-
-                # 拼接正式路径
-                url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
-                                               url_file)
-
-                # 拼接给前端的的地址
-                url_x_f = url_x.replace(relative_path, relative_path_front)
-                list2.append(url_x_f)
-
-                # 拼接ecode表中的path
-                path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
-                list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file,
-                                                path=path, operation_state=3, state=1))
-
-                # 将临时目录转移到正式目录
-                shutil.move(url_j, url_x)
-
-            # 创建atachmentinfo表
-            AttachmentFileinfo.objects.bulk_create(list1)
-
-            # 删除临时目录
-            shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
-
-            # 给前端抛正式目录
-            dict['url'] = list2
-
-            serializer = self.get_serializer(instance, data=request.data, partial=partial)
-            serializer.is_valid(raise_exception=True)
-            self.perform_update(serializer)
-
-            if getattr(instance, '_prefetched_objects_cache', None):
-                # If 'prefetch_related' has been applied to a queryset, we need to
-                # forcibly invalidate the prefetch cache on the instance.
-                instance._prefetched_objects_cache = {}
-        except Exception as e:
-            transaction.savepoint_rollback(save_id)
-            return HttpResponse('创建失败%s' % str(e))
-        transaction.savepoint_commit(save_id)
-        return Response(dict)
-
-
-def destroy(self, request, *args, **kwargs):
-    with transaction.atomic():
-        save_id = transaction.savepoint()
-
-        try:
-            instance = self.get_object()
-            serializer_ecode = instance.owner_code
-            account_code = instance.account_code
-
-            # 1 删除所属领域表记录
-            MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
-
-            # 2 删除identity_authorization_info信息
-            IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
-
-            # 3 删除文件以及ecode表记录
-            relative_path = ParamInfo.objects.get(param_code=2).param_value
-            obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
-            if obj:
-                try:
-                    for i in obj:
-                        url = '{}{}{}'.format(relative_path, i.path, i.file_name)
-                        # 创建对象
-                        a = FileStorage()
-                        # 删除文件
-                        a.delete(url)
-                        # 删除表记录
-                        i.delete()
-                except Exception as e:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('删除失败' % str(e))
-
-            self.perform_destroy(instance)
-        except Exception as e:
-            transaction.savepoint_rollback(save_id)
-            return HttpResponse('删除失败%s' % str(e))
-        transaction.savepoint_commit(save_id)
-        return HttpResponse('OK')
+                return HttpResponse('删除失败:%s' % str(e))
+            transaction.savepoint_commit(save_id)
+            return HttpResponse('OK')
 
 
 # 成果持有人申请视图
 class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
-    queryset = OwnerApplyHistory.objects.all().order_by('state')
+    queryset = OwnerApplyHistory.objects.filter(state=1).order_by('-apply_time')
     serializer_class = OwnerApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code", "account_code")
-    search_fields = ("account_code", "apply_code")
+    search_fields = ("owner.owner_name", "owner.owner_mobile", "owner.owner_id",
+                     "account.user_name")
+
+    owner_model = ResultOwnerpBaseinfo
+    owner_associated_field = ('owner_code', 'owner_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('owner_code', 'owner_code')
+    account_intermediate_model = ResultOwnerpBaseinfo
+    account_intermediate_associated_field = ('account_code', "account_code")
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -1111,6 +1183,8 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
             with transaction.atomic():
                 # 获取单个信息
                 instance = self.get_object()
+                if instance.state != 1:
+                    raise ValueError('该信息已被审核')
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
@@ -1157,7 +1231,7 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
                         #                                              iab_time=datetime.datetime.now(),
                         #                                              creater=request.user.account)
                         # 申请类型新增或修改时 更新account_info表dept_code
-                        if data.get('dept_code') and baseinfo.dept_code is None:
+                        if data.get('dept_code') and not baseinfo.dept_code:
                             AccountInfo.objects.filter(account_code=instance.owner.account_code).update(dept_code=data.get('dept_code'))
 
                         # 移动相关附件
@@ -1188,7 +1262,8 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return JsonResponse({"detail":"审核失败：%s" % str(e)})
+            return Response({"detail":{
+                "detail":["审核失败：%s" % str(e)]}}, status=400)
 
         return Response(serializer.data)
 
@@ -1199,15 +1274,23 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
     serializer_class = ResultOwnereSerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
 
     ordering_fields = ("insert_time",)
     filter_fields = ("state", "creater", "owner_id", "owner_city", "owner_license", "legal_person")
-    search_fields = ("owner_name", "owner_id", "owner_mobile", "owner_license", "legal_person")
+    search_fields = ("owner_name", "owner_license", "owner_mobile", "major.mname",
+                     "account.username")
 
+    major_model = MajorInfo
+    major_intermediate_model = MajorUserinfo
+    major_associated_field = ('owner_code', 'user_code')
+    major_intermediate_associated_field = ('mcode', "mcode")
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
@@ -1505,7 +1588,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                         for i in obj:
                             url = '{}{}{}'.format(relative_path, i.path, i.file_name)
                             # 创建对象
-                            a = FileStorage()
+                            a = FileSystemStorage()
                             # 删除文件
                             a.delete(url)
                             # 删除表记录
@@ -1520,19 +1603,30 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 return HttpResponse('删除失败%s' % str(e))
             transaction.savepoint_commit(save_id)
             return HttpResponse('OK')
+
+
 # 成果持有人（企业）申请视图
 class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
-    queryset = OwnereApplyHistory.objects.all().order_by('state')
+    queryset = OwnereApplyHistory.objects.filter(state=1).order_by('-apply_time')
     serializer_class = OwnereApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code")
-    search_fields = ("apply_code",)
+    search_fields = ("owner.owner_name", "owner.owner_mobile", "owner.owner_license",
+                     "account.user_name")
+
+    owner_model = ResultOwnereBaseinfo
+    owner_associated_field = ('owner_code', 'owner_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('owner_code', 'owner_code')
+    account_intermediate_model = ResultOwnereBaseinfo
+    account_intermediate_associated_field = ('account_code', "account_code")
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -1550,6 +1644,10 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
             with transaction.atomic():
                 # 获取单个信息、
                 instance = self.get_object()
+
+                if instance.state != 1:
+                    raise ValueError('该信息已被审核')
+
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
@@ -1603,7 +1701,7 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
                         #                                              creater=request.user.account)
 
                         # 申请类型新增或修改时 更新account_info表dept_code
-                        if data.get('dept_code') and baseinfo.dept_code is None:
+                        if data.get('dept_code') and not baseinfo.dept_code:
                             AccountInfo.objects.filter(account_code=instance.owner.account_code).update(dept_code=data.get('dept_code'))
 
                         # 移动相关附件
@@ -1613,7 +1711,6 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
                         move_single('entLicense', baseinfo.owner_code)
                         move_single('logoPhoto', baseinfo.owner_code)
                         move_single('Propaganda', baseinfo.owner_code)
-
 
                     # 更新账号绑定角色状态
                     if baseinfo.account_code:
@@ -1638,8 +1735,8 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return JsonResponse({"detail":"审核失败：%s" % str(e)})
-
+            return Response({"detail":{
+                "detail":["审核失败：%s" % str(e)]}}, status=400)
         return Response(serializer.data)
 
 
@@ -1649,15 +1746,23 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
     serializer_class = ResultOwnerpSerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
 
     ordering_fields = ("insert_time",)
     filter_fields = ("state", "creater", "owner_id", "owner_city",)
-    search_fields = ("owner_name", "owner_id", "owner_mobile")
+    search_fields = ("owner_name", "owner_id", "owner_mobile", "major.mname",
+                     "account.user_name")
 
+    major_model = MajorInfo
+    major_intermediate_model = MajorUserinfo
+    major_associated_field = ('owner_code', 'user_code')
+    major_intermediate_associated_field = ('mcode', "mcode")
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
@@ -1953,7 +2058,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                         for i in obj:
                             url = '{}{}{}'.format(relative_path, i.path, i.file_name)
                             # 创建对象
-                            a = FileStorage()
+                            a = FileSystemStorage()
                             # 删除文件
                             a.delete(url)
                             # 删除表记录
@@ -1969,19 +2074,29 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
             transaction.savepoint_commit(save_id)
             return HttpResponse('OK')
 
+
 # 需求持有人申请视图
 class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
-    queryset = OwnerApplyHistory.objects.all().order_by('state')
+    queryset = OwnerApplyHistory.objects.filter(state=1).order_by('-apply_time')
     serializer_class = OwnerApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code", "account_code")
-    search_fields = ("account_code", "apply_code")
+    search_fields = ("owner.owner_name", "owner.owner_mobile", "owner.owner_id",
+                     "account.user_name")
+
+    owner_model = ResultOwnerpBaseinfo
+    owner_associated_field = ('owner_code', 'owner_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('owner_code', 'owner_code')
+    account_intermediate_model = ResultOwnerpBaseinfo
+    account_intermediate_associated_field = ('account_code', "account_code")
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -1999,6 +2114,9 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
             with transaction.atomic():
                 # 获取单个记录
                 instance = self.get_object()
+
+                if instance.state != 1:
+                    raise ValueError('该信息已被审核')
 
                 data = request.data
                 partial = kwargs.pop('partial', False)
@@ -2046,7 +2164,7 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
                         #                                              iab_time=datetime.datetime.now(),
                         #                                              creater=request.user.account)
                         # 申请类型新增或修改时 更新account_info表dept_code
-                        if data.get('dept_code') and baseinfo.dept_code is None:
+                        if data.get('dept_code') and not baseinfo.dept_code:
                             AccountInfo.objects.filter(account_code=instance.owner.account_code).update(dept_code=data.get('dept_code'))
 
                         # 移动相关附件
@@ -2078,8 +2196,8 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return JsonResponse({"detail":"审核失败：%s" % str(e)})
-
+            return Response({"detail":{
+                "detail":["审核失败：%s" % str(e)]}}, status=400)
         return Response(serializer.data)
 
 
@@ -2089,15 +2207,23 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
     serializer_class = ResultOwnereSerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
 
     ordering_fields = ("insert_time",)
     filter_fields = ("state", "creater", "owner_id", "owner_city", "owner_license", "legal_person")
-    search_fields = ("owner_name", "owner_id", "owner_mobile", "owner_license", "legal_person")
+    search_fields = ("owner_name", "owner_license", "owner_mobile", "major.mname",
+                     "account.username")
 
+    major_model = MajorInfo
+    major_intermediate_model = MajorUserinfo
+    major_associated_field = ('owner_code', 'user_code')
+    major_intermediate_associated_field = ('mcode', "mcode")
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
@@ -2119,7 +2245,6 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                 # Ensure queryset is re-evaluated on each request.
                 queryset = queryset.all()
             return queryset
-
 
     # 创建需求持有人(企业）  author:范
     def create(self, request, *args, **kwargs):
@@ -2392,14 +2517,14 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                         for i in obj:
                             url = '{}{}{}'.format(relative_path, i.path, i.file_name)
                             # 创建对象
-                            a = FileStorage()
+                            a = FileSystemStorage()
                             # 删除文件
                             a.delete(url)
                             # 删除表记录
                             i.delete()
                     except Exception as e:
                         transaction.savepoint_rollback(save_id)
-                        return HttpResponse('删除失败' % str(e))
+                        return HttpResponse('删除失败%s' % str(e))
 
                 self.perform_destroy(instance)
             except Exception as e:
@@ -2408,19 +2533,29 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
             transaction.savepoint_commit(save_id)
             return HttpResponse('OK')
 
+
 # 需求持有企业申请视图
 class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
-    queryset = OwnereApplyHistory.objects.all().order_by('state')
+    queryset = OwnereApplyHistory.objects.filter(state=1).order_by('-apply_time')
     serializer_class = OwnereApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code")
-    search_fields = ("apply_code",)
+    search_fields = ("owner.owner_name", "owner.owner_mobile", "owner.owner_license",
+                     "account.user_name")
+
+    owner_model = ResultOwnereBaseinfo
+    owner_associated_field = ('owner_code', 'owner_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('owner_code', 'owner_code')
+    account_intermediate_model = ResultOwnereBaseinfo
+    account_intermediate_associated_field = ('account_code', "account_code")
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -2428,7 +2563,9 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
             "or override the `get_queryset()` method."
             % self.__class__.__name__
         )
-        queryset = self.queryset.filter(owner_code__in=ResultOwnereBaseinfo.objects.values_list('owner_code').filter(type=2))
+        queryset = self.queryset.filter(
+            owner_code__in=ResultOwnereBaseinfo.objects.values_list('owner_code').filter(type=2)
+        )
         if isinstance(queryset, QuerySet):
             queryset = queryset.all()
         return queryset
@@ -2438,6 +2575,8 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
             with transaction.atomic():
                 # 获取单个信息
                 instance = self.get_object()
+                if instance.state != 1:
+                    raise ValueError('该信息已被审核')
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
@@ -2481,7 +2620,8 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                         ecode = update_or_crete_enterprise(baseinfo.ecode, einfo)
 
                         # 更新角色基本信息表
-                        update_baseinfo(ResultOwnereBaseinfo, {'owner_code': baseinfo.owner_code}, {'state': 1, 'ecode': ecode})
+                        update_baseinfo(ResultOwnereBaseinfo,
+                                        {'owner_code': baseinfo.owner_code}, {'state': 1, 'ecode': ecode})
 
                         # 给账号绑定角色
                         # if baseinfo.account_code:
@@ -2490,8 +2630,10 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                         #                                              iab_time=datetime.datetime.now(),
                         #                                              creater=request.user.account)
                         # 申请类型新增或修改时 更新account_info表dept_code
-                        if data.get('dept_code') and baseinfo.dept_code is None:
-                            AccountInfo.objects.filter(account_code=instance.owner.account_code).update(dept_code=data.get('dept_code'))
+                        if data.get('dept_code') and not baseinfo.dept_code:
+                            AccountInfo.objects.filter(
+                                account_code=instance.owner.account_code
+                            ).update(dept_code=data.get('dept_code'))
 
                         # 移动相关附件
                         move_single('identityFront', baseinfo.owner_code)
@@ -2504,7 +2646,11 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                     # 更新账号绑定角色状态
                     if baseinfo.account_code:
                         IdentityAuthorizationInfo.objects.filter(account_code=baseinfo.account_code,
-                                                                 identity_code=IdentityInfo.objects.get(identity_name='requirement_enterprise_owner').identity_code).update(state=apply_state, iab_time=datetime.datetime.now())
+                                                                 identity_code=IdentityInfo.objects.get(
+                                                                     identity_name='requirement_enterprise_owner'
+                                                                 ).identity_code
+                                                                 ).update(state=apply_state,
+                                                                          iab_time=datetime.datetime.now())
 
                     # 发送信息
                     t1 = threading.Thread(target=send_msg, args=(baseinfo.owner_mobile, '需求持有企业', apply_state, baseinfo.account_code, request.user.account))
@@ -2524,8 +2670,8 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return JsonResponse({"detail":"审核失败：%s" % str(e)})
-
+            return Response({"detail":{
+                "detail":["审核失败：%s" % str(e)]}}, status=400)
         return Response(serializer.data)
 
 
@@ -2535,14 +2681,23 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
     serializer_class = TeamBaseinfoSerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
 
     ordering_fields = ("insert_time", "pt_level", "credit_value","pt_integral")
     filter_fields = ("state", "creater", "pt_people_id", "pt_city",)
-    search_fields = ("pt_name", "pt_people_id", "pt_people_tel", "pt_abbreviation")
+    search_fields = ("pt_name", "pt_people_id", "pt_people_tel", "pt_people_name", "pt_homepage",
+                     "major.mname", "account.user_name")
+
+    major_model = MajorInfo
+    major_intermediate_model = MajorUserinfo
+    major_associated_field = ('pt_code', 'user_code')
+    major_intermediate_associated_field = ('mcode', "mcode")
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -2587,34 +2742,49 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
 
 # 技术团队申请视图
 class TeamApplyViewSet(viewsets.ModelViewSet):
-    queryset = TeamApplyHistory.objects.all().order_by('state')
+    queryset = TeamApplyHistory.objects.filter(state=1).order_by('-apply_time')
     serializer_class = TeamApplySerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "team_code", "account_code")
-    search_fields = ("account_code", "apply_code","team_code")
+    search_fields = ("team_baseinfo.pt_name", "team_baseinfo.pt_people_name", "team_baseinfo.pt_people_tel",
+                     "team_baseinfo.pt_people_id", "team_baseinfo.pt_homepage", "major.mname",
+                     "account.user_name")
 
-    '''
-    技术团队申请步骤:(涉及表:project_team_baseinfo   team_apply_history team_check_history account_info identity_authorization_info message)
-    流程:检索project_team_baseinfo  team_apply_history作为主表 
-         1 新增或更新或禁权team_apply_history 表状态
-         2 更新project_team_baseinfo 表状态
-         3 新增team_check_history 表记录
-         4 新增前台角色授权记录 identity_authorization_info
-         5 发送短信通知
-         6 保存短信记录 message
-    '''
+    team_baseinfo_model = ProjectTeamBaseinfo
+    team_baseinfo_associated_field = ('team_code', 'pt_code')
+
+    major_model = MajorInfo
+    major_intermediate_model = MajorUserinfo
+    major_associated_field = ('pt_code', 'user_code')
+    major_intermediate_associated_field = ('mcode', "mcode")
+
+    account_model = AccountInfo
+    account_associated_field = ('team_code', 'pt_code')
+    account_intermediate_model = ProjectTeamBaseinfo
+    account_intermediate_associated_field = ('account_code', "account_code")
+
     def update(self, request, *args, **kwargs):
+        """
+        技术团队申请步骤:(涉及表:project_team_baseinfo   team_apply_history team_check_history account_info identity_authorization_info message)
+        流程:检索project_team_baseinfo  team_apply_history作为主表
+             1 新增或更新或禁权team_apply_history 表状态
+             2 更新project_team_baseinfo 表状态
+             3 新增team_check_history 表记录
+             4 新增前台角色授权记录 identity_authorization_info
+             5 发送短信通知
+             6 保存短信记录 message
+        """
         try:
             with transaction.atomic():
                 apply_team_baseinfo = self.get_object()
-                if apply_team_baseinfo.state == 2:
-                    return JsonResponse({"state":0,"msg":"审核已通过无需再审核"})
+                if apply_team_baseinfo.state != 1:
+                    raise ValueError('该信息已被审核')
 
                 check_state = request.data.get('state')
                 opinion = request.data.get('opinion')
@@ -2631,11 +2801,21 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                     elif check_state == 3: #审核未通过 不允许删除
                         baseinfo_state = apply_team_baseinfo.team_baseinfo.state
 
+                ecode = apply_team_baseinfo.team_baseinfo.ecode
+
+                if check_state == 2:
+                    ecode = update_or_crete_enterprise(ecode,
+                                                       {'ename':apply_team_baseinfo.team_baseinfo.comp_name,
+                                                        'business_license':apply_team_baseinfo.team_baseinfo.owner_license,
+                                                        'account_code':apply_team_baseinfo.team_baseinfo.account_code})
+
                 # 2 更新project_team_baseinfo表状态
-                ProjectTeamBaseinfo.objects.filter(serial=apply_team_baseinfo.team_baseinfo.serial).update(state=baseinfo_state)
+                ProjectTeamBaseinfo.objects.filter(
+                    serial=apply_team_baseinfo.team_baseinfo.serial
+                ).update(state=baseinfo_state, ecode=ecode)
 
                 # 申请类型新增或修改时 更新account_info表dept_code
-                if request.data.get('dept_code') and check_state == 2  and apply_team_baseinfo.team_baseinfo.dept_code is None:
+                if request.data.get('dept_code') and check_state == 2  and not apply_team_baseinfo.team_baseinfo.dept_code:
                     AccountInfo.objects.filter(account_code=apply_team_baseinfo.team_baseinfo.account_code).update(dept_code=request.data.get('dept_code'))
 
                 # 3 新增tema_check_history表记录
@@ -2648,20 +2828,12 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                 }
                 TeamCheckHistory.objects.create(**team_checkinfo_data)
                 # 4 新增前台角色授权记录 identity_authorization_info   变为移动附件
-                if check_state == 2:
-                    # identity_authorization_data = {
-                    #     'account_code': apply_team_baseinfo.team_baseinfo.account_code,
-                    #     'identity_code':3,
-                    #     'state': 1,
-                    #     'insert_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                    #     'creater': request.user.account
-                    # }
-                    # IdentityAuthorizationInfo.objects.create(**identity_authorization_data)
-                    move_single('identityFront', apply_team_baseinfo.team_baseinfo.pt_code)
-                    move_single('identityBack', apply_team_baseinfo.team_baseinfo.pt_code)
-                    move_single('handIdentityPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
-                    move_single('logoPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
-                    move_single('Propaganda', apply_team_baseinfo.team_baseinfo.pt_code)
+                # if check_state == 2:
+                #     move_single('identityFront', apply_team_baseinfo.team_baseinfo.pt_code)
+                #     move_single('identityBack', apply_team_baseinfo.team_baseinfo.pt_code)
+                #     move_single('handIdentityPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
+                #     move_single('logoPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
+                #     move_single('Propaganda', apply_team_baseinfo.team_baseinfo.pt_code)
 
                 #更新前台角色授权状态(审核通过未通过都更新)
                 IdentityAuthorizationInfo.objects.filter(account_code=apply_team_baseinfo.team_baseinfo.account_code,
@@ -2702,7 +2874,14 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                                             'email_account':''}
                     Message.objects.create(**message_data)
         except Exception as e:
-            fail_msg = "审核失败%s" % str(e)
-            return JsonResponse({"state":0,"msg": fail_msg})
+            return Response({"detail":{
+                "detail":["审核失败：%s" % str(e)]}}, status=400)
 
+        # 移动附件逻辑改为  数据库事务执行成功再移动附件
+        if check_state == 2:
+            move_single('identityFront', apply_team_baseinfo.team_baseinfo.pt_code)
+            move_single('identityBack', apply_team_baseinfo.team_baseinfo.pt_code)
+            move_single('handIdentityPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
+            move_single('logoPhoto', apply_team_baseinfo.team_baseinfo.pt_code)
+            move_single('Propaganda', apply_team_baseinfo.team_baseinfo.pt_code)
         return JsonResponse({"state":1,"msg":"审核成功"})

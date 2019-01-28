@@ -5,7 +5,11 @@ from consult.models import ResultsInfo
 from achievement.models import RequirementsInfo
 from django.db.models import Q
 
+
+
 # Create your models here.
+
+
 
 
 # 项目基本信息表 *
@@ -13,13 +17,14 @@ class ProjectInfo(models.Model):
     pserial = models.AutoField(primary_key=True)
     project_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
     project_name = models.CharField(max_length=255, blank=True, null=True)
+    project_start_time = models.DateTimeField(blank=True, null=True)
     project_from = models.IntegerField(blank=True, null=True)
     from_code = models.CharField(max_length=64, blank=True, null=True)
     project_state = models.IntegerField(blank=True, null=True)
     project_sub_state = models.IntegerField(blank=True, null=True)
-    start_time = models.DateTimeField(blank=True, null=True)
     last_time = models.DateTimeField(blank=True, null=True)
     project_desc = models.TextField(blank=True, null=True)
+    state = models.IntegerField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True)
 
@@ -29,20 +34,20 @@ class ProjectInfo(models.Model):
         from_code_info = RrApplyHistory.objects.get(a_code=self.from_code)
         return from_code_info
 
-    # 项目子步骤
+    # 项目当前子步骤
     @property
     def substep_info(self):
         q = ProjectSubstepInfo.objects.filter(Q(project_code=self.project_code),Q(step_code = self.project_state),Q(substep_code=self.project_sub_state)).order_by('-p_serial')
         if q != None and len(q)>0:
             substep_info = q[0]
         else:
-            substep_info = []
+            substep_info = {}
         return substep_info
 
-    # 项目子步骤流水
+    # 项目当前子步骤流水
     @property
     def substep_serial_info(self):
-        q = ProjectSubstepSerialInfo.objects.filter(project_code=self.project_code,substep_code=self.project_sub_state).order_by('-substep_serial')
+        q = ProjectSubstepSerialInfo.objects.filter(project_code=self.project_code,step_code=self.project_state,substep_code=self.project_sub_state).order_by('-p_serial')
         if q != None and len(q)>0:
             substep_serial_info = q[0]
         else:
@@ -52,7 +57,7 @@ class ProjectInfo(models.Model):
     # 项目审核信息
     @property
     def check_info(self):
-        q = ProjectCheckInfo.objects.filter(Q(project_code=self.project_code),~Q(substep_serial = 0)).order_by('-substep_serial')
+        q = ProjectCheckInfo.objects.filter(Q(project_code=self.project_code),~Q(substep_serial = 0)).order_by('-p_serial')
         if q != None and len(q)>0:
             check_info = q[0]
         else:
@@ -69,13 +74,27 @@ class ProjectInfo(models.Model):
             broker_info = {}
         return broker_info
 
-    # @property
-    # def rr(self):
-    #     result_codes = [r.rr_code for r in ProjectRrInfo.objects.filter(project_code=self.consult_code, rrtype=1)]
-    #     requirement_codes = [r.rr_code for r in ProjectRrInfo.objects.filter(project_code=self.consult_code, rrtype=2)]
-    #     results = [r.r_name for r in ResultsInfo.objects.filter(r_code__in=result_codes)]
-    #     requirements = [r.req_name for r in RequirementsInfo.objects.filter(req_code__in=requirement_codes)]
-    #     return results + requirements
+    # 项目关联技术团队
+    @property
+    def team_info(self):
+        q = ProjectTeamInfo.objects.filter(project_code=self.project_code)
+        if q != None and len(q) > 0:
+            team_info = q[0]
+        else:
+            team_info = {}
+        return team_info
+
+    @property
+    def rr_result(self):
+        result_codes = [r.rr_code for r in ProjectRrInfo.objects.filter(project_code=self.project_code, rr_type=1)]
+        results = [r.r_name for r in ResultsInfo.objects.filter(r_code__in=result_codes)]
+        return results
+
+    @property
+    def rr_requirement(self):
+        requirement_codes = [r.rr_code for r in ProjectRrInfo.objects.filter(project_code=self.project_code, rr_type=2)]
+        requirements = [r.req_name for r in RequirementsInfo.objects.filter(req_code__in=requirement_codes)]
+        return requirements
 
     class Meta:
         managed = False
@@ -107,6 +126,7 @@ class ProjectStepInfo(models.Model):
     step_state = models.IntegerField(blank=True, null=True)
     step_msg = models.CharField(max_length=255,blank=True, null=True)
 
+    # 项目子步骤
     @property
     def substep_info(self):
         q = ProjectSubstepInfo.objects.filter(project_code=self.project_code, step_code=self.step_code).order_by('substep_code')
@@ -126,8 +146,37 @@ class ProjectSubstepInfo(models.Model):
     substep_code = models.IntegerField(blank=True, null=True)
     btime = models.DateTimeField(blank=True, null=True)
     etime = models.DateTimeField(blank=True, null=True)
-    step_state = models.IntegerField(blank=True, null=True)
+    substep_state = models.IntegerField(blank=True, null=True)
     step_msg = models.CharField(max_length=255,blank=True, null=True)
+
+    # 子步骤附件 子步骤可能有很多流水(子步骤有多个操作类型) 每条流水有多个附件
+    @property
+    def substep_file_info(self):
+        # 根据子步骤找操作类型的 最后一次流水
+        # pssi = ProjectSubstepSerialInfo.objects.filter(project_code=self.project_code,
+        #                                                step_code=self.step_code,
+        #                                                substep_code=self.substep_code)
+        # fjs = ProjectSubstepFileInfo.objects.filter(project_code=self.project_code,step_code=self.step_code,substep_code=self.substep_code)
+        sql = """
+            select AA.* from 
+            (
+            select a.* from project_substep_serial_info as a
+            where a.project_code='{project_code}' and step_code='{step_code}' and substep_code='{substep_code}'
+            order by a.substep_serial_type asc, a.p_serial desc
+            ) as AA
+            group by AA.project_code,AA.step_code,AA.substep_code,AA.substep_serial_type
+        """
+        sql = sql.format(project_code=self.project_code,step_code=self.step_code,substep_code=self.substep_code)
+        raw_queryset =  ProjectSubstepSerialInfo.objects.raw(sql)
+
+        fjs = ProjectSubstepFileInfo.objects.filter(substep_serial__in=[i.substep_serial for i in raw_queryset],
+                                                    project_code=self.project_code,
+                                                    step_code=self.step_code,
+                                                    substep_code=self.substep_code)
+
+        if fjs == None:
+            fjs = []
+        return fjs
 
     class Meta:
         managed = False
@@ -142,8 +191,8 @@ class ProjectSubstepSerialInfo(models.Model):
     substep_code = models.IntegerField(blank=True, null=True)
     substep_serial = models.CharField(max_length=64, blank=True, null=True)
     submit_time = models.DateTimeField(blank=True, null=True)
-    etime = models.DateTimeField(blank=True, null=True)
-    substep_state = models.IntegerField(blank=True, null=True)
+    substep_serial_type = models.IntegerField(blank=True, null=True)
+    substep_serial_state = models.IntegerField(blank=True, null=True)
     step_msg = models.CharField(max_length=255,blank=True, null=True)
 
     class Meta:
@@ -160,7 +209,11 @@ class ProjectSubstepDetailInfo(models.Model):
     substep_code = models.IntegerField(blank=True, null=True)
     substep_serial = models.CharField(max_length=64, blank=True, null=True)
     submit_time = models.DateTimeField(blank=True, null=True)
+    submit_user = models.CharField(max_length=64, blank=True, null=True)
+    substep_serial_type = models.IntegerField(blank=True, null=True)
+    substep_serial_state = models.IntegerField(blank=True, null=True)
     # 不定长字段暂时没有加
+    # ...
     step_msg = models.CharField(max_length=255,blank=True, null=True)
 
     class Meta:
@@ -169,11 +222,66 @@ class ProjectSubstepDetailInfo(models.Model):
         unique_together = ('project_code','step_code','substep_code','substep_serial')
 
 
+class ProjectSubstepFileInfo(models.Model):
+    p_serial = models.AutoField(primary_key=True)
+    project_code = models.CharField(max_length=64, blank=True, null=True)
+    step_code = models.IntegerField(blank=True, null=True)
+    substep_code = models.IntegerField(blank=True, null=True)
+    substep_serial = models.CharField(max_length=64, blank=True, null=True)
+    submit_time = models.DateTimeField(blank=True, null=True)
+
+    file_caption = models.CharField(max_length=64, blank=True, null=True)
+    file_desp = models.CharField(max_length=255, blank=True, null=True)
+    file_typecode = models.CharField(max_length=64, blank=True, null=True)
+    filename = models.CharField(max_length=255, blank=True, null=True)
+
+    fileformat = models.IntegerField(blank=True, null=True)
+    up_perial = models.IntegerField(blank=True, null=True)
+    showtag = models.IntegerField(blank=True, null=True)
+    state = models.IntegerField(blank=True, null=True)
+
+    uper = models.CharField(max_length=64, blank=True, null=True)
+
+    @property
+    def file_url(self):
+        # 从参数表获取URL并拼接  现在没有数据 以后可以优化直接传递对象参数
+        return getFileUrl(self.p_serial)
+
+    class Meta:
+        managed = False
+        db_table = 'project_substep_file_info'
+
+# 有交叉引用问题，暂时只能放在这里了
+def getFileUrl(p_serial):
+    from public_models.models import ParamInfo
+    absolute_path = ParamInfo.objects.get(param_code=1).param_value
+    absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
+    relative_path = ParamInfo.objects.get(param_code=2).param_value
+    relative_path_front = ParamInfo.objects.get(param_code=4).param_value
+
+    # 获取附件数据
+    psfi = ProjectSubstepFileInfo.objects.get(p_serial=p_serial)
+
+    # 临时文件
+    oldpath = '{}{}/{}/{}/{}/'.format(absolute_path, 'project', psfi.project_code, psfi.step_code,
+                                      psfi.substep_code) + psfi.substep_serial + '/'
+    # 正式文件
+    newpath = '{}{}/{}/{}/{}/'.format(relative_path, 'project', psfi.project_code, psfi.step_code,
+                                      psfi.substep_code) + psfi.substep_serial + '/'
+
+    if psfi.state == 0:
+        url = oldpath.replace(absolute_path, absolute_path_front)
+    else:
+        url = newpath.replace(relative_path, relative_path_front)
+    return url + psfi.filename
+
+
 # 项目与成果/需求信息表 *
 class ProjectRrInfo(models.Model):
     p_serial = models.AutoField(primary_key=True)
     project_code = models.CharField(max_length=64, blank=True, null=True)
     rr_type = models.IntegerField(blank=True, null=True)
+    rr_main = models.IntegerField(blank=True, null=True)
     rr_code = models.CharField(max_length=64, blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True)
@@ -251,8 +359,8 @@ class ProjectTeamInfo(models.Model):
     insert_time = models.DateTimeField(blank=True, null=True)
 
     @property
-    def team(self):
-        team = ProjectTeamBaseinfo.objects.filter(pt_code=self.team_code)
+    def team_baseinfo(self):
+        team = ProjectTeamBaseinfo.objects.get(pt_code=self.team_code)
         return team
 
     class Meta:

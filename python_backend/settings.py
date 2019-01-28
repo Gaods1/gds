@@ -34,13 +34,13 @@ ALLOWED_HOSTS = ['*']
 AUTH_USER_MODEL = 'account.AccountInfo'
 
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'python_backend.pagenumber.MyPageNumberPagination',
+    'DEFAULT_PAGINATION_CLASS': 'misc.pagenumber.pagenumber.MyPageNumberPagination',
     'PAGE_SIZE': 10,
 
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
-        'permissions.FuncPermission',
-        'permissions.DontCheckRoot'
+        'misc.permissions.permissions.FuncPermission',
+        'misc.permissions.permissions.DontCheckRoot'
     ),
 
     'DEFAULT_AUTHENTICATION_CLASSES': (
@@ -52,6 +52,8 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
+
+    'NON_FIELD_ERRORS_KEY': 'non_field_errors',
 }
 
 JWT_AUTH = {
@@ -62,7 +64,7 @@ JWT_AUTH = {
 }
 
 AUTHENTICATION_BACKENDS = {
-    'backends.AccountBackend',
+    'misc.backends.backends.AccountBackend',
 }
 # Application definition
 
@@ -83,6 +85,7 @@ INSTALLED_APPS = [
     'rest_framework_jwt',
     'django_filters',
     'rest_framework_swagger',
+    'gunicorn', # 中间件
     'corsheaders',# 跨域(以后删除)
     'projectmanagement',#项目管理
     'consult',#征询管理
@@ -156,7 +159,7 @@ WSGI_APPLICATION = 'python_backend.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
-if os.environ.get('DATABASE_DEBUG'):
+if os.environ.get('DATABASE_DEBUG', None):
     database_setting = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'PatClub',
@@ -168,7 +171,7 @@ if os.environ.get('DATABASE_DEBUG'):
 else:
     database_setting = {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'PatClub',
+        'NAME': 'test_PatClub',
         'HOST': '120.77.58.203',
         'PORT': 3306,
         'USER': 'forcar',
@@ -178,6 +181,23 @@ else:
 DATABASES = {
     'default': database_setting
 }
+
+# redis 数据库默认1号
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://:l0092687dd@120.77.58.203:6379/1",
+        #"LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    },
+
+}
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+#SESSION_CACHE_ALIAS = "session"
+
 
 
 # Password validation
@@ -205,6 +225,46 @@ BASE_URL= 'http://patclub.for8.cn:8764/'#此地址根据图片服务器的真实
 media_root_front = 'http://patclub.for8.cn:8764/temp/uploads/temporary/'#此地址为抛给前端的地址
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(lineno)d %(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s %(module)s %(lineno)d %(message)s'
+        },
+    },
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, "logs/python_backend.log"),  # 日志文件的位置
+            'maxBytes': 300 * 1024 * 1024,
+            'backupCount': 10,
+            'formatter': 'verbose'
+        },
+    },
+    'loggers': {
+        'django': {  # 定义了一个名为django的日志器
+            'handlers': ['console', 'file'],
+            'propagate': True,
+        },
+    }
+}
 
 LANGUAGE_CODE = 'zh-hans'
 

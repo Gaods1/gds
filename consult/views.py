@@ -16,6 +16,7 @@ import random,requests,time,json
 from django.http import HttpResponse,JsonResponse
 from public_models.utils import move_attachment,move_single,get_detcode_str,get_dept_codes
 from django.db.models.query import QuerySet
+import re
 
 
 # Create your views here.
@@ -105,8 +106,18 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
             consult_info = self.get_object()
             if check_state !=1 and check_state !=2 :
                 return JsonResponse({'state':0,'msg':'请确认审核是否通过'})
+<<<<<<< HEAD
             if consult_info.consult_state != 0:
                 return JsonResponse({'state': 0, 'msg': '非待审核状态不允许审核'})
+=======
+
+            if consult_info.consult_state != 0 :
+                return JsonResponse({'state':0,'msg':'非待审核状态不允许审核'})
+
+            if  not data.get('check_memo').strip():
+                return JsonResponse({'state': 0, 'msg': '审核意见为必填项'})
+
+>>>>>>> dev_branch
             try:
                 with transaction.atomic():
                     # 1 更新征询表状态(共通)
@@ -137,76 +148,90 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                         #领域mcode 去重复
                         mcode = list(set(mcode_list))
 
-                        # 4 通过成果需求领域 检索领域专家手机号
+                        # 4 通过成果需求领域 检索领域专家user_code即expert_code
                         user_code_list = [major_userinfo.user_code for major_userinfo in MajorUserinfo.objects.filter(mcode__in=mcode, user_type=1)]
 
-                        #领域专家user_code去重复
-                        user_code = list(set(user_code_list))
+                        #判断领域专家是否有数据
+                        if user_code_list:
+                            #领域专家user_code去重复
+                            user_code = list(set(user_code_list))
 
-                        if len(user_code) >= 10:
-                            user_codes = random.sample(user_code, 10)
-                        else:
-                            user_codes = user_code
-                        # 通过user_code 检索领域专家的手机号
-                        expert_baseinfos = ExpertBaseinfo.objects.filter(expert_code__in=user_codes,state=1)
+                            #领域专家不能回复自己创建的征询
+                            consult_expert_info = ExpertBaseinfo.objects.filter(account_code=consult_info.consulter)
+                            if consult_expert_info:
+                                user_code.remove(consult_expert_info[0].expert_code)
 
-                        #组合生成短信消息发送列表
-                        message_list = []
-                        for expert_baseinfo in expert_baseinfos:
-                            message_obj = Message(message_title='征询回复邀请',
-                                                  message_content='有征询信息'+ consult_info.consult_title+ '需要您的回复，请登陆平台到个人中心查看',
-                                                  account_code=expert_baseinfo.account_code,
-                                                  state=0,
-                                                  send_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                                                  sender=request.user.account,
-                                                  sms=1,
-                                                  sms_state=1,
-                                                  sms_phone=expert_baseinfo.expert_mobile,
-                                                  email=0,
-                                                  email_state=0,
-                                                  email_account='')
-                            message_list.append(message_obj)
+                            if len(user_code) >= 10:
+                                user_codes = random.sample(user_code, 10)
+                            else:
+                                user_codes = user_code
+                            # 通过user_code 检索审核通过的领域专家信息
+                            expert_baseinfos = ExpertBaseinfo.objects.filter(expert_code__in=user_codes,state=1)
 
-                        expert_mobiles = [expert_baseinfo.expert_mobile for expert_baseinfo in expert_baseinfos]
-                        # 5 生成征询和专家关系记录
-                        consult_expert_list = []
-                        for expert_code in user_codes:
-                            consult_expert_list.append(ConsultExpert(expert_code=expert_code, consult_code=consult_info.consult_code,creater=request.user.account))
+                            #判断审核通过的领域专家是否有数据
+                            if expert_baseinfos:
+                                #组合生成短信消息发送列表
+                                message_list = []
+                                enable_expert_list = []
+                                for expert_baseinfo in expert_baseinfos:
+                                    message_obj = Message(message_title='征询回复邀请',
+                                                          message_content='有征询信息'+ consult_info.consult_title+ '需要您的回复，请登陆平台到个人中心查看',
+                                                          account_code=expert_baseinfo.account_code,
+                                                          state=0,
+                                                          send_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                                                          sender=request.user.account,
+                                                          sms=1,
+                                                          sms_state=1,
+                                                          sms_phone=expert_baseinfo.expert_mobile,
+                                                          email=0,
+                                                          email_state=0,
+                                                          email_account='')
+                                    message_list.append(message_obj)
+                                    enable_expert_list.append(expert_baseinfo.expert_code)
 
-                        ConsultExpert.objects.bulk_create(consult_expert_list)
+                                expert_mobiles = [expert_baseinfo.expert_mobile for expert_baseinfo in expert_baseinfos]
 
-                        #移动封面附件
-                        move_single('coverImg',consult_info.consult_code)
+                                # 5 生成征询和专家关系记录
+                                consult_expert_list = []
+                                for expert_code in enable_expert_list:
+                                    consult_expert_list.append(ConsultExpert(expert_code=expert_code, consult_code=consult_info.consult_code,creater=request.user.account))
 
-                        # 移动富文本编辑器附件
-                        move_attachment('consultEditor',consult_info.consult_code)
+                                ConsultExpert.objects.bulk_create(consult_expert_list)
 
-                        # 6 群发短信给领域专家
-                        sms_url = 'http://120.77.58.203:8808/sms/patclubmanage/send/needreply'
-                        sms_data = {
-                            'type': '征询',
-                            'name': '征询',
-                            'tel': ','.join(expert_mobiles),
-                        }
-                        # json.dumps(sms_data)
-                        headers = {
-                            "Content-Type": "application/x-www-form-urlencoded",
-                            "Accept": "application/json"
-                        }
-                        # requests.post(sms_url, data=sms_data, headers=headers)
-                        sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
-                        # 7 保存短信发送记录
-                        if int(sms_ret) == 1:
-                            Message.objects.bulk_create(message_list)
+
+                                # 6 群发短信给领域专家
+                                sms_url = 'http://120.77.58.203:8808/sms/patclubmanage/send/needreply'
+                                sms_data = {
+                                    'type': '征询',
+                                    'name': '征询',
+                                    'tel': ','.join(expert_mobiles),
+                                }
+                                # json.dumps(sms_data)
+                                headers = {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "Accept": "application/json"
+                                }
+                                # requests.post(sms_url, data=sms_data, headers=headers)
+                                sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
+                                # 7 保存短信发送记录
+                                if int(sms_ret) == 1:
+                                    Message.objects.bulk_create(message_list)
             except Exception as e:
                 fail_msg = "审核失败%s" % str(e)
                 return JsonResponse({"state" : 0, "msg" : fail_msg})
 
+            if check_state == 1:
+                #****附件移动逻辑放到事务外面防止 数据库事务审核失败造成临时目录图片被移动****#
+                # 移动封面附件
+                move_single('coverImg', consult_info.consult_code)
+                # 移动富文本编辑器附件
+                move_attachment('consultEditor', consult_info.consult_code)
             return JsonResponse({"state":1,"msg":"审核成功"})
         else:
             partial = kwargs.pop('partial', False)
             instance = self.get_object()
             del request.data['rr']
+            print(request.data)
             serializer = self.get_serializer(instance, data=request.data, partial=partial)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
@@ -315,14 +340,24 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
             reply_info = self.get_object()
             if check_state !=3 and check_state !=4 :
                 return JsonResponse({'state':0,'msg':'请确认审核是否通过'})
+<<<<<<< HEAD
             if reply_info.reply_state  != 1:
                 return JsonResponse({'state': 0, 'msg': '非待审核状态不允许审核'})
+=======
+
+            if reply_info.reply_state != 1 :
+                return JsonResponse({'state':0,'msg':'非待审核状态不允许审核'})
+
+            if  not checkinfo_data.get('check_memo').strip():
+                return JsonResponse({'state': 0, 'msg': '审核意见为必填项'})
+
+>>>>>>> dev_branch
             try:
                 with transaction.atomic():
                     #1 生成征询回复记录
                     reply_checkinfo_data = {
-                        'reply_code': gen_uuid32(),
-                        'check_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                        'reply_code': reply_info.reply_code,
+                        # 'check_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                         'check_memo': checkinfo_data.get('check_memo'),
                         'check_state': check_state,
                         'checker': request.user.account

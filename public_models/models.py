@@ -283,6 +283,7 @@ class PersonalInfo(models.Model):
     class Meta:
         managed = True
         db_table = 'personal_info'
+        unique_together = (('pid_type', 'pid'),)
 
 
 # 企业基本信息表 *
@@ -291,7 +292,7 @@ class EnterpriseBaseinfo(models.Model):
     ecode = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     ename = models.CharField(max_length=64, blank=True, null=True)
     eabbr = models.CharField(max_length=32, blank=True, null=True)
-    business_license = models.CharField(max_length=64,blank=True, null=True, validators=[validate_license])
+    business_license = models.CharField(max_length=64,blank=True, null=True, validators=[validate_license], unique=True)
     eabstract = models.TextField(blank=True, null=True)
     eabstract_detail = models.TextField(blank=True, null=True)
     homepage = models.URLField(max_length=128, blank=True, null=True)
@@ -328,6 +329,8 @@ class ParamInfo(models.Model):
 
     @property
     def pparam(self):
+        if self.pparam_code == "0":
+            return '一级分类'
         pparam = ParamInfo.objects.get(param_code=self.pparam_code)
         return pparam.param_name
 

@@ -1,5 +1,7 @@
 import os
 import re
+
+from account.models import AccountInfo
 from misc.misc import gen_uuid32, genearteMD5
 from _mysql_exceptions import DatabaseError
 
@@ -28,13 +30,19 @@ class RrApplyHistory(models.Model):
 
     @property
     def Results(self):
-        Results = ResultsInfo.objects.get(r_code=self.rr_code)
-        return Results
+        if self.type == 1:
+            Results = ResultsInfo.objects.get(r_code=self.rr_code)
+            return Results
+        else:
+            return None
 
     @property
     def Requirements(self):
-        Requirements = RequirementsInfo.objects.get(req_code=self.rr_code)
-        return Requirements
+        if self.type == 2:
+            Requirements = RequirementsInfo.objects.get(req_code=self.rr_code)
+            return Requirements
+        else:
+            return None
 
     @property
     def Cooperation(self):
@@ -50,16 +58,29 @@ class RrApplyHistory(models.Model):
 
     @property
     def Personal(self):
-        # Results = ResultsInfo.objects.filter(r_code=self.rr_code)
-        Owner = ResultsOwnerInfo.objects.get(r_code=self.rr_code)
-        Personal = PersonalInfo.objects.get(pcode=Owner.owner_code)
+        owner_code = ResultsOwnerInfo.objects.get(r_code=self.rr_code).owner_code
+        Personal = PersonalInfo.objects.values_list('pname',flat=True).get(pcode=owner_code)
         return Personal
+
+    @property
+    def Enterprise(self):
+        owner_code = ResultsOwnerInfo.objects.get(r_code=self.rr_code).owner_code
+        Enterprise = EnterpriseBaseinfo.objects.values_list('ename',flat=True).get(ecode=owner_code)
+        return Enterprise
 
     @property
     def Keywords(self):
         #Results = ResultsInfo.objects.filter(r_code=self.rr_code)
-        Keywords = KeywordsInfo.objects.filter(object_code=self.rr_code)
+        Keywords = KeywordsInfo.objects.values_list('key_info',flat=True).filter(object_code=self.rr_code)
         return Keywords
+
+    @property
+    def opinion(self):
+        opinion = ResultCheckHistory.objects.values_list('opinion',flat=True).filter(apply_code=self.a_code)
+        if opinion:
+            return opinion.order_by('-check_time')[0]
+        else:
+            return None
 
     class Meta:
         managed = False
@@ -94,8 +115,8 @@ class RequirementsInfo(models.Model):
     r_abstract_detail = models.TextField(blank=True, null=True)
     @property
     def Attach(self):
-        dict = get_attachment('attachment',self.req_code)
-        return dict
+        list = get_attachment('attachment',self.req_code)
+        return list
 
     @property
     def Cover(self):
@@ -123,6 +144,11 @@ class RequirementsInfo(models.Model):
         return str
 
     @property
+    def EntLicense(self):
+        str = get_single('entLicense', self.req_code)
+        return str
+
+    @property
     def mcode(self):
         mcode = MajorUserinfo.objects.values_list('mcode',flat=True).filter(user_type=5, user_code=self.req_code)
         return mcode
@@ -131,6 +157,11 @@ class RequirementsInfo(models.Model):
         mcode = MajorUserinfo.objects.values_list('mcode',flat=True).filter(user_type=5, user_code=self.req_code)
         mname = MajorInfo.objects.values_list('mname',flat=True).filter(mcode__in=mcode)
         return mname
+
+    @property
+    def username(self):
+        username = AccountInfo.objects.values_list('user_name', flat=True).get(account_code=self.account_code)
+        return username
 
     class Meta:
         managed = False
@@ -168,8 +199,8 @@ class ResultsInfo(models.Model):
 
     @property
     def Attach(self):
-        dict = get_attachment('attachment',self.r_code)
-        return dict
+        list = get_attachment('attachment',self.r_code)
+        return list
 
     @property
     def Cover(self):
@@ -197,6 +228,11 @@ class ResultsInfo(models.Model):
         return str
 
     @property
+    def EntLicense(self):
+        str = get_single('entLicense', self.r_code)
+        return str
+
+    @property
     def mcode(self):
         mcode = MajorUserinfo.objects.values_list('mcode',flat=True).filter(user_type=4, user_code=self.r_code)
         return mcode
@@ -206,6 +242,11 @@ class ResultsInfo(models.Model):
         mcode = MajorUserinfo.objects.values_list('mcode',flat=True).filter(user_type=4, user_code=self.r_code)
         mname = MajorInfo.objects.values_list('mname',flat=True).filter(mcode__in=mcode)
         return mname
+
+    @property
+    def username(self):
+        username = AccountInfo.objects.values_list('user_name', flat=True).get(account_code=self.account_code,state=1)
+        return username
 
     class Meta:
         managed =False

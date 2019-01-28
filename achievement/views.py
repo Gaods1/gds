@@ -1,30 +1,21 @@
-from django.core.files.storage import FileSystemStorage
 from django.db.models import QuerySet
-from django.shortcuts import render
-from django.http import HttpResponse
-from django.db import transaction
 
 from rest_framework import viewsets
-from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import filters
 
-from backends import FileStorage
-from misc.misc import gen_uuid32, genearteMD5
+from django.core.files.storage import FileSystemStorage
 import django_filters
 import threading
-import requests
-import json
 import time
 import shutil
-from django.db import connection  # django封装好的方法
 
 from public_models.utils import  move_attachment, move_single, get_detcode_str
-from account.models import Deptinfo, AccountInfo, IdentityAuthorizationInfo
 from python_backend import settings
 from .serializers import *
 from .models import *
-from .utils import massege, diedai
+from .utils import massege
+from django.db.models import Q
 
 
 # Create your views here.
@@ -51,17 +42,18 @@ class ProfileViewSet(viewsets.ModelViewSet):
         opinion（text）:审核意见,
     }
     """
-    queryset = RrApplyHistory.objects.filter(type=1).order_by('state')
+    queryset = RrApplyHistory.objects.filter(type=1,state=1).order_by('-apply_time')
 
     serializer_class = RrApplyHistorySerializer
     filter_backends = (
-        filters.SearchFilter,
+        # filters.SearchFilter,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("account_code","a_code","rr_code")
     filter_fields = ("account_code", "rr_code","a_code")
-    search_fields = ("rr_code","account_code","a_code")
+    # search_fields = ("rr_code","account_code","a_code")
+
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
@@ -73,10 +65,10 @@ class ProfileViewSet(viewsets.ModelViewSet):
             		inner join account_info \
             		on account_info.account_code=rr_apply_history.account_code \
             		where account_info.dept_code in ({dept_s}) \
-            		and rr_apply_history.type=1"
+            		and rr_apply_history.type=1 and rr_apply_history.state=1"
 
             raw_queryset = RrApplyHistory.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state')
+            consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('-apply_time')
             return consult_reply_set
         else:
             queryset = self.queryset
@@ -85,10 +77,38 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 queryset = queryset.all()
             return queryset
 
+    def list(self, request, *args, **kwargs):
+        search = request.query_params.get('search', None)
+        if search:
+            rq = ResultsInfo.objects.values_list('r_code').filter(r_code__in=self.get_queryset().values_list('rr_code'),
+                                                                  r_name__icontains=search)
+            kq = KeywordsInfo.objects.values_list('object_code').filter(object_code__in=self.get_queryset().values_list('rr_code'),
+                                                                        key_info__icontains=search)
+            queryset = self.get_queryset().filter(Q(rr_code__in=rq) | Q(rr_code__in=kq))
+        else:
+            queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         data = request.data
+
+        if instance.state != 1:
+            return Response({"detail": {"detail": ['该成果信息已审核']}}, status=400)
+
+        if not data.get('state',None) or not data.get('opinion',None):
+            return Response({"detail": {"detail": ['状态和审核意见是必填项']}}, status=400)
+
         state = data['state']
+
         if state == 2:
 
             #file = ResultsInfo.objects.filter(show_state=2)
@@ -109,14 +129,15 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     del data['opinion']
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('成果审核历史记录创建失败%s' % str(e))
+                    return Response({"detail": {"detail": ['成果审核历史记录创建失败%s' % str(e)]}}, status=400)
+
 
                 # 更新成果评价信息表
                 try:
                     Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=2)
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新成果评价信息失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新成果评价信息失败%s' % str(e)]}}, status=400)
 
                 # 更新成果合作方式表
 
@@ -124,14 +145,15 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     cooperation = ResultsCooperationTypeInfo.objects.filter(rr_code=instance.rr_code).update(state=1)
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新成果合作方式失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新成果合作方式失败%s' % str(e)]}}, status=400)
 
                 # 更新检索关键字表
                 try:
                     Keywords = KeywordsInfo.objects.filter(object_code=instance.rr_code).update(state=1)
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新检索关键字失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新检索关键字失败%s' % str(e)]}}, status=400)
+
                 # 更新成果信息表
                 try:
                     Results = ResultsInfo.objects.get(r_code=instance.rr_code)
@@ -139,8 +161,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     Results.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新成果信息失败%s' % str(e))
-
+                    return Response({"detail": {"detail": ['更新成果信息失败%s' % str(e)]}}, status=400)
 
                 # 更新成果持有人表
                 try:
@@ -149,91 +170,186 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     owner.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新成果持有人表失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新成果持有人表失败%s' % str(e)]}}, status=400)
+                # 如果是采集员
+                if Results.obtain_type==1:
+                    try:
+                        # 如果是采集的个人或者团队
+                        if owner.owner_type != 2:
+                            ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
+                            # 如果是不通过的状态
+                            if ownerp.state == 3:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({"detail": {"detail": ['请先通过成果持有人(个人)审核']}}, status=400)
+                            else:
+
+                                ownerp.state=2
+                                ownerp.save()
+
+                                tel = ownerp.pmobile
+                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
+                                body = {'type': '成果', 'name': Results.r_name}
+                                headers = {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "Accept": "application/json"
+                                }
+                                # 多线程发送短信
+                                t1 = threading.Thread(target=massege, args=(url, body, headers))
+                                t1.start()
+
+                                # 附件与封面与其他证件照
+                                move_attachment('attachment', instance.rr_code)
+                                move_single('coverImg', instance.rr_code)
+                                move_single('agreement', instance.rr_code)
+                                move_single('identityFront', instance.rr_code)
+                                move_single('identityBack', instance.rr_code)
+                                move_single('handIdentityPhoto', instance.rr_code)
 
 
-                try:
-                    dict_z = {}
-                    # 判断是个人还是企业
-                    if owner.owner_type != 2:
-                        ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
-
-                        tel = ownerp.pmobile
-                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
-                        body = {'type': '成果', 'name': Results.r_name}
-                        headers = {
-                            "Content-Type": "application/x-www-form-urlencoded",
-                            "Accept": "application/json"
-                        }
-
-                        # 判断是否采集员：1是采集员 2是持有人
-                        if ownerp.state in [1,2]:
-                            ownerp.state = 2
-                            ownerp.save()
-                            # 多线程发送短信
-                            t1 = threading.Thread(target=massege, args=(url, body, headers))
-                            t1.start()
+                        # 如果是采集持有人企业
                         else:
-                            transaction.savepoint_rollback(save_id)
-                            return HttpResponse('请先通过成果持有人(个人)审核')
-                    else:
-                        ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
+                            ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
+                            # 如果是采集企业不通过的状态
+                            if ownere.state == 3:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({"detail": {"detail": ['请先通过成果持有人(企业)审核']}}, status=400)
 
-                        tel = ownere.emobile
-                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
-                        body = {'type': '成果', 'name': Results.r_name}
-                        headers = {
-                            "Content-Type": "application/x-www-form-urlencoded",
-                            "Accept": "application/json"
-                        }
+                            else:
 
-                        if ownere.state in [1,2]:
-                            ownere.state = 2
-                            ownere.save()
-                            # 多线程发送短信
-                            t1 = threading.Thread(target=massege, args=(url, body, headers))
-                            t1.start()
+                                ownere.state = 2
+                                ownere.save()
+
+                                tel = ownere.emobile
+                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
+                                body = {'type': '成果', 'name': Results.r_name}
+                                headers = {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "Accept": "application/json"
+                                }
+                                # 多线程发送短信
+                                t1 = threading.Thread(target=massege, args=(url, body, headers))
+                                t1.start()
+
+                                # 附件与封面与其他证件照
+                                move_attachment('attachment', instance.rr_code)
+                                move_single('coverImg', instance.rr_code)
+                                move_single('agreement', instance.rr_code)
+                                move_single('identityFront', instance.rr_code)
+                                move_single('identityBack', instance.rr_code)
+                                move_single('handIdentityPhoto', instance.rr_code)
+                                move_single('entLicense', instance.rr_code)
+                        # 创建推送表
+                        mm = Message.objects.create(**{
+                            'message_title': '成果消息审核通知',
+                            'message_content': history.opinion,
+                            'account_code': owner.owner_code,
+                            'state': 0,
+                            'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                            'sender': request.user.account,
+                            'sms': 1,
+                            'sms_state': 1,
+                            'sms_phone': tel,
+                            'email': 1,
+                            'email_state': 1,
+                            'email_account': ''
+
+                        })
+
+                        partial = kwargs.pop('partial', False)
+                        serializer = self.get_serializer(instance, data=data, partial=partial)
+                        serializer.is_valid(raise_exception=True)
+                        self.perform_update(serializer)
+
+                        if getattr(instance, '_prefetched_objects_cache', None):
+                            # If 'prefetch_related' has been applied to a queryset, we need to
+                            # forcibly invalidate the prefetch cache on the instance.
+                            instance._prefetched_objects_cache = {}
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
+
+                    transaction.savepoint_commit(save_id)
+                    return Response({'message': '审核通过'})
+
+                # 如果不是采集员
+                else:
+                    try:
+                        # 如果是持有人个人或者是持有人团队
+                        if owner.owner_type != 2:
+                            ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
+                            # 如果是持有人个人或团队不通过的状态
+                            if ownerp.state==3:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({"detail": {"detail": ['请先通过成果持有人(个人)审核']}}, status=400)
+                            else:
+                                tel = ownerp.pmobile
+                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
+                                body = {'type': '成果', 'name': Results.r_name}
+                                headers = {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "Accept": "application/json"
+                                }
+                                # 多线程发送短信
+                                t1 = threading.Thread(target=massege, args=(url, body, headers))
+                                t1.start()
+
+                        # 如果是持有人企业
                         else:
-                            transaction.savepoint_rollback(save_id)
-                            return HttpResponse('请先通过成果持有人(企业)审核')
+                            ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
+                            # 如果是持有人企业不通过的状态
+                            if ownere.state==3:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({"detail": {"detail": ['请先通过成果持有人(企业)审核']}}, status=400)
 
-                    # 返回相对路径
-                    dict_attachment = move_attachment('attachment', instance.rr_code)
-                    dict_single = move_single('coverImg', instance.rr_code)
+                            else:
+                                tel = ownere.emobile
+                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
+                                body = {'type': '成果', 'name': Results.r_name}
+                                headers = {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "Accept": "application/json"
+                                }
+                                # 多线程发送短信
+                                t1 = threading.Thread(target=massege, args=(url, body, headers))
+                                t1.start()
 
-                    dict_z['Attach'] = dict_attachment
-                    dict_z['Cover'] = dict_single
+                        # 附件与封面
+                        move_attachment('attachment', instance.rr_code)
+                        move_single('coverImg', instance.rr_code)
 
-                    # 创建推送表
-                    mm = Message.objects.create(**{
-                        'message_title': '成果消息审核通知',
-                        'message_content': history.opinion,
-                        'account_code': owner.owner_code,
-                        'state': 0,
-                        'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                        'sender': request.user.account,
-                        'sms': 1,
-                        'sms_state': 1,
-                        'sms_phone': tel,
-                        'email': 1,
-                        'email_state': 1,
-                        'email_account': ''
+                        # 创建推送表
+                        mm = Message.objects.create(**{
+                            'message_title': '成果消息审核通知',
+                            'message_content': history.opinion,
+                            'account_code': owner.owner_code,
+                            'state': 0,
+                            'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                            'sender': request.user.account,
+                            'sms': 1,
+                            'sms_state': 1,
+                            'sms_phone': tel,
+                            'email': 1,
+                            'email_state': 1,
+                            'email_account': ''
 
-                    })
+                        })
 
-                    partial = kwargs.pop('partial', False)
-                    serializer = self.get_serializer(instance, data=data, partial=partial)
-                    serializer.is_valid(raise_exception=True)
-                    self.perform_update(serializer)
+                        partial = kwargs.pop('partial', False)
+                        serializer = self.get_serializer(instance, data=data, partial=partial)
+                        serializer.is_valid(raise_exception=True)
+                        self.perform_update(serializer)
 
-                    if getattr(instance, '_prefetched_objects_cache', None):
-                        # If 'prefetch_related' has been applied to a queryset, we need to
-                        # forcibly invalidate the prefetch cache on the instance.
-                        instance._prefetched_objects_cache = {}
-                except Exception as e:
-                    return HttpResponse('申请表更新失败%s' % str(e))
-                transaction.savepoint_commit(save_id)
-                return Response(dict_z)
+                        if getattr(instance, '_prefetched_objects_cache', None):
+                            # If 'prefetch_related' has been applied to a queryset, we need to
+                            # forcibly invalidate the prefetch cache on the instance.
+                            instance._prefetched_objects_cache = {}
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
+
+                    transaction.savepoint_commit(save_id)
+                    return Response({'message': '审核通过'})
+
 
         else:
             # 建立事物机制
@@ -252,7 +368,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     del data['opinion']
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('成果审核历史记录创建失败%s' % str(e))
+                    return Response({"detail": {"detail": ['成果审核历史记录创建失败%s' % str(e)]}}, status=400)
+
                 # 更新成果信息表
                 try:
                     Results = ResultsInfo.objects.get(r_code=instance.rr_code)
@@ -260,14 +377,14 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     Results.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新成果信息失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新成果信息失败%s' % str(e)]}}, status=400)
 
                 # 更新成果评价信息表
                 try:
                     Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=3)
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新成果评价信息失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新成果评价信息失败%s' % str(e)]}}, status=400)
 
                 # 更新成果合作方式表
 
@@ -277,14 +394,14 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     cooperation.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新成果合作方式失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新成果合作方式失败%s' % str(e)]}}, status=400)
 
                 # 更新检索关键字表
                 try:
                     Keywords = KeywordsInfo.objects.filter(object_code=instance.rr_code).update(state=2)
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新检索关键字失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新检索关键字失败%s' % str(e)]}}, status=400)
 
                 # 更新成果持有人表
 
@@ -294,85 +411,156 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     owner.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新成果持有人表失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新成果持有人表失败%s' % str(e)]}}, status=400)
 
-                try:
-                    dict_z = {}
-                    if owner.owner_type != 2:
-                        ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
+                # 如果是采集员
+                if Results.obtain_type == 1:
+                    try:
+                        # 如果是采集的个人或者团队
+                        if owner.owner_type != 2:
+                            ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
+                            # 如果是不通过的状态
+                            if ownerp.state == 3:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({"detail": {"detail": ['请先通过成果持有人(个人)审核']}}, status=400)
+                            else:
+                                tel = ownerp.pmobile
+                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
+                                body = {'type': '成果', 'name': Results.r_name}
+                                headers = {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "Accept": "application/json"
+                                }
+                                # 多线程发送短信
+                                t1 = threading.Thread(target=massege, args=(url, body, headers))
+                                t1.start()
 
-                        tel = ownerp.pmobile
-                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
-                        body = {'type': '成果', 'name': Results.r_name}
-                        headers = {
-                            "Content-Type": "application/x-www-form-urlencoded",
-                            "Accept": "application/json"
-                        }
-
-                        if ownerp.state in [1,2]:
-                            if ownerp.state == 1:
-                                ownerp.state = 3
-                                ownerp.save()
-                            # 多线程发送短信
-                            t1 = threading.Thread(target=massege, args=(url, body, headers))
-                            t1.start()
+                        # 如果是采集持有人企业
                         else:
-                            transaction.savepoint_rollback(save_id)
-                            return HttpResponse('请先通过成果持有人(个人)审核')
+                            ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
+                            # 如果是采集企业不通过的状态
+                            if ownere.state == 3:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({"detail": {"detail": ['请先通过成果持有人(企业)审核']}}, status=400)
+                            else:
+                                tel = ownere.emobile
+                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
+                                body = {'type': '成果', 'name': Results.r_name}
+                                headers = {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "Accept": "application/json"
+                                }
+                                # 多线程发送短信
+                                t1 = threading.Thread(target=massege, args=(url, body, headers))
+                                t1.start()
 
-                    else:
-                        # 更新企业信息并发送短信
-                        ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
+                        # 创建推送表
+                        mm = Message.objects.create(**{
+                            'message_title': '成果消息审核通知',
+                            'message_content': history.opinion,
+                            'account_code': owner.owner_code,
+                            'state': 0,
+                            'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                            'sender': request.user.account,
+                            'sms': 1,
+                            'sms_state': 1,
+                            'sms_phone': tel,
+                            'email': 1,
+                            'email_state': 1,
+                            'email_account': ''
 
-                        tel = ownere.emobile
-                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
-                        body = {'type': '成果', 'name': Results.r_name}
-                        headers = {
-                            "Content-Type": "application/x-www-form-urlencoded",
-                            "Accept": "application/json"
-                        }
+                        })
 
-                        if ownere.state in [1,2]:
-                            if ownere.state == 1:
-                                ownere.state = 3
-                                ownere.save()
-                            # 多线程发送短信
-                            t1 = threading.Thread(target=massege, args=(url, body, headers))
-                            t1.start()
+                        partial = kwargs.pop('partial', False)
+                        serializer = self.get_serializer(instance, data=data, partial=partial)
+                        serializer.is_valid(raise_exception=True)
+                        self.perform_update(serializer)
+
+                        if getattr(instance, '_prefetched_objects_cache', None):
+                            # If 'prefetch_related' has been applied to a queryset, we need to
+                            # forcibly invalidate the prefetch cache on the instance.
+                            instance._prefetched_objects_cache = {}
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
+
+                    transaction.savepoint_commit(save_id)
+                    return Response({'message': '审核不通过'})
+
+                # 如果不是采集员
+                else:
+                    try:
+                        # 如果是持有人个人或者是持有人团队
+                        if owner.owner_type != 2:
+                            ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
+                            # 如果是持有人个人或团队不通过的状态
+                            if ownerp.state == 3:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({"detail": {"detail": ['请先通过成果持有人(个人)审核']}}, status=400)
+                            else:
+                                tel = ownerp.pmobile
+                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
+                                body = {'type': '成果', 'name': Results.r_name}
+                                headers = {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "Accept": "application/json"
+                                }
+                                # 多线程发送短信
+                                t1 = threading.Thread(target=massege, args=(url, body, headers))
+                                t1.start()
+
+                        # 如果是持有人企业
                         else:
-                            transaction.savepoint_rollback(save_id)
-                            return HttpResponse('请先通过成果持有人(企业)审核')
+                            ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
+                            # 如果是持有人企业不通过的状态
+                            if ownere.state == 3:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({"detail": {"detail": ['请先通过成果持有人(企业)审核']}}, status=400)
 
-                    # 创建推送表
-                    mm = Message.objects.create(**{
-                        'message_title': '成果消息审核通知',
-                        'message_content': history.opinion,
-                        'account_code': owner.owner_code,
-                        'state': 0,
-                        'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                        'sender': request.user.account,
-                        'sms': 1,
-                        'sms_state': 1,
-                        'sms_phone': tel,
-                        'email': 1,
-                        'email_state': 1,
-                        'email_account': ''
+                            else:
+                                tel = ownere.emobile
+                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
+                                body = {'type': '成果', 'name': Results.r_name}
+                                headers = {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "Accept": "application/json"
+                                }
+                                # 多线程发送短信
+                                t1 = threading.Thread(target=massege, args=(url, body, headers))
+                                t1.start()
 
-                    })
+                        # 创建推送表
+                        mm = Message.objects.create(**{
+                            'message_title': '成果消息审核通知',
+                            'message_content': history.opinion,
+                            'account_code': owner.owner_code,
+                            'state': 0,
+                            'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                            'sender': request.user.account,
+                            'sms': 1,
+                            'sms_state': 1,
+                            'sms_phone': tel,
+                            'email': 1,
+                            'email_state': 1,
+                            'email_account': ''
 
-                    partial = kwargs.pop('partial', False)
-                    serializer = self.get_serializer(instance, data=data, partial=partial)
-                    serializer.is_valid(raise_exception=True)
-                    self.perform_update(serializer)
+                        })
 
-                    if getattr(instance, '_prefetched_objects_cache', None):
-                        # If 'prefetch_related' has been applied to a queryset, we need to
-                        # forcibly invalidate the prefetch cache on the instance.
-                        instance._prefetched_objects_cache = {}
-                except Exception as e:
-                    return HttpResponse('申请表更新失败%s' % str(e))
-                transaction.savepoint_commit(save_id)
-                return Response({'messege':'审核不通过'})
+                        partial = kwargs.pop('partial', False)
+                        serializer = self.get_serializer(instance, data=data, partial=partial)
+                        serializer.is_valid(raise_exception=True)
+                        self.perform_update(serializer)
+
+                        if getattr(instance, '_prefetched_objects_cache', None):
+                            # If 'prefetch_related' has been applied to a queryset, we need to
+                            # forcibly invalidate the prefetch cache on the instance.
+                            instance._prefetched_objects_cache = {}
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
+
+                    transaction.savepoint_commit(save_id)
+                    return Response({'message': '审核不通过'})
 
 # 需求
 class RequirementViewSet(viewsets.ModelViewSet):
@@ -395,16 +583,16 @@ class RequirementViewSet(viewsets.ModelViewSet):
         opinion（text）:审核意见,
     }
     """
-    queryset = RrApplyHistory.objects.filter(type=2).order_by('state')
+    queryset = RrApplyHistory.objects.filter(type=2,state=1).order_by('-apply_time')
     serializer_class = RrApplyHistorySerializer
     filter_backends = (
-        filters.SearchFilter,
+        # filters.SearchFilter,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("account_code","a_code","rr_code")
     filter_fields = ("account_code", "rr_code","a_code")
-    search_fields = ("rr_code","account_code","a_code")
+    # search_fields = ("rr_code","account_code","a_code")
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
@@ -416,17 +604,44 @@ class RequirementViewSet(viewsets.ModelViewSet):
             		inner join account_info \
             		on account_info.account_code=rr_apply_history.account_code \
             		where account_info.dept_code in ({dept_s}) \
-            		and rr_apply_history.type=2"
+            		and rr_apply_history.type=2 and rr_apply_history.state=1"
 
             raw_queryset = RrApplyHistory.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state')
+            consult_reply_set = RrApplyHistory.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('-apply_time')
             return consult_reply_set
         else:
             return self.queryset
 
+    def list(self, request, *args, **kwargs):
+        search = request.query_params.get('search', None)
+        if search:
+            rq = RequirementsInfo.objects.values_list('req_code').filter(req_code__in=self.get_queryset().values_list('rr_code'),
+                                                                  req_name__icontains=search)
+            kq = KeywordsInfo.objects.values_list('object_code').filter(object_code__in=self.get_queryset().values_list('rr_code'),
+                                                                        key_info__icontains=search)
+            queryset = self.get_queryset().filter(Q(rr_code__in=rq) | Q(rr_code__in=kq))
+        else:
+            queryset = self.get_queryset()
+        queryset = self.filter_queryset(queryset)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         data = request.data
+
+        if instance.state != 1:
+            return Response({"detail": {"detail": ['该需求信息已审核']}}, status=400)
+
+        if not data.get('state',None) or not data.get('opinion',None):
+            return Response({"detail": {"detail": ['状态和审核意见是必填项']}}, status=400)
+
         state = data['state']
         if state == 2:
             # 建立事物机制
@@ -445,7 +660,8 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     del data['opinion']
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('需求审核历史记录创建失败%s' % str(e))
+                    return Response({"detail": {"detail": ['需求审核历史记录创建失败%s' % str(e)]}}, status=400)
+
                 # 更新需求信息表
                 try:
                     Requirements = RequirementsInfo.objects.get(req_code=instance.rr_code)
@@ -453,13 +669,14 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     Requirements.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新需求信息失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新需求信息失败%s' % str(e)]}}, status=400)
+
                 # 更新需求评价信息表
                 try:
                     Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=2)
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新需求评价信息失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新需求评价信息失败%s' % str(e)]}}, status=400)
 
                 # 更新成果合作方式表
 
@@ -468,14 +685,14 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新需求合作方式失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新需求合作方式失败%s' % str(e)]}}, status=400)
 
                 # 更新检索关键字表
                 try:
                     Keywords = KeywordsInfo.objects.filter(object_code=instance.rr_code).update(state=1)
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新检索关键字失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新检索关键字失败%s' % str(e)]}}, status=400)
 
                 # 更新成果持有人表
 
@@ -485,92 +702,187 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     owner.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新需求持有人表失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新需求持有人表失败%s' % str(e)]}}, status=400)
 
-                try:
-                    dict_z = {}
-                    # 如果是个人或者团队
-                    if owner.owner_type != 2:
-                        ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
+                    # 如果是采集员
+                if Requirements.obtain_type == 1:
+                    try:
+                        # 如果是采集的个人或者团队
+                        if owner.owner_type != 2:
+                            ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
+                            # 如果是不通过的状态
+                            if ownerp.state == 3:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({"detail": {"detail": ['请先通过需求持有人(个人)审核']}}, status=400)
+                            else:
 
-                        tel = ownerp.pmobile
-                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
-                        body = {'type': '需求', 'name': Requirements.req_name}
-                        headers = {
-                            "Content-Type": "application/x-www-form-urlencoded",
-                            "Accept": "application/json"
-                        }
+                                ownerp.state = 2
+                                ownerp.save()
 
-                        # 如果申请人审核通过
-                        if ownerp.state in [1,2]:
-                            ownerp.state = 2
-                            ownerp.save()
-                            # 多线程发送短信
-                            t1 = threading.Thread(target=massege, args=(url, body, headers))
-                            t1.start()
+                                tel = ownerp.pmobile
+                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
+                                body = {'type': '需求', 'name': Requirements.req_name}
+                                headers = {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "Accept": "application/json"
+                                }
+                                # 多线程发送短信
+                                t1 = threading.Thread(target=massege, args=(url, body, headers))
+                                t1.start()
+
+                                # 附件与封面与其他证件照
+                                move_attachment('attachment', instance.rr_code)
+                                move_single('coverImg', instance.rr_code)
+                                move_single('agreement', instance.rr_code)
+                                move_single('identityFront', instance.rr_code)
+                                move_single('identityBack', instance.rr_code)
+                                move_single('handIdentityPhoto', instance.rr_code)
+
+
+                        # 如果是采集持有人企业
                         else:
-                            transaction.savepoint_rollback(save_id)
-                            return HttpResponse('请先通过需求持有人(个人)审核')
+                            ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
+                            # 如果是采集企业不通过的状态
+                            if ownere.state == 3:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({"detail": {"detail": ['请先通过需求持有人(企业)审核']}}, status=400)
 
-                    else:
-                        # 企业送短信
-                        ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
+                            else:
 
-                        tel = ownere.emobile
-                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
-                        body = {'type': '需求', 'name': Requirements.req_name}
-                        headers = {
-                            "Content-Type": "application/x-www-form-urlencoded",
-                            "Accept": "application/json"
-                        }
+                                ownere.state = 2
+                                ownere.save()
 
-                        if ownere.state in [1, 2]:
-                            ownere.state = 2
-                            ownere.save()
-                            # 多线程发送短信
-                            t1 = threading.Thread(target=massege, args=(url, body, headers))
-                            t1.start()
+                                tel = ownere.emobile
+                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
+                                body = {'type': '成果', 'name': Requirements.req_name}
+                                headers = {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "Accept": "application/json"
+                                }
+                                # 多线程发送短信
+                                t1 = threading.Thread(target=massege, args=(url, body, headers))
+                                t1.start()
+
+                                # 附件与封面与其他证件照
+                                move_attachment('attachment', instance.rr_code)
+                                move_single('coverImg', instance.rr_code)
+                                move_single('agreement', instance.rr_code)
+                                move_single('identityFront', instance.rr_code)
+                                move_single('identityBack', instance.rr_code)
+                                move_single('handIdentityPhoto', instance.rr_code)
+                                move_single('entLicense', instance.rr_code)
+                        # 创建推送表
+                        mm = Message.objects.create(**{
+                            'message_title': '需求消息审核通知',
+                            'message_content': history.opinion,
+                            'account_code': owner.owner_code,
+                            'state': 0,
+                            'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                            'sender': request.user.account,
+                            'sms': 1,
+                            'sms_state': 1,
+                            'sms_phone': tel,
+                            'email': 1,
+                            'email_state': 1,
+                            'email_account': ''
+
+                        })
+
+                        partial = kwargs.pop('partial', False)
+                        serializer = self.get_serializer(instance, data=data, partial=partial)
+                        serializer.is_valid(raise_exception=True)
+                        self.perform_update(serializer)
+
+                        if getattr(instance, '_prefetched_objects_cache', None):
+                            # If 'prefetch_related' has been applied to a queryset, we need to
+                            # forcibly invalidate the prefetch cache on the instance.
+                            instance._prefetched_objects_cache = {}
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
+
+                    transaction.savepoint_commit(save_id)
+                    return Response({'message': '审核通过'})
+
+                # 如果不是采集员
+                else:
+                    try:
+                        # 如果是持有人个人或者是持有人团队
+                        if owner.owner_type != 2:
+                            ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
+                            # 如果是持有人个人或团队不通过的状态
+                            if ownerp.state == 3:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({"detail": {"detail": ['请先通过需求持有人(个人)审核']}}, status=400)
+                            else:
+                                tel = ownerp.pmobile
+                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
+                                body = {'type': '需求', 'name': Requirements.req_name}
+                                headers = {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "Accept": "application/json"
+                                }
+                                # 多线程发送短信
+                                t1 = threading.Thread(target=massege, args=(url, body, headers))
+                                t1.start()
+
+                        # 如果是持有人企业
                         else:
-                            transaction.savepoint_rollback(save_id)
-                            return HttpResponse('请先通过需求持有人(企业)审核')
+                            ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
+                            # 如果是持有人企业不通过的状态
+                            if ownere.state == 3:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({"detail": {"detail": ['请先通过需求持有人(企业)审核']}}, status=400)
 
-                    # 返回相对路径
-                    dict_attachment = move_attachment('attachment', instance.rr_code)
-                    dict_single = move_single('coverImg', instance.rr_code)
+                            else:
+                                tel = ownere.emobile
+                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
+                                body = {'type': '需求', 'name': Requirements.req_name}
+                                headers = {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "Accept": "application/json"
+                                }
+                                # 多线程发送短信
+                                t1 = threading.Thread(target=massege, args=(url, body, headers))
+                                t1.start()
 
-                    dict_z['Attach'] = dict_attachment
-                    dict_z['Cover'] = dict_single
+                        # 附件与封面
+                        move_attachment('attachment', instance.rr_code)
+                        move_single('coverImg', instance.rr_code)
 
-                    # 创建推送表
-                    mm = Message.objects.create(**{
-                        'message_title': '需求消息审核通知',
-                        'message_content': history.opinion,
-                        'account_code': owner.owner_code,
-                        'state': 0,
-                        'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                        'sender': request.user.account,
-                        'sms': 1,
-                        'sms_state': 1,
-                        'sms_phone': tel,
-                        'email': 1,
-                        'email_state': 1,
-                        'email_account': ''
+                        # 创建推送表
+                        mm = Message.objects.create(**{
+                            'message_title': '需求消息审核通知',
+                            'message_content': history.opinion,
+                            'account_code': owner.owner_code,
+                            'state': 0,
+                            'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                            'sender': request.user.account,
+                            'sms': 1,
+                            'sms_state': 1,
+                            'sms_phone': tel,
+                            'email': 1,
+                            'email_state': 1,
+                            'email_account': ''
 
-                    })
+                        })
 
-                    partial = kwargs.pop('partial', False)
-                    serializer = self.get_serializer(instance, data=data, partial=partial)
-                    serializer.is_valid(raise_exception=True)
-                    self.perform_update(serializer)
+                        partial = kwargs.pop('partial', False)
+                        serializer = self.get_serializer(instance, data=data, partial=partial)
+                        serializer.is_valid(raise_exception=True)
+                        self.perform_update(serializer)
 
-                    if getattr(instance, '_prefetched_objects_cache', None):
-                        # If 'prefetch_related' has been applied to a queryset, we need to
-                        # forcibly invalidate the prefetch cache on the instance.
-                        instance._prefetched_objects_cache = {}
-                except Exception as e:
-                    return HttpResponse('申请表更新失败%s' % str(e))
-                transaction.savepoint_commit(save_id)
-                return Response(dict_z)
+                        if getattr(instance, '_prefetched_objects_cache', None):
+                            # If 'prefetch_related' has been applied to a queryset, we need to
+                            # forcibly invalidate the prefetch cache on the instance.
+                            instance._prefetched_objects_cache = {}
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
+
+                    transaction.savepoint_commit(save_id)
+                return Response({'message': '审核通过'})
+
 
         else:
             # 建立事物机制
@@ -590,7 +902,8 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     del data['opinion']
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('需求审核历史记录创建失败%s' % str(e))
+                    return Response({"detail": {"detail": ['需求审核历史记录创建失败%s' % str(e)]}}, status=400)
+
                 # 更新需求信息表
                 try:
                     Requirements = RequirementsInfo.objects.get(req_code=instance.rr_code)
@@ -598,13 +911,14 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     Requirements.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新需求信息失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新需求信息失败%s' % str(e)]}}, status=400)
+
                 # 更新需求评价信息表
                 try:
                     Ea = ResultsEaInfo.objects.filter(r_code=instance.rr_code).update(state=3)
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新需求评价信息失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新需求评价信息失败%s' % str(e)]}}, status=400)
 
                 # 更新成果合作方式表
 
@@ -614,14 +928,14 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     cooperation.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('需求成果合作方式失败%s' % str(e))
+                    return Response({"detail": {"detail": ['需求成果合作方式失败%s' % str(e)]}}, status=400)
 
                 # 更新检索关键字表
                 try:
                     Keywords = KeywordsInfo.objects.filter(object_code=instance.rr_code).update(state=2)
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新检索关键字失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新检索关键字失败%s' % str(e)]}}, status=400)
 
                 # 更新成果持有人表
 
@@ -631,84 +945,158 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     owner.save()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('更新需求持有人表失败%s' % str(e))
+                    return Response({"detail": {"detail": ['更新需求持有人表失败%s']}}, status=400)
 
-                try:
-                    if owner.owner_type != 2:
-                        ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
-
-                        tel = ownerp.pmobile
-                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
-                        body = {'type': '需求', 'name': Requirements.req_name}
-                        headers = {
-                            "Content-Type": "application/x-www-form-urlencoded",
-                            "Accept": "application/json"
-                        }
-
-                        if ownerp.state in [1,2]:
-                            if ownerp.state == 1:
-                                ownerp.state = 3
-                                ownerp.save()
+                # 如果是采集员
+                if Requirements.obtain_type == 1:
+                    try:
+                        # 如果是采集的个人或者团队
+                        if owner.owner_type != 2:
+                            ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
+                            # 如果是不通过的状态
+                            if ownerp.state == 3:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({"detail": {"detail": ['请先通过需求持有人(个人)审核']}}, status=400)
+                            else:
+                                tel = ownerp.pmobile
+                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
+                                body = {'type': '需求', 'name': Requirements.req_name}
+                                headers = {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "Accept": "application/json"
+                                }
                                 # 多线程发送短信
                                 t1 = threading.Thread(target=massege, args=(url, body, headers))
                                 t1.start()
+
+                        # 如果是采集持有人企业
                         else:
-                            transaction.savepoint_rollback(save_id)
-                            return HttpResponse('请先通过需求持有人(个人)审核')
-
-                    else:
-                        # 更新企业信息并发送短信
-                        ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
-
-                        tel = ownere.emobile
-                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
-                        body = {'type': '成果', 'name': Requirements.req_name}
-                        headers = {
-                            "Content-Type": "application/x-www-form-urlencoded",
-                            "Accept": "application/json"
-                        }
-
-                        if ownere.state in [1,2]:
-                            if ownere.state == 1:
-                                ownere.state = 3
-                                ownere.save()
+                            ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
+                            # 如果是采集企业不通过的状态
+                            if ownere.state == 3:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({"detail": {"detail": ['请先通过需求持有人(企业)审核']}}, status=400)
+                            else:
+                                tel = ownere.emobile
+                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
+                                body = {'type': '需求', 'name': Requirements.req_name}
+                                headers = {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "Accept": "application/json"
+                                }
                                 # 多线程发送短信
                                 t1 = threading.Thread(target=massege, args=(url, body, headers))
                                 t1.start()
+
+                        # 创建推送表
+                        mm = Message.objects.create(**{
+                            'message_title': '需求消息审核通知',
+                            'message_content': history.opinion,
+                            'account_code': owner.owner_code,
+                            'state': 0,
+                            'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                            'sender': request.user.account,
+                            'sms': 1,
+                            'sms_state': 1,
+                            'sms_phone': tel,
+                            'email': 1,
+                            'email_state': 1,
+                            'email_account': ''
+
+                        })
+
+                        partial = kwargs.pop('partial', False)
+                        serializer = self.get_serializer(instance, data=data, partial=partial)
+                        serializer.is_valid(raise_exception=True)
+                        self.perform_update(serializer)
+
+                        if getattr(instance, '_prefetched_objects_cache', None):
+                            # If 'prefetch_related' has been applied to a queryset, we need to
+                            # forcibly invalidate the prefetch cache on the instance.
+                            instance._prefetched_objects_cache = {}
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
+
+                    transaction.savepoint_commit(save_id)
+                    return Response({'message': '审核不通过'})
+
+                # 如果不是采集员
+                else:
+                    try:
+                        # 如果是持有人个人或者是持有人团队
+                        if owner.owner_type != 2:
+                            ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
+                            # 如果是持有人个人或团队不通过的状态
+                            if ownerp.state == 3:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({"detail": {"detail": ['请先通过需求持有人(个人)审核']}}, status=400)
+                            else:
+                                tel = ownerp.pmobile
+                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
+                                body = {'type': '需求', 'name': Requirements.req_name}
+                                headers = {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "Accept": "application/json"
+                                }
+                                # 多线程发送短信
+                                t1 = threading.Thread(target=massege, args=(url, body, headers))
+                                t1.start()
+
+                        # 如果是持有人企业
                         else:
-                            transaction.savepoint_rollback(save_id)
-                            return HttpResponse('请先通过需求持有人(企业)审核')
+                            ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
+                            # 如果是持有人企业不通过的状态
+                            if ownere.state == 3:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({"detail": {"detail": ['请先通过需求持有人(企业)审核']}}, status=400)
 
-                    # 创建推送表
-                    mm = Message.objects.create(**{
-                        'message_title': '需求消息审核通知',
-                        'message_content': history.opinion,
-                        'account_code': owner.owner_code,
-                        'state': 0,
-                        'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                        'sender': request.user.account,
-                        'sms': 1,
-                        'sms_state': 1,
-                        'sms_phone': tel,
-                        'email': 1,
-                        'email_state': 1,
-                        'email_account': ''
+                            else:
+                                tel = ownere.emobile
+                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
+                                body = {'type': '需求', 'name': Requirements.req_name}
+                                headers = {
+                                    "Content-Type": "application/x-www-form-urlencoded",
+                                    "Accept": "application/json"
+                                }
+                                # 多线程发送短信
+                                t1 = threading.Thread(target=massege, args=(url, body, headers))
+                                t1.start()
 
-                    })
+                        # 创建推送表
+                        mm = Message.objects.create(**{
+                            'message_title': '需求消息审核通知',
+                            'message_content': history.opinion,
+                            'account_code': owner.owner_code,
+                            'state': 0,
+                            'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                            'sender': request.user.account,
+                            'sms': 1,
+                            'sms_state': 1,
+                            'sms_phone': tel,
+                            'email': 1,
+                            'email_state': 1,
+                            'email_account': ''
 
-                    partial = kwargs.pop('partial', False)
-                    serializer = self.get_serializer(instance, data=data, partial=partial)
-                    serializer.is_valid(raise_exception=True)
-                    self.perform_update(serializer)
+                        })
 
-                    if getattr(instance, '_prefetched_objects_cache', None):
-                        # If 'prefetch_related' has been applied to a queryset, we need to
-                        # forcibly invalidate the prefetch cache on the instance.
-                        instance._prefetched_objects_cache = {}
-                except Exception as e:
-                    return HttpResponse('申请表更新失败%s' % str(e))
-                transaction.savepoint_commit(save_id)
-                return Response({'messege':'审核不通过'})
+                        partial = kwargs.pop('partial', False)
+                        serializer = self.get_serializer(instance, data=data, partial=partial)
+                        serializer.is_valid(raise_exception=True)
+                        self.perform_update(serializer)
+
+                        if getattr(instance, '_prefetched_objects_cache', None):
+                            # If 'prefetch_related' has been applied to a queryset, we need to
+                            # forcibly invalidate the prefetch cache on the instance.
+                            instance._prefetched_objects_cache = {}
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
+
+                    transaction.savepoint_commit(save_id)
+                    return Response({'message': '审核不通过'})
+
+
 
 
 class ManagementpViewSet(viewsets.ModelViewSet):
@@ -728,7 +1116,6 @@ class ManagementpViewSet(viewsets.ModelViewSet):
         dept_code = self.request.user.dept_code
         dept_code_str = get_detcode_str(dept_code)
         if dept_code_str:
-            #SQL = "select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.dept_code in ("+dept_code_str+") and rr_apply_history.type=1"
             SQL = "select results_info.* \
             		from results_info \
             		inner join account_info \
@@ -1021,7 +1408,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         for i in obj:
                             url = '{}{}{}'.format(relative_path, i.path, i.file_name)
                             # 创建对象
-                            a = FileStorage()
+                            a = FileSystemStorage()
                             # 删除文件
                             a.delete(url)
                             # 删除表记录
@@ -1055,7 +1442,6 @@ class ManagementrViewSet(viewsets.ModelViewSet):
         dept_code = self.request.user.dept_code
         dept_code_str = get_detcode_str(dept_code)
         if dept_code_str:
-            # SQL = "select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.dept_code in ("+dept_code_str+") and rr_apply_history.type=1"
             SQL = "select requirements_info.* \
             		from requirements_info \
             		inner join account_info \
@@ -1353,7 +1739,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         for i in obj:
                             url = '{}{}{}'.format(relative_path, i.path, i.file_name)
                             # 创建对象
-                            a = FileStorage()
+                            a = FileSystemStorage()
                             # 删除文件
                             a.delete(url)
                             # 删除表记录

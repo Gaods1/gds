@@ -2,38 +2,75 @@ from public_models.models import PersonalInfo, Message, EnterpriseBaseinfo
 import time,requests
 from .models import *
 import datetime
+from django.db.models import Q
 
 
 # 更新或创建个人信息
 def update_or_crete_person(pcode, info):
-    ap = PersonalInfo.objects.filter(account_code=info['account_code'])
-    pp = PersonalInfo.objects.filter(pcode=pcode)
-    if pcode and pp:
-        pp.update(**info)
-    elif info['account_code'] and ap:
-        ap.update(**info)
-        pcode = ap[0].pcode
-    else:
-        person = PersonalInfo.objects.create(**info)
-        pcode = person.pcode
 
-    return pcode
+    id_person = PersonalInfo.objects.filter(pid_type=info['pid_type'], pid=info['pid'])
+    account_person = PersonalInfo.objects.filter(account_code=info['account_code'])
+    if account_person and account_person[0].pid_type == info['pid_type'] and account_person[0].pid != info['pid']:
+        raise ValueError('此账号已经绑定证件号码，证件号码不允许更改')
+
+    if id_person and id_person[0].account_code and id_person[0].account_code != info['account_code']:
+            raise ValueError('此证件号码已经被其他账号注册')
+
+    if id_person and not id_person[0].account_code:
+        id_person.update(**info)
+        return id_person[0].pcode
+
+    code_person = PersonalInfo.objects.filter(pcode=pcode, account_code=info['account_code'])
+    if code_person and pcode:
+        code_person.update(**info)
+        return pcode
+
+    if account_person:
+        account_person.update(**info)
+        return account_person[0].pcode
+
+    person_info = PersonalInfo.objects.create(**info)
+    return person_info.pcode
+
+
+# 创建企业信息（如果只有企业名的话）
+def create_enterprise(ecode):
+    if ecode:
+        try:
+            e = EnterpriseBaseinfo.objects.values_list('ecode', flat=True).get(Q(ecode=ecode) | Q(ename=ecode))
+        except Exception as e:
+            e = EnterpriseBaseinfo.objects.create(ename=ecode).ecode
+        return e
+    return None
 
 
 #   更新或创建企业信息
 def update_or_crete_enterprise(ecode, info):
-    ap = EnterpriseBaseinfo.objects.filter(account_code=info['account_code'])
-    pp = EnterpriseBaseinfo.objects.filter(ecode=ecode)
-    if ecode and pp:
-        pp.update(**info)
-    elif info['account_code'] and ap:
-        ap.update(**info)
-        ecode = ap[0].ecode
-    else:
-        e = EnterpriseBaseinfo.objects.create(**info)
-        ecode = e.ecode
+    license_enterprise = EnterpriseBaseinfo.objects.filter(business_license=info['business_license'])
+    account_enterprise = EnterpriseBaseinfo.objects.filter(account_code=info['account_code'])
 
-    return ecode
+    if account_enterprise and account_enterprise[0].business_license != info['business_license']:
+        raise ValueError('此账号已经绑定统一社会信用码，统一社会信用码不允许更改')
+
+    if license_enterprise and license_enterprise[0].account_code and \
+            license_enterprise[0].account_code != info['account_code']:
+        raise ValueError('此统一社会信用码已经被其他账号注册')
+
+    if license_enterprise and not license_enterprise[0].account_code:
+        license_enterprise.update(**info)
+        return license_enterprise[0].ecode
+
+    code_enterprise = EnterpriseBaseinfo.objects.filter(ecode=ecode, account_code=info['account_code'])
+    if ecode and code_enterprise:
+        code_enterprise.update(**info)
+        return ecode
+
+    if account_enterprise:
+        account_enterprise.update(**info)
+        return account_enterprise[0].ecode
+
+    enterprise = EnterpriseBaseinfo.objects.create(**info)
+    return enterprise.ecode
 
 
 # 发送信息
@@ -77,6 +114,7 @@ def update_baseinfo(obj, code, data):
 
 # 获取领域
 def get_major(user_type, user_code):
-    mcode = MajorUserinfo.objects.values_list('mcode', flat=True).filter(mtype=2, user_type=user_type, user_code=user_code)
+    mcode = MajorUserinfo.objects.values_list('mcode', flat=True).filter(
+        mtype=2, user_type=user_type, user_code=user_code)
     mname = MajorInfo.objects.values_list('mname', flat=True).filter(mcode__in=mcode, state=1)
     return mname
