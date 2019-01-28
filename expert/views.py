@@ -34,7 +34,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
 
     ordering_fields = ("insert_time", "expert_level", "credit_value", "expert_integral")
     filter_fields = ("state", "creater", "expert_id", "expert_city", "ecode")
-    search_fields = ("expert_name", "expert_id", "expert_mobile", "ecode", "major.mname",
+    search_fields = ("expert_name", "expert_id", "expert_mobile", "major.mname",
                      "account.user_name")
 
     major_model = MajorInfo
@@ -212,14 +212,23 @@ class BrokerViewSet(viewsets.ModelViewSet):
     serializer_class = BrokerBaseInfoSerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
 
     ordering_fields = ("insert_time", "broker_level", "credit_value", "broker_integral", "work_type")
     filter_fields = ("state", "creater", "broker_id", "broker_city", "ecode", "work_type")
-    search_fields = ("broker_name", "broker_id", "broker_mobile", "ecode", "work_type", "broker_abbr")
+    search_fields = ("broker_name", "broker_id", "broker_mobile", "broker_abbr", "major.mname",
+                     "account.user_name")
+
+    major_model = MajorInfo
+    major_intermediate_model = MajorUserinfo
+    major_associated_field = ('broker_code', 'user_code')
+    major_intermediate_associated_field = ('mcode', "mcode")
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -282,7 +291,9 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
     broker_associated_field = ('broker_code', 'broker_code')
 
     account_model = AccountInfo
-    account_associated_field = ('account_code', 'account_code')
+    account_associated_field = ('broker_code', 'broker_code')
+    account_intermediate_model = BrokerBaseinfo
+    account_intermediate_associated_field = ('account_code', "account_code")
 
     def update(self, request, *args, **kwargs):
         try:
@@ -378,14 +389,18 @@ class CollectorViewSet(viewsets.ModelViewSet):
     serializer_class = CollectorBaseInfoSerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
 
     ordering_fields = ("insert_time",)
     filter_fields = ("state", "creater", "collector_id", "collector_city",)
-    search_fields = ("collector_name", "collector_id", "collector_mobile",)
+    search_fields = ("collector_name", "collector_id", "collector_mobile",
+                     'account.user_name')
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
@@ -396,7 +411,6 @@ class CollectorViewSet(viewsets.ModelViewSet):
                     inner join account_info \
                     on account_info.account_code=collector_baseinfo.account_code \
                     where account_info.dept_code in ({dept_s})"
-
 
             raw_queryset = CollectorBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
             consult_reply_set = CollectorBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state', '-serial')
@@ -702,7 +716,9 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
     collector_associated_field = ('collector_code', 'collector_code')
 
     account_model = AccountInfo
-    account_associated_field = ('account_code', 'account_code')
+    account_associated_field = ('collector_code', 'collector_code')
+    account_intermediate_model = CollectorBaseinfo
+    account_intermediate_associated_field = ('account_code', "account_code")
 
     def update(self, request, *args, **kwargs):
         try:
@@ -800,14 +816,23 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
     serializer_class = ResultOwnerpSerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
 
     ordering_fields = ("insert_time",)
     filter_fields = ("state", "creater", "owner_id", "owner_city",)
-    search_fields = ("owner_name", "owner_id", "owner_mobile")
+    search_fields = ("owner_name", "owner_id", "owner_mobile", "major.mname",
+                     "account.username")
+
+    major_model = MajorInfo
+    major_intermediate_model = MajorUserinfo
+    major_associated_field = ('owner_code', 'user_code')
+    major_intermediate_associated_field = ('mcode', "mcode")
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
@@ -1138,7 +1163,9 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
     owner_associated_field = ('owner_code', 'owner_code')
 
     account_model = AccountInfo
-    account_associated_field = ('account_code', 'account_code')
+    account_associated_field = ('owner_code', 'owner_code')
+    account_intermediate_model = ResultOwnerpBaseinfo
+    account_intermediate_associated_field = ('account_code', "account_code")
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -1247,15 +1274,23 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
     serializer_class = ResultOwnereSerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
 
     ordering_fields = ("insert_time",)
     filter_fields = ("state", "creater", "owner_id", "owner_city", "owner_license", "legal_person")
-    search_fields = ("owner_name", "owner_id", "owner_mobile", "owner_license", "legal_person")
+    search_fields = ("owner_name", "owner_license", "owner_mobile", "major.mname",
+                     "account.username")
 
+    major_model = MajorInfo
+    major_intermediate_model = MajorUserinfo
+    major_associated_field = ('owner_code', 'user_code')
+    major_intermediate_associated_field = ('mcode', "mcode")
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
@@ -1582,10 +1617,16 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code")
-    search_fields = ("owner.owner_name", "owner.owner_mobile", "owner.owner_license")
+    search_fields = ("owner.owner_name", "owner.owner_mobile", "owner.owner_license",
+                     "account.user_name")
 
     owner_model = ResultOwnereBaseinfo
     owner_associated_field = ('owner_code', 'owner_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('owner_code', 'owner_code')
+    account_intermediate_model = ResultOwnereBaseinfo
+    account_intermediate_associated_field = ('account_code', "account_code")
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -1705,14 +1746,23 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
     serializer_class = ResultOwnerpSerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
 
     ordering_fields = ("insert_time",)
     filter_fields = ("state", "creater", "owner_id", "owner_city",)
-    search_fields = ("owner_name", "owner_id", "owner_mobile")
+    search_fields = ("owner_name", "owner_id", "owner_mobile", "major.mname",
+                     "account.user_name")
+
+    major_model = MajorInfo
+    major_intermediate_model = MajorUserinfo
+    major_associated_field = ('owner_code', 'user_code')
+    major_intermediate_associated_field = ('mcode', "mcode")
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
@@ -2044,7 +2094,9 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
     owner_associated_field = ('owner_code', 'owner_code')
 
     account_model = AccountInfo
-    account_associated_field = ('account_code', 'account_code')
+    account_associated_field = ('owner_code', 'owner_code')
+    account_intermediate_model = ResultOwnerpBaseinfo
+    account_intermediate_associated_field = ('account_code', "account_code")
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -2155,15 +2207,23 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
     serializer_class = ResultOwnereSerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
 
     ordering_fields = ("insert_time",)
     filter_fields = ("state", "creater", "owner_id", "owner_city", "owner_license", "legal_person")
-    search_fields = ("owner_name", "owner_id", "owner_mobile", "owner_license", "legal_person")
+    search_fields = ("owner_name", "owner_license", "owner_mobile", "major.mname",
+                     "account.username")
 
+    major_model = MajorInfo
+    major_intermediate_model = MajorUserinfo
+    major_associated_field = ('owner_code', 'user_code')
+    major_intermediate_associated_field = ('mcode', "mcode")
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def get_queryset(self):
         dept_code = self.request.user.dept_code
@@ -2185,7 +2245,6 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                 # Ensure queryset is re-evaluated on each request.
                 queryset = queryset.all()
             return queryset
-
 
     # 创建需求持有人(企业）  author:范
     def create(self, request, *args, **kwargs):
@@ -2487,10 +2546,16 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
     )
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "owner_code")
-    search_fields = ("owner.owner_name", "owner.owner_mobile", "owner.owner_license")
+    search_fields = ("owner.owner_name", "owner.owner_mobile", "owner.owner_license",
+                     "account.user_name")
 
     owner_model = ResultOwnereBaseinfo
     owner_associated_field = ('owner_code', 'owner_code')
+
+    account_model = AccountInfo
+    account_associated_field = ('owner_code', 'owner_code')
+    account_intermediate_model = ResultOwnereBaseinfo
+    account_intermediate_associated_field = ('account_code', "account_code")
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -2616,14 +2681,23 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
     serializer_class = TeamBaseinfoSerializers
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
 
     ordering_fields = ("insert_time", "pt_level", "credit_value","pt_integral")
     filter_fields = ("state", "creater", "pt_people_id", "pt_city",)
-    search_fields = ("pt_name", "pt_people_id", "pt_people_tel", "pt_abbreviation")
+    search_fields = ("pt_name", "pt_people_id", "pt_people_tel", "pt_people_name", "pt_homepage",
+                     "major.mname", "account.user_name")
+
+    major_model = MajorInfo
+    major_intermediate_model = MajorUserinfo
+    major_associated_field = ('pt_code', 'user_code')
+    major_intermediate_associated_field = ('mcode', "mcode")
+
+    account_model = AccountInfo
+    account_associated_field = ('account_code', 'account_code')
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -2679,25 +2753,33 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
     ordering_fields = ("state", "apply_type", "apply_time")
     filter_fields = ("state", "team_code", "account_code")
     search_fields = ("team_baseinfo.pt_name", "team_baseinfo.pt_people_name", "team_baseinfo.pt_people_tel",
-                     "team_baseinfo.pt_people_id", "team_baseinfo.pt_homepage", "account.user_name")
+                     "team_baseinfo.pt_people_id", "team_baseinfo.pt_homepage", "major.mname",
+                     "account.user_name")
 
-    owner_model = ProjectTeamBaseinfo
-    owner_associated_field = ('team_code', 'pt_code')
+    team_baseinfo_model = ProjectTeamBaseinfo
+    team_baseinfo_associated_field = ('team_code', 'pt_code')
+
+    major_model = MajorInfo
+    major_intermediate_model = MajorUserinfo
+    major_associated_field = ('pt_code', 'user_code')
+    major_intermediate_associated_field = ('mcode', "mcode")
 
     account_model = AccountInfo
-    account_associated_field = ('account_code', 'account_code')
+    account_associated_field = ('team_code', 'pt_code')
+    account_intermediate_model = ProjectTeamBaseinfo
+    account_intermediate_associated_field = ('account_code', "account_code")
 
-    '''
-    技术团队申请步骤:(涉及表:project_team_baseinfo   team_apply_history team_check_history account_info identity_authorization_info message)
-    流程:检索project_team_baseinfo  team_apply_history作为主表 
-         1 新增或更新或禁权team_apply_history 表状态
-         2 更新project_team_baseinfo 表状态
-         3 新增team_check_history 表记录
-         4 新增前台角色授权记录 identity_authorization_info
-         5 发送短信通知
-         6 保存短信记录 message
-    '''
     def update(self, request, *args, **kwargs):
+        """
+        技术团队申请步骤:(涉及表:project_team_baseinfo   team_apply_history team_check_history account_info identity_authorization_info message)
+        流程:检索project_team_baseinfo  team_apply_history作为主表
+             1 新增或更新或禁权team_apply_history 表状态
+             2 更新project_team_baseinfo 表状态
+             3 新增team_check_history 表记录
+             4 新增前台角色授权记录 identity_authorization_info
+             5 发送短信通知
+             6 保存短信记录 message
+        """
         try:
             with transaction.atomic():
                 apply_team_baseinfo = self.get_object()

@@ -9,6 +9,7 @@ import django_filters
 from django.db.models.query import QuerySet
 from public_models.utils import get_dept_codes,get_detcode_str
 from .utils import *
+from misc.filter.search import ViewSearch
 # Create your views here.
 
 
@@ -50,13 +51,16 @@ class AccountViewSet(viewsets.ModelViewSet):
     queryset = AccountInfo.objects.all().order_by('-serial')
     serializer_class = AccountInfoSerializer
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("account","user_name", "user_email", "dept_code", "insert_time")
     filter_fields = ("state", "dept_code", "creater", "account")
-    search_fields = ("account","user_name", "user_email",)
+    search_fields = ("account","user_name", "user_email", "user_mobile", "dept.dept_name")
+
+    dept_model = Deptinfo
+    dept_associated_field = ("dept_code", "dept_code")
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -172,7 +176,7 @@ class RoleInfoViewSet(viewsets.ModelViewSet):
     queryset = RoleInfo.objects.all().order_by('-serial')
     serializer_class = RoleInfoSerializer
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
@@ -180,7 +184,6 @@ class RoleInfoViewSet(viewsets.ModelViewSet):
     ordering_fields = ("role_name", "insert_time")
     filter_fields = ("state", "creater", "role_code")
     search_fields = ("role_name",)
-
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -200,7 +203,6 @@ class RoleInfoViewSet(viewsets.ModelViewSet):
             queryset = queryset.all()
         return queryset
 
-
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
@@ -212,7 +214,7 @@ class RoleInfoViewSet(viewsets.ModelViewSet):
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(queryset, many=True)
-        return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
         data = request.data
@@ -263,7 +265,7 @@ class RoleInfoViewSet(viewsets.ModelViewSet):
 # 账号禁权管理
 class AccountDisableFuncinfoViewSet(viewsets.ModelViewSet):
     """
-    账号禁权管理
+ `   账号禁权管理
     ######################################################################################
     参数说明（param， get时使用的参数）
     page(integer):           【页数, 默认为1】
@@ -289,14 +291,14 @@ class AccountDisableFuncinfoViewSet(viewsets.ModelViewSet):
     serializer_class = AccountDisableFuncinfoSerializer
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
 
     ordering_fields = ("account", "insert_time", "func_code")
     filter_fields = ("state", "creater", "account", "func_code")
-    search_fields = ("account", "func_code")
+    search_fields = ("account",)
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -358,14 +360,17 @@ class AccountRoleViewSet(viewsets.ModelViewSet):
     serializer_class = AccountRoleInfoSerializer
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
 
     ordering_fields = ("account", "insert_time", "role_code")
     filter_fields = ("state", "creater", "account", "role_code", "type")
-    search_fields = ("account", "role_code")
+    search_fields = ("account", "role.role_name", "creater")
+
+    role_model = RoleInfo
+    role_associated_field = ("role_code", "role_code")
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -403,7 +408,7 @@ class FunctionViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated, ReadOnlyPermission)
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
@@ -442,7 +447,7 @@ class RoleFuncViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated, ReadOnlyPermission)
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
@@ -491,13 +496,16 @@ class DeptinfoViewSet(viewsets.ModelViewSet):
     queryset = Deptinfo.objects.all().order_by('-serial')
     serializer_class = DeptinfoSerializer
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("dept_name", "insert_time")
     filter_fields = ("state", "dept_level", "region_code","dept_code","pdept_code")
-    search_fields = ("dept_name",)
+    search_fields = ("dept_name", "manager", "dept.dpet_name")
+
+    dept_model = Deptinfo
+    dept_associated_field = ("pdept_code", "dept_code")
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -516,8 +524,6 @@ class DeptinfoViewSet(viewsets.ModelViewSet):
             # Ensure queryset is re-evaluated on each request.
             queryset = queryset.all()
         return queryset
-
-
 
 
 # 参数配置管理
@@ -544,13 +550,16 @@ class ParamInfoViewSet(viewsets.ModelViewSet):
     queryset = ParamInfo.objects.all().order_by('-serial')
     serializer_class = ParamInfoSerializer
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )
     ordering_fields = ("param_name", "insert_time")
     filter_fields = ("param_code", "pparam_code")
-    search_fields = ("param_name", "pparam_code")
+    search_fields = ("param_name", "param.param_name", "creater")
+
+    param_model = ParamInfo
+    param_associated_field = ("pparam_code", "param_code")
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -570,8 +579,6 @@ class ParamInfoViewSet(viewsets.ModelViewSet):
             queryset = queryset.all()
         return queryset
 
-
-
     def create(self, request, *args, **kwargs):
         data = request.data
         data['creater'] = request.user.account
@@ -589,7 +596,7 @@ class SystemDistrictViewSet(viewsets.ModelViewSet):
     serializer_class = SystemDistrictSerializer
 
     filter_backends = (
-        filters.SearchFilter,
+        ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
         filters.OrderingFilter,
     )

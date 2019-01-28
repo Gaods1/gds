@@ -7,22 +7,27 @@ from rest_framework.compat import distinct
 
 
 class ViewSearch(filters.SearchFilter):
-    '''
+    """
         模糊搜索过滤器
+        搜索关键字 search
         使用方法（具体示例 expert\views.py   CollectorApplyViewSet）：
         增加在view视图的filter_backends中，
         view 中增加如下字段
         search_fields = （） 需要查询的字段 关联表的查询字段要使用 xxx.yyy 例：collector.collector_name
         xxx_model = Model   关联表的model xxx 与search_fields 中的xxx相同
         xxx_associated_field = （） 当前表与关联表的关联字段。元组，第一个为当前model的关联字段，第二个为关联表的关联字段
-        搜索关键字 search
-
         多条件联合搜索 search=xxx yyy   条件之间用空格或者英文逗号隔开（表示两个条件and关系）
 
-        bug: 同一个model里的字段可做联合模糊搜索，但是不同表不能做字段的联合模糊搜索,
-        bug: 现在只能关联一层的搜索，不能xxx.xxx.xxx
+        增加中间表查询
+        （具体示例expert\views.py ExpertViewSet）
+        在view中增加如下字段
+        xxx_model = Model   关联表的model xxx 与search_fields 中的xxx相同
+        xxx_associated_field = （） 当前表与关联表的关联字段。元组，第一个为当前model的关联字段，第二个为中间表的关联字段
+        xxx_intermediate_model = Model 中间表
+        xxx_intermediate_associated_field = () 中间表与关联表的关联字段。元组，第一个为中间表的关联字段，第二个为关联表的关联字段
 
-    '''
+        bug: 同一个model里的字段可做联合模糊搜索，但是不同表不能做字段的联合模糊搜索,
+    """
     def __init__(self):
         super(ViewSearch, self).__init__()
         self.lookup_prefixes['~'] = "in"
@@ -75,10 +80,11 @@ class ViewSearch(filters.SearchFilter):
                 intermediate_model = getattr(view, key+'_intermediate_model', None)
                 intermediate_associated_field = getattr(view, key+'_intermediate_associated_field', None)
                 if intermediate_model and intermediate_associated_field:
-                    sub_search_terms, sub_associated_orm_lookups = self.get_intermediate_queries(intermediate_associated_field,
-                                                                                         search_terms,
-                                                                                         associated_orm_lookups,
-                                                                                         associated_model)
+                    sub_search_terms, sub_associated_orm_lookups = self.get_intermediate_queries(
+                        intermediate_associated_field,
+                        search_terms,
+                        associated_orm_lookups,
+                        associated_model)
                     associated_model = intermediate_model
                 else:
                     sub_search_terms = search_terms

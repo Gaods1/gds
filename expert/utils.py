@@ -37,8 +37,8 @@ def update_or_crete_person(pcode, info):
 def create_enterprise(ecode):
     if ecode:
         try:
-            e = EnterpriseBaseinfo.objects.values_list('ecode', flat=True).get(Q(ecode=ecode)|Q(ename=ecode))
-        except :
+            e = EnterpriseBaseinfo.objects.values_list('ecode', flat=True).get(Q(ecode=ecode) | Q(ename=ecode))
+        except Exception as e:
             e = EnterpriseBaseinfo.objects.create(ename=ecode).ecode
         return e
     return None
@@ -52,7 +52,8 @@ def update_or_crete_enterprise(ecode, info):
     if account_enterprise and account_enterprise[0].business_license != info['business_license']:
         raise ValueError('此账号已经绑定统一社会信用码，统一社会信用码不允许更改')
 
-    if license_enterprise and license_enterprise[0].account_code and license_enterprise[0].account_code != info['account_code']:
+    if license_enterprise and license_enterprise[0].account_code and \
+            license_enterprise[0].account_code != info['account_code']:
         raise ValueError('此统一社会信用码已经被其他账号注册')
 
     if license_enterprise and not license_enterprise[0].account_code:
@@ -113,6 +114,7 @@ def update_baseinfo(obj, code, data):
 
 # 获取领域
 def get_major(user_type, user_code):
-    mcode = MajorUserinfo.objects.values_list('mcode', flat=True).filter(mtype=2, user_type=user_type, user_code=user_code)
+    mcode = MajorUserinfo.objects.values_list('mcode', flat=True).filter(
+        mtype=2, user_type=user_type, user_code=user_code)
     mname = MajorInfo.objects.values_list('mname', flat=True).filter(mcode__in=mcode, state=1)
     return mname
