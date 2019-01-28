@@ -3,6 +3,7 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework import filters
 from rest_framework import mixins
+from rest_framework.response import Response
 import django_filters
 from django.db import transaction
 import time
@@ -27,7 +28,7 @@ from public_tools.utils import writeLog
 
 # Create your views here.
 
-class ProjectInfoViewSet(viewsets.ReadOnlyModelViewSet):
+class ProjectInfoViewSet(viewsets.ModelViewSet):
     '''项目信息'''
     queryset = ProjectInfo.objects.all().order_by('-pserial')
     serializer_class = ProjectInfoSerializer
@@ -108,7 +109,25 @@ class ProjectInfoViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return self.get_paginated_response(serializer.data)
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        data = request.data
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
 
+        # 修改项目的技术经济人
+        broker_code = data['brokers']
+        pbi = ProjectBrokerInfo.objects.get(project_code=instance.project_code)
+        pbi.broker_code = broker_code
+        pbi.save()
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+        # return JsonResponse({"state": 1, "msg": "修改成功"})
 
 
 class ProjectCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,viewsets.GenericViewSet):
@@ -192,7 +211,7 @@ def getProjectByDept(self, request):
 
     # 只要返回空列表我就认为你的部门是一级部门
     dept_codes = get_dept_codes(dept_code)
-    writeLog('yzw_py.log', 'getProjectByDept', sys._getframe().f_code.co_filename, str(sys._getframe().f_lineno))
+    # writeLog('yzw_py.log', 'getProjectByDept', sys._getframe().f_code.co_filename, str(sys._getframe().f_lineno))
 
 
     # 此处可以继续优化，但是数据关系不完整，暂时不做优化
@@ -287,9 +306,13 @@ def upCheckinfo(self, request):
     substep_serial = data['substep_serial']
     substep_serial_type = data['substep_serial_type']
     cmsg = data['cmsg']
+    # 终止项目时使用  主要是获取需要审核的状态
+    t_pssi = ProjectSubstepSerialInfo.objects.get(project_code=project_code,step_code=step_code,substep_code=substep_code,substep_serial=substep_serial)
+    old_substep_state = t_pssi.substep_serial_state
+    # old_substep_state = -11 # 测试时使用
 
     # 这里只判断一次，后面可以借用
-    if step_code > 0 and substep_code > 0:
+    if old_substep_state != -11:
         # 普通步骤
         if cstate == 1:
             substep_serial_state = 3
@@ -319,32 +342,28 @@ def upCheckinfo(self, request):
             projectcheckinfo.save()
 
 
-
-            if step_code > 0 and substep_code > 0: # 普通步骤
-                # 项目子步骤流水信息表
-                pssi = ProjectSubstepSerialInfo.objects.get(project_code=project_code,
-                                                            step_code=step_code, substep_code=substep_code,
-                                                            substep_serial=substep_serial, substep_serial_type=substep_serial_type)
+            # 项目子步骤流水信息表
+            pssi = ProjectSubstepSerialInfo.objects.get(project_code=project_code,
+                                                        step_code=step_code, substep_code=substep_code,
+                                                        substep_serial=substep_serial, substep_serial_type=substep_serial_type)
 
 
-                pssi.substep_serial_state = substep_serial_state
-                # pssi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) # 前端删除了数据库中的该字段
-                pssi.step_msg = cmsg
-                pssi.save()
+            pssi.substep_serial_state = substep_serial_state
+            pssi.step_msg = cmsg
+            pssi.save()
 
-                # 项目子步骤流水详情信息表
-                psdi = ProjectSubstepDetailInfo.objects.get(project_code=project_code,
-                                                               step_code=step_code,substep_code=substep_code,
-                                                               substep_serial=substep_serial,substep_serial_type=substep_serial_type)
-                psdi.substep_serial_state = substep_serial_state
-                # psdi.submit_user = request.user.account
-                psdi.step_msg = cmsg
-                psdi.save()
+            # 项目子步骤流水详情信息表
+            psdi = ProjectSubstepDetailInfo.objects.get(project_code=project_code,
+                                                           step_code=step_code,substep_code=substep_code,
+                                                           substep_serial=substep_serial,substep_serial_type=substep_serial_type)
+            psdi.substep_serial_state = substep_serial_state
+            psdi.step_msg = cmsg
+            psdi.save()
 
-                if step_code > 0 and substep_code > 0:
-                    if cstate == 1:
-                        # 审核通过时处理上传的附件
-                        move_project_file(project_code,step_code,substep_code,substep_serial)
+            if old_substep_state != -11:  # 普通步骤
+                if cstate == 1:
+                    # 审核通过时处理上传的附件
+                    move_project_file(project_code,step_code,substep_code,substep_serial)
 
 
             # 项目子步骤信息表
@@ -352,15 +371,17 @@ def upCheckinfo(self, request):
                                                  substep_code=substep_code)
             # 固化清单时这个状态要单独处理
             substep_state = substep_serial_state
-            if step_code == 4 and substep_code == 2 and substep_serial_type == 1:
-                if cstate == 1:
-                    substep_state = 1
-                else:
-                    substep_state = 0
+            if old_substep_state != -11:  # 普通步骤
+                if step_code == 4 and substep_code == 2 and substep_serial_type == 1:
+                    if cstate == 1:
+                        substep_state = 1
+                    else:
+                        substep_state = 0
             psi.substep_state = substep_state
             psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             psi.step_msg = cmsg
             psi.save()
+
 
             # 判断主步骤是否结束
             if step_code == 1 and substep_code == 1 and substep_serial_type == 1:
@@ -368,125 +389,141 @@ def upCheckinfo(self, request):
                 psi = ProjectStepInfo.objects.get(project_code=project_code, step_code=step_code)
 
                 # 终止时需要单独判断
-                if step_code > 0 and substep_code > 0:
-                    step_state = cstate
+                step_state = 0
+                if old_substep_state != -11:  # 普通步骤
+                    if cstate == 1:
+                        step_state = 1
                 else:
-                    step_state = -1
-
+                    step_state = substep_serial_state
                 psi.step_state = step_state
                 psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 psi.step_msg = cmsg
                 psi.save()
 
-                # 只有立项成功时才更新该时间
-                if cstate == 1:
-                    pi = ProjectInfo.objects.get(project_code=project_code)
-                    pi.project_start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-                    pi.save()
+                if old_substep_state != -11:  # 普通步骤
+                    # 只有立项成功时才更新该时间
+                    if cstate == 1:
+                        pi = ProjectInfo.objects.get(project_code=project_code)
+                        pi.project_start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                        pi.save()
+            elif step_code == 2 and substep_code == 2 and substep_serial_type == 1:
+                # 0：正在进行中；1：成功完成；-1：放弃审核通过；-11放弃申请, -12：放弃审核不通过
+                psi = ProjectStepInfo.objects.get(project_code=project_code, step_code=step_code)
+                psi.step_msg = cmsg
+                step_state = 0
+                if old_substep_state != -11:  # 普通步骤
+                    if cstate == 1:
+                        step_state = 1
+                else:
+                    step_state = substep_serial_state
+                psi.step_state = step_state
+                psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                psi.save()
             else:
                 psi = ProjectStepInfo.objects.get(project_code=project_code, step_code=step_code)
                 psi.step_msg = cmsg
                 psi.save()
+
 
             # 修改主表状态 和 子步骤状态一致
             pi = ProjectInfo.objects.get(project_code=project_code)
             pi.state = substep_serial_state
             pi.save()
 
+            if old_substep_state != -11:  # 普通步骤
+                # 组合生成短信消息发送列表
+                message_list = []
+                project = ProjectInfo.objects.get(project_code=project_code)
+                broker_code = ProjectBrokerInfo.objects.get(project_code=project_code).broker_code
+                broker_baseinfo = BrokerBaseinfo.objects.get(broker_code=broker_code)
 
-            # 组合生成短信消息发送列表
-            message_list = []
-            project = ProjectInfo.objects.get(project_code=project_code)
-            broker_code = ProjectBrokerInfo.objects.get(project_code=project_code).broker_code
-            broker_baseinfo = BrokerBaseinfo.objects.get(broker_code=broker_code)
+                if broker_baseinfo != None and broker_baseinfo.broker_mobile != None and broker_baseinfo.broker_mobile != '':
+                    phone = broker_baseinfo.broker_mobile
+                    # 检测电话格式
+                    if ismobile(phone):
+                        message_title = '项目'
+                        message_content = ''
+                        type = '项目'
 
-            if broker_baseinfo != None and broker_baseinfo.broker_mobile != None and broker_baseinfo.broker_mobile != '':
-                phone = broker_baseinfo.broker_mobile
-                # 检测电话格式
-                if ismobile(phone):
-                    message_title = '项目'
-                    message_content = ''
-                    type = '项目'
+                        message_content_unpass = '您发布的{}信息《{}》审核未通过，请登陆平台查看修改。'
+                        message_content_pass = '您发布的{}信息《{}》审核已通过。修改信息需重新审核，请谨慎修改。'
 
-                    message_content_unpass = '您发布的{}信息《{}》审核未通过，请登陆平台查看修改。'
-                    message_content_pass = '您发布的{}信息《{}》审核已通过。修改信息需重新审核，请谨慎修改。'
+                        # 项目审核4步  step_code:主步骤 substep_code:子步骤 substep_serial_type:操作类型
+                        if step_code == 1 and substep_code == 1 and substep_serial_type == 1:
+                            message_title = '项目立项审核通知'
+                            type = '项目立项'
+                            if cstate == 1:
+                                message_content = message_content_pass.format(type,project.project_name)
+                            else:
+                                message_content = message_content_unpass.format(type, project.project_name)
+                        elif step_code == 2 and substep_code == 1 and substep_serial_type == 1:
+                            message_title = '项目上传草本合同审核通知'
+                            type = '项目上传草本合同'
+                            if cstate == 1:
+                                message_content = message_content_pass.format(type,project.project_name)
+                            else:
+                                message_content = message_content_unpass.format(type, project.project_name)
+                        elif step_code == 3 and substep_code == 1 and substep_serial_type == 1:
+                            message_title = '项目上传标书审核通知'
+                            type = '项目上传标书'
+                            if cstate == 1:
+                                message_content = message_content_pass.format(type,project.project_name)
+                            else:
+                                message_content = message_content_unpass.format(type, project.project_name)
+                        elif step_code == 4 and substep_code == 2 and substep_serial_type == 1:
+                            message_title = '项目产品固话审核通知'
+                            type = '项目产品固话'
+                            if cstate == 1:
+                                message_content = message_content_pass.format(type,project.project_name)
+                            else:
+                                message_content = message_content_unpass.format(type, project.project_name)
+                        elif step_code == 0 and substep_code == 0: # 项目终止
+                            message_title = '项目终止审核通知'
+                            type = '项目终止'
+                            if cstate == 1:
+                                message_content = message_content_pass.format(type, project.project_name)
+                            else:
+                                message_content = message_content_unpass.format(type, project.project_name)
 
-                    # 项目审核4步  step_code:主步骤 substep_code:子步骤 substep_serial_type:操作类型
-                    if step_code == 1 and substep_code == 1 and substep_serial_type == 1:
-                        message_title = '项目立项审核通知'
-                        type = '项目立项'
-                        if cstate == 1:
-                            message_content = message_content_pass.format(type,project.project_name)
-                        else:
-                            message_content = message_content_unpass.format(type, project.project_name)
-                    elif step_code == 2 and substep_code == 1 and substep_serial_type == 1:
-                        message_title = '项目上传草本合同审核通知'
-                        type = '项目上传草本合同'
-                        if cstate == 1:
-                            message_content = message_content_pass.format(type,project.project_name)
-                        else:
-                            message_content = message_content_unpass.format(type, project.project_name)
-                    elif step_code == 3 and substep_code == 1 and substep_serial_type == 1:
-                        message_title = '项目上传标书审核通知'
-                        type = '项目上传标书'
-                        if cstate == 1:
-                            message_content = message_content_pass.format(type,project.project_name)
-                        else:
-                            message_content = message_content_unpass.format(type, project.project_name)
-                    elif step_code == 4 and substep_code == 2 and substep_serial_type == 1:
-                        message_title = '项目产品固话审核通知'
-                        type = '项目产品固话'
-                        if cstate == 1:
-                            message_content = message_content_pass.format(type,project.project_name)
-                        else:
-                            message_content = message_content_unpass.format(type, project.project_name)
-                    elif step_code == 0 and substep_code == 0: # 项目终止
-                        message_title = '项目终止审核通知'
-                        type = '项目终止'
-                        if cstate == 1:
-                            message_content = message_content_pass.format(type, project.project_name)
-                        else:
-                            message_content = message_content_unpass.format(type, project.project_name)
+                        message_obj = Message(message_title=message_title,
+                                              message_content=message_content,
+                                              account_code=project.creater,
+                                              state=0,
+                                              send_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                                              sender=request.user.account,
+                                              sms=1,
+                                              sms_state=1,
+                                              sms_phone=phone,
+                                              email=0,
+                                              email_state=0,
+                                              email_account='')
+                        message_list.append(message_obj)
 
-                    message_obj = Message(message_title=message_title,
-                                          message_content=message_content,
-                                          account_code=project.creater,
-                                          state=0,
-                                          send_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                                          sender=request.user.account,
-                                          sms=1,
-                                          sms_state=1,
-                                          sms_phone=phone,
-                                          email=0,
-                                          email_state=0,
-                                          email_account='')
-                    message_list.append(message_obj)
+                        # broker_mobiles = [phone]
 
-                    # broker_mobiles = [phone]
+                        checkstate = 1
+                        if cstate == -1:
+                            checkstate = 0
 
-                    checkstate = 1
-                    if cstate == -1:
-                        checkstate = 0
-
-                    # 发短信给技术经济人
-                    sms_url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/' + str(checkstate) + '/' + phone
-                    sms_data = {
-                        'type': type,
-                        'name': project.project_name,
-                        # 'tel': ','.join(broker_mobiles),
-                    }
-                    # json.dumps(sms_data)
-                    headers = {
-                        "Content-Type": "application/x-www-form-urlencoded",
-                        "Accept": "application/json"
-                    }
-                    # 测试时先不发
-                    # requests.post(sms_url, data=sms_data, headers=headers)
-                    # sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
-                    sms_ret = 1
-                    # 保存短信发送记录
-                    if int(sms_ret) == 1:
-                        Message.objects.bulk_create(message_list)
+                        # 发短信给技术经济人
+                        sms_url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/' + str(checkstate) + '/' + phone
+                        sms_data = {
+                            'type': type,
+                            'name': project.project_name,
+                            # 'tel': ','.join(broker_mobiles),
+                        }
+                        # json.dumps(sms_data)
+                        headers = {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "Accept": "application/json"
+                        }
+                        # 测试时先不发
+                        # requests.post(sms_url, data=sms_data, headers=headers)
+                        # sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
+                        sms_ret = 1
+                        # 保存短信发送记录
+                        if int(sms_ret) == 1:
+                            Message.objects.bulk_create(message_list)
 
             transaction.savepoint_commit(save_id)
         except Exception as e:

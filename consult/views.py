@@ -347,7 +347,7 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
                     #1 生成征询回复记录
                     reply_checkinfo_data = {
                         'reply_code': reply_info.reply_code,
-                        'check_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                        # 'check_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                         'check_memo': checkinfo_data.get('check_memo'),
                         'check_state': check_state,
                         'checker': request.user.account
