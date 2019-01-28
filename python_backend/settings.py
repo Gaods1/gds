@@ -172,6 +172,13 @@ if os.environ.get('DATABASE_DEBUG', None):
         'USER': 'forcar',
         'PASSWORD': 'l0092687dd'
     }
+    redis_setting = {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://:l0092687dd@120.77.58.203:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
 else:
     database_setting = {
         'ENGINE': 'django.db.backends.mysql',
@@ -182,6 +189,14 @@ else:
         'PASSWORD': 'l0092687dd'
     }
 
+    redis_setting = {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://:l0092687dd@127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+
 DATABASES = {
     'default': database_setting
 }
@@ -189,15 +204,7 @@ DATABASES = {
 # redis 数据库默认1号
 
 CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://:l0092687dd@120.77.58.203:6379/1",
-        #"LOCATION": "redis://127.0.0.1:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    },
-
+    "default": redis_setting
 }
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 #SESSION_CACHE_ALIAS = "session"
