@@ -3,6 +3,7 @@ from django.shortcuts import render
 from rest_framework import viewsets
 from rest_framework import filters
 from rest_framework import mixins
+from rest_framework.response import Response
 import django_filters
 from django.db import transaction
 import time
@@ -27,7 +28,7 @@ from public_tools.utils import writeLog
 
 # Create your views here.
 
-class ProjectInfoViewSet(viewsets.ReadOnlyModelViewSet):
+class ProjectInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,viewsets.GenericViewSet):
     '''项目信息'''
     queryset = ProjectInfo.objects.all().order_by('-pserial')
     serializer_class = ProjectInfoSerializer
@@ -108,7 +109,25 @@ class ProjectInfoViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return self.get_paginated_response(serializer.data)
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        data = request.data
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
 
+        # 修改项目的技术经济人
+        broker_code = data['brokers']
+        pbi = ProjectBrokerInfo.objects.get(project_code=instance.project_code)
+        pbi.broker_code = broker_code
+        pbi.save()
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+        # return JsonResponse({"state": 1, "msg": "修改成功"})
 
 
 class ProjectCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,viewsets.GenericViewSet):
@@ -192,7 +211,7 @@ def getProjectByDept(self, request):
 
     # 只要返回空列表我就认为你的部门是一级部门
     dept_codes = get_dept_codes(dept_code)
-    writeLog('yzw_py.log', 'getProjectByDept', sys._getframe().f_code.co_filename, str(sys._getframe().f_lineno))
+    # writeLog('yzw_py.log', 'getProjectByDept', sys._getframe().f_code.co_filename, str(sys._getframe().f_lineno))
 
 
     # 此处可以继续优化，但是数据关系不完整，暂时不做优化
