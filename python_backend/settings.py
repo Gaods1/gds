@@ -166,20 +166,36 @@ WSGI_APPLICATION = 'python_backend.wsgi.application'
 if os.environ.get('DATABASE_DEBUG', None):
     database_setting = {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'PatClub',
-        'HOST': '120.77.58.203',
-        'PORT': 3306,
-        'USER': 'forcar',
-        'PASSWORD': 'l0092687dd'
-    }
-else:
-    database_setting = {
-        'ENGINE': 'django.db.backends.mysql',
         'NAME': 'test_PatClub',
         'HOST': '120.77.58.203',
         'PORT': 3306,
         'USER': 'forcar',
         'PASSWORD': 'l0092687dd'
+    }
+    redis_setting = {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://:l0092687dd@120.77.58.203:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+else:
+    database_setting = {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'PatClub',
+        'HOST': '127.0.0.1',
+        'PORT': 3306,
+        'USER': 'root',
+        'PASSWORD': 'l0092687dd'
+    }
+
+
+    redis_setting = {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://:l0092687dd@127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
     }
 
 DATABASES = {
@@ -189,15 +205,7 @@ DATABASES = {
 # redis 数据库默认1号
 
 CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://:l0092687dd@120.77.58.203:6379/1",
-        #"LOCATION": "redis://127.0.0.1:6379/1",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        }
-    },
-
+    "default": redis_setting
 }
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 #SESSION_CACHE_ALIAS = "session"
