@@ -189,6 +189,7 @@ else:
         'PASSWORD': 'l0092687dd'
     }
 
+
     redis_setting = {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": "redis://:l0092687dd@127.0.0.1:6379/1",

@@ -44,6 +44,15 @@ class RrApplyHistory(models.Model):
         else:
             return None
 
+    @property
+    def opinion(self):
+        opinion = ResultCheckHistory.objects.values_list('opinion', flat=True).filter(apply_code=self.a_code)
+        if opinion:
+            opinion = opinion.order_by('-check_time')[0]
+            return opinion
+        else:
+            return None
+
     class Meta:
         managed = False
         db_table = 'rr_apply_history'
@@ -143,15 +152,6 @@ class RequirementsInfo(models.Model):
     def Keywords(self):
         Keywords = KeywordsInfo.objects.values_list('key_info', flat=True).filter(object_code=self.req_code)
         return Keywords
-
-    @property
-    def opinion(self):
-        a_code = RrApplyHistory.objects.get(rr_code=self.req_code).a_code
-        opinion = ResultCheckHistory.objects.values_list('opinion', flat=True).filter(apply_code=a_code)
-        if opinion:
-            return opinion.order_by('-check_time')[0]
-        else:
-            return None
 
     @property
     def Personal(self):
@@ -268,15 +268,6 @@ class ResultsInfo(models.Model):
     def Keywords(self):
         Keywords = KeywordsInfo.objects.values_list('key_info', flat=True).filter(object_code=self.r_code)
         return Keywords
-
-    @property
-    def opinion(self):
-        a_code = RrApplyHistory.objects.get(rr_code=self.r_code).a_code
-        opinion = ResultCheckHistory.objects.values_list('opinion', flat=True).filter(apply_code=a_code)
-        if opinion:
-            return opinion.order_by('-check_time')[0]
-        else:
-            return None
 
     @property
     def Personal(self):
