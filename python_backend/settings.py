@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 
 import os
 import datetime
+import logging
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -162,9 +163,11 @@ WSGI_APPLICATION = 'python_backend.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
+logger = logging.getLogger('django')
 
 if os.environ.get('DATABASE_DEBUG', None):
-    print(1)
+    a = "找到环境变量#####################################"
+    logger.error(a)
     database_setting = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'test_PatClub',
@@ -181,7 +184,8 @@ if os.environ.get('DATABASE_DEBUG', None):
         }
     }
 else:
-    print(0)
+    a = "未找到环境变量#####################################"
+    logger.error(a)
     database_setting = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'PatClub',
