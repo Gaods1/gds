@@ -97,7 +97,6 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
     cooperation_name = serializers.CharField(read_only=True)
     #owner_type = serializers.CharField(read_only=True)
     Keywords = serializers.ListField(read_only=True)
-    opinion = serializers.CharField(read_only=True)
     Personal = serializers.CharField(read_only=True)
     Enterprise = serializers.CharField(read_only=True)
 
@@ -141,7 +140,6 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
                   'cooperation_name',
                   #'owner_type',
                   'Keywords',
-                  'opinion',
                   'Personal',
                   'Enterprise',
                   ]
@@ -165,7 +163,6 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
     cooperation_name = serializers.CharField(read_only=True)
     #owner_type = serializers.CharField(read_only=True)
     Keywords = serializers.ListField(read_only=True)
-    opinion = serializers.CharField(read_only=True)
     Personal = serializers.CharField(read_only=True)
     Enterprise = serializers.CharField(read_only=True)
 
@@ -211,7 +208,6 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
             'cooperation_name',
             #'owner_type',
             'Keywords',
-            'opinion',
             'Personal',
             'Enterprise',
 
@@ -223,7 +219,7 @@ class RrApplyHistorySerializer(serializers.ModelSerializer):
     apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     Results = ResultsInfoSerializer(read_only=True)
     Requirements = RequirementsInfoSerializer(read_only=True)
-
+    opinion = serializers.CharField(read_only=True)
     class Meta:
         model = RrApplyHistory
         fields = ['serial',
@@ -237,4 +233,5 @@ class RrApplyHistorySerializer(serializers.ModelSerializer):
                   'Results',
                   'Requirements',
                   'apply_time',
+                  'opinion',
                   ]
