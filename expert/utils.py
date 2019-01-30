@@ -37,10 +37,10 @@ def update_or_crete_person(pcode, info):
 def create_enterprise(ecode):
     if ecode:
         try:
-            e = EnterpriseBaseinfo.objects.values_list('ecode', flat=True).get(Q(ecode=ecode) | Q(ename=ecode))
+            e_code = EnterpriseBaseinfo.objects.values_list('ecode', flat=True).get(Q(ecode=ecode) | Q(ename=ecode))
         except Exception as e:
-            e = EnterpriseBaseinfo.objects.create(ename=ecode).ecode
-        return e
+            e_code = EnterpriseBaseinfo.objects.create(ename=ecode).ecode
+        return e_code
     return None
 
 
