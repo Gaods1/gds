@@ -2801,16 +2801,13 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                     elif check_state == 3: #审核未通过 不允许删除
                         baseinfo_state = apply_team_baseinfo.team_baseinfo.state
 
-                if apply_team_baseinfo.team_baseinfo.pt_type == 0:
-                    ecode = apply_team_baseinfo.team_baseinfo.ecode
+                ecode = apply_team_baseinfo.team_baseinfo.ecode
 
-                    if check_state == 2:
-                        ecode = update_or_crete_enterprise(ecode,
-                                                           {'ename':apply_team_baseinfo.team_baseinfo.comp_name,
-                                                            'business_license':apply_team_baseinfo.team_baseinfo.owner_license,
-                                                            'account_code':apply_team_baseinfo.team_baseinfo.account_code})
-                else:
-                    ecode = None
+                if check_state == 2:
+                    ecode = update_or_crete_enterprise(ecode,
+                                                       {'ename':apply_team_baseinfo.team_baseinfo.comp_name,
+                                                        'business_license':apply_team_baseinfo.team_baseinfo.owner_license,
+                                                        'account_code':apply_team_baseinfo.team_baseinfo.account_code})
 
                 # 2 更新project_team_baseinfo表状态
                 ProjectTeamBaseinfo.objects.filter(
