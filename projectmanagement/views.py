@@ -1,9 +1,12 @@
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
+
 from rest_framework import viewsets
 from rest_framework import filters
 from rest_framework import mixins
 from rest_framework.response import Response
+from rest_framework import status, permissions
+
 import django_filters
 from django.db import transaction
 import time
@@ -25,12 +28,11 @@ from .utils import *
 from public_tools.utils import writeLog
 
 
-
 # Create your views here.
 
 class ProjectInfoViewSet(viewsets.ModelViewSet):
     '''项目信息'''
-    queryset = ProjectInfo.objects.all().order_by('-pserial')
+    queryset = ProjectInfo.objects.filter(~Q(state=-99)).order_by('-pserial')
     serializer_class = ProjectInfoSerializer
     filter_backends = (
         filters.SearchFilter,
@@ -127,8 +129,20 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
             instance._prefetched_objects_cache = {}
 
         return Response(serializer.data)
-        # return JsonResponse({"state": 1, "msg": "修改成功"})
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        # ProjectInfo.objects.filter(project_code=instance.project_code).delete()
+        # self.perform_destroy(instance)
+        pro = ProjectInfo.objects.get(project_code=instance.project_code)
+        pro.state = -99
+        pro.save()
+        psi = ProjectStepInfo.objects.filter(project_code=instance.project_code).order_by('-p_serial')[0]
+        step_msg = request.user.account + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + '后台删除项目'
+        psi.step_msg = step_msg
+        psi.save()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class ProjectCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,viewsets.GenericViewSet):
     """
@@ -171,7 +185,7 @@ class ProjectCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,view
     ==================================================
     """
 
-    queryset = ProjectInfo.objects.all().order_by('-pserial')
+    queryset = ProjectInfo.objects.filter(~Q(state=-99)).order_by('-pserial')
     serializer_class = ProjectInfoSerializer
     filter_backends = (
         filters.SearchFilter,

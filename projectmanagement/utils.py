@@ -52,22 +52,29 @@ def move_project_file(project_code,step_code,substep_code,substep_serial):
             psfi.state = 1
             psfi.save()
 
-            # 移动附件
-            filename = psfi.filename
+            # fileformat为0的我会有源文件也有pdf
 
-            # 将临时文件转为正式文件
-            url_j_c = '{}{}'.format(oldpath, filename)
-            if os.path.exists(url_j_c):
+            # 移动附件 数据表中记录的附件  可能还有其它附件
 
-                # 更新绝对路径并转移文件
-                url_x = newpath
-                if not os.path.exists(url_x):
-                    os.makedirs(url_x)
-                url_x = url_x + filename
-                shutil.move(url_j_c, url_x)
+            # filename = psfi.filename
+            # # 将临时文件转为正式文件
+            # url_j_c = '{}{}'.format(oldpath, filename)
+            # if os.path.exists(url_j_c):
+            #
+            #     # 更新绝对路径并转移文件
+            #     url_x = newpath
+            #     if not os.path.exists(url_x):
+            #         os.makedirs(url_x)
+            #     url_x = url_x + filename
+            #     shutil.move(url_j_c, url_x)
 
-        # 所有文件移动完成后删除临时目录c
-        os.rmdir(oldpath)
+            if os.listdir(oldpath):
+                # 移动文件(目录)
+                shutil.move(oldpath, newpath)
+
+        if os.path.exists(oldpath):
+            # 所有文件移动完成后删除临时目录c
+            shutil.rmtree(oldpath)
 
 
 
