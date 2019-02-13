@@ -3,7 +3,7 @@ import re
 
 from account.models import AccountInfo
 from misc.misc import gen_uuid32, genearteMD5
-from _mysql_exceptions import DatabaseError
+#from _mysql_exceptions import DatabaseError
 
 from django.http import HttpResponse
 
