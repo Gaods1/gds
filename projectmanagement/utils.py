@@ -28,7 +28,7 @@ def move_project_file(project_code,step_code,substep_code,substep_serial):
                                       substep_code) + substep_serial + '/'
     # 正式文件
     newpath = '{}{}/{}/{}/{}/'.format(relative_path, 'project', project_code, step_code,
-                                      substep_code)
+                                      substep_code) + substep_serial + '/'
 
     # # 临时文件
     # oldpath = '/Users/yzw{}{}/{}/{}/{}/'.format(absolute_path, 'project', project_code, step_code,
