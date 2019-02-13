@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from expert.models import *
 from achievement.models import *
 from consult.models import *
-import requests,json,math,csv,time,random,os,execjs,csv
+import requests,json,math,csv,time,random,os,csv
 from bs4 import BeautifulSoup
 from index.models import *
 from achievement.models import *

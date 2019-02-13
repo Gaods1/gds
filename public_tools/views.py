@@ -73,7 +73,7 @@ class PublicInfo(APIView,FileSystemStorage):
                         # 上传服务器
                         url = a._save(url,file)
                         # 判断如果是office文件
-                        if url.endswith('doc') or url.endswith('xls'):
+                        if url.endswith('doc') or url.endswith('xls') or url.endswith('xlsx') or url.endswith('docx'):
                             # 转换office文件为pdf文件
                             child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + settings.MEDIA_ROOT + ' ' + url, stdout=subprocess.PIPE, shell=True)
                             # 拼接转换pdf后的路径
@@ -85,10 +85,10 @@ class PublicInfo(APIView,FileSystemStorage):
 
                         u_z = url.split('/')[-1]
                         url_front = settings.media_root_front + u_z
-                        if url.endswith('jpg'):
-                            pdf_and_jpg.append(url_front)
-                        else:
+                        if url.endswith('doc') or url.endswith('xls') or url.endswith('xlsx') or url.endswith('docx'):
                             doc_and_xls.append(url_front)
+                        else:
+                            pdf_and_jpg.append(url_front)
 
 
                 except Exception as e:
@@ -113,23 +113,25 @@ class PublicInfo(APIView,FileSystemStorage):
                         if not os.path.exists(url):
                             os.makedirs(url)
                         url = url + file.name
+                        if not url.endswith('jpg') or not url.endswith('png') or not url.endswith('jpeg') or not url.endswith('bmp') or not url.endswith('gif'):
+                            return HttpResponse('请上传图片类型')
                         # 创建对象
                         a = FileSystemStorage()
                         # 上传服务器
                         url = a._save(url, file)
                         # 判断如果是office文件
-                        if url.endswith('doc') or url.endswith('xls'):
+                        #if url.endswith('doc') or url.endswith('xls') or url.endswith('xlsx') or url.endswith('docx'):
 
                             # 转换office文件为pdf文件
-                            child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + settings.MEDIA_ROOT + ' ' + url, stdout=subprocess.PIPE,shell=True)
+                            #child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + settings.MEDIA_ROOT + ' ' + url, stdout=subprocess.PIPE,shell=True)
                             # 拼接转换pdf后的路径
-                            url_pdf = os.path.splitext(url)[0] + '.pdf'
+                            #url_pdf = os.path.splitext(url)[0] + '.pdf'
                             # 给前端抛出pdf路径
-                            u_z = url_pdf.split('/')[-1]
-                            pdf = settings.media_root_front + u_z
-                            dict[flag] = pdf
+                            #u_z = url_pdf.split('/')[-1]
+                            #pdf = settings.media_root_front + u_z
+                            #dict[flag] = pdf
 
-                        # 给前端抛出office文件路径
+                        # 给前端抛出文件路径
                         u_z = url.split('/')[-1]
                         jpg = settings.media_root_front + u_z
                         dict[flag] = jpg
@@ -166,6 +168,7 @@ class PublicInfo(APIView,FileSystemStorage):
                     a = FileSystemStorage()
                     # 删除
                     a.delete(url)
+
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('上传失败' % str(e))
