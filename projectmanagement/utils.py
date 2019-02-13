@@ -28,7 +28,7 @@ def move_project_file(project_code,step_code,substep_code,substep_serial):
                                       substep_code) + substep_serial + '/'
     # 正式文件
     newpath = '{}{}/{}/{}/{}/'.format(relative_path, 'project', project_code, step_code,
-                                      substep_code) + substep_serial + '/'
+                                      substep_code)
 
     # # 临时文件
     # oldpath = '/Users/yzw{}{}/{}/{}/{}/'.format(absolute_path, 'project', project_code, step_code,
@@ -68,13 +68,13 @@ def move_project_file(project_code,step_code,substep_code,substep_serial):
             #     url_x = url_x + filename
             #     shutil.move(url_j_c, url_x)
 
-            if os.listdir(oldpath):
-                # 移动文件(目录)
-                shutil.move(oldpath, newpath)
+        if os.listdir(oldpath):
+            # 移动文件(目录)
+            shutil.move(oldpath, newpath)
 
-        if os.path.exists(oldpath):
+        # if os.path.exists(oldpath):
             # 所有文件移动完成后删除临时目录c
-            shutil.rmtree(oldpath)
+            # shutil.rmtree(oldpath)
 
 
 
