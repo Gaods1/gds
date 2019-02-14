@@ -742,6 +742,14 @@ class TeamApplyHistory(models.Model):
         team_baseinfo = ProjectTeamBaseinfo.objects.get(pt_code=self.team_code)
         return team_baseinfo
 
+    @property
+    def opinion(self):
+        history = TeamCheckHistory.objects.filter(apply_code=self.apply_code)
+        opinion = None
+        if history:
+            opinion = history.order_by('-check_time')[0].opinion
+        return opinion
+
     class Meta:
         managed = False
         db_table = 'team_apply_history'
