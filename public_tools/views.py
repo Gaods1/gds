@@ -193,12 +193,12 @@ class PublicInfo(APIView,FileSystemStorage):
                         transaction.savepoint_rollback(save_id)
                         return HttpResponse('该正式路径下不存在该文件')
                     # 创建对象
-                    a = FileSystemStorage()
+                    #a = FileSystemStorage()
                     # 删除文件
-                    a.delete(url)
+                    #a.delete(url)
                     # 删除表记录
-                    #b = AttachmentFileinfo.objects.filter(file_name=name).order_by('-insert_time')[0]
-                    #b.delete()
+                    b = AttachmentFileinfo.objects.filter(file_name=name).order_by('-insert_time')[0]
+                    b.delete()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('删除失败' % str(e))
