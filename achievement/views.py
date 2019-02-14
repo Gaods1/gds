@@ -1369,7 +1369,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 state=state, r_type=1)
 
                 # 4 更新关键字表
-                KeywordsInfo.objects.filter(rr_code=serializer_ecode).update(key_type=1,
+                KeywordsInfo.objects.filter(object_code=serializer_ecode).update(key_type=1,
                 key_info=key_info, state=state, creater=request.user.account)
 
                 #5 更新新纪录
@@ -1397,7 +1397,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     if not os.path.exists(url_x_a):
                         os.makedirs(url_x_a)
                     if not os.path.exists(url_x_c):
-                        os.makedirs(url_x_a)
+                        os.makedirs(url_x_c)
 
                     if single_dict and len(single_dict) == 1:
                         # 封面
