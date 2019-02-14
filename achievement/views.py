@@ -1240,9 +1240,9 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode_coverImg, serializer_ecode)
 
                 if not os.path.exists(url_x_a):
-                    os.mkdir(url_x_a)
+                    os.makedirs(url_x_a)
                 if not os.path.exists(url_x_c):
-                    os.mkdir(url_x_a)
+                    os.makedirs(url_x_c)
 
                 dict = {}
                 list1 = []
