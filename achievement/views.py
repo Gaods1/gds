@@ -1169,11 +1169,25 @@ class ManagementpViewSet(viewsets.ModelViewSet):
             save_id = transaction.savepoint()
             try:
                 data = request.data
+                # 图片
                 single_dict = request.data.pop('single', None)
+                # 附件
                 attachment_list = request.data.pop('attachment', None)
+                # 所属领域表
                 mcode_list = request.data.pop('mcode',None)
+                # 成果/需求合作方式信息表
+                cooperation_code = request.data.pop('cooperation_code', None)
+                # 成果持有人信息表
+                main_owner = request.data.pop('main_owner', None)
+                owner_type = request.data.pop('owner_type', None)
+                # 关键字表
+                key_info = request.data.pop('key_info', None)
+                # 个人基本信息表或者企业基本信息表
+                pcode_or_ecode = request.data.pop('pcode_or_ecode', None)
+                # 激活状态
+                state = request.data.get('state', None)
 
-                if not mcode_list:
+                if not mcode_list or not cooperation_code or not main_owner or not owner_type or not key_info or not pcode_or_ecode:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('请完善相关信息')
 
@@ -1185,199 +1199,36 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('封面只能上传一张')
 
-                # 1 创建需求
-                obtain_type = request.data['obtain_type']
-                owner_type = request.data['owner_type']
+                #1 创建resultsinfo表
+                data['creater'] = request.user.account
+                serializer = self.get_serializer(data=data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
 
-                # 如果是采集员
-                if obtain_type == 1:
-                    # 个人或者团队
-                    if owner_type in [1, 3]:
-                        #personalinfo表
-                        pid = request.data.pop('pid', None)
-                        pname = request.data.pop('pname', None)
-                        psex = request.data.pop('psex', None)
-                        pid_type = request.data.pop('pid_type', None)
-                        pmobile = request.data.pop('pmobile', None)
-                        ptel = request.data.pop('ptel', None)
-                        pemail = request.data.pop('pemail', None)
-                        peducation = request.data.pop('peducation', None)
-                        pabstract = request.data.pop('pabstract', None)
-                        account_code = request.data.pop('account_code', None)
+                serializer_ecode = serializer.data['r_code']
 
-                        #成果/需求合作方式信息表
-                        r_type = request.data.pop('r_type', None)
-                        cooperation_code = request.data.pop('cooperation_code', None)
-                        cooperation_name = request.data.pop('cooperation_name', None)
+                #2 创建合作方式表
+                dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
+                ResultsCooperationTypeInfo.objects.create(r_type=1,
+                rr_code=serializer_ecode, cooperation_code=cooperation_code,
+                cooperation_name=dict_coop[cooperation_code], state=state)
 
-                        #成果持有人信息表
-                        main_owner = request.data.pop('main_owner', None)
+                #3 创建持有人信息表
+                ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
+                owner_type=owner_type, owner_code=pcode_or_ecode, main_owner=main_owner,
+                state=state, r_type=1)
 
-                        #关键字表
-                        key_info = request.data.pop('key_info', None)
+                #4 创建关键字表
+                KeywordsInfo.objects.create(key_type=1, object_code=serializer_ecode,
+                key_info=key_info, state=state, creater=request.user.account)
 
-                        pcode_list = PersonalInfo.objects.filter(pid=pid)
-
-                        #判断是否存在personalinfo表
-                        if pcode_list:
-                            pcode = pcode_list[0]
-
-                            #创建resultsinfo表
-                            data['creater'] = request.user.account
-                            serializer = self.get_serializer(data=data)
-                            serializer.is_valid(raise_exception=True)
-                            self.perform_create(serializer)
-
-                            serializer_ecode = serializer.data['r_code']
-
-                            #创建合作方式表
-                            ResultsCooperationTypeInfo.objects.create(r_type=r_type,
-                            rr_code=serializer_ecode,cooperation_code=cooperation_code,
-                            cooperation_name=cooperation_name,state=1)
-
-                            #创建持有人信息表
-                            ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
-                            owner_type=owner_type,owner_code=pcode,main_owner=main_owner,
-                            state=1,r_type=r_type)
-
-                            #创建关键字表
-                            KeywordsInfo.objects.create(key_type=r_type,object_code=serializer_ecode,
-                            key_info=key_info,state=1,creater=request.user.account)
-
-                        else:
-                            #创建personalinfo表
-                            pcode_element = PersonalInfo.objects.create(pid=pid,pname=pname,psex=psex,
-                            pid_type=pid_type,pmobile=pmobile,ptel=ptel,pemail=pemail,
-                            peducation=peducation,pabstract=pabstract,state=2,creater
-                            =request.user.account,account_code=account_code)
-                            pcode = pcode_element.pcode
-
-                            #创建resultsinfo表
-                            data['creater'] = request.user.account
-                            serializer = self.get_serializer(data=data)
-                            serializer.is_valid(raise_exception=True)
-                            self.perform_create(serializer)
-
-                            serializer_ecode = serializer.data['r_code']
-
-                            # 创建合作方式表
-                            ResultsCooperationTypeInfo.objects.create(r_type=r_type,
-                            rr_code=serializer_ecode,
-                            cooperation_code=cooperation_code,
-                            cooperation_name=cooperation_name, state=1)
-
-                            # 创建持有人信息表
-                            ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
-                            owner_type=owner_type, owner_code=pcode,
-                            main_owner=main_owner,
-                            state=1, r_type=r_type)
-
-                            # 创建关键字表
-                            KeywordsInfo.objects.create(key_type=r_type, object_code=serializer_ecode,
-                            key_info=key_info, state=1, creater=request.user.account)
-
-                    # 企业的情况
-                    else:
-                        manager_id = request.data.pop('manager_id', None)
-
-                        # 判断是否存在enterpriseinfo表
-                        ecode_list = EnterpriseBaseinfo.objects.filter(manager_id=manager_id)
-                        if ecode_list:
-                            ecode = ecode_list[0]
-
-                            #创建resultsinfo表
-                            data['creater'] = request.user.account
-                            serializer = self.get_serializer(data=data)
-                            serializer.is_valid(raise_exception=True)
-                            self.perform_create(serializer)
-
-                            serializer_ecode = serializer.data['r_code']
-
-                        else:
-
-                            EnterpriseBaseinfo.objects.create()
-
-                            #创建resultsinfo表
-                            data['creater'] = request.user.account
-                            serializer = self.get_serializer(data=data)
-                            serializer.is_valid(raise_exception=True)
-                            self.perform_create(serializer)
-
-                            serializer_ecode = serializer.data['r_code']
-
-                else:
-                    # 个人或者团队
-                    if owner_type in [1, 3]:
-                        # personalinfo表
-                        pid = request.data.pop('pid', None)
-                        pname = request.data.pop('pname', None)
-                        psex = request.data.pop('psex', None)
-                        pid_type = request.data.pop('pid_type', None)
-                        pmobile = request.data.pop('pmobile', None)
-                        ptel = request.data.pop('ptel', None)
-                        pemail = request.data.pop('pemail', None)
-                        peducation = request.data.pop('peducation', None)
-                        pabstract = request.data.pop('pabstract', None)
-                        account_code = request.data.pop('account_code', None)
-
-                        # 成果/需求合作方式信息表
-                        r_type = request.data.pop('r_type', None)
-                        cooperation_code = request.data.pop('cooperation_code', None)
-                        cooperation_name = request.data.pop('cooperation_name', None)
-
-                        # 成果持有人信息表
-                        main_owner = request.data.pop('main_owner', None)
-
-                        # 关键字表
-                        key_info = request.data.pop('key_info', None)
-
-                        pcode = PersonalInfo.objects.get(pid=pid).pcode
-
-                        # 创建resultsinfo表
-                        data['creater'] = request.user.account
-                        serializer = self.get_serializer(data=data)
-                        serializer.is_valid(raise_exception=True)
-                        self.perform_create(serializer)
-
-                        serializer_ecode = serializer.data['r_code']
-
-                        # 创建合作方式表
-                        ResultsCooperationTypeInfo.objects.create(r_type=r_type,
-                        rr_code=serializer_ecode,
-                        cooperation_code=cooperation_code,
-                        cooperation_name=cooperation_name, state=1)
-
-                        # 创建持有人信息表
-                        ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
-                        owner_type=owner_type, owner_code=pcode, main_owner=main_owner,
-                        state=1, r_type=r_type)
-
-                        # 创建关键字表
-                        KeywordsInfo.objects.create(key_type=r_type, object_code=serializer_ecode,
-                        key_info=key_info, state=1, creater=request.user.account)
-
-
-                    # 企业的情况
-                    else:
-                        manager_id = request.data.pop('manager_id', None)
-                        ecode = EnterpriseBaseinfo.objects.get(manager_id=manager_id).ecode
-
-                        # 创建resultsinfo表
-                        data['creater'] = request.user.account
-                        serializer = self.get_serializer(data=data)
-                        serializer.is_valid(raise_exception=True)
-                        self.perform_create(serializer)
-
-                        serializer_ecode = serializer.data['r_code']
-
-
-                # 2 创建所属领域
+                #5 创建所属领域
                 major_list = []
                 for mcode in mcode_list:
                     major_list.append(MajorUserinfo(mcode=mcode,user_type=4,user_code=serializer_ecode,mtype=2))
                 MajorUserinfo.objects.bulk_create(major_list)
 
-                # 3 转移附件创建ecode表
+                #6 转移附件创建ecode表
                 absolute_path = ParamInfo.objects.get(param_code=1).param_value
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
                 relative_path_front = ParamInfo.objects.get(param_code=4).param_value
@@ -1438,9 +1289,9 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     url_x_f = url_x.replace(relative_path, relative_path_front)
                     list2.append(url_x_f)
 
-                    if not url_file.endswith('pdf'):
-                        path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                        list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,operation_state=3, state=1))
+
+                    path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                    list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,operation_state=3, state=1))
 
                     # 将临时目录转移到正式目录
                     shutil.move(url_j, url_x)
@@ -1475,115 +1326,29 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 serializer_ecode = instance.r_code
 
                 data = request.data
+                # 图片
                 single_dict = request.data.pop('single', None)
+                # 附件
                 attachment_list = request.data.pop('attachment', None)
+                # 所属领域
                 mcode_list = request.data.pop('mcode',None)
+                # 成果/需求合作方式信息表
+                cooperation_code = request.data.pop('cooperation_code', None)
+                # 成果持有人信息表
+                main_owner = request.data.pop('main_owner', None)
+                owner_type = request.data.pop('owner_type', None)
+                # 关键字表
+                key_info = request.data.pop('key_info', None)
+                # 个人基本信息表或者企业基本信息表
+                pcode_or_ecode = request.data.pop('pcode_or_ecode', None)
+                # 激活状态
+                state = request.data.get('state', None)
 
-                if not mcode_list:
+                if not mcode_list or not cooperation_code or not main_owner or not owner_type or not key_info or not pcode_or_ecode:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('请完善相关信息')
 
-                if not single_dict or not attachment_list:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请先上传相关文件')
-
-                if len(single_dict) != 1:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('封面只能上传一张')
-
-                # 1 删除原有记录
-                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
-
-                # 2 创建新纪录
-                major_list = []
-                for mcode in mcode_list:
-                    major_list.append(MajorUserinfo(mcode=mcode, user_type=4, user_code=serializer_ecode, mtype=2))
-                MajorUserinfo.objects.bulk_create(major_list)
-
-                # 3 转移附件创建ecode表
-                absolute_path = ParamInfo.objects.get(param_code=1).param_value
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-                tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
-                tcode_coverImg = AttachmentFileType.objects.get(tname='coverImg').tcode
-                param_value = ParamInfo.objects.get(param_code=6).param_value
-
-                url_x_a = '{}{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode)
-                url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode_coverImg, serializer_ecode)
-
-                if not os.path.exists(url_x_a):
-                    os.makedirs(url_x_a)
-                if not os.path.exists(url_x_c):
-                    os.makedirs(url_x_a)
-
-                dict = {}
-                list1 = []
-                list2 = []
-
-                # 封面
-                for key, value in single_dict.items():
-
-                    if key != 'coverImg':
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('封面代名不正确')
-
-                    url_l = value.split('/')
-                    url_file = url_l[-1]
-
-                    url_j = settings.MEDIA_ROOT + url_file
-                    if not os.path.exists(url_j):
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
-
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, single_dict, serializer_ecode, url_file)
-
-                    # 拼接给前端的的地址
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
-
-                    # 拼接ecode表中的path
-                    path = '{}/{}/{}/'.format(param_value, single_dict, serializer_ecode)
-
-                    list1.append(
-                        AttachmentFileinfo(tcode=single_dict, ecode=serializer_ecode, file_name=url_file, path=path,
-                                           operation_state=3, state=1))
-
-                    # 将临时目录转移到正式目录
-                    shutil.move(url_j, url_x)
-
-                for attachment in attachment_list:
-                    url_l = attachment.split('/')
-                    url_file = url_l[-1]
-
-                    url_j = settings.MEDIA_ROOT + url_file
-                    if not os.path.exists(url_j):
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
-
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode,
-                                                   url_file)
-
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
-
-                    if not url_file.endswith('pdf'):
-                        path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                        list1.append(
-                            AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file,
-                                               path=path,operation_state=3, state=1))
-
-                    # 将临时目录转移到正式目录
-                    shutil.move(url_j, url_x)
-
-                # 创建atachmentinfo表
-                AttachmentFileinfo.objects.bulk_create(list1)
-
-                # 删除临时目录
-                shutil.rmtree(settings.MEDIA_ROOT,ignore_errors=True)
-
-                # 给前端抛正式目录
-                dict['url'] = list2
-
+                #1 更新resultsinfo表
                 serializer = self.get_serializer(instance, data=request.data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
@@ -1592,6 +1357,114 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     # If 'prefetch_related' has been applied to a queryset, we need to
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
+
+                # 2 更新合作方式表
+                dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
+                ResultsCooperationTypeInfo.objects.filter(rr_code=serializer_ecode).update(r_type=1,
+                cooperation_code=cooperation_code,cooperation_name=dict_coop[cooperation_code], state=state)
+
+                # 3 更新持有人信息表
+                ResultsOwnerInfo.objects.filter(r_code=serializer_ecode).update(
+                owner_type=owner_type, owner_code=pcode_or_ecode,main_owner=main_owner,
+                state=state, r_type=1)
+
+                # 4 更新关键字表
+                KeywordsInfo.objects.filter(rr_code=serializer_ecode).update(key_type=1,
+                key_info=key_info, state=state, creater=request.user.account)
+
+                #5 更新新纪录
+                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
+                major_list = []
+                for mcode in mcode_list:
+                    major_list.append(MajorUserinfo(mcode=mcode, user_type=4, user_code=serializer_ecode, mtype=2))
+                MajorUserinfo.objects.bulk_create(major_list)
+
+                dict = {}
+                list1 = []
+                list2 = []
+                if single_dict or attachment_list:
+                    #6 转移附件创建ecode表
+                    absolute_path = ParamInfo.objects.get(param_code=1).param_value
+                    relative_path = ParamInfo.objects.get(param_code=2).param_value
+                    relative_path_front = ParamInfo.objects.get(param_code=4).param_value
+                    tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
+                    tcode_coverImg = AttachmentFileType.objects.get(tname='coverImg').tcode
+                    param_value = ParamInfo.objects.get(param_code=6).param_value
+
+                    url_x_a = '{}{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode)
+                    url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode_coverImg, serializer_ecode)
+
+                    if not os.path.exists(url_x_a):
+                        os.makedirs(url_x_a)
+                    if not os.path.exists(url_x_c):
+                        os.makedirs(url_x_a)
+
+                    if single_dict and len(single_dict) == 1:
+                        # 封面
+                        for key, value in single_dict.items():
+
+                            if key != 'coverImg':
+                                transaction.savepoint_rollback(save_id)
+                                return HttpResponse('封面代名不正确')
+
+                            url_l = value.split('/')
+                            url_file = url_l[-1]
+
+                            url_j = settings.MEDIA_ROOT + url_file
+                            if not os.path.exists(url_j):
+                                transaction.savepoint_rollback(save_id)
+                                return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
+
+                            url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_coverImg, serializer_ecode, url_file)
+
+                            # 拼接给前端的的地址
+                            url_x_f = url_x.replace(relative_path, relative_path_front)
+                            list2.append(url_x_f)
+
+                            # 拼接ecode表中的path
+                            path = '{}/{}/{}/'.format(param_value, tcode_coverImg, serializer_ecode)
+
+                            list1.append(
+                                AttachmentFileinfo(tcode=tcode_coverImg, ecode=serializer_ecode, file_name=url_file, path=path,
+                                                   operation_state=3, state=1))
+
+                            # 将临时目录转移到正式目录
+                            shutil.move(url_j, url_x)
+
+                        if attachment_list:
+
+                            for attachment in attachment_list:
+                                url_l = attachment.split('/')
+                                url_file = url_l[-1]
+
+                                url_j = settings.MEDIA_ROOT + url_file
+                                if not os.path.exists(url_j):
+                                    transaction.savepoint_rollback(save_id)
+                                    return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
+
+                                url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode,
+                                                               url_file)
+
+                                url_x_f = url_x.replace(relative_path, relative_path_front)
+                                list2.append(url_x_f)
+
+
+                                path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                                list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file,
+                                path=path,operation_state=3, state=1))
+
+                                # 将临时目录转移到正式目录
+                                shutil.move(url_j, url_x)
+
+                    # 创建atachmentinfo表
+                    AttachmentFileinfo.objects.bulk_create(list1)
+
+                    # 删除临时目录
+                    shutil.rmtree(settings.MEDIA_ROOT,ignore_errors=True)
+
+                    # 给前端抛正式目录
+                    dict['url'] = list2
+
             except Exception as e:
                 transaction.savepoint_rollback(save_id)
                 return HttpResponse('更新失败%s' % str(e))
@@ -1606,10 +1479,17 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 instance = self.get_object()
                 serializer_ecode = instance.r_code
 
-                # 1 删除所属领域表记录
+                #1 删除resultsinfo表
+                self.perform_destroy(instance)
+                # 2 删除合作方式表
+                ResultsCooperationTypeInfo.objects.filer(rr_code=serializer_ecode).delete()
+                # 3 删除成果持有人表
+                ResultsOwnerInfo.objects.filer(r_code=serializer_ecode).delete()
+                # 4 删关键字表
+                KeywordsInfo.objects.filer(object_code=serializer_ecode).delete()
+                # 5 删除所属领域表记录
                 MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
-
-                # 2 删除文件以及ecode表记录
+                # 6 删除文件以及ecode表记录
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
                 obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
                 if obj:
@@ -1626,7 +1506,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         transaction.savepoint_rollback(save_id)
                         return HttpResponse('删除失败' % str(e))
 
-                self.perform_destroy(instance)
+
             except Exception as e:
                 transaction.savepoint_rollback(save_id)
                 return HttpResponse('删除失败%s' % str(e))

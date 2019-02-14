@@ -113,7 +113,7 @@ class PublicInfo(APIView,FileSystemStorage):
                         if not os.path.exists(url):
                             os.makedirs(url)
                         url = url + file.name
-                        if not url.endswith('jpg') or not url.endswith('png') or not url.endswith('jpeg') or not url.endswith('bmp') or not url.endswith('gif'):
+                        if not url.endswith('jpg') and not url.endswith('png') and not url.endswith('jpeg') and not url.endswith('bmp') and not url.endswith('gif'):
                             return HttpResponse('请上传图片类型')
                         # 创建对象
                         a = FileSystemStorage()
