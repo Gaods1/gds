@@ -1179,13 +1179,13 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 cooperation_code = request.data.pop('cooperation_code', None)
                 # 成果持有人信息表
                 main_owner = request.data.pop('main_owner', None)
-                owner_type = request.data.pop('owner_type', None)
+                owner_type = request.data.get('owner_type', None)
                 # 关键字表
                 key_info = request.data.pop('key_info', None)
                 # 个人基本信息表或者企业基本信息表
                 pcode_or_ecode = request.data.pop('pcode_or_ecode', None)
                 # 激活状态
-                state = request.data.get('state', None)
+                state = request.data.get('show_state', None)
 
                 if not mcode_list or not cooperation_code or not main_owner or not owner_type or not key_info or not pcode_or_ecode:
                     transaction.savepoint_rollback(save_id)
@@ -1242,7 +1242,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 if not os.path.exists(url_x_a):
                     os.makedirs(url_x_a)
                 if not os.path.exists(url_x_c):
-                    os.makedirs(url_x_a)
+                    os.makedirs(url_x_c)
 
                 dict = {}
                 list1 = []
@@ -1336,7 +1336,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 cooperation_code = request.data.pop('cooperation_code', None)
                 # 成果持有人信息表
                 main_owner = request.data.pop('main_owner', None)
-                owner_type = request.data.pop('owner_type', None)
+                owner_type = request.data.get('owner_type', None)
                 # 关键字表
                 key_info = request.data.pop('key_info', None)
                 # 个人基本信息表或者企业基本信息表
