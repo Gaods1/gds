@@ -171,7 +171,7 @@ class PublicInfo(APIView,FileSystemStorage):
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('上传失败' % str(e))
+                    return HttpResponse('删除失败' % str(e))
 
                 transaction.savepoint_commit(save_id)
                 return HttpResponse('ok')
@@ -197,11 +197,11 @@ class PublicInfo(APIView,FileSystemStorage):
                     # 删除文件
                     a.delete(url)
                     # 删除表记录
-                    b = AttachmentFileinfo.objects.filter(file_name=name).order_by('-insert_time')[0]
-                    b.delete()
+                    #b = AttachmentFileinfo.objects.filter(file_name=name).order_by('-insert_time')[0]
+                    #b.delete()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('上传失败' % str(e))
+                    return HttpResponse('删除失败' % str(e))
                 transaction.savepoint_commit(save_id)
                 return HttpResponse('ok')
 
