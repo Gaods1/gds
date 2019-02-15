@@ -183,7 +183,7 @@ class PublicInfo(APIView,FileSystemStorage):
                 try:
                     # 拼接地址
                     path = AttachmentFileinfo.objects.filter(file_name=name).order_by('-insert_time')[0].path
-                    url = settings.MEDIA_ROOT + path + name
+                    url = settings.MEDIA_ROOT + 'uploads/' + path + name
                     # 判断该路径下是否有该文件
                     if not os.path.exists(url):
                         transaction.savepoint_rollback(save_id)

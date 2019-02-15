@@ -1497,7 +1497,9 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 if obj:
                     try:
                         for i in obj:
-                            url = '{}{}{}'.format(settings.MEDIA_ROOT, i.path, i.file_name)
+                            url = settings.MEDIA_ROOT
+                            url = url + 'uploads/'
+                            url = '{}{}{}'.format(url, i.path, i.file_name)
                             # 创建对象
                             a = FileSystemStorage()
                             # 删除文件
