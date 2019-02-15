@@ -1445,7 +1445,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                                 url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode,
                                                                url_file)
 
-                                if not os.path.exists(url_x):
+                                if not os.path.isfile(url_x):
 
                                     url_x_f = url_x.replace(relative_path, relative_path_front)
                                     list2.append(url_x_f)
