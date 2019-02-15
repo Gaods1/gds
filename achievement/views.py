@@ -1491,6 +1491,9 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
                 # 6 删除文件以及ecode表记录
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
+                tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
+                tcode_coverImg = AttachmentFileType.objects.get(tname='coverImg').tcode
+                param_value = ParamInfo.objects.get(param_code=6).param_value
                 obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
                 if obj:
                     try:
@@ -1504,11 +1507,15 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             a.delete(url)
                             # 删除表记录
                             i.delete()
+                        url_att = '{}{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode)
+                        if os.path.exists(url_att):
+                            shutil.rmtree(url_att,ignore_errors=True)
+                        url_cov = '{}{}/{}/{}'.format(relative_path, param_value, tcode_coverImg, serializer_ecode)
+                        if os.path.exists(url_cov):
+                            shutil.rmtree(url_cov,ignore_errors=True)
                     except Exception as e:
                         transaction.savepoint_rollback(save_id)
-                        return HttpResponse('删除失败' % str(e))
-
-
+                        return HttpResponse('删除失败%s' % str(e))
             except Exception as e:
                 transaction.savepoint_rollback(save_id)
                 return HttpResponse('删除失败%s' % str(e))
