@@ -1258,7 +1258,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     url_l = value.split('/')
                     url_file = url_l[-1]
 
-                    url_j = settings.MEDIA_ROOT + url_file
+                    url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/' + url_file
                     if not os.path.exists(url_j):
                         transaction.savepoint_rollback(save_id)
                         return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
@@ -1279,7 +1279,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     url_l = attachment.split('/')
                     url_file = url_l[-1]
 
-                    url_j = settings.MEDIA_ROOT + url_file
+                    url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/' + url_file
                     if not os.path.exists(url_j):
                         transaction.savepoint_rollback(save_id)
                         return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
@@ -1300,7 +1300,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 AttachmentFileinfo.objects.bulk_create(list1)
 
                 # 删除临时目录
-                shutil.rmtree(settings.MEDIA_ROOT,ignore_errors=True)
+                shutil.rmtree(settings.MEDIA_ROOT+'temp/uploads/temporary/',ignore_errors=True)
 
                 # 给前端抛正式目录
                 dict['url'] = list2
@@ -1410,7 +1410,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             url_l = value.split('/')
                             url_file = url_l[-1]
 
-                            url_j = settings.MEDIA_ROOT + url_file
+                            url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/' + url_file
                             if not os.path.exists(url_j):
                                 transaction.savepoint_rollback(save_id)
                                 return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
@@ -1437,7 +1437,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                                 url_l = attachment.split('/')
                                 url_file = url_l[-1]
 
-                                url_j = settings.MEDIA_ROOT + url_file
+                                url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/'+url_file
                                 if not os.path.exists(url_j):
                                     transaction.savepoint_rollback(save_id)
                                     return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
@@ -1445,22 +1445,24 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                                 url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode,
                                                                url_file)
 
-                                url_x_f = url_x.replace(relative_path, relative_path_front)
-                                list2.append(url_x_f)
+                                if not os.path.exists(url_x):
 
+                                    url_x_f = url_x.replace(relative_path, relative_path_front)
+                                    list2.append(url_x_f)
 
-                                path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                                list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file,
-                                path=path,operation_state=3, state=1))
+                                    path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                                    list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
+                                                                    file_name=url_file,
+                                                                    path=path, operation_state=3, state=1))
 
-                                # 将临时目录转移到正式目录
-                                shutil.move(url_j, url_x)
+                                    # 将临时目录转移到正式目录
+                                    shutil.move(url_j, url_x)
 
                     # 创建atachmentinfo表
                     AttachmentFileinfo.objects.bulk_create(list1)
 
                     # 删除临时目录
-                    shutil.rmtree(settings.MEDIA_ROOT,ignore_errors=True)
+                    shutil.rmtree(settings.MEDIA_ROOT+'temp/uploads/temporary/',ignore_errors=True)
 
                     # 给前端抛正式目录
                     dict['url'] = list2
@@ -1495,7 +1497,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 if obj:
                     try:
                         for i in obj:
-                            url = '{}{}{}'.format(relative_path, i.path, i.file_name)
+                            url = '{}{}{}'.format(settings.MEDIA_ROOT, i.path, i.file_name)
                             # 创建对象
                             a = FileSystemStorage()
                             # 删除文件

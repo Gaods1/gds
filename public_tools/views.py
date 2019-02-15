@@ -50,7 +50,7 @@ class PublicInfo(APIView,FileSystemStorage):
         flag = request.POST.get('flag',None)
 
         if not files or not flag:
-            return HttpResponse('上传失败')
+            return HttpResponse('请上传文件')
         if flag == 'attachment':
             pdf_and_jpg = []
             doc_and_xls = []
@@ -62,12 +62,11 @@ class PublicInfo(APIView,FileSystemStorage):
                 try:
                     for file in files:
                         # 拼接地址
-                        url = settings.MEDIA_ROOT
+                        url = settings.MEDIA_ROOT + 'temp/uploads/temporary/'
                         if not os.path.exists(url):
                             os.makedirs(url)
                         #上传服务器的路径
                         url = url + file.name
-
                         # 创建对象
                         a = FileSystemStorage()
                         # 上传服务器
@@ -109,7 +108,7 @@ class PublicInfo(APIView,FileSystemStorage):
                 dict = {}
                 try:
                     for file in files:
-                        url = settings.MEDIA_ROOT
+                        url = settings.MEDIA_ROOT + 'temp/uploads/temporary/'
                         if not os.path.exists(url):
                             os.makedirs(url)
                         url = url + file.name
@@ -154,8 +153,7 @@ class PublicInfo(APIView,FileSystemStorage):
         # 在提交之前的删除
         if not serial:
             # 拼接地址
-            url = settings.MEDIA_ROOT
-            url = url + name
+            url = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + name
             # 判断此路径下是否有文件
             if not os.path.exists(url):
                 return HttpResponse('该临时路径下没有该文件')
@@ -184,21 +182,18 @@ class PublicInfo(APIView,FileSystemStorage):
                 save_id = transaction.savepoint()
                 try:
                     # 拼接地址
-                    relative_path = ParamInfo.objects.get(param_code=2).param_value
-                    path_e = AttachmentFileinfo.objects.filter(file_name=name).order_by('-insert_time')[0]
-                    path = path_e.path
-                    url = '{}{}{}'.format(relative_path, path, name)
+                    path = AttachmentFileinfo.objects.filter(file_name=name).order_by('-insert_time')[0].path
+                    url = settings.MEDIA_ROOT + path + name
                     # 判断该路径下是否有该文件
                     if not os.path.exists(url):
                         transaction.savepoint_rollback(save_id)
                         return HttpResponse('该正式路径下不存在该文件')
                     # 创建对象
-                    #a = FileSystemStorage()
+                    a = FileSystemStorage()
                     # 删除文件
-                    #a.delete(url)
+                    a.delete(url)
                     # 删除表记录
-                    b = AttachmentFileinfo.objects.filter(file_name=name).order_by('-insert_time')[0]
-                    b.delete()
+                    AttachmentFileinfo.objects.filter(file_name=name).order_by('-insert_time')[0].delete()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('删除失败' % str(e))
