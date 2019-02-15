@@ -1445,18 +1445,18 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                                 url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode,
                                                                url_file)
 
-                                if not os.path.isfile(url_x):
+                                #if not os.path.isfile(url_x):
 
-                                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                                    list2.append(url_x_f)
+                                url_x_f = url_x.replace(relative_path, relative_path_front)
+                                list2.append(url_x_f)
 
-                                    path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                                    list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
+                                path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                                list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
                                                                     file_name=url_file,
                                                                     path=path, operation_state=3, state=1))
 
-                                    # 将临时目录转移到正式目录
-                                    shutil.move(url_j, url_x)
+                                # 将临时目录转移到正式目录
+                                shutil.move(url_j, url_x)
 
                     # 创建atachmentinfo表
                     AttachmentFileinfo.objects.bulk_create(list1)
