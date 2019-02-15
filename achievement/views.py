@@ -1431,29 +1431,29 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             # 将临时目录转移到正式目录
                             shutil.move(url_j, url_x)
 
-                        if attachment_list:
+                    if attachment_list:
 
-                            for attachment in attachment_list:
-                                url_l = attachment.split('/')
-                                url_file = url_l[-1]
+                        for attachment in attachment_list:
+                            url_l = attachment.split('/')
+                            url_file = url_l[-1]
 
-                                url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/'+url_file
-                                if not os.path.exists(url_j):
-                                    transaction.savepoint_rollback(save_id)
-                                    return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
+                            url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/'+url_file
+                            if not os.path.exists(url_j):
+                                transaction.savepoint_rollback(save_id)
+                                return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
 
-                                url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode,
-                                                               url_file)
+                            url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode,
+                                                           url_file)
 
-                                #if not os.path.isfile(url_x):
+                            if not os.path.exists(url_x):
 
                                 url_x_f = url_x.replace(relative_path, relative_path_front)
                                 list2.append(url_x_f)
 
                                 path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
                                 list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
-                                                                    file_name=url_file,
-                                                                    path=path, operation_state=3, state=1))
+                                                                file_name=url_file,
+                                                                path=path, operation_state=3, state=1))
 
                                 # 将临时目录转移到正式目录
                                 shutil.move(url_j, url_x)
