@@ -514,7 +514,7 @@ class DeptinfoViewSet(viewsets.ModelViewSet):
             % self.__class__.__name__
         )
         dept_codes_str = get_detcode_str(self.request.user.dept_code)
-        if dept_codes_str:
+        if dept_codes_str and 'echo' not in self.request.query_params:
             raw_queryset = Deptinfo.objects.raw("select d.serial  from deptinfo as d where d.dept_code  in (" + dept_codes_str + ") ")
             queryset = Deptinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
         else:
