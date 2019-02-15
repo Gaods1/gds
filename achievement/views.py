@@ -1150,7 +1150,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
             		inner join account_info \
             		on account_info.account_code=results_info.account_code \
             		where account_info.dept_code in ({dept_s}) \
-            		and results_info.show_state in [1,2,3]"
+            		and results_info.show_state in (1,2,3)"
 
             raw_queryset = ResultsInfo.objects.raw(SQL.format(dept_s=dept_code_str))
             consult_reply_set = ResultsInfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('-show_state')
@@ -1538,7 +1538,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
             		inner join account_info \
             		on account_info.account_code=requirements_info.account_code \
             		where account_info.dept_code in ({dept_s}) \
-            		and requirements_info.show_state in [1,2,3]"
+            		and requirements_info.show_state in (1,2,3)"
 
             raw_queryset = RequirementsInfo.objects.raw(SQL.format(dept_s=dept_code_str))
             consult_reply_set = RequirementsInfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('-show_state')
