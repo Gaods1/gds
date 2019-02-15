@@ -1488,7 +1488,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 # 4 删关键字表
                 KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
                 # 5 删除所属领域表记录
-                MajorUserinfo.objects.filter(mcuser_code=serializer_ecode).delete()
+                MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
                 # 6 删除文件以及ecode表记录
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
                 obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
