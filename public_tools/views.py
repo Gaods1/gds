@@ -74,7 +74,7 @@ class PublicInfo(APIView,FileSystemStorage):
                         # 判断如果是office文件
                         if url.endswith('doc') or url.endswith('xls') or url.endswith('xlsx') or url.endswith('docx'):
                             # 转换office文件为pdf文件
-                            child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + settings.MEDIA_ROOT + ' ' + url, stdout=subprocess.PIPE, shell=True)
+                            child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + settings.MEDIA_ROOT + 'temp/uploads/temporary/' + ' ' + url, stdout=subprocess.PIPE, shell=True)
                             # 拼接转换pdf后的路径
                             url_pdf = os.path.splitext(url)[0] + '.pdf'
                             # 给前端抛出pdf路径
