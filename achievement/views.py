@@ -1150,7 +1150,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
             		inner join account_info \
             		on account_info.account_code=results_info.account_code \
             		where account_info.dept_code in ({dept_s}) \
-            		and results_info.show_state in [1,2,3]"
+            		and results_info.show_state in (1,2,3)"
 
             raw_queryset = ResultsInfo.objects.raw(SQL.format(dept_s=dept_code_str))
             consult_reply_set = ResultsInfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('-show_state')
@@ -1179,13 +1179,13 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 cooperation_code = request.data.pop('cooperation_code', None)
                 # 成果持有人信息表
                 main_owner = request.data.pop('main_owner', None)
-                owner_type = request.data.pop('owner_type', None)
+                owner_type = request.data.get('owner_type', None)
                 # 关键字表
                 key_info = request.data.pop('key_info', None)
                 # 个人基本信息表或者企业基本信息表
                 pcode_or_ecode = request.data.pop('pcode_or_ecode', None)
                 # 激活状态
-                state = request.data.get('state', None)
+                state = request.data.get('show_state', None)
 
                 if not mcode_list or not cooperation_code or not main_owner or not owner_type or not key_info or not pcode_or_ecode:
                     transaction.savepoint_rollback(save_id)
@@ -1242,7 +1242,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 if not os.path.exists(url_x_a):
                     os.makedirs(url_x_a)
                 if not os.path.exists(url_x_c):
-                    os.makedirs(url_x_a)
+                    os.makedirs(url_x_c)
 
                 dict = {}
                 list1 = []
@@ -1258,7 +1258,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     url_l = value.split('/')
                     url_file = url_l[-1]
 
-                    url_j = settings.MEDIA_ROOT + url_file
+                    url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/' + url_file
                     if not os.path.exists(url_j):
                         transaction.savepoint_rollback(save_id)
                         return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
@@ -1279,7 +1279,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     url_l = attachment.split('/')
                     url_file = url_l[-1]
 
-                    url_j = settings.MEDIA_ROOT + url_file
+                    url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/' + url_file
                     if not os.path.exists(url_j):
                         transaction.savepoint_rollback(save_id)
                         return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
@@ -1300,7 +1300,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 AttachmentFileinfo.objects.bulk_create(list1)
 
                 # 删除临时目录
-                shutil.rmtree(settings.MEDIA_ROOT,ignore_errors=True)
+                shutil.rmtree(settings.MEDIA_ROOT+'temp/uploads/temporary/',ignore_errors=True)
 
                 # 给前端抛正式目录
                 dict['url'] = list2
@@ -1336,7 +1336,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 cooperation_code = request.data.pop('cooperation_code', None)
                 # 成果持有人信息表
                 main_owner = request.data.pop('main_owner', None)
-                owner_type = request.data.pop('owner_type', None)
+                owner_type = request.data.get('owner_type', None)
                 # 关键字表
                 key_info = request.data.pop('key_info', None)
                 # 个人基本信息表或者企业基本信息表
@@ -1369,11 +1369,11 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 state=state, r_type=1)
 
                 # 4 更新关键字表
-                KeywordsInfo.objects.filter(rr_code=serializer_ecode).update(key_type=1,
+                KeywordsInfo.objects.filter(object_code=serializer_ecode).update(key_type=1,
                 key_info=key_info, state=state, creater=request.user.account)
 
                 #5 更新新纪录
-                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
+                MajorUserinfo.objects.filter(mcuser_code=serializer_ecode).delete()
                 major_list = []
                 for mcode in mcode_list:
                     major_list.append(MajorUserinfo(mcode=mcode, user_type=4, user_code=serializer_ecode, mtype=2))
@@ -1397,7 +1397,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     if not os.path.exists(url_x_a):
                         os.makedirs(url_x_a)
                     if not os.path.exists(url_x_c):
-                        os.makedirs(url_x_a)
+                        os.makedirs(url_x_c)
 
                     if single_dict and len(single_dict) == 1:
                         # 封面
@@ -1410,7 +1410,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             url_l = value.split('/')
                             url_file = url_l[-1]
 
-                            url_j = settings.MEDIA_ROOT + url_file
+                            url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/' + url_file
                             if not os.path.exists(url_j):
                                 transaction.savepoint_rollback(save_id)
                                 return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
@@ -1437,7 +1437,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                                 url_l = attachment.split('/')
                                 url_file = url_l[-1]
 
-                                url_j = settings.MEDIA_ROOT + url_file
+                                url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/'+url_file
                                 if not os.path.exists(url_j):
                                     transaction.savepoint_rollback(save_id)
                                     return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
@@ -1445,22 +1445,24 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                                 url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode,
                                                                url_file)
 
-                                url_x_f = url_x.replace(relative_path, relative_path_front)
-                                list2.append(url_x_f)
+                                if not os.path.exists(url_x):
 
+                                    url_x_f = url_x.replace(relative_path, relative_path_front)
+                                    list2.append(url_x_f)
 
-                                path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                                list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file,
-                                path=path,operation_state=3, state=1))
+                                    path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                                    list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
+                                                                    file_name=url_file,
+                                                                    path=path, operation_state=3, state=1))
 
-                                # 将临时目录转移到正式目录
-                                shutil.move(url_j, url_x)
+                                    # 将临时目录转移到正式目录
+                                    shutil.move(url_j, url_x)
 
                     # 创建atachmentinfo表
                     AttachmentFileinfo.objects.bulk_create(list1)
 
                     # 删除临时目录
-                    shutil.rmtree(settings.MEDIA_ROOT,ignore_errors=True)
+                    shutil.rmtree(settings.MEDIA_ROOT+'temp/uploads/temporary/',ignore_errors=True)
 
                     # 给前端抛正式目录
                     dict['url'] = list2
@@ -1495,7 +1497,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 if obj:
                     try:
                         for i in obj:
-                            url = '{}{}{}'.format(relative_path, i.path, i.file_name)
+                            url = '{}{}{}'.format(settings.MEDIA_ROOT, i.path, i.file_name)
                             # 创建对象
                             a = FileSystemStorage()
                             # 删除文件
@@ -1536,7 +1538,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
             		inner join account_info \
             		on account_info.account_code=requirements_info.account_code \
             		where account_info.dept_code in ({dept_s}) \
-            		and requirements_info.show_state in [1,2,3]"
+            		and requirements_info.show_state in (1,2,3)"
 
             raw_queryset = RequirementsInfo.objects.raw(SQL.format(dept_s=dept_code_str))
             consult_reply_set = RequirementsInfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('-show_state')

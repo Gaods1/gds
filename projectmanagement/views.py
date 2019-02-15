@@ -374,6 +374,7 @@ def upCheckinfo(self, request):
             psdi.step_msg = cmsg
             psdi.save()
 
+            # 附件
             if old_substep_state != -11:  # 普通步骤
                 if cstate == 1:
                     # 审核通过时处理上传的附件
@@ -387,17 +388,17 @@ def upCheckinfo(self, request):
             substep_state = substep_serial_state
             if old_substep_state != -11:  # 普通步骤
                 if step_code == 4 and substep_code == 2 and substep_serial_type == 1:
-                    if cstate == 1:
-                        substep_state = 1
-                    else:
-                        substep_state = 0
-            psi.substep_state = substep_state
+                    pass
+                else:
+                    psi.substep_state = substep_state
+            else:
+                psi.substep_state = substep_state
             psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             psi.step_msg = cmsg
             psi.save()
 
 
-            # 判断主步骤是否结束
+            # 项目步骤信息表
             if step_code == 1 and substep_code == 1 and substep_serial_type == 1:
                 # 项目步骤信息表
                 psi = ProjectStepInfo.objects.get(project_code=project_code, step_code=step_code)
@@ -413,13 +414,6 @@ def upCheckinfo(self, request):
                 psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 psi.step_msg = cmsg
                 psi.save()
-
-                if old_substep_state != -11:  # 普通步骤
-                    # 只有立项成功时才更新该时间
-                    if cstate == 1:
-                        pi = ProjectInfo.objects.get(project_code=project_code)
-                        pi.project_start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-                        pi.save()
             elif step_code == 2 and substep_code == 2 and substep_serial_type == 1:
                 # 0：正在进行中；1：成功完成；-1：放弃审核通过；-11放弃申请, -12：放弃审核不通过
                 psi = ProjectStepInfo.objects.get(project_code=project_code, step_code=step_code)
@@ -439,11 +433,29 @@ def upCheckinfo(self, request):
                 psi.save()
 
 
-            # 修改主表状态 和 子步骤状态一致
-            pi = ProjectInfo.objects.get(project_code=project_code)
-            pi.state = substep_serial_state
-            pi.save()
+            # 修改项目主表状态
+            # 和 子步骤状态一致 固话清单内容审核之后，不更新project_info和project_substep_info
+            if step_code == 1 and substep_code == 1 and substep_serial_type == 1:
+                if old_substep_state != -11:  # 普通步骤
+                    # 只有立项成功时才更新该时间
+                    if cstate == 1:
+                        pi = ProjectInfo.objects.get(project_code=project_code)
+                        pi.project_start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                        pi.save()
+            if step_code == 4 and substep_code == 2 and substep_serial_type == 1:
+                if old_substep_state != -11:  # 普通步骤
+                    pass
+                else:
+                    pi = ProjectInfo.objects.get(project_code=project_code)
+                    pi.state = substep_serial_state
+                    pi.save()
+            else:
+                pi = ProjectInfo.objects.get(project_code=project_code)
+                pi.state = substep_serial_state
+                pi.save()
 
+
+            # 只有普通步骤才发送短信
             if old_substep_state != -11:  # 普通步骤
                 # 组合生成短信消息发送列表
                 message_list = []

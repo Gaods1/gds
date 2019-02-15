@@ -552,4 +552,7 @@
 
                         serializer_ecode = serializer.data['r_code']
 
+                        /alidata1/patclub/uploads/Results/0110/L1AYcahuGrN2KWpgLka4Qwgjbq4iojFP
+
+
 """

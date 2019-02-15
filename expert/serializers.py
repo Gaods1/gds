@@ -411,6 +411,7 @@ class TeamApplySerializers(serializers.ModelSerializer):
     apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     team_baseinfo = TeamBaseinfoSerializers(read_only=True)
     major_names = serializers.ListField(required=False)
+    opinion = serializers.CharField(read_only=True)
 
     class Meta:
         model = TeamApplyHistory
@@ -422,5 +423,6 @@ class TeamApplySerializers(serializers.ModelSerializer):
                   'state',
                   'apply_type',
                   'apply_time',
-                  'major_names'
+                  'major_names',
+                  'opinion',
                   ]
