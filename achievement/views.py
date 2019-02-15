@@ -1373,7 +1373,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 key_info=key_info, state=state, creater=request.user.account)
 
                 #5 更新新纪录
-                MajorUserinfo.objects.filter(mcuser_code=serializer_ecode).delete()
+                MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
                 major_list = []
                 for mcode in mcode_list:
                     major_list.append(MajorUserinfo(mcode=mcode, user_type=4, user_code=serializer_ecode, mtype=2))
