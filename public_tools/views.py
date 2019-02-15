@@ -182,7 +182,9 @@ class PublicInfo(APIView,FileSystemStorage):
                 save_id = transaction.savepoint()
                 try:
                     # 拼接地址
-                    path = AttachmentFileinfo.objects.filter(file_name=name).order_by('-insert_time')[0].path
+                    path_list = AttachmentFileinfo.objects.filter(file_name=name)
+                    if path_list:
+                        path = path_list.order_by('-insert_time')[0].path
                     url = settings.MEDIA_ROOT + 'uploads/' + path
                     # 判断该路径下是否有该文件
                     if not os.path.exists(url):
@@ -194,9 +196,9 @@ class PublicInfo(APIView,FileSystemStorage):
                     # 删除文件
                     a.delete(url)
                     # 删除表记录
-                    element_list =AttachmentFileinfo.objects.filter(file_name=name).order_by('-insert_time')
+                    element_list =AttachmentFileinfo.objects.filter(file_name=name)
                     if element_list:
-                        element_list[0].delete()
+                        element_list.order_by('-insert_time')[0].delete()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('删除失败' % str(e))
