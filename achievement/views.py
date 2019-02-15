@@ -1482,13 +1482,13 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 #1 删除resultsinfo表
                 self.perform_destroy(instance)
                 # 2 删除合作方式表
-                ResultsCooperationTypeInfo.objects.filer(rr_code=serializer_ecode).delete()
+                ResultsCooperationTypeInfo.objects.filter(rr_code=serializer_ecode).delete()
                 # 3 删除成果持有人表
-                ResultsOwnerInfo.objects.filer(r_code=serializer_ecode).delete()
+                ResultsOwnerInfo.objects.filter(r_code=serializer_ecode).delete()
                 # 4 删关键字表
-                KeywordsInfo.objects.filer(object_code=serializer_ecode).delete()
+                KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
                 # 5 删除所属领域表记录
-                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
+                MajorUserinfo.objects.filter(mcuser_code=serializer_ecode).delete()
                 # 6 删除文件以及ecode表记录
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
                 obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
