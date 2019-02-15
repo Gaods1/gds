@@ -1451,9 +1451,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                                 list2.append(url_x_f)
 
                                 path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                                list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
-                                                                file_name=url_file,
-                                                                path=path, operation_state=3, state=1))
+                                list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,file_name=url_file,path=path, operation_state=3, state=1))
 
                                 # 将临时目录转移到正式目录
                                 shutil.move(url_j, url_x)
