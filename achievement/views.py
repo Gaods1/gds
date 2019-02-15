@@ -1451,9 +1451,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                                 list2.append(url_x_f)
 
                                 path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                                list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
-                                                                file_name=url_file,
-                                                                path=path, operation_state=3, state=1))
+                                list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,file_name=url_file,path=path, operation_state=3, state=1))
 
                                 # 将临时目录转移到正式目录
                                 shutil.move(url_j, url_x)
@@ -1484,15 +1482,18 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 #1 删除resultsinfo表
                 self.perform_destroy(instance)
                 # 2 删除合作方式表
-                ResultsCooperationTypeInfo.objects.filer(rr_code=serializer_ecode).delete()
+                ResultsCooperationTypeInfo.objects.filter(rr_code=serializer_ecode).delete()
                 # 3 删除成果持有人表
-                ResultsOwnerInfo.objects.filer(r_code=serializer_ecode).delete()
+                ResultsOwnerInfo.objects.filter(r_code=serializer_ecode).delete()
                 # 4 删关键字表
-                KeywordsInfo.objects.filer(object_code=serializer_ecode).delete()
+                KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
                 # 5 删除所属领域表记录
-                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
+                MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
                 # 6 删除文件以及ecode表记录
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
+                tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
+                tcode_coverImg = AttachmentFileType.objects.get(tname='coverImg').tcode
+                param_value = ParamInfo.objects.get(param_code=6).param_value
                 obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
                 if obj:
                     try:
@@ -1506,11 +1507,15 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             a.delete(url)
                             # 删除表记录
                             i.delete()
+                        url_att = '{}{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode)
+                        if os.path.exists(url_att):
+                            shutil.rmtree(url_att,ignore_errors=True)
+                        url_cov = '{}{}/{}/{}'.format(relative_path, param_value, tcode_coverImg, serializer_ecode)
+                        if os.path.exists(url_cov):
+                            shutil.rmtree(url_cov,ignore_errors=True)
                     except Exception as e:
                         transaction.savepoint_rollback(save_id)
-                        return HttpResponse('删除失败' % str(e))
-
-
+                        return HttpResponse('删除失败%s' % str(e))
             except Exception as e:
                 transaction.savepoint_rollback(save_id)
                 return HttpResponse('删除失败%s' % str(e))
