@@ -202,7 +202,7 @@ class PublicInfo(APIView,FileSystemStorage):
                         a.delete(url)
                         # 相同路径下删除pdf文件
                         name_pdf= name.split('.')[-1]
-                        name_pdf = url.replace(name_pdf, 'pdf')
+                        name_pdf = name.replace(name_pdf, 'pdf')
                         url_pdf = url.replace(name,name_pdf)
                         if os.path.exists(url_pdf):
                             a.delete(url_pdf)
