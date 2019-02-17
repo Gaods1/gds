@@ -367,7 +367,7 @@ class ProjectExpertInfo(models.Model):
 
     @property
     def expert(self):
-        expert = ExpertBaseinfo.objects.filter(expert_code=self.expert_code).values('expert_code','expert_mobile','expert_name')
+        expert = ExpertBaseinfo.objects.filter(expert_code=self.expert_code).values('serial','expert_code','expert_mobile','expert_name')
         if expert != None and len(expert)>0:
             return expert[0]
         else:
