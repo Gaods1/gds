@@ -465,7 +465,11 @@ def getCheckInfo(self,request, step_code, substep_code):
 
         project_codes = [check.project_code for check in projectcheckinfos]
 
-        q = queryset.filter(project_code__in=project_codes)
+        # q = queryset.filter(project_code__in=project_codes, step_code=step_code, substep_code=substep_code)
+        if step_code > 0 and substep_code > 0:
+            q = queryset.filter(project_code__in=project_codes, project_state=step_code, project_sub_state=substep_code)
+        else:
+            q = queryset.filter(project_code__in=project_codes)
         if q != None and len(q) > 0:
             queryset = self.filter_queryset(q)
         else:
