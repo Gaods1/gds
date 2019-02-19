@@ -2761,7 +2761,7 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
 
     major_model = MajorInfo
     major_intermediate_model = MajorUserinfo
-    major_associated_field = ('pt_code', 'user_code')
+    major_associated_field = ('team_code', 'user_code')
     major_intermediate_associated_field = ('mcode', "mcode")
 
     account_model = AccountInfo
