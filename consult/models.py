@@ -59,13 +59,7 @@ class ConsultInfo(models.Model):
         requirement_codes = [r.rrcode for r in ConsultRrinfo.objects.filter(consult_code=self.consult_code, rrtype=0)]
         results = [r.r_name for r in ResultsInfo.objects.filter(r_code__in=result_codes)]
         requirements = [r.req_name for r in RequirementsInfo.objects.filter(req_code__in=requirement_codes)]
-        results_str = ','.join(results)
-        requirements_str = ','.join(requirements)
-        rr_str = results_str + requirements_str
-        return rr_str
-        print(requirements)
-        print(results)
-        return results + requirements;
+        return results + requirements
 
     @property
     def account(self):
