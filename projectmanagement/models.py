@@ -3,6 +3,7 @@ from achievement.models import RrApplyHistory
 from expert.models import BrokerBaseinfo, ExpertBaseinfo, ProjectTeamBaseinfo
 from consult.models import ResultsInfo
 from achievement.models import RequirementsInfo
+from public_models.models import MajorUserinfo,MajorInfo
 from django.db.models import Q
 
 
@@ -106,6 +107,12 @@ class ProjectInfo(models.Model):
     @property
     def rr(self):
         return ProjectRrInfo.objects.filter(project_code=self.project_code)
+
+    @property
+    def majors(self):
+        mus = MajorUserinfo.objects.filter(mtype=2,user_type=11,user_code=self.project_code).values('mcode')
+        majors = MajorInfo.objects.filter(mtype=2,mcode__in=mus).values('mcode','mname','pmcode')
+        return majors
 
     class Meta:
         managed = False

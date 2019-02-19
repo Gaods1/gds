@@ -3,7 +3,7 @@ from rest_framework import serializers
 from achievement.serializers import RrApplyHistorySerializer
 from expert.serializers import BrokerBaseInfoSerializers,TeamBaseinfoSerializers,ExpertBaseInfoSerializers
 from achievement.serializers import RequirementsInfoSerializer,ResultsInfoSerializer
-
+from public_models.serializers import MajorInfoSerializers
 
 class ProjectCheckInfoSerializer(serializers.ModelSerializer):
     ctime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
@@ -183,6 +183,8 @@ class ProjectInfoSerializer(serializers.ModelSerializer):
     rr_requirement = serializers.ListField(required=False)
     rr = ProjectRrInfoSerializer(read_only=True, many=True)
 
+    majors = serializers.ListField(required=False)
+
     class Meta:
         model = ProjectInfo
         fields = [
@@ -209,6 +211,7 @@ class ProjectInfoSerializer(serializers.ModelSerializer):
             'rr_requirement',
             'rr_result',
             'rr',
+            'majors',
         ]
 
 

@@ -21,7 +21,7 @@ from expert.models import BrokerBaseinfo
 
 from django.db.models.query import QuerySet
 from public_models.utils import get_dept_codes,get_detcode_str
-from public_models.models import Message
+from public_models.models import Message, MajorUserinfo
 
 from .utils import *
 from misc.misc import *
@@ -111,6 +111,16 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
                     # project_expert_info_list.append(project_expert_info_data)
                     ProjectExpertInfo.objects.create(**project_expert_info_data)
                 # ProjectExpertInfo.objects.bulk_create(project_expert_info_list)
+
+                # 领域
+                majors = data.get('project_major', [])
+                for major in majors:
+                    major_userinfo_data = {}
+                    major_userinfo_data['mtype'] = 2
+                    major_userinfo_data['user_type'] = 11
+                    major_userinfo_data['user_code'] = project_code
+                    major_userinfo_data['mcode'] = major
+                    MajorUserinfo.objects.create(**major_userinfo_data)
 
 
                 # 项目主步骤表
@@ -297,6 +307,18 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
             project_expert_info_data['insert_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             ProjectExpertInfo.objects.create(**project_expert_info_data)
 
+        # 领域
+        mui = MajorUserinfo.objects.filter(user_code=project_code,mtype=2,user_type=11)
+        for mu in mui:
+            mu.delete()
+        majors = data.get('project_major', [])
+        for major in majors:
+            major_userinfo_data = {}
+            major_userinfo_data['mtype'] = 2
+            major_userinfo_data['user_type'] = 11
+            major_userinfo_data['user_code'] = project_code
+            major_userinfo_data['mcode'] = major
+            MajorUserinfo.objects.create(**major_userinfo_data)
 
         if getattr(instance, '_prefetched_objects_cache', None):
             instance._prefetched_objects_cache = {}
