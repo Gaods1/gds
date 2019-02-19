@@ -113,7 +113,6 @@ class ConsultReplyInfo(models.Model):
     reply_time = models.DateTimeField(blank=True, null=True)
     reply_state = models.IntegerField(blank=True, null=True)
     accept_time = models.DateTimeField(blank=True,null=True)
-    reply_time = models.DateTimeField(blank=True, null=True)
 
     @property
     def check_memo(self):
