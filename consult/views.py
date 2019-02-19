@@ -336,7 +336,6 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
             if check_state !=3 and check_state !=4 :
                 return JsonResponse({'state':0,'msg':'请确认审核是否通过'})
 
-
             if reply_info.reply_state != 1 :
                 return JsonResponse({'state':0,'msg':'非待审核状态不允许审核'})
 
