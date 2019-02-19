@@ -1,16 +1,6 @@
 from account.models import *
 from rest_framework import serializers
-
-
-class PatclubModelSerializer(serializers.ModelSerializer):
-    @property
-    def errors(self):
-        if not hasattr(self, '_errors'):
-            msg = 'You must call `.is_valid()` before accessing `.errors`.'
-            raise AssertionError(msg)
-        if self._errors:
-            return {'detail': self._errors}
-        return self._errors
+from misc.serializers.serializers import PatclubModelSerializer
 
 
 # 区域表序列化
