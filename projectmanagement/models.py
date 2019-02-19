@@ -3,6 +3,7 @@ from achievement.models import RrApplyHistory
 from expert.models import BrokerBaseinfo, ExpertBaseinfo, ProjectTeamBaseinfo
 from consult.models import ResultsInfo
 from achievement.models import RequirementsInfo
+from public_models.models import MajorUserinfo,MajorInfo
 from django.db.models import Q
 
 
@@ -31,8 +32,9 @@ class ProjectInfo(models.Model):
     # 项目来源
     @property
     def from_code_info(self):
-        from_code_info = RrApplyHistory.objects.get(a_code=self.from_code)
-        return from_code_info
+        # from_code_info = RrApplyHistory.objects.get(a_code=self.from_code)
+        # return from_code_info
+        return None
 
     # 项目当前子步骤
     @property
@@ -84,6 +86,12 @@ class ProjectInfo(models.Model):
             team_info = {}
         return team_info
 
+    # 项目关联专家
+    @property
+    def expert_info(self):
+        expert_info = ProjectExpertInfo.objects.filter(project_code=self.project_code)
+        return expert_info
+
     @property
     def rr_result(self):
         result_codes = [r.rr_code for r in ProjectRrInfo.objects.filter(project_code=self.project_code, rr_type=1)]
@@ -95,6 +103,16 @@ class ProjectInfo(models.Model):
         requirement_codes = [r.rr_code for r in ProjectRrInfo.objects.filter(project_code=self.project_code, rr_type=2)]
         requirements = [r.req_name for r in RequirementsInfo.objects.filter(req_code__in=requirement_codes)]
         return requirements
+
+    @property
+    def rr(self):
+        return ProjectRrInfo.objects.filter(project_code=self.project_code)
+
+    @property
+    def majors(self):
+        mus = MajorUserinfo.objects.filter(mtype=2,user_type=11,user_code=self.project_code).values('mcode')
+        majors = MajorInfo.objects.filter(mtype=2,mcode__in=mus).values('mcode','mname','pmcode')
+        return majors
 
     class Meta:
         managed = False
@@ -289,13 +307,28 @@ class ProjectRrInfo(models.Model):
     contract = models.CharField(max_length=255, blank=True, null=True)
 
     @property
-    def rr(self):
+    def results_info(self):
         if self.rr_type == 1:
-            results = ResultsInfo.objects.filter(r_code=self.rr_code)
-            return results;
+            results = ResultsInfo.objects.filter(r_code=self.rr_code).values('r_code','r_name')
+            if results != None and len(results)>0:
+                result = results[0]
+                return result
+            else:
+                return None
         elif self.rr_type == 2:
-            requirements = RequirementsInfo.objects.filter(req_code=self.rr_code)
-            return requirements
+            return None
+
+    @property
+    def requirements_info(self):
+        if self.rr_type == 1:
+            return None
+        elif self.rr_type == 2:
+            requirements = RequirementsInfo.objects.filter(req_code=self.rr_code).values('req_code','req_name')
+            if requirements != None and len(requirements)>0:
+                requirement = requirements[0]
+                return requirement
+            else:
+                return None
 
     class Meta:
         managed = False
@@ -317,8 +350,11 @@ class ProjectBrokerInfo(models.Model):
 
     @property
     def broker(self):
-        broker = BrokerBaseinfo.objects.get(broker_code=self.broker_code)
-        return broker
+        broker = BrokerBaseinfo.objects.filter(broker_code=self.broker_code).values('broker_code','broker_mobile','broker_name')
+        if broker != None and len(broker)>0:
+            return broker[0]
+        else:
+            return None
 
     class Meta:
         managed = False
@@ -338,8 +374,11 @@ class ProjectExpertInfo(models.Model):
 
     @property
     def expert(self):
-        expert = ExpertBaseinfo.objects.filter(expert_code=self.expert_code)
-        return expert
+        expert = ExpertBaseinfo.objects.filter(expert_code=self.expert_code).values('serial','expert_code','expert_mobile','expert_name')
+        if expert != None and len(expert)>0:
+            return expert[0]
+        else:
+            return None
 
     class Meta:
         managed = False

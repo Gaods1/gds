@@ -362,3 +362,197 @@
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 """
+
+
+
+
+"""
+# 1 创建需求
+                obtain_type = request.data['obtain_type']
+                owner_type = request.data['owner_type']
+
+                # 如果是采集员
+                if obtain_type == 1:
+                    # 个人或者团队
+                    if owner_type in [1, 3]:
+                        #personalinfo表
+                        pid = request.data.pop('pid', None)
+                        pname = request.data.pop('pname', None)
+                        psex = request.data.pop('psex', None)
+                        pid_type = request.data.pop('pid_type', None)
+                        pmobile = request.data.pop('pmobile', None)
+                        ptel = request.data.pop('ptel', None)
+                        pemail = request.data.pop('pemail', None)
+                        peducation = request.data.pop('peducation', None)
+                        pabstract = request.data.pop('pabstract', None)
+                        account_code = request.data.pop('account_code', None)
+
+                        #成果/需求合作方式信息表
+                        r_type = request.data.pop('r_type', None)
+                        cooperation_code = request.data.pop('cooperation_code', None)
+                        cooperation_name = request.data.pop('cooperation_name', None)
+
+                        #成果持有人信息表
+                        main_owner = request.data.pop('main_owner', None)
+
+                        #关键字表
+                        key_info = request.data.pop('key_info', None)
+
+                        pcode_list = PersonalInfo.objects.filter(pid=pid)
+
+                        #判断是否存在personalinfo表
+                        if pcode_list:
+                            pcode = pcode_list[0]
+
+                            #创建resultsinfo表
+                            data['creater'] = request.user.account
+                            serializer = self.get_serializer(data=data)
+                            serializer.is_valid(raise_exception=True)
+                            self.perform_create(serializer)
+
+                            serializer_ecode = serializer.data['r_code']
+
+                            #创建合作方式表
+                            ResultsCooperationTypeInfo.objects.create(r_type=r_type,
+                            rr_code=serializer_ecode,cooperation_code=cooperation_code,
+                            cooperation_name=cooperation_name,state=1)
+
+                            #创建持有人信息表
+                            ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
+                            owner_type=owner_type,owner_code=pcode,main_owner=main_owner,
+                            state=1,r_type=r_type)
+
+                            #创建关键字表
+                            KeywordsInfo.objects.create(key_type=r_type,object_code=serializer_ecode,
+                            key_info=key_info,state=1,creater=request.user.account)
+
+                        else:
+                            #创建personalinfo表
+                            pcode_element = PersonalInfo.objects.create(pid=pid,pname=pname,psex=psex,
+                            pid_type=pid_type,pmobile=pmobile,ptel=ptel,pemail=pemail,
+                            peducation=peducation,pabstract=pabstract,state=2,creater
+                            =request.user.account,account_code=account_code)
+                            pcode = pcode_element.pcode
+
+                            #创建resultsinfo表
+                            data['creater'] = request.user.account
+                            serializer = self.get_serializer(data=data)
+                            serializer.is_valid(raise_exception=True)
+                            self.perform_create(serializer)
+
+                            serializer_ecode = serializer.data['r_code']
+
+                            # 创建合作方式表
+                            ResultsCooperationTypeInfo.objects.create(r_type=r_type,
+                            rr_code=serializer_ecode,
+                            cooperation_code=cooperation_code,
+                            cooperation_name=cooperation_name, state=1)
+
+                            # 创建持有人信息表
+                            ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
+                            owner_type=owner_type, owner_code=pcode,
+                            main_owner=main_owner,
+                            state=1, r_type=r_type)
+
+                            # 创建关键字表
+                            KeywordsInfo.objects.create(key_type=r_type, object_code=serializer_ecode,
+                            key_info=key_info, state=1, creater=request.user.account)
+
+                    # 企业的情况
+                    else:
+                        manager_id = request.data.pop('manager_id', None)
+
+                        # 判断是否存在enterpriseinfo表
+                        ecode_list = EnterpriseBaseinfo.objects.filter(manager_id=manager_id)
+                        if ecode_list:
+                            ecode = ecode_list[0]
+
+                            #创建resultsinfo表
+                            data['creater'] = request.user.account
+                            serializer = self.get_serializer(data=data)
+                            serializer.is_valid(raise_exception=True)
+                            self.perform_create(serializer)
+
+                            serializer_ecode = serializer.data['r_code']
+
+                        else:
+
+                            EnterpriseBaseinfo.objects.create()
+
+                            #创建resultsinfo表
+                            data['creater'] = request.user.account
+                            serializer = self.get_serializer(data=data)
+                            serializer.is_valid(raise_exception=True)
+                            self.perform_create(serializer)
+
+                            serializer_ecode = serializer.data['r_code']
+
+                else:
+                    # 个人或者团队
+                    if owner_type in [1, 3]:
+                        # personalinfo表
+                        pid = request.data.pop('pid', None)
+                        pname = request.data.pop('pname', None)
+                        psex = request.data.pop('psex', None)
+                        pid_type = request.data.pop('pid_type', None)
+                        pmobile = request.data.pop('pmobile', None)
+                        ptel = request.data.pop('ptel', None)
+                        pemail = request.data.pop('pemail', None)
+                        peducation = request.data.pop('peducation', None)
+                        pabstract = request.data.pop('pabstract', None)
+                        account_code = request.data.pop('account_code', None)
+
+                        # 成果/需求合作方式信息表
+                        r_type = request.data.pop('r_type', None)
+                        cooperation_code = request.data.pop('cooperation_code', None)
+                        cooperation_name = request.data.pop('cooperation_name', None)
+
+                        # 成果持有人信息表
+                        main_owner = request.data.pop('main_owner', None)
+
+                        # 关键字表
+                        key_info = request.data.pop('key_info', None)
+
+                        pcode = PersonalInfo.objects.get(pid=pid).pcode
+
+                        # 创建resultsinfo表
+                        data['creater'] = request.user.account
+                        serializer = self.get_serializer(data=data)
+                        serializer.is_valid(raise_exception=True)
+                        self.perform_create(serializer)
+
+                        serializer_ecode = serializer.data['r_code']
+
+                        # 创建合作方式表
+                        ResultsCooperationTypeInfo.objects.create(r_type=r_type,
+                        rr_code=serializer_ecode,
+                        cooperation_code=cooperation_code,
+                        cooperation_name=cooperation_name, state=1)
+
+                        # 创建持有人信息表
+                        ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
+                        owner_type=owner_type, owner_code=pcode, main_owner=main_owner,
+                        state=1, r_type=r_type)
+
+                        # 创建关键字表
+                        KeywordsInfo.objects.create(key_type=r_type, object_code=serializer_ecode,
+                        key_info=key_info, state=1, creater=request.user.account)
+
+
+                    # 企业的情况
+                    else:
+                        manager_id = request.data.pop('manager_id', None)
+                        ecode = EnterpriseBaseinfo.objects.get(manager_id=manager_id).ecode
+
+                        # 创建resultsinfo表
+                        data['creater'] = request.user.account
+                        serializer = self.get_serializer(data=data)
+                        serializer.is_valid(raise_exception=True)
+                        self.perform_create(serializer)
+
+                        serializer_ecode = serializer.data['r_code']
+
+                        /alidata1/patclub/uploads/Results/0110/L1AYcahuGrN2KWpgLka4Qwgjbq4iojFP
+
+
+"""

@@ -1,8 +1,9 @@
 from projectmanagement.models import *
 from rest_framework import serializers
 from achievement.serializers import RrApplyHistorySerializer
-from expert.serializers import BrokerBaseInfoSerializers,TeamBaseinfoSerializers
-
+from expert.serializers import BrokerBaseInfoSerializers,TeamBaseinfoSerializers,ExpertBaseInfoSerializers
+from achievement.serializers import RequirementsInfoSerializer,ResultsInfoSerializer
+from public_models.serializers import MajorInfoSerializers
 
 class ProjectCheckInfoSerializer(serializers.ModelSerializer):
     ctime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
@@ -90,7 +91,7 @@ class ProjectSubstepSerialInfoSerializer(serializers.ModelSerializer):
 # 项目经纪人信息表
 class ProjectBrokerInfoSerializer(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    broker = BrokerBaseInfoSerializers(read_only=True)
+    broker = serializers.DictField(read_only=True)
 
     class Meta:
         model = ProjectBrokerInfo
@@ -124,6 +125,47 @@ class ProjectTeamInfoSerializer(serializers.ModelSerializer):
             'team_baseinfo',
         ]
 
+# 项目需求/成果信息表
+class ProjectRrInfoSerializer(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+
+    results_info = serializers.DictField(read_only=True)
+    requirements_info = serializers.DictField(read_only=True)
+
+    class Meta:
+        model = ProjectRrInfo
+        fields = [
+            'p_serial',
+            'project_code',
+            'rr_type',
+            'rr_main',
+            'rr_code',
+            'creater',
+            'insert_time',
+            'rr_work',
+            'contract',
+            'results_info',
+            'requirements_info',
+        ]
+
+# 目领域专家信息表
+class ProjectExpertInfoSerializer(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    expert = serializers.DictField(read_only=True)
+
+    class Meta:
+        model = ProjectExpertInfo
+        fields = [
+            'pserial',
+            'project_code',
+            'expert_code',
+            'ex_work',
+            'contract',
+            'creater',
+            'insert_time',
+            'expert',
+        ]
+
 # 项目表序列化
 class ProjectInfoSerializer(serializers.ModelSerializer):
     project_start_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
@@ -135,9 +177,13 @@ class ProjectInfoSerializer(serializers.ModelSerializer):
     check_info = ProjectCheckInfoSerializer(read_only=True)
     broker_info = ProjectBrokerInfoSerializer(read_only=True)
     team_info = ProjectTeamInfoSerializer(read_only=True)
+    expert_info = ProjectExpertInfoSerializer(read_only=True,many=True)
 
     rr_result = serializers.ListField(required=False)
     rr_requirement = serializers.ListField(required=False)
+    rr = ProjectRrInfoSerializer(read_only=True, many=True)
+
+    majors = serializers.ListField(required=False)
 
     class Meta:
         model = ProjectInfo
@@ -161,8 +207,11 @@ class ProjectInfoSerializer(serializers.ModelSerializer):
             'check_info',
             'broker_info',
             'team_info',
+            'expert_info',
             'rr_requirement',
             'rr_result',
+            'rr',
+            'majors',
         ]
 
 
@@ -193,42 +242,13 @@ class ProjectSubstepDetailInfoSerializer(serializers.ModelSerializer):
 
 
 
-# 项目需求/成果信息表
-class ProjectRrInfoSerializer(serializers.ModelSerializer):
-    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-
-    class Meta:
-        model = ProjectRrInfo
-        fields = [
-            'p_serial',
-            'project_code',
-            'rr_type',
-            'rr_code',
-            'creater',
-            'insert_time',
-            'rr_work',
-            'contract'
-        ]
 
 
 
 
 
-# 目领域专家信息表
-class ProjectExpertInfoSerializer(serializers.ModelSerializer):
-    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
 
-    class Meta:
-        model = ProjectExpertInfo
-        fields = [
-            'pserial',
-            'project_code',
-            'expert_code',
-            'ex_work',
-            'contract',
-            'creater',
-            'insert_time'
-        ]
+
 
 
 

@@ -1,9 +1,12 @@
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
+
 from rest_framework import viewsets
 from rest_framework import filters
 from rest_framework import mixins
 from rest_framework.response import Response
+from rest_framework import status, permissions
+
 import django_filters
 from django.db import transaction
 import time
@@ -18,19 +21,19 @@ from expert.models import BrokerBaseinfo
 
 from django.db.models.query import QuerySet
 from public_models.utils import get_dept_codes,get_detcode_str
-from public_models.models import Message
+from public_models.models import Message, MajorUserinfo
 
 from .utils import *
+from misc.misc import *
 
 from public_tools.utils import writeLog
-
 
 
 # Create your views here.
 
 class ProjectInfoViewSet(viewsets.ModelViewSet):
     '''项目信息'''
-    queryset = ProjectInfo.objects.all().order_by('-pserial')
+    queryset = ProjectInfo.objects.filter(~Q(state=-99)).order_by('-pserial')
     serializer_class = ProjectInfoSerializer
     filter_backends = (
         filters.SearchFilter,
@@ -40,6 +43,162 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
     ordering_fields = ("project_name", "project_state", "project_sub_state")
     filter_fields = ("project_code", "project_name", "project_state", "project_sub_state")
     search_fields = ("project_code", "project_name", "project_state", "project_sub_state")
+
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        # Projec 2019 0215 154518 Uz638Q7P91e5
+        project_code = 'Projec' + time.strftime("%Y%m%d%H%M%S", time.localtime()) + gen_uuid12()
+        step_code = 1
+        substep_code = 1
+
+        # 建立事物机制
+        with transaction.atomic():
+            # 创建一个保存点
+            save_id = transaction.savepoint()
+            # 创建历史记录表
+            try:
+                # 项目表
+                project_info_data = {}
+                project_info_data['project_code'] = project_code
+                project_info_data['project_name'] = data.get('project_name', None)
+                project_info_data['project_from'] = data.get('project_from', 7)
+                project_info_data['project_state'] = step_code
+                project_info_data['project_sub_state'] = substep_code
+                project_info_data['project_desc'] = data.get('project_desc', None)
+                project_info_data['state'] = 0
+                project_info_data['creater'] = request.user.account_code
+                project_info_data['insert_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                ProjectInfo.objects.create(**project_info_data)
+
+                # 项目技术经济人
+                project_broker_info_data = {}
+                project_broker_info_data['project_code'] = project_code
+                project_broker_info_data['broker_code'] = data.get('brokers', None)
+                project_broker_info_data['creater'] = request.user.account_code
+                project_broker_info_data['insert_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                ProjectBrokerInfo.objects.create(**project_broker_info_data)
+
+                # 项目成果
+                project_rr_info_data = {}
+                project_rr_info_data['project_code'] = project_code
+                project_rr_info_data['rr_type'] = 1
+                project_rr_info_data['rr_main'] = 1
+                project_rr_info_data['rr_code'] = data.get('results', None)
+                project_rr_info_data['creater'] = request.user.account_code
+                project_rr_info_data['insert_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                ProjectRrInfo.objects.create(**project_rr_info_data)
+
+                # 项目需求
+                project_rr_info_data = {}
+                project_rr_info_data['project_code'] = project_code
+                project_rr_info_data['rr_type'] = 2
+                project_rr_info_data['rr_main'] = 1
+                project_rr_info_data['rr_code'] = data.get('requirements', None)
+                project_rr_info_data['creater'] = request.user.account_code
+                project_rr_info_data['insert_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                ProjectRrInfo.objects.create(**project_rr_info_data)
+
+                # 项目专家
+                # project_expert_info_list = []
+                experts = data.get('experts', [])
+                for expert in experts:
+                    project_expert_info_data = {}
+                    project_expert_info_data['project_code'] = project_code
+                    project_expert_info_data['expert_code'] = expert
+                    project_expert_info_data['creater'] = request.user.account_code
+                    project_expert_info_data['insert_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                    # project_expert_info_list.append(project_expert_info_data)
+                    ProjectExpertInfo.objects.create(**project_expert_info_data)
+                # ProjectExpertInfo.objects.bulk_create(project_expert_info_list)
+
+                # 领域
+                majors = data.get('project_major', [])
+                for major in majors:
+                    major_userinfo_data = {}
+                    major_userinfo_data['mtype'] = 2
+                    major_userinfo_data['user_type'] = 11
+                    major_userinfo_data['user_code'] = project_code
+                    major_userinfo_data['mcode'] = major
+                    MajorUserinfo.objects.create(**major_userinfo_data)
+
+
+                # 项目主步骤表
+                project_step_info_data = {}
+                project_step_info_data['project_code'] = project_code
+                project_step_info_data['step_code'] = step_code
+                project_step_info_data['btime'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                project_step_info_data['step_state'] = 0
+                ProjectStepInfo.objects.create(**project_step_info_data)
+
+
+                # 项目子步骤表
+                project_substep_info_data = {}
+                project_substep_info_data['project_code'] = project_code
+                project_substep_info_data['step_code'] = step_code
+                project_substep_info_data['substep_code'] = substep_code
+                project_substep_info_data['btime'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                project_substep_info_data['substep_state'] = 2
+                ProjectSubstepInfo.objects.create(**project_substep_info_data)
+
+                # 计算流水号
+                sql = "select * from project_substep_detail_info order by p_serial desc limit 1"
+                raw_queryset = ProjectCheckInfo.objects.raw(sql)
+                projectsubstepdetailinfo = ProjectSubstepDetailInfo.objects.filter(p_serial__in=[i.p_serial for i in raw_queryset])[0]
+                substep_serial = projectsubstepdetailinfo.substep_serial + 1
+
+
+                # 项目审核流水表
+                project_substep_serial_info_data = {}
+                project_substep_serial_info_data['project_code'] = project_code
+                project_substep_serial_info_data['step_code'] = step_code
+                project_substep_serial_info_data['substep_code'] = substep_code
+                project_substep_serial_info_data['substep_serial'] = substep_serial
+                project_substep_serial_info_data['submit_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                project_substep_serial_info_data['substep_serial_type'] = 1
+                project_substep_serial_info_data['substep_serial_state'] = 2
+                ProjectSubstepSerialInfo.objects.create(**project_substep_serial_info_data)
+
+                # 项目审核流水详情表
+                project_substep_detail_info_data = {}
+                project_substep_detail_info_data['project_code'] = project_code
+                project_substep_detail_info_data['step_code'] = step_code
+                project_substep_detail_info_data['substep_code'] = substep_code
+                project_substep_detail_info_data['substep_serial'] = substep_serial
+                project_substep_detail_info_data['submit_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                project_substep_detail_info_data['submit_user'] = request.user.account_code
+                project_substep_detail_info_data['substep_serial_type'] = 1
+                project_substep_detail_info_data['substep_serial_state'] = 2
+                ProjectSubstepDetailInfo.objects.create(**project_substep_detail_info_data)
+
+                # 项目附件表
+
+                # 项目审核表
+                project_check_info_data = {}
+                project_check_info_data['project_code'] = project_code
+                project_check_info_data['step_code'] = step_code
+                project_check_info_data['substep_code'] = substep_code
+                project_check_info_data['substep_serial'] = substep_serial
+                project_check_info_data['cstate'] = 0
+                ProjectCheckInfo.objects.create(**project_check_info_data)
+
+                # return JsonResponse({'state':0,'msg':'ok'})
+
+
+                transaction.savepoint_commit(save_id)
+
+                fail_msg = "添加成功"
+                return JsonResponse({"state": 1, "msg": fail_msg})
+
+                # serializer = self.get_serializer(data=project_info_data)
+                # serializer.is_valid(raise_exception=True)
+                # self.perform_create(serializer)
+                # headers = self.get_success_headers(serializer.data)
+                # return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                fail_msg = "添加失败%s" % str(e)
+                return JsonResponse({"state": 0, "msg": fail_msg})
 
     def list(self, request, *args, **kwargs):
 
@@ -117,18 +276,68 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
+        project_code = instance.project_code
+
         # 修改项目的技术经济人
         broker_code = data['brokers']
         pbi = ProjectBrokerInfo.objects.get(project_code=instance.project_code)
         pbi.broker_code = broker_code
         pbi.save()
 
+        # 项目成果
+        pri = ProjectRrInfo.objects.get(project_code=project_code,rr_type=1,rr_main=1)
+        pri.rr_code = data.get('results', None)
+        pri.save()
+
+        # 项目需求
+        pri = ProjectRrInfo.objects.get(project_code=project_code, rr_type=2, rr_main=1)
+        pri.rr_code = data.get('requirements', None)
+        pri.save()
+
+        # 项目专家
+        peis = ProjectExpertInfo.objects.filter(project_code=project_code)
+        for pei in peis:
+            pei.delete()
+        experts = data.get('experts', [])
+        for expert in experts:
+            project_expert_info_data = {}
+            project_expert_info_data['project_code'] = project_code
+            project_expert_info_data['expert_code'] = expert
+            project_expert_info_data['creater'] = request.user.account_code
+            project_expert_info_data['insert_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            ProjectExpertInfo.objects.create(**project_expert_info_data)
+
+        # 领域
+        mui = MajorUserinfo.objects.filter(user_code=project_code,mtype=2,user_type=11)
+        for mu in mui:
+            mu.delete()
+        majors = data.get('project_major', [])
+        for major in majors:
+            major_userinfo_data = {}
+            major_userinfo_data['mtype'] = 2
+            major_userinfo_data['user_type'] = 11
+            major_userinfo_data['user_code'] = project_code
+            major_userinfo_data['mcode'] = major
+            MajorUserinfo.objects.create(**major_userinfo_data)
+
         if getattr(instance, '_prefetched_objects_cache', None):
             instance._prefetched_objects_cache = {}
 
         return Response(serializer.data)
-        # return JsonResponse({"state": 1, "msg": "修改成功"})
 
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        # ProjectInfo.objects.filter(project_code=instance.project_code).delete()
+        # self.perform_destroy(instance)
+        pro = ProjectInfo.objects.get(project_code=instance.project_code)
+        pro.state = -99
+        pro.save()
+        psi = ProjectStepInfo.objects.filter(project_code=instance.project_code).order_by('-p_serial')[0]
+        step_msg = request.user.account + time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) + '后台删除项目'
+        psi.step_msg = step_msg
+        psi.save()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class ProjectCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,viewsets.GenericViewSet):
     """
@@ -171,7 +380,7 @@ class ProjectCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,view
     ==================================================
     """
 
-    queryset = ProjectInfo.objects.all().order_by('-pserial')
+    queryset = ProjectInfo.objects.filter(~Q(state=-99)).order_by('-pserial')
     serializer_class = ProjectInfoSerializer
     filter_backends = (
         filters.SearchFilter,
@@ -278,7 +487,11 @@ def getCheckInfo(self,request, step_code, substep_code):
 
         project_codes = [check.project_code for check in projectcheckinfos]
 
-        q = queryset.filter(project_code__in=project_codes)
+        # q = queryset.filter(project_code__in=project_codes, step_code=step_code, substep_code=substep_code)
+        if step_code > 0 and substep_code > 0:
+            q = queryset.filter(project_code__in=project_codes, project_state=step_code, project_sub_state=substep_code)
+        else:
+            q = queryset.filter(project_code__in=project_codes)
         if q != None and len(q) > 0:
             queryset = self.filter_queryset(q)
         else:
@@ -360,6 +573,7 @@ def upCheckinfo(self, request):
             psdi.step_msg = cmsg
             psdi.save()
 
+            # 附件
             if old_substep_state != -11:  # 普通步骤
                 if cstate == 1:
                     # 审核通过时处理上传的附件
@@ -373,17 +587,17 @@ def upCheckinfo(self, request):
             substep_state = substep_serial_state
             if old_substep_state != -11:  # 普通步骤
                 if step_code == 4 and substep_code == 2 and substep_serial_type == 1:
-                    if cstate == 1:
-                        substep_state = 1
-                    else:
-                        substep_state = 0
-            psi.substep_state = substep_state
+                    pass
+                else:
+                    psi.substep_state = substep_state
+            else:
+                psi.substep_state = substep_state
             psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             psi.step_msg = cmsg
             psi.save()
 
 
-            # 判断主步骤是否结束
+            # 项目步骤信息表
             if step_code == 1 and substep_code == 1 and substep_serial_type == 1:
                 # 项目步骤信息表
                 psi = ProjectStepInfo.objects.get(project_code=project_code, step_code=step_code)
@@ -399,13 +613,6 @@ def upCheckinfo(self, request):
                 psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 psi.step_msg = cmsg
                 psi.save()
-
-                if old_substep_state != -11:  # 普通步骤
-                    # 只有立项成功时才更新该时间
-                    if cstate == 1:
-                        pi = ProjectInfo.objects.get(project_code=project_code)
-                        pi.project_start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-                        pi.save()
             elif step_code == 2 and substep_code == 2 and substep_serial_type == 1:
                 # 0：正在进行中；1：成功完成；-1：放弃审核通过；-11放弃申请, -12：放弃审核不通过
                 psi = ProjectStepInfo.objects.get(project_code=project_code, step_code=step_code)
@@ -425,11 +632,29 @@ def upCheckinfo(self, request):
                 psi.save()
 
 
-            # 修改主表状态 和 子步骤状态一致
-            pi = ProjectInfo.objects.get(project_code=project_code)
-            pi.state = substep_serial_state
-            pi.save()
+            # 修改项目主表状态
+            # 和 子步骤状态一致 固话清单内容审核之后，不更新project_info和project_substep_info
+            if step_code == 1 and substep_code == 1 and substep_serial_type == 1:
+                if old_substep_state != -11:  # 普通步骤
+                    # 只有立项成功时才更新该时间
+                    if cstate == 1:
+                        pi = ProjectInfo.objects.get(project_code=project_code)
+                        pi.project_start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                        pi.save()
+            if step_code == 4 and substep_code == 2 and substep_serial_type == 1:
+                if old_substep_state != -11:  # 普通步骤
+                    pass
+                else:
+                    pi = ProjectInfo.objects.get(project_code=project_code)
+                    pi.state = substep_serial_state
+                    pi.save()
+            else:
+                pi = ProjectInfo.objects.get(project_code=project_code)
+                pi.state = substep_serial_state
+                pi.save()
 
+
+            # 只有普通步骤才发送短信
             if old_substep_state != -11:  # 普通步骤
                 # 组合生成短信消息发送列表
                 message_list = []
