@@ -199,7 +199,7 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return Response({"detail": {"审核失败：%s" % str(e)}}, status=400)
+            return Response({"detail": "审核失败：%s" % str(e)}, status=400)
 
         return Response(serializer.data)
 
@@ -376,7 +376,7 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return Response({"detail":{"审核失败：%s" % str(e)}}, status=400)
+            return Response({"detail": "审核失败：%s" % str(e)}, status=400)
 
         return Response(serializer.data)
 
@@ -802,7 +802,7 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
                     instance._prefetched_objects_cache = {}
         except Exception as e:
             logger.error(e)
-            return Response({"detail":{"审核失败：%s" % str(e)}}, status=400)
+            return Response({"detail": "审核失败：%s" % str(e)}, status=400)
 
         return Response(serializer.data)
 
@@ -1259,7 +1259,7 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return Response({"detail":{"审核失败：%s" % str(e)}}, status=400)
+            return Response({"detail": "审核失败：%s" % str(e)}, status=400)
 
         return Response(serializer.data)
 
@@ -1731,7 +1731,7 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return Response({"detail":{"审核失败：%s" % str(e)}}, status=400)
+            return Response({"detail":"审核失败：%s" % str(e)}, status=400)
         return Response(serializer.data)
 
 
@@ -2191,7 +2191,7 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return Response({"detail": {"审核失败：%s" % str(e)}}, status=400)
+            return Response({"detail": "审核失败：%s" % str(e)}, status=400)
         return Response(serializer.data)
 
 
@@ -2664,7 +2664,7 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return Response({"detail":{"审核失败：%s" % str(e)}}, status=400)
+            return Response({"detail": "审核失败：%s" % str(e)}, status=400)
         return Response(serializer.data)
 
 
@@ -2871,7 +2871,7 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                                             'email_account':''}
                     Message.objects.create(**message_data)
         except Exception as e:
-            return Response({"detail":{"审核失败：%s" % str(e)}}, status=400)
+            return Response({"detail":"审核失败：%s" % str(e)}, status=400)
 
         # 移动附件逻辑改为  数据库事务执行成功再移动附件
         if check_state == 2:
