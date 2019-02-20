@@ -84,6 +84,7 @@ class RequirementsInfo(models.Model):
     insert_time = models.DateTimeField(blank=True, null=True,auto_now=True)
     account_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
     r_abstract_detail = models.TextField(blank=True, null=True)
+
     @property
     def Attach(self):
         list = get_attachment('attachment',self.req_code)

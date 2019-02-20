@@ -1170,24 +1170,24 @@ class ManagementpViewSet(viewsets.ModelViewSet):
             try:
                 data = request.data
                 # 图片
-                single_dict = request.data.pop('single', None)
+                single_dict = request.data.pop('Cover', None)
                 # 附件
-                attachment_list = request.data.pop('attachment', None)
+                attachment_list = request.data.pop('Attach', None)
                 # 所属领域表
-                mcode_list = request.data.pop('mcode',None)
+                mname_list = request.data.pop('mname',None)
                 # 成果/需求合作方式信息表
-                cooperation_code = request.data.pop('cooperation_code', None)
+                cooperation_name = request.data.pop('cooperation_name', None)
                 # 成果持有人信息表
                 main_owner = request.data.pop('main_owner', None)
                 owner_type = request.data.get('owner_type', None)
                 # 关键字表
-                key_info = request.data.pop('key_info', None)
+                key_info = request.data.pop('Keywords', None)
                 # 个人基本信息表或者企业基本信息表
-                pcode_or_ecode = request.data.pop('pcode_or_ecode', None)
+                pcode_or_ecode = request.data.pop('pcode', None) if request.data.pop('pcode', None) else request.data.pop('ecode', None)
                 # 激活状态
                 state = request.data.get('show_state', None)
 
-                if not mcode_list or not cooperation_code or not main_owner or not owner_type or not key_info or not pcode_or_ecode:
+                if not mname_list or not cooperation_name or not main_owner or not owner_type or not key_info or not pcode_or_ecode:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('请完善相关信息')
 
@@ -1208,10 +1208,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 serializer_ecode = serializer.data['r_code']
 
                 #2 创建合作方式表
-                dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
+                dict_coop = {'寻求资金': 1, '市场推广': 2, '方案落地': 3, '其他方式另行确定': 4}
                 ResultsCooperationTypeInfo.objects.create(r_type=1,
-                rr_code=serializer_ecode, cooperation_code=cooperation_code,
-                cooperation_name=dict_coop[cooperation_code], state=state)
+                rr_code=serializer_ecode, cooperation_name=cooperation_name,
+                cooperation_code=dict_coop[cooperation_name], state=state)
 
                 #3 创建持有人信息表
                 ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
@@ -1224,7 +1224,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 #5 创建所属领域
                 major_list = []
-                for mcode in mcode_list:
+                for mname in mname_list:
+                    mcode = MajorInfo.objects.get(mname=mname).mcode
                     major_list.append(MajorUserinfo(mcode=mcode,user_type=4,user_code=serializer_ecode,mtype=2))
                 MajorUserinfo.objects.bulk_create(major_list)
 
@@ -1327,24 +1328,24 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 data = request.data
                 # 图片
-                single_dict = request.data.pop('single', None)
+                single_dict = request.data.pop('Cover', None)
                 # 附件
-                attachment_list = request.data.pop('attachment', None)
+                attachment_list = request.data.pop('Attach', None)
                 # 所属领域
-                mcode_list = request.data.pop('mcode',None)
+                mname_list = request.data.pop('mname',None)
                 # 成果/需求合作方式信息表
-                cooperation_code = request.data.pop('cooperation_code', None)
+                cooperation_name = request.data.pop('cooperation_name', None)
                 # 成果持有人信息表
                 main_owner = request.data.pop('main_owner', None)
                 owner_type = request.data.get('owner_type', None)
                 # 关键字表
                 key_info = request.data.pop('key_info', None)
                 # 个人基本信息表或者企业基本信息表
-                pcode_or_ecode = request.data.pop('pcode_or_ecode', None)
+                pcode_or_ecode = request.data.pop('pcode', None) if request.data.pop('pcode', None) else request.data.pop('ecode', None)
                 # 激活状态
                 state = request.data.get('state', None)
 
-                if not mcode_list or not cooperation_code or not main_owner or not owner_type or not key_info or not pcode_or_ecode:
+                if not mname_list or not cooperation_name or not main_owner or not owner_type or not key_info or not pcode_or_ecode:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('请完善相关信息')
 
@@ -1359,9 +1360,9 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     instance._prefetched_objects_cache = {}
 
                 # 2 更新合作方式表
-                dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
+                dict_coop = {'寻求资金': 1, '市场推广': 2, '方案落地': 3, '其他方式另行确定': 4}
                 ResultsCooperationTypeInfo.objects.filter(rr_code=serializer_ecode).update(r_type=1,
-                cooperation_code=cooperation_code,cooperation_name=dict_coop[cooperation_code], state=state)
+                cooperation_name=cooperation_name,cooperation_code=dict_coop[cooperation_name], state=state)
 
                 # 3 更新持有人信息表
                 ResultsOwnerInfo.objects.filter(r_code=serializer_ecode).update(
@@ -1375,7 +1376,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 #5 更新新纪录
                 MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
                 major_list = []
-                for mcode in mcode_list:
+                for mname in mname_list:
+                    mcode = MajorInfo.objects.get(mname=mname).mcode
                     major_list.append(MajorUserinfo(mcode=mcode, user_type=4, user_code=serializer_ecode, mtype=2))
                 MajorUserinfo.objects.bulk_create(major_list)
 
@@ -1565,24 +1567,24 @@ class ManagementrViewSet(viewsets.ModelViewSet):
             try:
                 data = request.data
                 # 图片
-                single_dict = request.data.pop('single', None)
+                single_dict = request.data.pop('Cover', None)
                 # 附件
-                attachment_list = request.data.pop('attachment', None)
+                attachment_list = request.data.pop('Attach', None)
                 # 所属领域表
-                mcode_list = request.data.pop('mcode',None)
+                mname_list = request.data.pop('mname',None)
                 # 成果/需求合作方式信息表
-                cooperation_code = request.data.pop('cooperation_code', None)
-                # 成果持有人信息表
+                cooperation_name = request.data.pop('cooperation_name', None)
+                # 需求持有人信息表
                 main_owner = request.data.pop('main_owner', None)
                 owner_type = request.data.get('owner_type', None)
                 # 关键字表
-                key_info = request.data.pop('key_info', None)
+                key_info = request.data.pop('Keywords', None)
                 # 个人基本信息表或者企业基本信息表
-                pcode_or_ecode = request.data.pop('pcode_or_ecode', None)
+                pcode_or_ecode = request.data.pop('pcode', None) if request.data.pop('pcode', None) else request.data.pop('ecode', None)
                 # 激活状态
                 state = request.data.get('show_state', None)
 
-                if not mcode_list or not cooperation_code or not main_owner or not owner_type or not key_info or not pcode_or_ecode:
+                if not mname_list or not cooperation_name or not main_owner or not owner_type or not key_info or not pcode_or_ecode:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('请完善相关信息')
 
@@ -1603,10 +1605,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 serializer_ecode = serializer.data['req_code']
 
                 #2 创建合作方式表
-                dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
+                dict_coop = {'寻求资金': 1, '市场推广': 2, '方案落地': 3, '其他方式另行确定': 4}
                 ResultsCooperationTypeInfo.objects.create(r_type=2,
-                rr_code=serializer_ecode, cooperation_code=cooperation_code,
-                cooperation_name=dict_coop[cooperation_code], state=state)
+                rr_code=serializer_ecode, cooperation_name=cooperation_name,
+                cooperation_code=dict_coop[cooperation_name], state=state)
 
                 #3 创建持有人信息表
                 ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
@@ -1619,8 +1621,9 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 #5 创建所属领域
                 major_list = []
-                for mcode in mcode_list:
-                    major_list.append(MajorUserinfo(mcode=mcode,user_type=5,user_code=serializer_ecode,mtype=2))
+                for mname in mname_list:
+                    mcode = MajorInfo.objects.get(mname=mname).mcode
+                    major_list.append(MajorUserinfo(mcode=mcode, user_type=5, user_code=serializer_ecode, mtype=2))
                 MajorUserinfo.objects.bulk_create(major_list)
 
                 #6 转移附件创建ecode表
@@ -1722,24 +1725,24 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 data = request.data
                 # 图片
-                single_dict = request.data.pop('single', None)
+                single_dict = request.data.pop('Cover', None)
                 # 附件
-                attachment_list = request.data.pop('attachment', None)
-                # 所属领域
-                mcode_list = request.data.pop('mcode',None)
+                attachment_list = request.data.pop('Attach', None)
+                # 所属领域表
+                mname_list = request.data.pop('mname', None)
                 # 成果/需求合作方式信息表
-                cooperation_code = request.data.pop('cooperation_code', None)
-                # 成果持有人信息表
+                cooperation_name = request.data.pop('cooperation_name', None)
+                # 需求持有人信息表
                 main_owner = request.data.pop('main_owner', None)
                 owner_type = request.data.get('owner_type', None)
                 # 关键字表
-                key_info = request.data.pop('key_info', None)
+                key_info = request.data.pop('Keywords', None)
                 # 个人基本信息表或者企业基本信息表
-                pcode_or_ecode = request.data.pop('pcode_or_ecode', None)
+                pcode_or_ecode = request.data.pop('pcode', None) if request.data.pop('pcode', None) else request.data.pop('ecode', None)
                 # 激活状态
                 state = request.data.get('state', None)
 
-                if not mcode_list or not cooperation_code or not main_owner or not owner_type or not key_info or not pcode_or_ecode:
+                if not mname_list or not cooperation_name or not main_owner or not owner_type or not key_info or not pcode_or_ecode:
                     transaction.savepoint_rollback(save_id)
                     return HttpResponse('请完善相关信息')
 
@@ -1754,9 +1757,9 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     instance._prefetched_objects_cache = {}
 
                 # 2 更新合作方式表
-                dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
+                dict_coop = {'寻求资金': 1, '市场推广': 2, '方案落地': 3, '其他方式另行确定': 4}
                 ResultsCooperationTypeInfo.objects.filter(rr_code=serializer_ecode).update(r_type=2,
-                cooperation_code=cooperation_code,cooperation_name=dict_coop[cooperation_code], state=state)
+                cooperation_name=cooperation_name,cooperation_code=dict_coop[cooperation_name], state=state)
 
                 # 3 更新持有人信息表
                 ResultsOwnerInfo.objects.filter(r_code=serializer_ecode).update(
@@ -1770,7 +1773,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 #5 更新新纪录
                 MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
                 major_list = []
-                for mcode in mcode_list:
+                for mname in mname_list:
+                    mcode = MajorInfo.objects.get(mname=mname).mcode
                     major_list.append(MajorUserinfo(mcode=mcode, user_type=5, user_code=serializer_ecode, mtype=2))
                 MajorUserinfo.objects.bulk_create(major_list)
 
