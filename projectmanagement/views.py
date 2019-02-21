@@ -558,7 +558,11 @@ def upCheckinfo(self, request):
     substep_serial_type = data['substep_serial_type']
     cmsg = data['cmsg']
     # 终止项目时使用  主要是获取需要审核的状态
-    t_pssi = ProjectSubstepSerialInfo.objects.get(project_code=project_code,step_code=step_code,substep_code=substep_code,substep_serial=substep_serial)
+    try:
+        t_pssi = ProjectSubstepSerialInfo.objects.get(project_code=project_code,step_code=step_code,substep_code=substep_code,substep_serial=substep_serial)
+    except Exception as e:
+        fail_msg = "审核失败%s" % str(e)
+        return JsonResponse({"state": 0, "msg": fail_msg})
     old_substep_state = t_pssi.substep_serial_state
     # old_substep_state = -11 # 测试时使用
 
