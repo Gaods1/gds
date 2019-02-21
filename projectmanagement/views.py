@@ -524,6 +524,8 @@ def upCheckinfo(self, request):
     old_substep_state = t_pssi.substep_serial_state
     # old_substep_state = -11 # 测试时使用
 
+    writeLog('yzw_py.log', data, sys._getframe().f_code.co_filename, str(sys._getframe().f_lineno))
+
     # 这里只判断一次，后面可以借用
     if old_substep_state != -11:
         # 普通步骤
@@ -628,6 +630,11 @@ def upCheckinfo(self, request):
                 psi.save()
             else:
                 psi = ProjectStepInfo.objects.get(project_code=project_code, step_code=step_code)
+                if old_substep_state != -11:  # 普通步骤
+                    pass
+                else:
+                    psi.step_state = substep_serial_state
+                    psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 psi.step_msg = cmsg
                 psi.save()
 
