@@ -1261,8 +1261,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     url_l = attachment.split('/')
                     url_file = url_l[-1]
 
-                    url_file_pdf = os.path.split(url_file)[0] + '.pdf'
-                    doc = os.path.split(url_file)[-1]
+                    url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
+                    #doc = os.path.splitext(url_file)[-1]
 
                     url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/' + url_file
                     if not os.path.exists(url_j):
@@ -1281,7 +1281,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
 
                     path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                    list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file_pdf, path=path,operation_state=3, state=1))
+                    list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,operation_state=3, state=1))
 
                     # 同路经下有pdf文件
                     if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx'):
@@ -1303,7 +1303,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         shutil.move(url_j, url_x)
                         # 将pdf临时目录转移到正式目录
                         shutil.move(url_j_pdf, url_x_pdf)
-                        list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,operation_state=3, state=1))
+                        list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file_pdf, path=path,operation_state=3, state=1))
                         url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                         list2.append(url_x_f_pdf)
                     else:
@@ -1461,8 +1461,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             url_l = attachment.split('/')
                             url_file = url_l[-1]
 
-                            url_file_pdf = os.path.split(url_file)[0] + '.pdf'
-                            doc = os.path.split(url_file)[-1]
+                            url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
+                            #doc = os.path.split(url_file)[-1]
 
                             url_j = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + url_file
                             if not os.path.exists(url_j):
@@ -1481,7 +1481,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                             path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
                             list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
-                                                            file_name=url_file_pdf, path=path, operation_state=3,
+                                                            file_name=url_file, path=path, operation_state=3,
                                                             state=1))
 
                             # 同路经下有pdf文件
@@ -1505,7 +1505,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                                 # 将pdf临时目录转移到正式目录
                                 shutil.move(url_j_pdf, url_x_pdf)
                                 list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
-                                                                file_name=url_file, path=path, operation_state=3,
+                                                                file_name=url_file_pdf, path=path, operation_state=3,
                                                                 state=1))
                                 url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                                 list2.append(url_x_f_pdf)
