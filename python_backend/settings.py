@@ -94,8 +94,6 @@ INSTALLED_APPS = [
     'projectmanagement',#项目管理
     'consult',#征询管理
     'index',
-    'ckeditor',#富文本编辑器
-    'ckeditor_uploader',#富文本编辑器加载图片模块
 ]
 
 MIDDLEWARE = [
@@ -240,8 +238,6 @@ BASE_URL= 'http://patclub.for8.cn:8764/'#此地址根据图片服务器的真实
 media_root_front = 'http://patclub.for8.cn:8764/temp/uploads/temporary/'#此地址为抛给前端的地址
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
-
-CKEDITOR_UPLOAD_PATH = '/alidata1/patclub/temp/uploads/temporary/'
 
 LOGGING = {
     'version': 1,
