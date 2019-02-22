@@ -192,8 +192,9 @@ class PublicInfo(APIView,FileSystemStorage):
                         # 删除文件
                         a.delete(url)
                         # 相同路径下删除pdf文件
-                        name_pdf= name.split('.')[-1]
-                        name_pdf = name.replace(name_pdf, 'pdf')
+                        #name_pdf= name.split('.')[-1]
+                        name_pdf = os.path.splitext(name)[0] + '.pdf'
+                        #name_pdf = name.replace(name_pdf, 'pdf')
                         url_pdf = url.replace(name,name_pdf)
                         if os.path.exists(url_pdf):
                             a.delete(url_pdf)
@@ -208,7 +209,7 @@ class PublicInfo(APIView,FileSystemStorage):
                     return Response({'detail': '删除失败' % str(e)})
 
                 transaction.savepoint_commit(save_id)
-                return HttpResponse({'message':'ok'})
+                return Response({'message':'ok'})
 
 
 
