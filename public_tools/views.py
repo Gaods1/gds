@@ -50,10 +50,9 @@ class PublicInfo(APIView,FileSystemStorage):
         flag = request.POST.get('flag',None)
 
         if not files or not flag:
-            return HttpResponse('请上传文件')
+            return Response({'detail':'请上传文件'})
         if flag == 'attachment':
-            pdf_and_jpg = []
-            doc_and_xls = []
+            attachment_pdf = []
             dict = {}
             # 建立事物机制
             with transaction.atomic():
@@ -75,32 +74,21 @@ class PublicInfo(APIView,FileSystemStorage):
                         if url.endswith('doc') or url.endswith('xls') or url.endswith('xlsx') or url.endswith('docx'):
                             # 转换office文件为pdf文件
                             child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + settings.MEDIA_ROOT + 'temp/uploads/temporary/' + ' ' + url, stdout=subprocess.PIPE, shell=True)
-                            # 拼接转换pdf后的路径
-                            url_pdf = os.path.splitext(url)[0] + '.pdf'
-                            # 给前端抛出pdf路径
-                            u_z = url_pdf.split('/')[-1]
-                            url_front = settings.media_root_front + u_z
-                            pdf_and_jpg.append(url_front)
 
                         u_z = url.split('/')[-1]
                         url_front = settings.media_root_front + u_z
-                        if url.endswith('doc') or url.endswith('xls') or url.endswith('xlsx') or url.endswith('docx'):
-                            doc_and_xls.append(url_front)
-                        else:
-                            pdf_and_jpg.append(url_front)
-
-
+                        attachment_pdf.append(url_front)
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('上传失败' % str(e))
+                    return Response({'detail': '上传失败%s' % str(e)})
 
-                dict['attachment_pdf_and_jpg'] = pdf_and_jpg
-                dict['attachment_doc_and_xls'] = doc_and_xls
+                dict['attachment'] = attachment_pdf
                 transaction.savepoint_commit(save_id)
                 return Response(dict)
         else:
             if len(files)!=1:
-                return HttpResponse('证件照只能上传一张')
+                return Response({'detail': '证件照只能上传一张'})
+
             # 建立事物机制
             with transaction.atomic():
                 # 创建一个保存点
@@ -113,7 +101,8 @@ class PublicInfo(APIView,FileSystemStorage):
                             os.makedirs(url)
                         url = url + file.name
                         if not url.endswith('jpg') and not url.endswith('png') and not url.endswith('jpeg') and not url.endswith('bmp') and not url.endswith('gif'):
-                            return HttpResponse('请上传图片类型')
+                            return Response({'detail': '请上传图片类型'})
+
                         # 创建对象
                         a = FileSystemStorage()
                         # 上传服务器
@@ -136,27 +125,29 @@ class PublicInfo(APIView,FileSystemStorage):
                         dict[flag] = jpg
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('上传失败' % str(e))
+                    return Response({'detail': '上传失败%s' % str(e)})
 
                 transaction.savepoint_commit(save_id)
                 return Response(dict)
     def delete(self,request):
 
         if not request.method == "DELETE":
-            return JsonResponse({"error": u"不支持此种请求"}, safe=False)
+            return Response({"detail": u"不支持此种请求"})
 
         name = request.query_params.get('name',None)
         serial = request.query_params.get('serial',None)
 
         if not name:
-            return HttpResponse('请添加要删除的文件名称')
+            return Response({'detail': '请添加要删除的文件名称'})
+
         # 在提交之前的删除
         if not serial:
             # 拼接地址
             url = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + name
             # 判断此路径下是否有文件
             if not os.path.exists(url):
-                return HttpResponse('该临时路径下没有该文件')
+                return Response({'detail': '该临时路径下没有该文件'})
+
             # 建立事物机制
             with transaction.atomic():
                 # 创建一个保存点
@@ -174,10 +165,9 @@ class PublicInfo(APIView,FileSystemStorage):
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('删除失败' % str(e))
-
+                    return Response({'detail': '删除失败' % str(e)})
                 transaction.savepoint_commit(save_id)
-                return HttpResponse('ok')
+                return Response({'message':'ok'})
 
         # 在提交之后的删除
         else:
@@ -194,7 +184,8 @@ class PublicInfo(APIView,FileSystemStorage):
                         # 判断该路径下是否有该文件
                         if not os.path.exists(url):
                             transaction.savepoint_rollback(save_id)
-                            return HttpResponse('该正式路径下不存在该文件')
+                            return Response({'detail': '该正式路径下不存在该文件'})
+
                         #url = url + name
                         # 创建对象
                         a = FileSystemStorage()
@@ -214,9 +205,10 @@ class PublicInfo(APIView,FileSystemStorage):
                             path_pdf.order_by('-insert_time')[0].delete()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('删除失败' % str(e))
+                    return Response({'detail': '删除失败' % str(e)})
+
                 transaction.savepoint_commit(save_id)
-                return HttpResponse('ok')
+                return HttpResponse({'message':'ok'})
 
 
 

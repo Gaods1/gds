@@ -93,11 +93,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
         if instance.state != 1:
             logger.error('该成果信息已审核')
-            return Response({"detail": {"detail": ['该成果信息已审核']}}, status=400)
+            return Response({"detail": '该成果信息已审核'}, status=400)
 
         if not data.get('state',None) or not data.get('opinion',None):
             logger.error('状态和审核意见是必填项')
-            return Response({"detail": {"detail": ['状态和审核意见是必填项']}}, status=400)
+            return Response({"detail": '状态和审核意见是必填项'}, status=400)
 
         state = data['state']
 
@@ -122,7 +122,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['成果审核历史记录创建失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '成果审核历史记录创建失败%s' % str(e)}, status=400)
 
 
                 # 更新成果评价信息表
@@ -131,7 +131,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新成果评价信息失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '更新成果评价信息失败%s' % str(e)}, status=400)
 
                 # 更新成果合作方式表
 
@@ -140,7 +140,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新成果合作方式失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '更新成果合作方式失败%s' % str(e)}, status=400)
 
                 # 更新检索关键字表
                 try:
@@ -148,7 +148,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新检索关键字失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '更新检索关键字失败%s' % str(e)}, status=400)
 
                 # 更新成果信息表
                 try:
@@ -158,7 +158,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新成果信息失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '更新成果信息失败%s' % str(e)}, status=400)
 
                 # 更新成果持有人表
                 try:
@@ -168,7 +168,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新成果持有人表失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '更新成果持有人表失败%s' % str(e)}, status=400)
                 # 如果是采集员
                 if Results.obtain_type==1:
                     try:
@@ -178,7 +178,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             # 如果是不通过的状态
                             if ownerp.state == 3:
                                 transaction.savepoint_rollback(save_id)
-                                return Response({"detail": {"detail": ['请先通过成果持有人(个人)审核']}}, status=400)
+                                return Response({"detail": '请先通过成果持有人(个人)审核'}, status=400)
                             else:
 
                                 ownerp.state=2
@@ -210,7 +210,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             # 如果是采集企业不通过的状态
                             if ownere.state == 3:
                                 transaction.savepoint_rollback(save_id)
-                                return Response({"detail": {"detail": ['请先通过成果持有人(企业)审核']}}, status=400)
+                                return Response({"detail": '请先通过成果持有人(企业)审核'}, status=400)
 
                             else:
 
@@ -265,7 +265,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     except Exception as e:
                         logger.error(e)
                         transaction.savepoint_rollback(save_id)
-                        return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
+                        return Response({"detail": '申请表更新失败%s' % str(e)}, status=400)
 
                     transaction.savepoint_commit(save_id)
                     return Response({'message': '审核通过'})
@@ -279,7 +279,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             # 如果是持有人个人或团队不通过的状态
                             if ownerp.state==3:
                                 transaction.savepoint_rollback(save_id)
-                                return Response({"detail": {"detail": ['请先通过成果持有人(个人)审核']}}, status=400)
+                                return Response({"detail": '请先通过成果持有人(个人)审核'}, status=400)
                             else:
                                 tel = ownerp.pmobile
                                 url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
@@ -298,7 +298,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             # 如果是持有人企业不通过的状态
                             if ownere.state==3:
                                 transaction.savepoint_rollback(save_id)
-                                return Response({"detail": {"detail": ['请先通过成果持有人(企业)审核']}}, status=400)
+                                return Response({"detail": '请先通过成果持有人(企业)审核'}, status=400)
 
                             else:
                                 tel = ownere.emobile
@@ -345,7 +345,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     except Exception as e:
                         logger.error(e)
                         transaction.savepoint_rollback(save_id)
-                        return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
+                        return Response({"detail": '申请表更新失败%s' % str(e)}, status=400)
 
                     transaction.savepoint_commit(save_id)
                     return Response({'message': '审核通过'})
@@ -369,7 +369,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['成果审核历史记录创建失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '成果审核历史记录创建失败%s' % str(e)}, status=400)
 
                 # 更新成果信息表
                 try:
@@ -379,7 +379,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新成果信息失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '更新成果信息失败%s' % str(e)}, status=400)
 
                 # 更新成果评价信息表
                 try:
@@ -387,7 +387,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新成果评价信息失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '更新成果评价信息失败%s' % str(e)}, status=400)
 
                 # 更新成果合作方式表
 
@@ -398,7 +398,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新成果合作方式失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '更新成果合作方式失败%s' % str(e)}, status=400)
 
                 # 更新检索关键字表
                 try:
@@ -406,7 +406,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新检索关键字失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '更新检索关键字失败%s' % str(e)}, status=400)
 
                 # 更新成果持有人表
 
@@ -417,7 +417,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新成果持有人表失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '更新成果持有人表失败%s' % str(e)}, status=400)
 
                 # 如果是采集员
                 if Results.obtain_type == 1:
@@ -428,7 +428,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             # 如果是不通过的状态
                             if ownerp.state == 3:
                                 transaction.savepoint_rollback(save_id)
-                                return Response({"detail": {"detail": ['请先通过成果持有人(个人)审核']}}, status=400)
+                                return Response({"detail": '请先通过成果持有人(个人)审核'}, status=400)
                             else:
                                 tel = ownerp.pmobile
                                 url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
@@ -447,7 +447,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             # 如果是采集企业不通过的状态
                             if ownere.state == 3:
                                 transaction.savepoint_rollback(save_id)
-                                return Response({"detail": {"detail": ['请先通过成果持有人(企业)审核']}}, status=400)
+                                return Response({"detail": '请先通过成果持有人(企业)审核'}, status=400)
                             else:
                                 tel = ownere.emobile
                                 url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
@@ -489,7 +489,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     except Exception as e:
                         logger.error(e)
                         transaction.savepoint_rollback(save_id)
-                        return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
+                        return Response({"detail": '申请表更新失败%s' % str(e)}, status=400)
 
                     transaction.savepoint_commit(save_id)
                     return Response({'message': '审核不通过'})
@@ -503,7 +503,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             # 如果是持有人个人或团队不通过的状态
                             if ownerp.state == 3:
                                 transaction.savepoint_rollback(save_id)
-                                return Response({"detail": {"detail": ['请先通过成果持有人(个人)审核']}}, status=400)
+                                return Response({"detail": '请先通过成果持有人(个人)审核'}, status=400)
                             else:
                                 tel = ownerp.pmobile
                                 url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
@@ -522,7 +522,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             # 如果是持有人企业不通过的状态
                             if ownere.state == 3:
                                 transaction.savepoint_rollback(save_id)
-                                return Response({"detail": {"detail": ['请先通过成果持有人(企业)审核']}}, status=400)
+                                return Response({"detail": '请先通过成果持有人(企业)审核'}, status=400)
 
                             else:
                                 tel = ownere.emobile
@@ -565,7 +565,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     except Exception as e:
                         logger.error(e)
                         transaction.savepoint_rollback(save_id)
-                        return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
+                        return Response({"detail": '申请表更新失败%s' % str(e)}, status=400)
 
                     transaction.savepoint_commit(save_id)
                     return Response({'message': '审核不通过'})
@@ -626,35 +626,15 @@ class RequirementViewSet(viewsets.ModelViewSet):
         else:
             return self.queryset
 
-    def list(self, request, *args, **kwargs):
-        search = request.query_params.get('search', None)
-        if search:
-            rq = RequirementsInfo.objects.values_list('req_code').filter(req_code__in=self.get_queryset().values_list('rr_code'),
-                                                                  req_name__icontains=search)
-            kq = KeywordsInfo.objects.values_list('object_code').filter(object_code__in=self.get_queryset().values_list('rr_code'),
-                                                                        key_info__icontains=search)
-            queryset = self.get_queryset().filter(Q(rr_code__in=rq) | Q(rr_code__in=kq))
-        else:
-            queryset = self.get_queryset()
-        queryset = self.filter_queryset(queryset)
-
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
-
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         data = request.data
 
         if instance.state != 1:
-            return Response({"detail": {"detail": ['该需求信息已审核']}}, status=400)
+            return Response({"detail": '该需求信息已审核'}, status=400)
 
         if not data.get('state',None) or not data.get('opinion',None):
-            return Response({"detail": {"detail": ['状态和审核意见是必填项']}}, status=400)
+            return Response({"detail": '状态和审核意见是必填项'}, status=400)
 
         state = data['state']
         if state == 2:
@@ -675,7 +655,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['需求审核历史记录创建失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '需求审核历史记录创建失败%s' % str(e)}, status=400)
 
                 # 更新需求信息表
                 try:
@@ -685,7 +665,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新需求信息失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '更新需求信息失败%s' % str(e)}, status=400)
 
                 # 更新需求评价信息表
                 try:
@@ -693,7 +673,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新需求评价信息失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '更新需求评价信息失败%s' % str(e)}, status=400)
 
                 # 更新成果合作方式表
 
@@ -703,7 +683,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新需求合作方式失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '更新需求合作方式失败%s' % str(e)}, status=400)
 
                 # 更新检索关键字表
                 try:
@@ -711,7 +691,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新检索关键字失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '更新检索关键字失败%s' % str(e)}, status=400)
 
                 # 更新成果持有人表
 
@@ -722,7 +702,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新需求持有人表失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '更新需求持有人表失败%s' % str(e)}, status=400)
 
                     # 如果是采集员
                 if Requirements.obtain_type == 1:
@@ -733,7 +713,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             # 如果是不通过的状态
                             if ownerp.state == 3:
                                 transaction.savepoint_rollback(save_id)
-                                return Response({"detail": {"detail": ['请先通过需求持有人(个人)审核']}}, status=400)
+                                return Response({"detail": '请先通过需求持有人(个人)审核'}, status=400)
                             else:
 
                                 ownerp.state = 2
@@ -765,7 +745,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             # 如果是采集企业不通过的状态
                             if ownere.state == 3:
                                 transaction.savepoint_rollback(save_id)
-                                return Response({"detail": {"detail": ['请先通过需求持有人(企业)审核']}}, status=400)
+                                return Response({"detail": '请先通过需求持有人(企业)审核'}, status=400)
 
                             else:
 
@@ -820,7 +800,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     except Exception as e:
                         logger.error(e)
                         transaction.savepoint_rollback(save_id)
-                        return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
+                        return Response({"detail": '申请表更新失败%s' % str(e)}, status=400)
 
                     transaction.savepoint_commit(save_id)
                     return Response({'message': '审核通过'})
@@ -834,7 +814,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             # 如果是持有人个人或团队不通过的状态
                             if ownerp.state == 3:
                                 transaction.savepoint_rollback(save_id)
-                                return Response({"detail": {"detail": ['请先通过需求持有人(个人)审核']}}, status=400)
+                                return Response({"detail": '请先通过需求持有人(个人)审核'}, status=400)
                             else:
                                 tel = ownerp.pmobile
                                 url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
@@ -900,7 +880,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     except Exception as e:
                         logger.error(e)
                         transaction.savepoint_rollback(save_id)
-                        return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
+                        return Response({"detail": '申请表更新失败%s' % str(e)}, status=400)
 
                     transaction.savepoint_commit(save_id)
                 return Response({'message': '审核通过'})
@@ -925,7 +905,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['需求审核历史记录创建失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '需求审核历史记录创建失败%s' % str(e)}, status=400)
 
                 # 更新需求信息表
                 try:
@@ -935,7 +915,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新需求信息失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '更新需求信息失败%s' % str(e)}, status=400)
 
                 # 更新需求评价信息表
                 try:
@@ -943,7 +923,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新需求评价信息失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '更新需求评价信息失败%s' % str(e)}, status=400)
 
                 # 更新成果合作方式表
 
@@ -954,7 +934,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['需求成果合作方式失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '需求成果合作方式失败%s' % str(e)}, status=400)
 
                 # 更新检索关键字表
                 try:
@@ -962,7 +942,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新检索关键字失败%s' % str(e)]}}, status=400)
+                    return Response({"detail": '更新检索关键字失败%s' % str(e)}, status=400)
 
                 # 更新成果持有人表
 
@@ -973,7 +953,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
-                    return Response({"detail": {"detail": ['更新需求持有人表失败%s']}}, status=400)
+                    return Response({"detail": '更新需求持有人表失败%s'}, status=400)
 
                 # 如果是采集员
                 if Requirements.obtain_type == 1:
@@ -984,7 +964,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             # 如果是不通过的状态
                             if ownerp.state == 3:
                                 transaction.savepoint_rollback(save_id)
-                                return Response({"detail": {"detail": ['请先通过需求持有人(个人)审核']}}, status=400)
+                                return Response({"detail": '请先通过需求持有人(个人)审核'}, status=400)
                             else:
                                 tel = ownerp.pmobile
                                 url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
@@ -1003,7 +983,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             # 如果是采集企业不通过的状态
                             if ownere.state == 3:
                                 transaction.savepoint_rollback(save_id)
-                                return Response({"detail": {"detail": ['请先通过需求持有人(企业)审核']}}, status=400)
+                                return Response({"detail":'请先通过需求持有人(企业)审核'}, status=400)
                             else:
                                 tel = ownere.emobile
                                 url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
@@ -1045,7 +1025,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     except Exception as e:
                         logger.error(e)
                         transaction.savepoint_rollback(save_id)
-                        return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
+                        return Response({"detail": '申请表更新失败%s' % str(e)}, status=400)
 
                     transaction.savepoint_commit(save_id)
                     return Response({'message': '审核不通过'})
@@ -1059,7 +1039,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             # 如果是持有人个人或团队不通过的状态
                             if ownerp.state == 3:
                                 transaction.savepoint_rollback(save_id)
-                                return Response({"detail": {"detail": ['请先通过需求持有人(个人)审核']}}, status=400)
+                                return Response({"detail": '请先通过需求持有人(个人)审核'}, status=400)
                             else:
                                 tel = ownerp.pmobile
                                 url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
@@ -1078,7 +1058,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             # 如果是持有人企业不通过的状态
                             if ownere.state == 3:
                                 transaction.savepoint_rollback(save_id)
-                                return Response({"detail": {"detail": ['请先通过需求持有人(企业)审核']}}, status=400)
+                                return Response({"detail": '请先通过需求持有人(企业)审核'}, status=400)
 
                             else:
                                 tel = ownere.emobile
@@ -1121,7 +1101,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     except Exception as e:
                         logger.error(e)
                         transaction.savepoint_rollback(save_id)
-                        return Response({"detail": {"detail": ['申请表更新失败%s' % str(e)]}}, status=400)
+                        return Response({"detail": '申请表更新失败%s' % str(e)}, status=400)
 
                     transaction.savepoint_commit(save_id)
                     return Response({'message': '审核不通过'})
@@ -1187,20 +1167,25 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 pcode_or_ecode = request.data.pop('pcode', None) if request.data.pop('pcode', None) else request.data.pop('ecode', None)
                 # 激活状态
                 state = request.data.get('show_state', None)
+                # 关联帐号
+                username = request.data.pop('username', None)
 
-                if not mname_list or not cooperation_name or not main_owner or not owner_type or not key_info or not pcode_or_ecode:
+                if not mname_list or not cooperation_name or not main_owner or not owner_type or not key_info or not pcode_or_ecode or not username:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请完善相关信息')
+                    return Response({'detail':'请完善相关信息'},status=400)
 
                 if not single_dict or not attachment_list:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请先上传相关文件')
+                    return Response({'detail':'请先上传相关文件'},status=400)
+
 
                 if len(single_dict) != 1:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('封面只能上传一张')
+                    return Response({'detail': '封面只能上传一张'}, status=400)
 
                 #1 创建resultsinfo表
+                account_code = AccountInfo.objects.get(username=username).account_code
+                data['account_code'] = account_code
                 data['creater'] = request.user.account
                 serializer = self.get_serializer(data=data)
                 serializer.is_valid(raise_exception=True)
@@ -1251,52 +1236,77 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 list2 = []
 
                 # 封面
-                for key, value in single_dict.items():
+                value = single_dict['coverImg']
 
-                    if key != 'coverImg':
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('封面代名不正确')
+                url_l = value.split('/')
+                url_file = url_l[-1]
 
-                    url_l = value.split('/')
-                    url_file = url_l[-1]
+                url_j_jpg = settings.MEDIA_ROOT+'temp/uploads/temporary/' + url_file
+                if not os.path.exists(url_j_jpg):
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
 
-                    url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/' + url_file
-                    if not os.path.exists(url_j):
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
+                url_x_jpg = '{}{}/{}/{}/{}'.format(relative_path,param_value,tcode_coverImg, serializer_ecode, url_file)
+                # 拼接给前端的的地址
+                url_x_f = url_x_jpg.replace(relative_path,relative_path_front)
+                list2.append(url_x_f)
 
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path,param_value,tcode_coverImg, serializer_ecode, url_file)
-                    # 拼接给前端的的地址
-                    url_x_f = url_x.replace(relative_path,relative_path_front)
-                    list2.append(url_x_f)
-
-                    # 拼接ecode表中的path
-                    path = '{}/{}/{}/'.format(param_value,tcode_coverImg,serializer_ecode)
-                    list1.append(AttachmentFileinfo(tcode=tcode_coverImg,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1))
-
-                    # 将临时目录转移到正式目录
-                    shutil.move(url_j, url_x)
+                # 拼接ecode表中的path
+                path = '{}/{}/{}/'.format(param_value,tcode_coverImg,serializer_ecode)
+                list1.append(AttachmentFileinfo(tcode=tcode_coverImg,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1))
 
                 for attachment in attachment_list:
                     url_l = attachment.split('/')
                     url_file = url_l[-1]
 
+                    url_file_pdf = os.path.split(url_file)[0] + '.pdf'
+                    doc = os.path.split(url_file)[-1]
+
                     url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/' + url_file
                     if not os.path.exists(url_j):
                         transaction.savepoint_rollback(save_id)
-                        return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
+                        return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
+
 
                     url_x = '{}{}/{}/{}/{}'.format(relative_path,param_value,tcode_attachment, serializer_ecode, url_file)
+
+                    if os.path.exists(url_x):
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
 
                     url_x_f = url_x.replace(relative_path, relative_path_front)
                     list2.append(url_x_f)
 
 
                     path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                    list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,operation_state=3, state=1))
+                    list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file_pdf, path=path,operation_state=3, state=1))
 
-                    # 将临时目录转移到正式目录
-                    shutil.move(url_j, url_x)
+                    # 同路经下有pdf文件
+                    if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx'):
+                        url_j_pdf = url_j.replace(doc,'pdf')
+                        url_x_pdf = url_x.replace(doc,'pdf')
+
+                        if not os.path.exists(url_j_pdf):
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '该临时路径下不存在该pdf文件,可能系统没有生成pdf文件'}, status=400)
+
+                        if os.path.exists(url_x_pdf):
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
+
+                        # 将doc临时目录转移到正式目录
+                        shutil.move(url_j, url_x)
+                        # 将pdf临时目录转移到正式目录
+                        shutil.move(url_j_pdf, url_x_pdf)
+                        list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,operation_state=3, state=1))
+                        url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
+                        list2.append(url_x_f_pdf)
+                    else:
+                        # 将doc临时目录转移到正式目录
+                        shutil.move(url_j, url_x)
+
+                # 将jpg临时目录转移到正式目录
+                shutil.move(url_j_jpg, url_x_jpg)
 
                 # 创建atachmentinfo表
                 AttachmentFileinfo.objects.bulk_create(list1)
@@ -1311,7 +1321,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 #return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
             except Exception as e:
                 transaction.savepoint_rollback(save_id)
-                return HttpResponse('创建失败%s' % str(e))
+                return Response({'detail': '创建失败%s' % str(e)}, status=400)
+
             transaction.savepoint_commit(save_id)
             return Response(dict)
 
@@ -1348,7 +1359,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 if not mname_list or not cooperation_name or not main_owner or not owner_type or not key_info or not pcode_or_ecode:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请完善相关信息')
+                    return Response({'detail': '请完善相关信息'}, status=400)
 
                 #1 更新resultsinfo表
                 serializer = self.get_serializer(instance, data=request.data, partial=partial)
@@ -1402,37 +1413,35 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     if not os.path.exists(url_x_c):
                         os.makedirs(url_x_c)
 
+                    url_j_jpg = None
+                    url_x_jpg = None
+
                     if single_dict and len(single_dict) == 1:
                         # 封面
-                        for key, value in single_dict.items():
+                        value = single_dict['coverImg']
+                        url_l = value.split('/')
+                        url_file = url_l[-1]
 
-                            if key != 'coverImg':
-                                transaction.savepoint_rollback(save_id)
-                                return HttpResponse('封面代名不正确')
+                        url_j_jpg = settings.MEDIA_ROOT+'temp/uploads/temporary/' + url_file
+                        if not os.path.exists(url_j_jpg):
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
 
-                            url_l = value.split('/')
-                            url_file = url_l[-1]
 
-                            url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/' + url_file
-                            if not os.path.exists(url_j):
-                                transaction.savepoint_rollback(save_id)
-                                return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
+                        url_x_jpg = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_coverImg, serializer_ecode, url_file)
 
-                            url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_coverImg, serializer_ecode, url_file)
+                        # 拼接给前端的的地址
+                        url_x_f = url_x_jpg.replace(relative_path, relative_path_front)
+                        list2.append(url_x_f)
 
-                            # 拼接给前端的的地址
-                            url_x_f = url_x.replace(relative_path, relative_path_front)
-                            list2.append(url_x_f)
+                        # 拼接ecode表中的path
+                        path = '{}/{}/{}/'.format(param_value, tcode_coverImg, serializer_ecode)
 
-                            # 拼接ecode表中的path
-                            path = '{}/{}/{}/'.format(param_value, tcode_coverImg, serializer_ecode)
+                        list1.append(
+                            AttachmentFileinfo(tcode=tcode_coverImg, ecode=serializer_ecode, file_name=url_file, path=path,
+                                               operation_state=3, state=1))
 
-                            list1.append(
-                                AttachmentFileinfo(tcode=tcode_coverImg, ecode=serializer_ecode, file_name=url_file, path=path,
-                                                   operation_state=3, state=1))
 
-                            # 将临时目录转移到正式目录
-                            shutil.move(url_j, url_x)
 
                     if attachment_list:
 
@@ -1440,25 +1449,59 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             url_l = attachment.split('/')
                             url_file = url_l[-1]
 
-                            url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/'+url_file
+                            url_file_pdf = os.path.split(url_file)[0] + '.pdf'
+                            doc = os.path.split(url_file)[-1]
+
+                            url_j = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + url_file
                             if not os.path.exists(url_j):
                                 transaction.savepoint_rollback(save_id)
-                                return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
+                                return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
 
-                            url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode,
-                                                           url_file)
+                            url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment,
+                                                           serializer_ecode, url_file)
 
-                            if not os.path.exists(url_x):
+                            if os.path.exists(url_x):
+                                transaction.savepoint_rollback(save_id)
+                                return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
 
-                                url_x_f = url_x.replace(relative_path, relative_path_front)
-                                list2.append(url_x_f)
+                            url_x_f = url_x.replace(relative_path, relative_path_front)
+                            list2.append(url_x_f)
 
-                                path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                                list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,file_name=url_file,path=path, operation_state=3, state=1))
+                            path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                            list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
+                                                            file_name=url_file_pdf, path=path, operation_state=3,
+                                                            state=1))
 
-                                # 将临时目录转移到正式目录
+                            # 同路经下有pdf文件
+                            if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith(
+                                    'xlsx') or url_j.endswith('docx'):
+                                url_j_pdf = url_j.replace(doc, 'pdf')
+                                url_x_pdf = url_x.replace(doc, 'pdf')
+
+                                if not os.path.exists(url_j_pdf):
+                                    transaction.savepoint_rollback(save_id)
+                                    return Response({'detail': '该临时路径下不存在该pdf文件,可能系统没有生成pdf文件'}, status=400)
+
+                                if os.path.exists(url_x_pdf):
+                                    transaction.savepoint_rollback(save_id)
+                                    return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
+
+                                # 将doc临时目录转移到正式目录
+                                shutil.move(url_j, url_x)
+                                # 将pdf临时目录转移到正式目录
+                                shutil.move(url_j_pdf, url_x_pdf)
+                                list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
+                                                                file_name=url_file, path=path, operation_state=3,
+                                                                state=1))
+                                url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
+                                list2.append(url_x_f_pdf)
+                            else:
+                                # 将doc临时目录转移到正式目录
                                 shutil.move(url_j, url_x)
 
+                    if url_j_jpg and url_x_jpg:
+                        # 将jpg临时目录转移到正式目录
+                        shutil.move(url_j_jpg, url_x_jpg)
                     # 创建atachmentinfo表
                     AttachmentFileinfo.objects.bulk_create(list1)
 
@@ -1470,7 +1513,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
             except Exception as e:
                 transaction.savepoint_rollback(save_id)
-                return HttpResponse('更新失败%s' % str(e))
+                return Response({'detail': '更新失败%s' % str(e)}, status=400)
+
             transaction.savepoint_commit(save_id)
             return Response(dict)
 
@@ -1518,12 +1562,13 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             shutil.rmtree(url_cov,ignore_errors=True)
                     except Exception as e:
                         transaction.savepoint_rollback(save_id)
-                        return HttpResponse('删除失败%s' % str(e))
+                        return Response({'detail': '删除失败%s' % str(e)}, status=400)
+
             except Exception as e:
                 transaction.savepoint_rollback(save_id)
-                return HttpResponse('删除失败%s' % str(e))
+                return Response({'detail': '删除失败%s' % str(e)}, status=400)
             transaction.savepoint_commit(save_id)
-            return HttpResponse('OK')
+            return Response({'message':'ok'})
 
 
 class ManagementrViewSet(viewsets.ModelViewSet):
@@ -1587,15 +1632,16 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 if not mname_list or not cooperation_name or not main_owner or not owner_type or not key_info or not pcode_or_ecode:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请完善相关信息')
+                    return Response({'detail': '请完善相关信息'}, status=400)
 
                 if not single_dict or not attachment_list:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请先上传相关文件')
+                    return Response({'detail': '请先上传相关文件'}, status=400)
+
 
                 if len(single_dict) != 1:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('封面只能上传一张')
+                    return Response({'detail': '封面只能上传一张'}, status=400)
 
                 #1 创建resultsinfo表
                 data['creater'] = request.user.account
@@ -1660,7 +1706,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/' + url_file
                     if not os.path.exists(url_j):
                         transaction.savepoint_rollback(save_id)
-                        return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
+                        return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
 
                     url_x = '{}{}/{}/{}/{}'.format(relative_path,param_value,tcode_coverImg, serializer_ecode, url_file)
                     # 拼接给前端的的地址
@@ -1681,7 +1727,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/' + url_file
                     if not os.path.exists(url_j):
                         transaction.savepoint_rollback(save_id)
-                        return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
+                        return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
 
                     url_x = '{}{}/{}/{}/{}'.format(relative_path,param_value,tcode_attachment, serializer_ecode, url_file)
 
@@ -1708,7 +1754,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 #return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
             except Exception as e:
                 transaction.savepoint_rollback(save_id)
-                return HttpResponse('创建失败%s' % str(e))
+                return Response({'detail': '创建失败%s' % str(e)}, status=400)
+
             transaction.savepoint_commit(save_id)
             return Response(dict)
 
@@ -1745,7 +1792,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 if not mname_list or not cooperation_name or not main_owner or not owner_type or not key_info or not pcode_or_ecode:
                     transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请完善相关信息')
+                    return Response({'detail': '请完善相关信息'}, status=400)
+
 
                 #1 更新resultsinfo表
                 serializer = self.get_serializer(instance, data=request.data, partial=partial)
@@ -1805,7 +1853,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                             if key != 'coverImg':
                                 transaction.savepoint_rollback(save_id)
-                                return HttpResponse('封面代名不正确')
+                                return Response({'detail': '封面代名不正确'}, status=400)
 
                             url_l = value.split('/')
                             url_file = url_l[-1]
@@ -1813,7 +1861,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                             url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/' + url_file
                             if not os.path.exists(url_j):
                                 transaction.savepoint_rollback(save_id)
-                                return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
+                                return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
+
 
                             url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_coverImg, serializer_ecode, url_file)
 
@@ -1840,7 +1889,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                             url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/'+url_file
                             if not os.path.exists(url_j):
                                 transaction.savepoint_rollback(save_id)
-                                return HttpResponse('该临时路径下不存在该文件,可能文件名错误')
+                                return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
 
                             url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode,
                                                            url_file)
@@ -1867,7 +1916,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
             except Exception as e:
                 transaction.savepoint_rollback(save_id)
-                return HttpResponse('更新失败%s' % str(e))
+                return Response({'detail': '更新失败%s' % str(e)}, status=400)
+
             transaction.savepoint_commit(save_id)
             return Response(dict)
 
@@ -1915,12 +1965,12 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                             shutil.rmtree(url_cov,ignore_errors=True)
                     except Exception as e:
                         transaction.savepoint_rollback(save_id)
-                        return HttpResponse('删除失败%s' % str(e))
+                        return Response({'detail': '删除失败%s' % str(e)}, status=400)
             except Exception as e:
                 transaction.savepoint_rollback(save_id)
-                return HttpResponse('删除失败%s' % str(e))
+                return Response({'detail': '删除失败%s' % str(e)}, status=400)
             transaction.savepoint_commit(save_id)
-            return HttpResponse('OK')
+            return Response({'message':'ok'})
 
 
 
