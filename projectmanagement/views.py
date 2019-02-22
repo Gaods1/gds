@@ -44,6 +44,27 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
     filter_fields = ("project_code", "project_name", "project_state", "project_sub_state")
     search_fields = ("project_code", "project_name", "project_state", "project_sub_state")
 
+    # def get_queryset(self):
+    #     assert self.queryset is not None, (
+    #         "'%s' should either include a `queryset` attribute, "
+    #         "or override the `get_queryset()` method."
+    #         % self.__class__.__name__
+    #     )
+    #
+    #     project_state = self.request.GET.get('project_state')
+    #     if project_state != None and project_state != '':
+    #         project_state = int(project_state)
+    #         if project_state == -1:
+    #             queryset = ProjectInfo.objects.filter(state__in=[-1,-11,-12]).order_by('-pserial')
+    #         else:
+    #             queryset = self.queryset
+    #     else:
+    #         queryset = self.queryset
+    #
+    #     if isinstance(queryset, QuerySet):
+    #         # Ensure queryset is re-evaluated on each request.
+    #         queryset = queryset.all()
+    #     return queryset
 
     def create(self, request, *args, **kwargs):
         data = request.data
@@ -441,7 +462,24 @@ def getProjectByDept(self, request):
     project_codes = [projectbrokerinfo.project_code for projectbrokerinfo in
                      ProjectBrokerInfo.objects.filter(broker_code__in=brokers)]
 
-    q = self.get_queryset().filter(project_code__in=project_codes)
+    project_state = request.GET.get('project_state')
+    project_sub_state = request.GET.get('project_sub_state')
+    if project_state != None and project_state != '':
+        project_state = int(project_state)
+        if project_sub_state != None and project_sub_state != '':
+            project_sub_state = int(project_sub_state)
+            q = self.get_queryset().filter(project_code__in=project_codes, project_state=project_state,project_sub_state=project_sub_state)
+        else:
+            q = self.get_queryset().filter(project_code__in=project_codes, project_state=project_state)
+    else:
+        isend = request.GET.get('isend')
+        if isend != None:
+            if isend == '1':
+                q = self.get_queryset().filter(project_code__in=project_codes, state__in=[-1])
+            else:
+                q = self.get_queryset().filter(project_code__in=project_codes)
+        else:
+            q = self.get_queryset().filter(project_code__in=project_codes)
     if q != None and len(q) > 0:
         queryset = self.filter_queryset(q)
     else:
@@ -520,9 +558,15 @@ def upCheckinfo(self, request):
     substep_serial_type = data['substep_serial_type']
     cmsg = data['cmsg']
     # 终止项目时使用  主要是获取需要审核的状态
-    t_pssi = ProjectSubstepSerialInfo.objects.get(project_code=project_code,step_code=step_code,substep_code=substep_code,substep_serial=substep_serial)
+    try:
+        t_pssi = ProjectSubstepSerialInfo.objects.get(project_code=project_code,step_code=step_code,substep_code=substep_code,substep_serial=substep_serial)
+    except Exception as e:
+        fail_msg = "审核失败%s" % str(e)
+        return JsonResponse({"state": 0, "msg": fail_msg})
     old_substep_state = t_pssi.substep_serial_state
     # old_substep_state = -11 # 测试时使用
+
+    writeLog('yzw_py.log', data, sys._getframe().f_code.co_filename, str(sys._getframe().f_lineno))
 
     # 这里只判断一次，后面可以借用
     if old_substep_state != -11:
@@ -628,12 +672,20 @@ def upCheckinfo(self, request):
                 psi.save()
             else:
                 psi = ProjectStepInfo.objects.get(project_code=project_code, step_code=step_code)
+                step_state = 0
+                if old_substep_state != -11:  # 普通步骤
+                    if cstate == 1:
+                        step_state = 1
+                else:
+                    step_state = substep_serial_state
+                psi.step_state = step_state
                 psi.step_msg = cmsg
                 psi.save()
 
 
             # 修改项目主表状态
             # 和 子步骤状态一致 固话清单内容审核之后，不更新project_info和project_substep_info
+            # 1.先只修改立项时间
             if step_code == 1 and substep_code == 1 and substep_serial_type == 1:
                 if old_substep_state != -11:  # 普通步骤
                     # 只有立项成功时才更新该时间
@@ -641,17 +693,28 @@ def upCheckinfo(self, request):
                         pi = ProjectInfo.objects.get(project_code=project_code)
                         pi.project_start_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                         pi.save()
+
+            # 2.修改主项目表
             if step_code == 4 and substep_code == 2 and substep_serial_type == 1:
                 if old_substep_state != -11:  # 普通步骤
                     pass
                 else:
                     pi = ProjectInfo.objects.get(project_code=project_code)
                     pi.state = substep_serial_state
+                    if cstate == 1:
+                        pi.last_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                     pi.save()
             else:
-                pi = ProjectInfo.objects.get(project_code=project_code)
-                pi.state = substep_serial_state
-                pi.save()
+                if old_substep_state != -11:  # 普通步骤
+                    pi = ProjectInfo.objects.get(project_code=project_code)
+                    pi.state = substep_serial_state
+                    pi.save()
+                else:
+                    pi = ProjectInfo.objects.get(project_code=project_code)
+                    pi.state = substep_serial_state
+                    if cstate == 1:
+                        pi.last_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                    pi.save()
 
 
             # 只有普通步骤才发送短信

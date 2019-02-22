@@ -27,7 +27,7 @@ class ConsultInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     consult_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
     consulter = models.CharField(max_length=64, blank=True, null=True)
-    consult_title = models.CharField(max_length=64,blank=True,null=True)
+    consult_title = models.CharField(max_length=64, blank=True, null=True)
     consult_memo = models.TextField(blank=True, null=True)
     consult_body = models.TextField(blank=True, null=True)
     consult_time = models.DateTimeField(blank=True, null=True)
@@ -59,7 +59,7 @@ class ConsultInfo(models.Model):
         requirement_codes = [r.rrcode for r in ConsultRrinfo.objects.filter(consult_code=self.consult_code, rrtype=0)]
         results = [r.r_name for r in ResultsInfo.objects.filter(r_code__in=result_codes)]
         requirements = [r.req_name for r in RequirementsInfo.objects.filter(req_code__in=requirement_codes)]
-        return results + requirements;
+        return results + requirements
 
     @property
     def account(self):
@@ -107,7 +107,6 @@ class ConsultReplyInfo(models.Model):
     reply_time = models.DateTimeField(blank=True, null=True)
     reply_state = models.IntegerField(blank=True, null=True)
     accept_time = models.DateTimeField(blank=True,null=True)
-    reply_time = models.DateTimeField(blank=True, null=True)
 
     @property
     def check_memo(self):

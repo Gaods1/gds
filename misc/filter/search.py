@@ -126,7 +126,10 @@ class ViewSearch(filters.SearchFilter):
 
         search_terms = self.get_search_terms(request)
 
-        if not search_fields or not search_terms or not associated_fields:
+        if not search_terms:
+            return queryset
+
+        if not search_fields and not associated_fields:
             return queryset
 
         # 查询字段去除关联表的字段

@@ -24,6 +24,7 @@ logger = logging.getLogger('django')
 
 # Create your views here.
 
+##########################################################
 
 # 成果
 class ProfileViewSet(viewsets.ModelViewSet):
