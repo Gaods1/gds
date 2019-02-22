@@ -1356,12 +1356,16 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 pcode_or_ecode = request.data.pop('pcode', None) if request.data.pop('pcode', None) else request.data.pop('ecode', None)
                 # 激活状态
                 state = request.data.get('state', None)
+                # 关联帐号
+                username = request.data.pop('username', None)
 
-                if not mname_list or not cooperation_name or not main_owner or not owner_type or not key_info or not pcode_or_ecode:
+                if not mname_list or not cooperation_name or not main_owner or not owner_type or not key_info or not pcode_or_ecode or not username:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '请完善相关信息'}, status=400)
 
                 #1 更新resultsinfo表
+                account_code = AccountInfo.objects.get(username=username).account_code
+                data['account_code'] = account_code
                 serializer = self.get_serializer(instance, data=request.data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
