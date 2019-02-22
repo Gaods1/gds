@@ -1157,20 +1157,22 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 # 所属领域表
                 mname_list = request.data.pop('mname',None)
                 # 成果/需求合作方式信息表
-                cooperation_name = request.data.pop('cooperation_name', None)
+                cooperation_code = request.data.pop('cooperation_code', None)
                 # 成果持有人信息表
                 main_owner = request.data.pop('main_owner', None)
                 owner_type = request.data.get('owner_type', None)
                 # 关键字表
                 key_info = request.data.pop('Keywords', None)
                 # 个人基本信息表或者企业基本信息表
-                pcode_or_ecode = request.data.pop('pcode', None) if request.data.pop('pcode', None) else request.data.pop('ecode', None)
+                #pcode_or_ecode = request.data.pop('pcode', None) if request.data.pop('pcode', None) else request.data.pop('ecode', None)
+                pcode_or_ecode = request.data.pop('pcode', None)
+
                 # 激活状态
                 state = request.data.get('show_state', None)
                 # 关联帐号
-                username = request.data.pop('username', None)
+                user_name = request.data.pop('username', None)
 
-                if not mname_list or not cooperation_name or not main_owner or not owner_type or not key_info or not pcode_or_ecode or not username:
+                if not mname_list or not cooperation_code or not main_owner or not owner_type or not key_info or not pcode_or_ecode or not user_name:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail':'请完善相关信息'},status=400)
 
@@ -1184,7 +1186,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     return Response({'detail': '封面只能上传一张'}, status=400)
 
                 #1 创建resultsinfo表
-                account_code = AccountInfo.objects.get(username=username).account_code
+                account_code = AccountInfo.objects.get(user_name=user_name).account_code
                 data['account_code'] = account_code
                 data['creater'] = request.user.account
                 serializer = self.get_serializer(data=data)
@@ -1194,10 +1196,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 serializer_ecode = serializer.data['r_code']
 
                 #2 创建合作方式表
-                dict_coop = {'寻求资金': 1, '市场推广': 2, '方案落地': 3, '其他方式另行确定': 4}
+                dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
                 ResultsCooperationTypeInfo.objects.create(r_type=1,
-                rr_code=serializer_ecode, cooperation_name=cooperation_name,
-                cooperation_code=dict_coop[cooperation_name], state=state)
+                rr_code=serializer_ecode, cooperation_code=cooperation_code,
+                cooperation_name=dict_coop[cooperation_code], state=state)
 
                 #3 创建持有人信息表
                 ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
@@ -1346,12 +1348,12 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 # 所属领域
                 mname_list = request.data.pop('mname',None)
                 # 成果/需求合作方式信息表
-                cooperation_name = request.data.pop('cooperation_name', None)
+                cooperation_code = request.data.pop('cooperation_code', None)
                 # 成果持有人信息表
                 main_owner = request.data.pop('main_owner', None)
                 owner_type = request.data.get('owner_type', None)
                 # 关键字表
-                key_info = request.data.pop('key_info', None)
+                key_info = request.data.pop('Keywords', None)
                 # 个人基本信息表或者企业基本信息表
                 #pcode_or_ecode = request.data.pop('pcode', None) if request.data.pop('pcode', None) else request.data.pop('ecode', None)
                 pcode_or_ecode = request.data.pop('pcode', None)
@@ -1359,14 +1361,14 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 # 激活状态
                 state = request.data.get('show_state', None)
                 # 关联帐号
-                username = request.data.pop('username', None)
+                user_name = request.data.pop('username', None)
 
-                if not mname_list or not cooperation_name or not main_owner or not owner_type or not key_info or not pcode_or_ecode or not username:
+                if not mname_list or not cooperation_code or not main_owner or not owner_type or not key_info or not pcode_or_ecode or not user_name:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '请完善相关信息'}, status=400)
 
                 #1 更新resultsinfo表
-                account_code = AccountInfo.objects.get(username=username).account_code
+                account_code = AccountInfo.objects.get(user_name=user_name).account_code
                 data['account_code'] = account_code
                 serializer = self.get_serializer(instance, data=request.data, partial=partial)
                 serializer.is_valid(raise_exception=True)
@@ -1377,10 +1379,12 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
 
-                # 2 更新合作方式表
-                dict_coop = {'寻求资金': 1, '市场推广': 2, '方案落地': 3, '其他方式另行确定': 4}
-                ResultsCooperationTypeInfo.objects.filter(rr_code=serializer_ecode).update(r_type=1,
-                cooperation_name=cooperation_name,cooperation_code=dict_coop[cooperation_name], state=state)
+                # 2 创建合作方式表
+                dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
+                ResultsCooperationTypeInfo.objects.create(r_type=1,
+                rr_code=serializer_ecode,
+                cooperation_code=cooperation_code,
+                cooperation_name=dict_coop[cooperation_code], state=state)
 
                 # 3 更新持有人信息表
                 ResultsOwnerInfo.objects.filter(r_code=serializer_ecode).update(
