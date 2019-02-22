@@ -1285,8 +1285,11 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                     # 同路经下有pdf文件
                     if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx'):
-                        url_j_pdf = url_j.replace(doc,'pdf')
-                        url_x_pdf = url_x.replace(doc,'pdf')
+                        #url_j_pdf = url_j.replace(doc,'pdf')
+                        #url_x_pdf = url_x.replace(doc,'pdf')
+                        url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
+                        url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
+
 
                         if not os.path.exists(url_j_pdf):
                             transaction.savepoint_rollback(save_id)
@@ -1482,10 +1485,12 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                                                             state=1))
 
                             # 同路经下有pdf文件
-                            if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith(
-                                    'xlsx') or url_j.endswith('docx'):
-                                url_j_pdf = url_j.replace(doc, 'pdf')
-                                url_x_pdf = url_x.replace(doc, 'pdf')
+                            if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx'):
+
+                                #url_j_pdf = url_j.replace(doc, 'pdf')
+                                #url_x_pdf = url_x.replace(doc, 'pdf')
+                                url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
+                                url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
 
                                 if not os.path.exists(url_j_pdf):
                                     transaction.savepoint_rollback(save_id)
