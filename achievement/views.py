@@ -1353,9 +1353,11 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 # 关键字表
                 key_info = request.data.pop('key_info', None)
                 # 个人基本信息表或者企业基本信息表
-                pcode_or_ecode = request.data.pop('pcode', None) if request.data.pop('pcode', None) else request.data.pop('ecode', None)
+                #pcode_or_ecode = request.data.pop('pcode', None) if request.data.pop('pcode', None) else request.data.pop('ecode', None)
+                pcode_or_ecode = request.data.pop('pcode', None)
+
                 # 激活状态
-                state = request.data.get('state', None)
+                state = request.data.get('show_state', None)
                 # 关联帐号
                 username = request.data.pop('username', None)
 
