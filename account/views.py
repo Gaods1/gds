@@ -122,13 +122,18 @@ class AccountViewSet(viewsets.ModelViewSet):
         data = request.data
         data = update_data(data, ['account', 'user_mobile', 'user_email', 'account_id'])
         if instance.account and instance.account != data.get("account"):
-            return Response({"detail": {"account": ["账号不允许修改"]}}, status=400)
+            return Response({"detail": "账号不允许修改"}, status=400)
         if not data['account'] and not data['user_mobile']:
-            return Response({"detail":{"user_mobile":["账号和手机号不能同时为空"]}}, status=400)
+            return Response({"detail":"账号和手机号不能同时为空"}, status=400)
         password = data.get("password")
         if password and password != instance.password:
             validate_password(password)
             data['password'] = genearteMD5(password)
+
+        # 判断是否修改自己的部门
+        if instance.account == request.user.account:
+            if 'dept_code' in data.keys() and data['dept_code'] != instance.dept_code:
+                return Response({"detail": "不允许修改自己的机构部门"}, status=400)
 
         partial = kwargs.pop('partial', False)
 
