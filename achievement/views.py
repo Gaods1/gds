@@ -1538,7 +1538,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
             try:
                 instance = self.get_object()
-                instance.show_state = 2
+                instance.show_state = 3
             except Exception as e:
                 transaction.savepoint_rollback(save_id)
                 return Response({'detail': '删除失败%s' % str(e)}, status=400)
@@ -1977,7 +1977,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
             try:
                 instance = self.get_object()
-                instance.show_state = 2
+                instance.show_state = 3
             except Exception as e:
                 transaction.savepoint_rollback(save_id)
                 return Response({'detail': '删除失败%s' % str(e)}, status=400)
