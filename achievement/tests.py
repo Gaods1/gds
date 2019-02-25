@@ -342,6 +342,8 @@
 
 
 """
+
+实现关联表的模糊搜索
     def list(self, request, *args, **kwargs):
         search = request.query_params.get('search', None)
         if search:
@@ -554,5 +556,56 @@
 
                         /alidata1/patclub/uploads/Results/0110/L1AYcahuGrN2KWpgLka4Qwgjbq4iojFP
 
+
+"""
+"""
+逻辑删除：
+            try:
+                instance = self.get_object()
+                serializer_ecode = instance.r_code
+
+                #1 删除resultsinfo表
+                self.perform_destroy(instance)
+                # 2 删除合作方式表
+                ResultsCooperationTypeInfo.objects.filter(rr_code=serializer_ecode).delete()
+                # 3 删除成果持有人表
+                ResultsOwnerInfo.objects.filter(r_code=serializer_ecode).delete()
+                # 4 删关键字表
+                KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
+                # 5 删除所属领域表记录
+                MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
+                # 6 删除文件以及ecode表记录
+                relative_path = ParamInfo.objects.get(param_code=2).param_value
+                tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
+                tcode_coverImg = AttachmentFileType.objects.get(tname='coverImg').tcode
+                param_value = ParamInfo.objects.get(param_code=6).param_value
+                obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
+                if obj:
+                    try:
+                        for i in obj:
+                            url = settings.MEDIA_ROOT
+                            url = url + 'uploads/'
+                            url = '{}{}{}'.format(url, i.path, i.file_name)
+                            # 创建对象
+                            a = FileSystemStorage()
+                            # 删除文件
+                            a.delete(url)
+                            # 删除表记录
+                            i.delete()
+                        url_att = '{}{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode)
+                        if os.path.exists(url_att):
+                            shutil.rmtree(url_att,ignore_errors=True)
+                        url_cov = '{}{}/{}/{}'.format(relative_path, param_value, tcode_coverImg, serializer_ecode)
+                        if os.path.exists(url_cov):
+                            shutil.rmtree(url_cov,ignore_errors=True)
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '删除失败%s' % str(e)}, status=400)
+
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return Response({'detail': '删除失败%s' % str(e)}, status=400)
+            transaction.savepoint_commit(save_id)
+            return Response({'message':'ok'})
 
 """
