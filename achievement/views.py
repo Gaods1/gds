@@ -1234,6 +1234,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
 
                 #1 创建resultsinfo表
+                data['obtain_source'] = pcode_or_ecode
                 data['account_code'] = account_code
                 data['creater'] = request.user.account
                 serializer = self.get_serializer(data=data)
@@ -1464,7 +1465,9 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 pcode_or_ecode = pcode if pcode else ecode
 
                 #1 更新resultsinfo表
+                data['obtain_source'] = pcode_or_ecode
                 data['account_code'] = account_code
+                data['creater'] = request.user.account
                 serializer = self.get_serializer(instance, data=request.data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
@@ -1761,6 +1764,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 pcode_or_ecode = pcode if pcode else ecode
 
                 # 1 创建resultsinfo表
+                data['obtain_source'] = pcode_or_ecode
                 data['account_code'] = account_code
                 data['creater'] = request.user.account
                 serializer = self.get_serializer(data=data)
@@ -1995,7 +1999,9 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 pcode_or_ecode = pcode if pcode else ecode
 
                 # 1 更新resultsinfo表
+                data['obtain_source'] = pcode_or_ecode
                 data['account_code'] = account_code
+                data['creater'] = request.user.account
                 serializer = self.get_serializer(instance, data=request.data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)

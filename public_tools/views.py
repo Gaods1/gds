@@ -48,6 +48,7 @@ class PublicInfo(APIView,FileSystemStorage):
 
         files = request.FILES.getlist('file',None)
         flag = request.POST.get('flag',None)
+        account_code = request.user.account_code
 
         if not files or not flag:
             return Response({'detail':'请上传文件'})
@@ -61,11 +62,13 @@ class PublicInfo(APIView,FileSystemStorage):
                 try:
                     for file in files:
                         # 拼接地址
-                        url = settings.MEDIA_ROOT + 'temp/uploads/temporary/'
+                        url = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code + '/'
                         if not os.path.exists(url):
                             os.makedirs(url)
                         #上传服务器的路径
                         url = url + file.name
+                        if os.path.exists(url):
+                            return Response({'detail': '该附件已上传到服务器'})
                         # 创建对象
                         a = FileSystemStorage()
                         # 上传服务器
@@ -96,13 +99,14 @@ class PublicInfo(APIView,FileSystemStorage):
                 dict = {}
                 try:
                     for file in files:
-                        url = settings.MEDIA_ROOT + 'temp/uploads/temporary/'
+                        url = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code + '/'
                         if not os.path.exists(url):
                             os.makedirs(url)
                         url = url + file.name
                         if not url.endswith('jpg') and not url.endswith('png') and not url.endswith('jpeg') and not url.endswith('bmp') and not url.endswith('gif'):
                             return Response({'detail': '请上传图片类型'})
-
+                        if os.path.exists(url):
+                            return Response({'detail': '该图片已上传到服务器'})
                         # 创建对象
                         a = FileSystemStorage()
                         # 上传服务器
@@ -136,14 +140,15 @@ class PublicInfo(APIView,FileSystemStorage):
 
         name = request.query_params.get('name',None)
         serial = request.query_params.get('serial',None)
+        account_code = request.user.account_code
 
         if not name:
             return Response({'detail': '请添加要删除的文件名称'})
-
+        name = name.split('/')[-1]
         # 在提交之前的删除
         if not serial:
             # 拼接地址
-            url = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + name
+            url = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code + '/' + name
             # 判断此路径下是否有文件
             if not os.path.exists(url):
                 return Response({'detail': '该临时路径下没有该文件'})
