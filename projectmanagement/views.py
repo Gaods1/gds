@@ -591,7 +591,7 @@ def upCheckinfo(self, request):
         try:
             # 项目审核信息表
             projectcheckinfo = ProjectCheckInfo.objects.get(project_code=project_code,
-                                                            substep_serial=substep_serial)
+                                                            substep_serial=substep_serial,cstate=0)
             projectcheckinfo.cstate = cstate
             projectcheckinfo.ctime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             projectcheckinfo.checker = request.user.account
