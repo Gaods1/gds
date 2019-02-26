@@ -2,7 +2,7 @@ from public_models.models import *
 from public_models.utils import get_single
 from .utils import get_major
 from account.models import AccountInfo
-from account.utils import validate_email, validate_mobile, validate_tel, validate_license
+from misc.validate import validate_email, validate_mobile, validate_tel, validate_license
 # Create your models here.
 
 

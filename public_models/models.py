@@ -2,6 +2,7 @@ from django.db import models
 from misc.misc import gen_uuid32
 import time
 from account.utils import *
+from misc.validate import *
 
 
 # *******************************django 用户模型相关表， 勿动，如对程序无影响，后续可能删除****************************
