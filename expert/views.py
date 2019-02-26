@@ -4,8 +4,7 @@ from django.http import HttpResponse
 from django.core.files.storage import FileSystemStorage
 from python_backend import settings
 from .serializers import *
-from rest_framework import viewsets
-from rest_framework import filters
+from rest_framework import viewsets, filters, status
 import django_filters
 from rest_framework.response import Response
 from django.db import transaction
@@ -17,6 +16,8 @@ from django.db.models.query import QuerySet
 from public_models.models import IdentityAuthorizationInfo
 from misc.filter.search import ViewSearch
 import logging
+from misc.validate import check_card_id
+
 
 logger = logging.getLogger('django')
 
@@ -64,27 +65,46 @@ class ExpertViewSet(viewsets.ModelViewSet):
             queryset = queryset.all()
         return queryset
 
-    # 创建领域专家 2018/12/24  author:周
     def create(self, request, *args, **kwargs):
         try:
             with transaction.atomic():
-                account_code = request.data.get('account_code')
-                # 1 创建expert_baseinfo领域专家基本信息
-                expert_baseinfo_data = request.data.get('expert_baseinfo')
-                expert_baseinfo_data['account_code'] = account_code
-                # expert_baseinfo = ExpertBaseinfo.objects.create(**expert_baseinfo_data)
-                serializer = self.get_serializer(data=expert_baseinfo_data)
+                data = request.data
+                # 查询所绑定的账号是否有此身份
+                account_code = data['account_code']
+                check_identity(account_code=account_code, identity=9)
+
+                # 验证证件号码
+                id_type = data['expert_id_type']
+                id = data['expert_id']
+                check_card_id(id_type, id)
+
+                # 获取当前后台登陆账号作为创建者
+                creater = request.user.account
+                # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                pinfo = {
+                    'pname': data['expert_name'],
+                    'pid_type': id_type,
+                    'pid': id,
+                    'pmobile': data['expert_mobile'],
+                    'ptel': data['expert_tel'],
+                    'pemail': data['expert_email'],
+                    'peducation': data['education'],
+                    'pabstract': data['expert_abstract'],
+                    'state': 2,
+                    'creater': creater,
+                    'account_code': account_code
+                }
+                raise ValueError('测试')
+                serializer = self.get_serializer(data=data)
                 serializer.is_valid(raise_exception=True)
                 self.perform_create(serializer)
-                # 2 创建identity_authorization_info信息
-                identity_authorizationinfo_data = request.data.get('identity_authorization_info')
-                identity_authorizationinfo_data['account_code'] = account_code
-                IdentityAuthorizationInfo.objects.create(**identity_authorizationinfo_data)
+                headers = self.get_success_headers(serializer.data)
         except Exception as e:
-            fail_msg = "创建失败%s" % str(e)
-            return JsonResponse({"state": 0, "msg": fail_msg})
+            if isinstance(e, ValidationError):
+                e = e.message
+            return Response({"detail": "创建失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        return JsonResponse({"state": 1, "msg": "创建成功"})
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 # 领域专家申请视图

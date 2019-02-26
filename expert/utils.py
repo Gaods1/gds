@@ -118,3 +118,9 @@ def get_major(user_type, user_code):
         mtype=2, user_type=user_type, user_code=user_code)
     mname = MajorInfo.objects.values_list('mname', flat=True).filter(mcode__in=mcode, state=1)
     return mname
+
+
+# 验证前端账号是否具有当前信息
+def check_identity(account_code, identity):
+    if IdentityAuthorizationInfo.objects.filter(account_code=account_code, identity_code=identity):
+        raise ValueError('所选账号已经认证当前身份')
