@@ -76,7 +76,7 @@ class PublicInfo(APIView,FileSystemStorage):
                         # 判断如果是office文件
                         if url.endswith('doc') or url.endswith('xls') or url.endswith('xlsx') or url.endswith('docx'):
                             # 转换office文件为pdf文件
-                            child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + settings.MEDIA_ROOT + 'temp/uploads/temporary/' + ' ' + url, stdout=subprocess.PIPE, shell=True)
+                            child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code + ' ' + url, stdout=subprocess.PIPE, shell=True)
 
                         u_z = url.split('/')[-1]
                         url_front = settings.media_root_front + u_z
@@ -90,7 +90,7 @@ class PublicInfo(APIView,FileSystemStorage):
                 return Response(dict)
         else:
             if len(files)!=1:
-                return Response({'detail': '证件照只能上传一张'})
+                return Response({'detail': '图片只能上传一张'})
 
             # 建立事物机制
             with transaction.atomic():
@@ -163,8 +163,9 @@ class PublicInfo(APIView,FileSystemStorage):
                     # 删除
                     a.delete(url)
                     # 相同路径下有pdf文件
-                    url_pdf = url.split('.')[-1]
-                    url_pdf = url.replace(url_pdf,'pdf')
+                    url_pdf = os.path.splitext(url)[0] + '.pdf'
+                    #url_pdf = url.split('.')[-1]
+                    #url_pdf = url.replace(url_pdf,'pdf')
                     if os.path.exists(url_pdf):
                         a.delete(url_pdf)
 
