@@ -1162,7 +1162,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 main_owner = request.data.pop('main_owner', None)
                 owner_type = request.data.get('owner_type', None)
                 # 关键字表
-                key_info = request.data.pop('Keywords', None)
+                key_info_list = request.data.pop('Keywords', None)
                 # 个人基本信息表或者企业基本信息表
                 #pcode_or_ecode = request.data.pop('pcode', None) if request.data.pop('pcode', None) else request.data.pop('ecode', None)
                 #pcode_or_ecode = request.data.pop('pcode', None)
@@ -1174,7 +1174,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 obtain_type = request.data.get('obtain_type',None)
 
-                if not mname_list or not cooperation_code or not main_owner or not owner_type or not key_info or not user_name or not obtain_type or not owner_type :
+                if not mname_list or not cooperation_code or not main_owner or not owner_type or not key_info_list or not user_name or not obtain_type or not owner_type :
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail':'请完善相关信息'},status=400)
 
@@ -1250,8 +1250,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 state=state, r_type=1)
 
                 #4 创建关键字表
-                KeywordsInfo.objects.create(key_type=1, object_code=serializer_ecode,
-                key_info=key_info, state=state, creater=request.user.account)
+                key_list=[]
+                for key_info in key_info_list:
+                    key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode,key_info=key_info, state=state, creater=request.user.account))
+                KeywordsInfo.objects.bulk_create(key_list)
 
                 #5 创建所属领域
                 major_list = []
@@ -1410,7 +1412,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 main_owner = request.data.pop('main_owner', None)
                 owner_type = request.data.get('owner_type', None)
                 # 关键字表
-                key_info = request.data.pop('Keywords', None)
+                key_info_list = request.data.pop('Keywords', None)
                 # 个人基本信息表或者企业基本信息表
                 #pcode_or_ecode = request.data.pop('pcode', None) if request.data.pop('pcode', None) else request.data.pop('ecode', None)
                 #pcode_or_ecode = request.data.pop('pcode', None)
@@ -1422,7 +1424,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 obtain_type = request.data.get('obtain_type', None)
 
-                if not mname_list or not cooperation_code or not main_owner or not owner_type or not key_info or not obtain_type or not owner_type or not user_name:
+                if not mname_list or not cooperation_code or not main_owner or not owner_type or not key_info_list or not obtain_type or not owner_type or not user_name:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '请完善相关信息'}, status=400)
                 account_code_list = AccountInfo.objects.filter(user_name=user_name)
@@ -1495,8 +1497,11 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 state=state, r_type=1)
 
                 # 4 更新关键字表
-                KeywordsInfo.objects.filter(object_code=serializer_ecode).update(key_type=1,
-                key_info=key_info, state=state, creater=request.user.account)
+                KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
+                key_list = []
+                for key_info in key_info_list:
+                    key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
+                KeywordsInfo.objects.bulk_create(key_list)
 
                 #5 更新新纪录
                 MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
@@ -1711,7 +1716,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 main_owner = request.data.pop('main_owner', None)
                 owner_type = request.data.get('owner_type', None)
                 # 关键字表
-                key_info = request.data.pop('Keywords', None)
+                key_info_list = request.data.pop('Keywords', None)
                 # 个人基本信息表或者企业基本信息表
                 # pcode_or_ecode = request.data.pop('pcode', None) if request.data.pop('pcode', None) else request.data.pop('ecode', None)
                 #pcode_or_ecode = request.data.pop('pcode', None)
@@ -1723,7 +1728,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 obtain_type = request.data.get('obtain_type', None)
 
-                if not mname_list or not cooperation_code or not main_owner or not owner_type or not key_info or not obtain_type or not user_name:
+                if not mname_list or not cooperation_code or not main_owner or not owner_type or not key_info_list or not obtain_type or not user_name:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '请完善相关信息'}, status=400)
 
@@ -1802,8 +1807,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                                                 state=state, r_type=1)
 
                 # 4 创建关键字表
-                KeywordsInfo.objects.create(key_type=1, object_code=serializer_ecode,
-                                            key_info=key_info, state=state, creater=request.user.account)
+                key_list = []
+                for key_info in key_info_list:
+                    key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
+                KeywordsInfo.objects.bulk_create(key_list)
 
                 # 5 创建所属领域
                 major_list = []
@@ -1963,7 +1970,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 main_owner = request.data.pop('main_owner', None)
                 owner_type = request.data.get('owner_type', None)
                 # 关键字表
-                key_info = request.data.pop('Keywords', None)
+                key_info_list = request.data.pop('Keywords', None)
                 # 个人基本信息表或者企业基本信息表
                 # pcode_or_ecode = request.data.pop('pcode', None) if request.data.pop('pcode', None) else request.data.pop('ecode', None)
                 #pcode_or_ecode = request.data.pop('pcode', None)
@@ -1975,7 +1982,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 obtain_type = request.data.get('obtain_type', None)
 
-                if not mname_list or not cooperation_code or not main_owner or not owner_type or not key_info or not obtain_type or not user_name:
+                if not mname_list or not cooperation_code or not main_owner or not owner_type or not key_info_list or not obtain_type or not user_name:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '请完善相关信息'}, status=400)
 
@@ -2049,10 +2056,11 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     state=state, r_type=1)
 
                 # 4 更新关键字表
-                KeywordsInfo.objects.filter(object_code=serializer_ecode).update(key_type=1,
-                                                                                 key_info=key_info, state=state,
-                                                                                 creater=request.user.account)
-
+                KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
+                key_list = []
+                for key_info in key_info_list:
+                    key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
+                KeywordsInfo.objects.bulk_create(key_list)
                 # 5 更新新纪录
                 MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
                 major_list = []
