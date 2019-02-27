@@ -94,7 +94,7 @@ def check_card_id(type, value):
 
 # 验证统一社会信用代码
 def validate_license(value):
-    if not re.match(r'[^_IOZSVa-z\W]{2}\d{6}[^_IOZSVa-z\W]{10}', value):
+    if not re.match(r'^[^_IOZSVa-z\W]{2}\d{6}[^_IOZSVa-z\W]{10}$', value):
         raise ValidationError('统一社会信用代码格式错误')
 
 
