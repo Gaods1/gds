@@ -1279,7 +1279,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 # 临时目录当前登录账户文件夹
                 account_code_office = request.user.account_code
 
-                # 封面
+               # 图片
                 for key,value in single_dict.items():
 
                     tcode = AttachmentFileType.objects.get(tname=key).tcode

@@ -79,7 +79,7 @@ class PublicInfo(APIView,FileSystemStorage):
                             child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code + ' ' + url, stdout=subprocess.PIPE, shell=True)
 
                         u_z = url.split('/')[-1]
-                        url_front = settings.media_root_front + u_z
+                        url_front = settings.media_root_front + account_code + '/' + u_z
                         attachment_pdf.append(url_front)
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
@@ -125,7 +125,7 @@ class PublicInfo(APIView,FileSystemStorage):
 
                         # 给前端抛出文件路径
                         u_z = url.split('/')[-1]
-                        jpg = settings.media_root_front + u_z
+                        jpg = settings.media_root_front + account_code + '/'+ u_z
                         dict[flag] = jpg
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
