@@ -100,7 +100,7 @@ def validate_license(value):
 
 # 验证邮政编码
 def validate_zipcode(value):
-    if not re.match(r'^[1-9]\d{5}$', value):
+    if not re.match(r'^\d{6}$', value):
         raise ValidationError('邮政编码格式错误')
 
 
