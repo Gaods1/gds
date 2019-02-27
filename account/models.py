@@ -6,7 +6,7 @@ from misc.para_info import state_map
 from public_models.models import *
 from .menu import *
 import copy
-from .utils import validate_mobile, validate_account, validate_email, validate_id
+from misc.validate import validate_mobile, validate_account, validate_email, validate_id
 
 
 
