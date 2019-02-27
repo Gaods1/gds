@@ -1817,46 +1817,52 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
                 relative_path_front = ParamInfo.objects.get(param_code=4).param_value
                 tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
-                tcode_coverImg = AttachmentFileType.objects.get(tname='coverImg').tcode
                 param_value = ParamInfo.objects.get(param_code=7).param_value
 
                 url_x_a = '{}{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode)
-                url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode_coverImg, serializer_ecode)
-
                 if not os.path.exists(url_x_a):
                     os.makedirs(url_x_a)
-                if not os.path.exists(url_x_c):
-                    os.makedirs(url_x_c)
 
                 dict = {}
                 list1 = []
                 list2 = []
+                dict_jpg = {}
 
                 # 临时目录当前登录账户文件夹
                 account_code_office = request.user.account_code
 
                 # 封面
-                value = single_dict['coverImg']
+                for key, value in single_dict.items():
 
-                url_l = value.split('/')
-                url_file = url_l[-1]
+                    tcode = AttachmentFileType.objects.get(tname=key).tcode
+                    url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
+                    if not os.path.exists(url_x_c):
+                        os.makedirs(url_x_c)
 
-                url_j_jpg = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code_office + '/' + url_file
-                if not os.path.exists(url_j_jpg):
-                    transaction.savepoint_rollback(save_id)
-                    return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
+                    url_l = value.split('/')
+                    url_file = url_l[-1]
 
-                url_x_jpg = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_coverImg, serializer_ecode,
-                                                   url_file)
-                # 拼接给前端的的地址
-                url_x_f = url_x_jpg.replace(relative_path, relative_path_front)
-                list2.append(url_x_f)
+                    url_j_jpg = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code_office + '/' + url_file
+                    if not os.path.exists(url_j_jpg):
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
 
-                # 拼接ecode表中的path
-                path = '{}/{}/{}/'.format(param_value, tcode_coverImg, serializer_ecode)
-                list1.append(
-                    AttachmentFileinfo(tcode=tcode_coverImg, ecode=serializer_ecode, file_name=url_file, path=path,
-                                       operation_state=3, state=1))
+                    url_x_jpg = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode, url_file)
+                    if os.path.exists(url_x_jpg):
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
+
+                    # 收集临时路径和正式路径
+                    dict_jpg[url_j_jpg] = url_x_jpg
+
+                    # 拼接给前端的的地址
+                    url_x_f = url_x_jpg.replace(relative_path, relative_path_front)
+                    list2.append(url_x_f)
+
+                    # 拼接ecode表中的path
+                    path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
+                    list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
+                                                    operation_state=3, state=1))
 
                 for attachment in attachment_list:
                     url_l = attachment.split('/')
@@ -1912,9 +1918,9 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     else:
                         # 将doc临时目录转移到正式目录
                         shutil.move(url_j, url_x)
-
-                # 将jpg临时目录转移到正式目录
-                shutil.move(url_j_jpg, url_x_jpg)
+                for url_j_jpg, url_x_jpg in dict_jpg.items():
+                    # 将jpg临时目录转移到正式目录
+                    shutil.move(url_j_jpg, url_x_jpg)
 
                 # 创建atachmentinfo表
                 AttachmentFileinfo.objects.bulk_create(list1)
@@ -2058,32 +2064,24 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 dict = {}
                 list1 = []
                 list2 = []
-                if single_dict or attachment_list:
-                    # 6 转移附件创建ecode表
+                dict_jpg = {}
+
+                # 临时目录当前登录账户文件夹
+                account_code_office = request.user.account_code
+
+                if single_dict:
                     absolute_path = ParamInfo.objects.get(param_code=1).param_value
                     relative_path = ParamInfo.objects.get(param_code=2).param_value
                     relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-                    tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
-                    tcode_coverImg = AttachmentFileType.objects.get(tname='coverImg').tcode
+                    # tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
                     param_value = ParamInfo.objects.get(param_code=7).param_value
+                    # 封面
+                    for key, value in single_dict.items():
+                        tcode = AttachmentFileType.objects.get(tname=key).tcode
+                        url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
+                        if not os.path.exists(url_x_c):
+                            os.makedirs(url_x_c)
 
-                    url_x_a = '{}{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode)
-                    url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode_coverImg, serializer_ecode)
-
-                    if not os.path.exists(url_x_a):
-                        os.makedirs(url_x_a)
-                    if not os.path.exists(url_x_c):
-                        os.makedirs(url_x_c)
-
-                    url_j_jpg = None
-                    url_x_jpg = None
-
-                    # 临时目录当前登录账户文件夹
-                    account_code_office = request.user.account_code
-
-                    if single_dict and len(single_dict) == 1:
-                        # 封面
-                        value = single_dict['coverImg']
                         url_l = value.split('/')
                         url_file = url_l[-1]
 
@@ -2092,88 +2090,107 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
 
-                        url_x_jpg = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_coverImg, serializer_ecode,
+                        url_x_jpg = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
                                                            url_file)
+                        if os.path.exists(url_x_jpg):
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
+
+                        # 收集临时路径和正式路径
+                        dict_jpg[url_j_jpg] = url_x_jpg
 
                         # 拼接给前端的的地址
                         url_x_f = url_x_jpg.replace(relative_path, relative_path_front)
                         list2.append(url_x_f)
 
                         # 拼接ecode表中的path
-                        path = '{}/{}/{}/'.format(param_value, tcode_coverImg, serializer_ecode)
+                        path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
 
                         list1.append(
-                            AttachmentFileinfo(tcode=tcode_coverImg, ecode=serializer_ecode, file_name=url_file,
-                                               path=path,
+                            AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
                                                operation_state=3, state=1))
 
-                    if attachment_list:
+                if attachment_list:
 
-                        for attachment in attachment_list:
-                            url_l = attachment.split('/')
-                            url_file = url_l[-1]
+                    absolute_path = ParamInfo.objects.get(param_code=1).param_value
+                    relative_path = ParamInfo.objects.get(param_code=2).param_value
+                    relative_path_front = ParamInfo.objects.get(param_code=4).param_value
+                    tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
+                    param_value = ParamInfo.objects.get(param_code=7).param_value
 
-                            url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
-                            # doc = os.path.split(url_file)[-1]
+                    url_x_a = '{}{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode)
 
-                            url_j = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code_office + '/' + url_file
-                            if not os.path.exists(url_j):
+                    if not os.path.exists(url_x_a):
+                        os.makedirs(url_x_a)
+
+                    for attachment in attachment_list:
+                        url_l = attachment.split('/')
+                        url_file = url_l[-1]
+
+                        url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
+                        # doc = os.path.split(url_file)[-1]
+
+                        url_j = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code_office + '/' + url_file
+                        if not os.path.exists(url_j):
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
+
+                        url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment,
+                                                       serializer_ecode, url_file)
+
+                        if os.path.exists(url_x):
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
+
+                        url_x_f = url_x.replace(relative_path, relative_path_front)
+                        list2.append(url_x_f)
+
+                        path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                        list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
+                                                        file_name=url_file, path=path, operation_state=3,
+                                                        state=1))
+
+                        # 同路经下有pdf文件
+                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith(
+                                'docx'):
+
+                            # url_j_pdf = url_j.replace(doc, 'pdf')
+                            # url_x_pdf = url_x.replace(doc, 'pdf')
+                            url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
+                            url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
+
+                            if not os.path.exists(url_j_pdf):
                                 transaction.savepoint_rollback(save_id)
-                                return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
+                                return Response({'detail': '该临时路径下不存在该pdf文件,可能系统没有生成pdf文件'}, status=400)
 
-                            url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment,
-                                                           serializer_ecode, url_file)
-
-                            if os.path.exists(url_x):
+                            if os.path.exists(url_x_pdf):
                                 transaction.savepoint_rollback(save_id)
-                                return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
+                                return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
 
-                            url_x_f = url_x.replace(relative_path, relative_path_front)
-                            list2.append(url_x_f)
-
-                            path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                            # 将doc临时目录转移到正式目录
+                            shutil.move(url_j, url_x)
+                            # 将pdf临时目录转移到正式目录
+                            shutil.move(url_j_pdf, url_x_pdf)
                             list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
-                                                            file_name=url_file, path=path, operation_state=3,
+                                                            file_name=url_file_pdf, path=path, operation_state=3,
                                                             state=1))
+                            url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
+                            list2.append(url_x_f_pdf)
+                        else:
+                            # 将doc临时目录转移到正式目录
+                            shutil.move(url_j, url_x)
 
-                            # 同路经下有pdf文件
-                            if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith(
-                                    'xlsx') or url_j.endswith('docx'):
-
-                                # url_j_pdf = url_j.replace(doc, 'pdf')
-                                # url_x_pdf = url_x.replace(doc, 'pdf')
-                                url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
-                                url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
-
-                                if not os.path.exists(url_j_pdf):
-                                    transaction.savepoint_rollback(save_id)
-                                    return Response({'detail': '该临时路径下不存在该pdf文件,可能系统没有生成pdf文件'}, status=400)
-
-                                if os.path.exists(url_x_pdf):
-                                    transaction.savepoint_rollback(save_id)
-                                    return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
-
-                                # 将doc临时目录转移到正式目录
-                                shutil.move(url_j, url_x)
-                                # 将pdf临时目录转移到正式目录
-                                shutil.move(url_j_pdf, url_x_pdf)
-                                list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
-                                                                file_name=url_file_pdf, path=path, operation_state=3,
-                                                                state=1))
-                                url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
-                                list2.append(url_x_f_pdf)
-                            else:
-                                # 将doc临时目录转移到正式目录
-                                shutil.move(url_j, url_x)
-
-                    if url_j_jpg and url_x_jpg:
+                if len(dict_jpg) != 0:
+                    for url_j_jpg, url_x_jpg in dict_jpg.items():
                         # 将jpg临时目录转移到正式目录
                         shutil.move(url_j_jpg, url_x_jpg)
+                if list1:
                     # 创建atachmentinfo表
                     AttachmentFileinfo.objects.bulk_create(list1)
 
                     # 删除临时目录
-                    shutil.rmtree(settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code_office, ignore_errors=True)
+                    shutil.rmtree(settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code_office,
+                                  ignore_errors=True)
 
                     # 给前端抛正式目录
                     dict['url'] = list2
