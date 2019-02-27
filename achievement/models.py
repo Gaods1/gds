@@ -82,7 +82,7 @@ class RequirementsInfo(models.Model):
     sniff_time = models.DateTimeField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True,auto_now=True)
-    account_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    account_code = models.CharField(max_length=64, blank=True, null=True)
     r_abstract_detail = models.TextField(blank=True, null=True)
 
     @property
@@ -196,7 +196,7 @@ class ResultsInfo(models.Model):
     sniff_time = models.DateTimeField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True,auto_now=True)
-    account_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    account_code = models.CharField(max_length=64, blank=True, null=True)
     r_abstract_detail = models.TextField(blank=True, null=True)
     patent_number = models.CharField(max_length=64, blank=True, null=True)
 
