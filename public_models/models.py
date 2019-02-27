@@ -274,7 +274,7 @@ class PersonalInfo(models.Model):
     pmobile = models.CharField(max_length=16, blank=True, null=True, validators=[validate_mobile])
     ptel = models.CharField(max_length=16, blank=True, null=True, validators=[validate_tel])
     pemail = models.CharField(max_length=64, blank=True, null=True, validators=[validate_email])
-    peducation = models.CharField(max_length=8, default="本科")   # 学历信息；本:研:博:大专:中专：mba：emba：其他
+    peducation = models.CharField(max_length=8, default=None)   # 学历信息；本:研:博:大专:中专：mba：emba：其他
     pabstract = models.TextField(blank=True, null=True)
     state = models.IntegerField(default=2)          # '状态；1：提交等待审核；2：审核通过；3：审核未通过；4：暂停；5：伪删除'
     creater = models.CharField(max_length=32, blank=True, null=True)
