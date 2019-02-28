@@ -234,7 +234,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # 上传附件用的测试数据,部署到线上后在修改
 DEFAULT_FILE_STORAGE = 'backends.ImageStorage'
-MEDIA_ROOT = '/alidata1/patclub/temp/uploads/'#部署后将此地址改为正式的临时目录
+#MEDIA_ROOT = '/alidata1/patclub/temp/uploads/'#部署后将此地址改为正式的临时目录
 #BASE_URL= 'http://patclub.for8.cn:8764/'#此地址根据图片服务器的真实地址而定
 #media_root_front = 'http://patclub.for8.cn:8764/temp/uploads/'#此地址为抛给前端的地址
 # Internationalization
