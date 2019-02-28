@@ -94,6 +94,7 @@ INSTALLED_APPS = [
     'projectmanagement',#项目管理
     'consult',#征询管理
     'index',
+    'enterpriseperson',#企业和个人管理
 ]
 
 MIDDLEWARE = [

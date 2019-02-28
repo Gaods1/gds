@@ -43,4 +43,5 @@ urlpatterns = [
     path('major/', include('public_models.urls')),
     path('imagecodes/', get_image_code,name='imagecodes'),
     path('index',include('index.urls')),
+    path('ep/',include('enterpriseperson.urls')),
 ]

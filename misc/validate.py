@@ -28,7 +28,8 @@ def validate_tel(value):
 
 # 验证身份证
 def validate_id(value):
-    if not re.match(r'(^\d{15}$)|(^\d{18}}$)|(^\d{17}(\d|X|x)$)', value):
+    # (^\d{15}$)|(^\d{18}}$)|(^\d{17}(\d|X|x)$) 15位18位身份证号码
+    if not re.match(r'^\d{6}(18|19|20)?\d{2}(0[1-9]|1[012])(0[1-9]|[12]\d|3[01])\d{3}(\d|X)$', value):
         raise ValidationError('身份证号码格式错误')
 
 
@@ -44,7 +45,7 @@ def validate_passport(value):
 
 # 验证驾照
 def validate_driver_license(value):
-    if not re.match(r'(^\d{15}$)|(^\d{18}}$)|(^\d{17}(\d|X|x)$)', value):
+    if not re.match(r'^\d{6}(18|19|20)?\d{2}(0[1-9]|1[012])(0[1-9]|[12]\d|3[01])\d{3}(\d|X)$', value):
         raise ValidationError('驾驶证号码格式错误')
 
 
@@ -93,13 +94,13 @@ def check_card_id(type, value):
 
 # 验证统一社会信用代码
 def validate_license(value):
-    if not re.match(r'[^_IOZSVa-z\W]{2}\d{6}[^_IOZSVa-z\W]{10}', value):
+    if not re.match(r'^[^_IOZSVa-z\W]{2}\d{6}[^_IOZSVa-z\W]{10}$', value):
         raise ValidationError('统一社会信用代码格式错误')
 
 
 # 验证邮政编码
 def validate_zipcode(value):
-    if not re.match(r'^[1-9]\d{5}$', value):
+    if not re.match(r'^\d{6}$', value):
         raise ValidationError('邮政编码格式错误')
 
 
