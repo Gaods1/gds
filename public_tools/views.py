@@ -43,6 +43,8 @@ class PublicInfo(APIView,FileSystemStorage):
 
     def post(self, request):
         absolute_path = ParamInfo.objects.get(param_code=1).param_value
+        absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
+        MEDIA_ROOT = absolute_path
         if not request.method == "POST":
             return JsonResponse({"error": u"不支持此种请求"}, safe=False)
 
@@ -62,7 +64,7 @@ class PublicInfo(APIView,FileSystemStorage):
                 try:
                     for file in files:
                         # 拼接地址
-                        url = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code + '/'
+                        url = MEDIA_ROOT + 'temporary/' + account_code + '/'
                         if not os.path.exists(url):
                             os.makedirs(url)
                         #上传服务器的路径
@@ -76,10 +78,10 @@ class PublicInfo(APIView,FileSystemStorage):
                         # 判断如果是office文件
                         if url.endswith('doc') or url.endswith('xls') or url.endswith('xlsx') or url.endswith('docx'):
                             # 转换office文件为pdf文件
-                            child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code + ' ' + url, stdout=subprocess.PIPE, shell=True)
+                            child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + MEDIA_ROOT + 'temporary/' + account_code + ' ' + url, stdout=subprocess.PIPE, shell=True)
 
                         u_z = url.split('/')[-1]
-                        url_front = settings.media_root_front + account_code + '/' + u_z
+                        url_front = absolute_path_front + 'temporary/' + account_code + '/' + u_z
                         attachment_pdf.append(url_front)
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
@@ -99,7 +101,7 @@ class PublicInfo(APIView,FileSystemStorage):
                 dict = {}
                 try:
                     for file in files:
-                        url = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code + '/'
+                        url = MEDIA_ROOT + 'temporary/' + account_code + '/'
                         if not os.path.exists(url):
                             os.makedirs(url)
                         url = url + file.name
@@ -125,7 +127,7 @@ class PublicInfo(APIView,FileSystemStorage):
 
                         # 给前端抛出文件路径
                         u_z = url.split('/')[-1]
-                        jpg = settings.media_root_front + account_code + '/'+ u_z
+                        jpg = absolute_path_front + 'temporary/' + account_code + '/'+ u_z
                         dict[flag] = jpg
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
@@ -148,7 +150,7 @@ class PublicInfo(APIView,FileSystemStorage):
         # 在提交之前的删除
         if not serial:
             # 拼接地址
-            url = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code + '/' + name
+            url = MEDIA_ROOT + 'temporary/' + account_code + '/' + name
             # 判断此路径下是否有文件
             if not os.path.exists(url):
                 return Response({'detail': '该临时路径下没有该文件'})
@@ -186,7 +188,7 @@ class PublicInfo(APIView,FileSystemStorage):
                     path_list = AttachmentFileinfo.objects.filter(file_name=name)
                     if path_list:
                         path = path_list.order_by('-insert_time')[0].path
-                        url = settings.MEDIA_ROOT + 'uploads/' + path + name
+                        url = MEDIA_ROOT + 'uploads/' + path + name
                         # 判断该路径下是否有该文件
                         if not os.path.exists(url):
                             transaction.savepoint_rollback(save_id)

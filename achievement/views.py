@@ -1273,10 +1273,11 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 if not os.path.exists(url_x_a):
                     os.makedirs(url_x_a)
 
-                dict = {}
-                list1 = []
-                list2 = []
-                dict_jpg = {}
+                dict = {}  # 抛给前端用的大字典
+                list1 = []  # 入库用的列表
+                list2 = []  # 抛给前端用的列表
+                list3 = []  # 富文本用的列表
+                dict_jpg = {}   # 收集图片临时和正式目录用的字典
 
                 # 临时目录当前登录账户文件夹
                 account_code_office = request.user.account_code
@@ -1292,7 +1293,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     url_l = value.split('/')
                     url_file = url_l[-1]
 
-                    url_j_jpg = settings.MEDIA_ROOT+'temp/uploads/temporary/' + account_code_office + '/' + url_file
+                    url_j_jpg = settings.MEDIA_ROOT+'temporary/' + account_code_office + '/' + url_file
                     if not os.path.exists(url_j_jpg):
                         transaction.savepoint_rollback(save_id)
                         return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
@@ -1313,6 +1314,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     path = '{}/{}/{}/'.format(param_value,tcode,serializer_ecode)
                     list1.append(AttachmentFileinfo(tcode=tcode,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1))
 
+                    if key=='consultEditor':
+                        list3.append(url_x_f)
                 for attachment in attachment_list:
                     url_l = attachment.split('/')
                     url_file = url_l[-1]
@@ -1320,7 +1323,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
                     #doc = os.path.splitext(url_file)[-1]
 
-                    url_j = settings.MEDIA_ROOT+'temp/uploads/temporary/' + account_code_office + '/' + url_file
+                    url_j = settings.MEDIA_ROOT+'temporary/' + account_code_office + '/' + url_file
                     if not os.path.exists(url_j):
                         transaction.savepoint_rollback(save_id)
                         return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
@@ -1373,7 +1376,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 AttachmentFileinfo.objects.bulk_create(list1)
 
                 # 删除临时目录
-                shutil.rmtree(settings.MEDIA_ROOT+'temp/uploads/temporary/'+ account_code_office,ignore_errors=True)
+                shutil.rmtree(settings.MEDIA_ROOT+'temporary/'+ account_code_office,ignore_errors=True)
 
                 # 给前端抛正式目录
                 dict['url'] = list2
@@ -1535,7 +1538,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         url_l = value.split('/')
                         url_file = url_l[-1]
 
-                        url_j_jpg = settings.MEDIA_ROOT+'temp/uploads/temporary/' + account_code_office + '/' + url_file
+                        url_j_jpg = settings.MEDIA_ROOT+'temporary/' + account_code_office + '/' + url_file
                         if not os.path.exists(url_j_jpg):
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
@@ -1579,7 +1582,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
                         #doc = os.path.split(url_file)[-1]
 
-                        url_j = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code_office + '/'  + url_file
+                        url_j = settings.MEDIA_ROOT + 'temporary/' + account_code_office + '/'  + url_file
                         if not os.path.exists(url_j):
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
@@ -1637,7 +1640,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     AttachmentFileinfo.objects.bulk_create(list1)
 
                     # 删除临时目录
-                    shutil.rmtree(settings.MEDIA_ROOT+'temp/uploads/temporary/' + account_code_office,ignore_errors=True)
+                    shutil.rmtree(settings.MEDIA_ROOT+'temporary/' + account_code_office,ignore_errors=True)
 
                     # 给前端抛正式目录
                     dict['url'] = list2
@@ -1849,7 +1852,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     url_l = value.split('/')
                     url_file = url_l[-1]
 
-                    url_j_jpg = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code_office + '/' + url_file
+                    url_j_jpg = settings.MEDIA_ROOT + 'temporary/' + account_code_office + '/' + url_file
                     if not os.path.exists(url_j_jpg):
                         transaction.savepoint_rollback(save_id)
                         return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
@@ -1878,7 +1881,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
                     # doc = os.path.splitext(url_file)[-1]
 
-                    url_j = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code_office + '/' + url_file
+                    url_j = settings.MEDIA_ROOT + 'temporary/' + account_code_office + '/' + url_file
                     if not os.path.exists(url_j):
                         transaction.savepoint_rollback(save_id)
                         return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
@@ -1933,7 +1936,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 AttachmentFileinfo.objects.bulk_create(list1)
 
                 # 删除临时目录
-                shutil.rmtree(settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code_office, ignore_errors=True)
+                shutil.rmtree(settings.MEDIA_ROOT + 'temporary/' + account_code_office, ignore_errors=True)
 
                 # 给前端抛正式目录
                 dict['url'] = list2
@@ -2093,7 +2096,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         url_l = value.split('/')
                         url_file = url_l[-1]
 
-                        url_j_jpg = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code_office + '/' + url_file
+                        url_j_jpg = settings.MEDIA_ROOT + 'temporary/' + account_code_office + '/' + url_file
                         if not os.path.exists(url_j_jpg):
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
@@ -2138,7 +2141,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
                         # doc = os.path.split(url_file)[-1]
 
-                        url_j = settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code_office + '/' + url_file
+                        url_j = settings.MEDIA_ROOT + 'temporary/' + account_code_office + '/' + url_file
                         if not os.path.exists(url_j):
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
@@ -2197,7 +2200,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     AttachmentFileinfo.objects.bulk_create(list1)
 
                     # 删除临时目录
-                    shutil.rmtree(settings.MEDIA_ROOT + 'temp/uploads/temporary/' + account_code_office,
+                    shutil.rmtree(settings.MEDIA_ROOT + 'temporary/' + account_code_office,
                                   ignore_errors=True)
 
                     # 给前端抛正式目录
