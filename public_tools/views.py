@@ -38,18 +38,18 @@ from django_redis import get_redis_connection
 
 """
 
-class PublicInfo(APIView,FileSystemStorage):
+class PublicInfo(APIView):
     queryset = AttachmentFileinfo.objects.all()
 
 
-    #absolute_path = ParamInfo.objects.get(param_code=1).param_value
-    #absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
-    #MEDIA_ROOT = absolute_path
+    absolute_path = ParamInfo.objects.get(param_code=1).param_value
+    absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
+    MEDIA_ROOT = absolute_path
 
     def post(self, request):
-        absolute_path = ParamInfo.objects.get(param_code=1).param_value
-        absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
-        MEDIA_ROOT = absolute_path
+        #absolute_path = ParamInfo.objects.get(param_code=1).param_value
+        #absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
+        #MEDIA_ROOT = absolute_path
         if not request.method == "POST":
             return Response({"detail": u"不支持此种请求"},status=400)
 
@@ -69,7 +69,7 @@ class PublicInfo(APIView,FileSystemStorage):
                 try:
                     for file in files:
                         # 拼接地址
-                        url = MEDIA_ROOT + 'temporary/' + account_code + '/'
+                        url = self.MEDIA_ROOT + 'temporary/' + account_code + '/'
                         if not os.path.exists(url):
                             os.makedirs(url)
                         #上传服务器的路径
@@ -77,7 +77,7 @@ class PublicInfo(APIView,FileSystemStorage):
                         if os.path.exists(url):
                             return Response({'detail': '该附件已上传到服务器'},status=400)
                         # 创建对象
-                        a = FileSystemStorage()
+                        a = FileSystemStorage(location=self.MEDIA_ROOT)
                         # 上传服务器
                         url = a._save(url,file)
                         # 判断如果是office文件
@@ -86,7 +86,7 @@ class PublicInfo(APIView,FileSystemStorage):
                             child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + self.MEDIA_ROOT + 'temporary/' + account_code + ' ' + url, stdout=subprocess.PIPE, shell=True)
 
                         u_z = url.split('/')[-1]
-                        url_front = absolute_path_front + 'temporary/' + account_code + '/' + u_z
+                        url_front = self.absolute_path_front + 'temporary/' + account_code + '/' + u_z
                         attachment_pdf.append(url_front)
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
@@ -106,7 +106,7 @@ class PublicInfo(APIView,FileSystemStorage):
                 dict = {}
                 try:
                     for file in files:
-                        url = MEDIA_ROOT + 'temporary/' + account_code + '/'
+                        url = self.MEDIA_ROOT + 'temporary/' + account_code + '/'
                         if not os.path.exists(url):
                             os.makedirs(url)
                         url = url + file.name
@@ -115,7 +115,7 @@ class PublicInfo(APIView,FileSystemStorage):
                         if os.path.exists(url):
                             return Response({'detail': '该图片已上传到服务器'},status=400)
                         # 创建对象
-                        a = FileSystemStorage()
+                        a = FileSystemStorage(location=self.MEDIA_ROOT)
                         # 上传服务器
                         url = a._save(url, file)
                         # 判断如果是office文件
@@ -132,7 +132,7 @@ class PublicInfo(APIView,FileSystemStorage):
 
                         # 给前端抛出文件路径
                         u_z = url.split('/')[-1]
-                        jpg = absolute_path_front + 'temporary/' + account_code + '/'+ u_z
+                        jpg = self.absolute_path_front + 'temporary/' + account_code + '/'+ u_z
                         dict[flag] = jpg
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
@@ -142,9 +142,9 @@ class PublicInfo(APIView,FileSystemStorage):
                 return Response(dict)
     def delete(self,request):
 
-        absolute_path = ParamInfo.objects.get(param_code=1).param_value
-        absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
-        MEDIA_ROOT = absolute_path
+        #absolute_path = ParamInfo.objects.get(param_code=1).param_value
+        #absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
+        #MEDIA_ROOT = absolute_path
 
         if not request.method == "DELETE":
             return Response({"detail": u"不支持此种请求"},status=400)
@@ -159,7 +159,7 @@ class PublicInfo(APIView,FileSystemStorage):
         # 在提交之前的删除
         if not serial:
             # 拼接地址
-            url = MEDIA_ROOT + 'temporary/' + account_code + '/' + name
+            url = self.MEDIA_ROOT + 'temporary/' + account_code + '/' + name
             # 判断此路径下是否有文件
             if not os.path.exists(url):
                 return Response({'detail': '该临时路径下没有该文件'},status=400)
@@ -170,7 +170,7 @@ class PublicInfo(APIView,FileSystemStorage):
                 save_id = transaction.savepoint()
                 try:
                     # 创建对象
-                    a = FileSystemStorage()
+                    a = FileSystemStorage(location=self.MEDIA_ROOT)
                     # 删除
                     a.delete(url)
                     # 相同路径下有pdf文件
@@ -197,7 +197,7 @@ class PublicInfo(APIView,FileSystemStorage):
                     path_list = AttachmentFileinfo.objects.filter(file_name=name)
                     if path_list:
                         path = path_list.order_by('-insert_time')[0].path
-                        url = MEDIA_ROOT + 'uploads/' + path + name
+                        url = self.MEDIA_ROOT + 'uploads/' + path + name
                         # 判断该路径下是否有该文件
                         if not os.path.exists(url):
                             transaction.savepoint_rollback(save_id)
@@ -205,7 +205,7 @@ class PublicInfo(APIView,FileSystemStorage):
 
                         #url = url + name
                         # 创建对象
-                        a = FileSystemStorage()
+                        a = FileSystemStorage(location=self.MEDIA_ROOT)
                         # 删除文件
                         a.delete(url)
                         # 相同路径下删除pdf文件
