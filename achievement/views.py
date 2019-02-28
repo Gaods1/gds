@@ -1264,6 +1264,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 #6 转移附件创建ecode表
                 absolute_path = ParamInfo.objects.get(param_code=1).param_value
+                absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
                 relative_path_front = ParamInfo.objects.get(param_code=4).param_value
                 tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
@@ -1315,7 +1316,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     list1.append(AttachmentFileinfo(tcode=tcode,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1))
 
                     if key=='consultEditor':
-                        list3.append(url_x_f)
+                        url_j_f = url_j_jpg.replace(absolute_path,absolute_path_front)
+                        dict_editor = {}
+                        dict_editor[url_j_f]=url_x_f
+                        list3.append(dict_editor)
                 for attachment in attachment_list:
                     url_l = attachment.split('/')
                     url_file = url_l[-1]
@@ -1368,6 +1372,15 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     else:
                         # 将doc临时目录转移到正式目录
                         shutil.move(url_j, url_x)
+
+                if list3:
+                    element = ResultsInfo.objects.get(r_code=serializer_ecode)
+                    detail = element.r_abstract_detail
+                    for i in list3:
+                        detail = detail.replace(list(i)[0],i[list(i)[0]])
+                    element.r_abstract_detail=detail
+                    element.save()
+
                 for url_j_jpg,url_x_jpg in dict_jpg.items():
                     # 将jpg临时目录转移到正式目录
                     shutil.move(url_j_jpg, url_x_jpg)
@@ -1522,13 +1535,13 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 # 临时目录当前登录账户文件夹
                 account_code_office = request.user.account_code
 
+                absolute_path = ParamInfo.objects.get(param_code=1).param_value
+                relative_path = ParamInfo.objects.get(param_code=2).param_value
+                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
+                param_value = ParamInfo.objects.get(param_code=6).param_value
+
                 if single_dict:
-                    absolute_path = ParamInfo.objects.get(param_code=1).param_value
-                    relative_path = ParamInfo.objects.get(param_code=2).param_value
-                    relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-                    #tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
-                    param_value = ParamInfo.objects.get(param_code=6).param_value
-                    # 封面
+                    # 图片
                     for key,value in single_dict.items():
                         tcode = AttachmentFileType.objects.get(tname=key).tcode
                         url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
@@ -1563,13 +1576,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                                                operation_state=3, state=1))
 
                 if attachment_list:
-
-                    absolute_path = ParamInfo.objects.get(param_code=1).param_value
-                    relative_path = ParamInfo.objects.get(param_code=2).param_value
-                    relative_path_front = ParamInfo.objects.get(param_code=4).param_value
                     tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
-                    param_value = ParamInfo.objects.get(param_code=6).param_value
-
                     url_x_a = '{}{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode)
 
                     if not os.path.exists(url_x_a):
@@ -2080,13 +2087,13 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 # 临时目录当前登录账户文件夹
                 account_code_office = request.user.account_code
 
+                absolute_path = ParamInfo.objects.get(param_code=1).param_value
+                relative_path = ParamInfo.objects.get(param_code=2).param_value
+                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
+                param_value = ParamInfo.objects.get(param_code=7).param_value
+
                 if single_dict:
-                    absolute_path = ParamInfo.objects.get(param_code=1).param_value
-                    relative_path = ParamInfo.objects.get(param_code=2).param_value
-                    relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-                    # tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
-                    param_value = ParamInfo.objects.get(param_code=7).param_value
-                    # 封面
+                    # 图片
                     for key, value in single_dict.items():
                         tcode = AttachmentFileType.objects.get(tname=key).tcode
                         url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
@@ -2122,13 +2129,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                                                operation_state=3, state=1))
 
                 if attachment_list:
-
-                    absolute_path = ParamInfo.objects.get(param_code=1).param_value
-                    relative_path = ParamInfo.objects.get(param_code=2).param_value
-                    relative_path_front = ParamInfo.objects.get(param_code=4).param_value
                     tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
-                    param_value = ParamInfo.objects.get(param_code=7).param_value
-
                     url_x_a = '{}{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode)
 
                     if not os.path.exists(url_x_a):
