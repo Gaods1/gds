@@ -194,7 +194,8 @@ class AttachmentFileinfo(models.Model):
     insert_time = models.DateTimeField(auto_now_add=True)
     operation_state = models.IntegerField(blank=True, null=True)
     path = models.CharField(max_length=64, blank=True, null=True)
-
+    file_caption = models.CharField(max_length=64, blank=True, null=True)
+    publish = models.IntegerField(blank=True, null=True)
     class Meta:
         managed = False
         db_table = 'attachment_fileinfo'

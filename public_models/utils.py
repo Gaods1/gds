@@ -65,12 +65,13 @@ def get_detcode_str(code):
 
 """
 
-def content_type(a,b,c,d):
+def content_type(a,b,c,d,e):
     dict ={}
     dict['type'] = a
     dict['name'] = b
     dict['look'] = c
     dict['down'] = d
+    dict['file_caption'] = e
     return dict
 
 def get_content_type(path,path_front,file):
@@ -93,7 +94,7 @@ def get_content_type(path,path_front,file):
         url = url.replace(path, path_front)
 
         type = 'excel' if url.endswith('xls') or url.endswith('xlsx') else 'doc'
-        dict_office = content_type(type, file.file_name, url_pdf, url)
+        dict_office = content_type(type, file.file_name, url_pdf, url,file.file_caption)
 
         list_a.append(dict_office)
 
@@ -102,14 +103,14 @@ def get_content_type(path,path_front,file):
             'gif') or url.endswith('pdf'):
         type = 'pdf' if url.endswith('pdf') else 'image'
         url_jpg_pdf = url.replace(path, path_front)
-        dict = content_type(type, file.file_name, url_jpg_pdf, url_jpg_pdf)
+        dict = content_type(type, file.file_name, url_jpg_pdf, url_jpg_pdf,file.file_caption)
         list_a.append(dict)
 
     # 如果是txt或者zip
     elif url.endswith('txt') or url.endswith('zip'):
         url_t_z = url.replace(path, path_front)
         type = 'txt' if url.endswith('txt') else 'zip'
-        dict = content_type(type, file.file_name, url_t_z, url_t_z)
+        dict = content_type(type, file.file_name, url_t_z, url_t_z,file.file_caption)
         list_a.append(dict)
 
     # 如果是ppt或者其他
@@ -117,7 +118,7 @@ def get_content_type(path,path_front,file):
         url_other_type = url.split('.')[-1]
         url_other = url.replace(path, path_front)
         type = 'ppt' if url_other_type == 'ppt' else url_other_type
-        dict = content_type(type, file.file_name, url_other, url_other)
+        dict = content_type(type, file.file_name, url_other, url_other,file.file_caption)
         list_a.append(dict)
 
     return list_a
