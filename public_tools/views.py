@@ -38,7 +38,7 @@ from django_redis import get_redis_connection
 
 """
 
-class PublicInfo(APIView):
+class PublicInfo(APIView,FileSystemStorage):
     queryset = AttachmentFileinfo.objects.all()
 
 
