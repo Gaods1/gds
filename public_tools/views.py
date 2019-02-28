@@ -39,26 +39,26 @@ from django_redis import get_redis_connection
 """
 
 class PublicInfo(APIView):
-    #queryset = AttachmentFileinfo.objects.all()
+    queryset = AttachmentFileinfo.objects.all()
 
 
-    absolute_path = ParamInfo.objects.get(param_code=1).param_value
-    absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
-    MEDIA_ROOT = absolute_path
+    #absolute_path = ParamInfo.objects.get(param_code=1).param_value
+    #absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
+    #MEDIA_ROOT = absolute_path
 
     def post(self, request):
-        #absolute_path = ParamInfo.objects.get(param_code=1).param_value
-        #absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
-        #MEDIA_ROOT = absolute_path
+        absolute_path = ParamInfo.objects.get(param_code=1).param_value
+        absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
+        MEDIA_ROOT = absolute_path
         if not request.method == "POST":
-            return JsonResponse({"error": u"不支持此种请求"}, safe=False)
+            return Response({"detail": u"不支持此种请求"},status=400)
 
         files = request.FILES.getlist('file',None)
         flag = request.POST.get('flag',None)
         account_code = request.user.account_code
 
         if not files or not flag:
-            return Response({'detail':'请上传文件'})
+            return Response({'detail':'请上传文件'},status=400)
         if flag == 'attachment':
             attachment_pdf = []
             dict = {}
@@ -69,13 +69,13 @@ class PublicInfo(APIView):
                 try:
                     for file in files:
                         # 拼接地址
-                        url = self.MEDIA_ROOT + 'temporary/' + account_code + '/'
+                        url = MEDIA_ROOT + 'temporary/' + account_code + '/'
                         if not os.path.exists(url):
                             os.makedirs(url)
                         #上传服务器的路径
                         url = url + file.name
                         if os.path.exists(url):
-                            return Response({'detail': '该附件已上传到服务器'})
+                            return Response({'detail': '该附件已上传到服务器'},status=400)
                         # 创建对象
                         a = FileSystemStorage()
                         # 上传服务器
@@ -86,18 +86,18 @@ class PublicInfo(APIView):
                             child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + self.MEDIA_ROOT + 'temporary/' + account_code + ' ' + url, stdout=subprocess.PIPE, shell=True)
 
                         u_z = url.split('/')[-1]
-                        url_front = self.absolute_path_front + 'temporary/' + account_code + '/' + u_z
+                        url_front = absolute_path_front + 'temporary/' + account_code + '/' + u_z
                         attachment_pdf.append(url_front)
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return Response({'detail': '上传失败%s' % str(e)})
+                    return Response({'detail': '上传失败%s' % str(e)},status=400)
 
                 dict['attachment'] = attachment_pdf
                 transaction.savepoint_commit(save_id)
                 return Response(dict)
         else:
             if len(files)!=1:
-                return Response({'detail': '图片只能上传一张'})
+                return Response({'detail': '图片只能上传一张'},status=400)
 
             # 建立事物机制
             with transaction.atomic():
@@ -106,14 +106,14 @@ class PublicInfo(APIView):
                 dict = {}
                 try:
                     for file in files:
-                        url = self.MEDIA_ROOT + 'temporary/' + account_code + '/'
+                        url = MEDIA_ROOT + 'temporary/' + account_code + '/'
                         if not os.path.exists(url):
                             os.makedirs(url)
                         url = url + file.name
                         if not url.endswith('jpg') and not url.endswith('png') and not url.endswith('jpeg') and not url.endswith('bmp') and not url.endswith('gif'):
-                            return Response({'detail': '请上传图片类型'})
+                            return Response({'detail': '请上传图片类型'},status=400)
                         if os.path.exists(url):
-                            return Response({'detail': '该图片已上传到服务器'})
+                            return Response({'detail': '该图片已上传到服务器'},status=400)
                         # 创建对象
                         a = FileSystemStorage()
                         # 上传服务器
@@ -132,37 +132,37 @@ class PublicInfo(APIView):
 
                         # 给前端抛出文件路径
                         u_z = url.split('/')[-1]
-                        jpg = self.absolute_path_front + 'temporary/' + account_code + '/'+ u_z
+                        jpg = absolute_path_front + 'temporary/' + account_code + '/'+ u_z
                         dict[flag] = jpg
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return Response({'detail': '上传失败%s' % str(e)})
+                    return Response({'detail': '上传失败%s' % str(e)},status=400)
 
                 transaction.savepoint_commit(save_id)
                 return Response(dict)
     def delete(self,request):
 
-        #absolute_path = ParamInfo.objects.get(param_code=1).param_value
-        #absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
-        #MEDIA_ROOT = absolute_path
+        absolute_path = ParamInfo.objects.get(param_code=1).param_value
+        absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
+        MEDIA_ROOT = absolute_path
 
         if not request.method == "DELETE":
-            return Response({"detail": u"不支持此种请求"})
+            return Response({"detail": u"不支持此种请求"},status=400)
 
         name = request.query_params.get('name',None)
         serial = request.query_params.get('serial',None)
         account_code = request.user.account_code
 
         if not name:
-            return Response({'detail': '请添加要删除的文件名称'})
+            return Response({'detail': '请添加要删除的文件名称'},status=400)
         name = name.split('/')[-1]
         # 在提交之前的删除
         if not serial:
             # 拼接地址
-            url = self.MEDIA_ROOT + 'temporary/' + account_code + '/' + name
+            url = MEDIA_ROOT + 'temporary/' + account_code + '/' + name
             # 判断此路径下是否有文件
             if not os.path.exists(url):
-                return Response({'detail': '该临时路径下没有该文件'})
+                return Response({'detail': '该临时路径下没有该文件'},status=400)
 
             # 建立事物机制
             with transaction.atomic():
@@ -182,7 +182,7 @@ class PublicInfo(APIView):
 
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return Response({'detail': '删除失败' % str(e)})
+                    return Response({'detail': '删除失败' % str(e)},status=400)
                 transaction.savepoint_commit(save_id)
                 return Response({'message':'ok'})
 
@@ -197,11 +197,11 @@ class PublicInfo(APIView):
                     path_list = AttachmentFileinfo.objects.filter(file_name=name)
                     if path_list:
                         path = path_list.order_by('-insert_time')[0].path
-                        url = self.MEDIA_ROOT + 'uploads/' + path + name
+                        url = MEDIA_ROOT + 'uploads/' + path + name
                         # 判断该路径下是否有该文件
                         if not os.path.exists(url):
                             transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该正式路径下不存在该文件'})
+                            return Response({'detail': '该正式路径下不存在该文件'},status=400)
 
                         #url = url + name
                         # 创建对象
@@ -223,7 +223,7 @@ class PublicInfo(APIView):
                             path_pdf.order_by('-insert_time')[0].delete()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
-                    return Response({'detail': '删除失败' % str(e)})
+                    return Response({'detail': '删除失败' % str(e)},status=400)
 
                 transaction.savepoint_commit(save_id)
                 return Response({'message':'ok'})
