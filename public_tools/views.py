@@ -137,6 +137,10 @@ class PublicInfo(APIView,FileSystemStorage):
                 return Response(dict)
     def delete(self,request):
 
+        absolute_path = ParamInfo.objects.get(param_code=1).param_value
+        absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
+        MEDIA_ROOT = absolute_path
+        
         if not request.method == "DELETE":
             return Response({"detail": u"不支持此种请求"})
 
