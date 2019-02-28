@@ -41,10 +41,10 @@ from django_redis import get_redis_connection
 class PublicInfo(APIView):
     #queryset = AttachmentFileinfo.objects.all()
 
-    def __init__(self):
-        absolute_path = ParamInfo.objects.get(param_code=1).param_value
-        self.absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
-        self.MEDIA_ROOT = absolute_path
+
+    absolute_path = ParamInfo.objects.get(param_code=1).param_value
+    absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
+    MEDIA_ROOT = absolute_path
 
     def post(self, request):
         #absolute_path = ParamInfo.objects.get(param_code=1).param_value
