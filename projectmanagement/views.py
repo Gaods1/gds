@@ -494,6 +494,8 @@ def getCheckInfo(self,request, step_code, substep_code):
     step_code = int(step_code)
     substep_code = int(substep_code)
 
+    #***** 4 2 状态的项目单独查询永远也不会走到这个函数
+
     if queryset != None and len(queryset) > 0:
         # 判断是否终止项目
         if step_code > 0 and substep_code > 0:
@@ -534,6 +536,7 @@ def getCheckInfo(self,request, step_code, substep_code):
             queryset = self.filter_queryset(q)
         else:
             queryset = []
+
 
     page = self.paginate_queryset(queryset)
     if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
@@ -603,8 +606,6 @@ def upCheckinfo(self, request):
             pssi = ProjectSubstepSerialInfo.objects.get(project_code=project_code,
                                                         step_code=step_code, substep_code=substep_code,
                                                         substep_serial=substep_serial, substep_serial_type=substep_serial_type)
-
-
             pssi.substep_serial_state = substep_serial_state
             pssi.step_msg = cmsg
             pssi.save()
@@ -634,9 +635,10 @@ def upCheckinfo(self, request):
                     pass
                 else:
                     psi.substep_state = substep_state
+                    psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             else:
                 psi.substep_state = substep_state
-            psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             psi.step_msg = cmsg
             psi.save()
 
@@ -669,6 +671,18 @@ def upCheckinfo(self, request):
                     step_state = substep_serial_state
                 psi.step_state = step_state
                 psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                psi.save()
+            elif step_code == 4 and substep_code == 2 and substep_serial_type == 1:
+                psi = ProjectStepInfo.objects.get(project_code=project_code, step_code=step_code)
+                step_state = 0
+                if old_substep_state != -11:  # 普通步骤
+                    if cstate == 1:
+                        step_state = 1
+                else:
+                    step_state = substep_serial_state
+                    psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                    psi.step_state = step_state
+                psi.step_msg = cmsg
                 psi.save()
             else:
                 psi = ProjectStepInfo.objects.get(project_code=project_code, step_code=step_code)
@@ -839,7 +853,111 @@ def upCheckinfo(self, request):
 
 
 
+class ProjectSolidCheckInfoViewSet(viewsets.ModelViewSet):
+    queryset = ProjectCheckInfo.objects.filter(cstate=0).order_by('p_serial')
+    serializer_class = ProjectCheckInfoSerializer
 
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("project_code", "step_code")
+    filter_fields = ("project_code", "step_code", "substep_code")
+    search_fields = ("project_code", "step_code", "substep_code")
+
+
+    def list(self, request, *args, **kwargs):
+        # 检测 状态在
+        step_code = request.GET.get('step_code')
+        substep_code = request.GET.get('substep_code')
+        if step_code == None or substep_code == None:
+            queryset = []
+            page = self.paginate_queryset(queryset)  # 不能省略
+            serializer = self.get_serializer(queryset, many=True)
+            return self.get_paginated_response(serializer.data)
+
+
+        # 获取当前账号所属部门及子部门 上级能查看审核下级
+        dept_code = request.user.dept_code
+
+        # 只要返回空列表我就认为你的部门是一级部门
+        dept_codes = get_dept_codes(dept_code)
+        # writeLog('yzw_py.log', 'getProjectByDept', sys._getframe().f_code.co_filename, str(sys._getframe().f_lineno))
+
+        step_code = int(step_code)
+        substep_code = int(substep_code)
+
+        # 判断是否终止项目
+        if step_code > 0 and substep_code > 0:
+            if step_code == 4 and substep_code == 2:
+                sql = """
+                    select a.*
+                    from project_check_info as a,project_substep_info as b,project_substep_serial_info as c,
+                    project_info as p
+                    where a.project_code=b.project_code and a.step_code=b.step_code and a.substep_code=b.substep_code
+                    and b.substep_state<>-11 and a.substep_serial=c.substep_serial
+                    and a.cstate=0 and a.step_code={step_code} and a.substep_code={substep_code}
+                    and a.project_code=p.project_code and p.project_state={step_code} and p.project_sub_state={substep_code}
+                    order by c.p_serial desc
+                    """
+            else:
+                sql = """
+                    select AA.* from 
+                    (select a.*
+                    from project_check_info as a,project_substep_info as b,project_substep_serial_info as c,
+                    project_info as p
+                    where a.project_code=b.project_code and a.step_code=b.step_code and a.substep_code=b.substep_code
+                    and b.substep_state<>-11 and a.substep_serial=c.substep_serial
+                    and a.cstate=0 and a.step_code={step_code} and a.substep_code={substep_code}
+                    and a.project_code=p.project_code and p.project_state={step_code} and p.project_sub_state={substep_code}
+                    order by c.p_serial desc
+                    ) as AA 
+                    group by AA.project_code
+                    """
+        else:
+            sql = """
+                select a.* from project_check_info as a,project_substep_info as b
+                where a.project_code=b.project_code and a.step_code=b.step_code and a.substep_code=b.substep_code
+                and b.substep_state=-11
+                and a.cstate=0
+                group by a.project_code
+                """
+        sql = sql.format(step_code=step_code, substep_code=substep_code)
+        raw_queryset = ProjectCheckInfo.objects.raw(sql)
+
+        # 当前部门所有账号
+        if dept_codes == None or len(dept_codes) == 0:
+            projectcheckinfos = ProjectCheckInfo.objects.filter(p_serial__in=[i.p_serial for i in raw_queryset]).order_by("-p_serial")
+
+        else:
+            account_codes = [account.account_code for account in
+                             AccountInfo.objects.only('dept_code').filter(dept_code__in=dept_codes, state=1)]
+
+            # 当前部门账号相关的技术经济人代码
+            brokers = [broker.broker_code for broker in
+                       BrokerBaseinfo.objects.filter(account_code__in=account_codes, state=1)]
+            # 技术经济人相关的项目
+            project_codes = [projectbrokerinfo.project_code for projectbrokerinfo in
+                             ProjectBrokerInfo.objects.filter(broker_code__in=brokers)]
+
+
+            projectcheckinfos = ProjectCheckInfo.objects.filter(p_serial__in=[i.p_serial for i in raw_queryset],project_code__in=project_codes).order_by("-p_serial")
+
+        page = self.paginate_queryset(projectcheckinfos)
+        if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
+            page = None
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(projectcheckinfos, many=True)
+        return self.get_paginated_response(serializer.data)
+
+        return projectcheckinfos
+
+    def update(self, request, *args, **kwargs):
+        return upCheckinfo(self,request)
 
 
 class ProjectStepInfoViewSet(viewsets.ModelViewSet):
