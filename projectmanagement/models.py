@@ -30,11 +30,11 @@ class ProjectInfo(models.Model):
     insert_time = models.DateTimeField(blank=True, null=True)
 
     # 项目来源
-    @property
-    def from_code_info(self):
-        # from_code_info = RrApplyHistory.objects.get(a_code=self.from_code)
-        # return from_code_info
-        return None
+    # @property
+    # def from_code_info(self):
+    #     # from_code_info = RrApplyHistory.objects.get(a_code=self.from_code)
+    #     # return from_code_info
+    #     return None
 
     # 项目当前子步骤
     @property
@@ -57,14 +57,14 @@ class ProjectInfo(models.Model):
         return substep_serial_info
 
     # 项目审核信息
-    @property
-    def check_info(self):
-        q = ProjectCheckInfo.objects.filter(Q(project_code=self.project_code),~Q(substep_serial = 0)).order_by('-p_serial')
-        if q != None and len(q)>0:
-            check_info = q[0]
-        else:
-            check_info = []
-        return check_info
+    # @property
+    # def check_info(self):
+    #     q = ProjectCheckInfo.objects.filter(Q(project_code=self.project_code),~Q(substep_serial = 0)).order_by('-p_serial')
+    #     if q != None and len(q)>0:
+    #         check_info = q[0]
+    #     else:
+    #         check_info = []
+    #     return check_info
 
     # 项目关联技术经济人
     @property
@@ -157,6 +157,22 @@ class ProjectCheckInfo(models.Model):
     cmsg = models.TextField(blank=True, null=True)
     checker = models.CharField(max_length=32, blank=True, null=True)
     ctime = models.DateTimeField(blank=True, null=True)
+
+
+    @property
+    def project_info(self):
+        return ProjectInfo.objects.get(project_code=self.project_code)
+
+    # 项目当前子步骤流水
+    @property
+    def substep_serial_info(self):
+        q = ProjectSubstepSerialInfo.objects.filter(project_code=self.project_code, step_code=self.step_code,
+                                                    substep_code=self.substep_code,substep_serial=self.substep_serial).order_by('-p_serial')
+        if q != None and len(q) > 0:
+            substep_serial_info = q[0]
+        else:
+            substep_serial_info = {}
+        return substep_serial_info
 
     class Meta:
         managed = False
