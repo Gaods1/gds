@@ -61,6 +61,8 @@ class ProjectSubstepInfoSerializer(PatclubModelSerializer):
 class ProjectSubstepSerialInfoSerializer(PatclubModelSerializer):
     submit_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
 
+    check_info = serializers.DictField(read_only=True)
+
     class Meta:
         model = ProjectSubstepSerialInfo
         fields = ['p_serial',
@@ -71,7 +73,10 @@ class ProjectSubstepSerialInfoSerializer(PatclubModelSerializer):
                   'submit_time',
                   'substep_serial_type',
                   'substep_serial_state',
-                  'step_msg']
+                  'step_msg',
+                  'check_info'
+                  ]
+
 
 
 # 项目经纪人信息表
@@ -159,7 +164,7 @@ class ProjectInfoSerializer(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     # from_code_info = RrApplyHistorySerializer(many=True)
     substep_info = ProjectSubstepInfoSerializer(read_only=True)
-    substep_serial_info = ProjectSubstepSerialInfoSerializer(read_only=True)
+    substep_serial_info = ProjectSubstepSerialInfoSerializer(read_only=True,many=True)
     # check_info = ProjectCheckInfoSerializer(read_only=True)
     broker_info = ProjectBrokerInfoSerializer(read_only=True)
     team_info = ProjectTeamInfoSerializer(read_only=True)

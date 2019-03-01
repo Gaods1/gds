@@ -853,7 +853,7 @@ def upCheckinfo(self, request):
 
 
 
-class ProjectSolidCheckInfoViewSet(viewsets.ModelViewSet):
+class ProjectCommonCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,viewsets.GenericViewSet):
     queryset = ProjectCheckInfo.objects.filter(cstate=0).order_by('p_serial')
     serializer_class = ProjectCheckInfoSerializer
 
@@ -868,7 +868,6 @@ class ProjectSolidCheckInfoViewSet(viewsets.ModelViewSet):
 
 
     def list(self, request, *args, **kwargs):
-        # 检测 状态在
         step_code = request.GET.get('step_code')
         substep_code = request.GET.get('substep_code')
         if step_code == None or substep_code == None:
@@ -877,87 +876,88 @@ class ProjectSolidCheckInfoViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(queryset, many=True)
             return self.get_paginated_response(serializer.data)
 
-
-        # 获取当前账号所属部门及子部门 上级能查看审核下级
-        dept_code = request.user.dept_code
-
-        # 只要返回空列表我就认为你的部门是一级部门
-        dept_codes = get_dept_codes(dept_code)
-        # writeLog('yzw_py.log', 'getProjectByDept', sys._getframe().f_code.co_filename, str(sys._getframe().f_lineno))
-
-        step_code = int(step_code)
-        substep_code = int(substep_code)
-
-        # 判断是否终止项目
-        if step_code > 0 and substep_code > 0:
-            if step_code == 4 and substep_code == 2:
-                sql = """
-                    select a.*
-                    from project_check_info as a,project_substep_info as b,project_substep_serial_info as c,
-                    project_info as p
-                    where a.project_code=b.project_code and a.step_code=b.step_code and a.substep_code=b.substep_code
-                    and b.substep_state<>-11 and a.substep_serial=c.substep_serial
-                    and a.cstate=0 and a.step_code={step_code} and a.substep_code={substep_code}
-                    and a.project_code=p.project_code and p.project_state={step_code} and p.project_sub_state={substep_code}
-                    order by c.p_serial desc
-                    """
-            else:
-                sql = """
-                    select AA.* from 
-                    (select a.*
-                    from project_check_info as a,project_substep_info as b,project_substep_serial_info as c,
-                    project_info as p
-                    where a.project_code=b.project_code and a.step_code=b.step_code and a.substep_code=b.substep_code
-                    and b.substep_state<>-11 and a.substep_serial=c.substep_serial
-                    and a.cstate=0 and a.step_code={step_code} and a.substep_code={substep_code}
-                    and a.project_code=p.project_code and p.project_state={step_code} and p.project_sub_state={substep_code}
-                    order by c.p_serial desc
-                    ) as AA 
-                    group by AA.project_code
-                    """
-        else:
-            sql = """
-                select a.* from project_check_info as a,project_substep_info as b
-                where a.project_code=b.project_code and a.step_code=b.step_code and a.substep_code=b.substep_code
-                and b.substep_state=-11
-                and a.cstate=0
-                group by a.project_code
-                """
-        sql = sql.format(step_code=step_code, substep_code=substep_code)
-        raw_queryset = ProjectCheckInfo.objects.raw(sql)
-
-        # 当前部门所有账号
-        if dept_codes == None or len(dept_codes) == 0:
-            projectcheckinfos = ProjectCheckInfo.objects.filter(p_serial__in=[i.p_serial for i in raw_queryset]).order_by("-p_serial")
-
-        else:
-            account_codes = [account.account_code for account in
-                             AccountInfo.objects.only('dept_code').filter(dept_code__in=dept_codes, state=1)]
-
-            # 当前部门账号相关的技术经济人代码
-            brokers = [broker.broker_code for broker in
-                       BrokerBaseinfo.objects.filter(account_code__in=account_codes, state=1)]
-            # 技术经济人相关的项目
-            project_codes = [projectbrokerinfo.project_code for projectbrokerinfo in
-                             ProjectBrokerInfo.objects.filter(broker_code__in=brokers)]
-
-
-            projectcheckinfos = ProjectCheckInfo.objects.filter(p_serial__in=[i.p_serial for i in raw_queryset],project_code__in=project_codes).order_by("-p_serial")
-
-        page = self.paginate_queryset(projectcheckinfos)
-        if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
-            page = None
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = self.get_serializer(projectcheckinfos, many=True)
-        return self.get_paginated_response(serializer.data)
-
-        return projectcheckinfos
+        return getCommonCheckInfo(self, request, step_code, substep_code)
 
     def update(self, request, *args, **kwargs):
         return upCheckinfo(self,request)
+
+
+
+def getCommonCheckInfo(self,request, step_code, substep_code):
+    step_code = int(step_code)
+    substep_code = int(substep_code)
+
+    # 判断是否终止项目
+    if step_code > 0 and substep_code > 0:
+        if step_code == 4 and substep_code == 2:
+            sql = """
+                        select a.*
+                        from project_check_info as a,project_substep_info as b,project_substep_serial_info as c,
+                        project_info as p
+                        where a.project_code=b.project_code and a.step_code=b.step_code and a.substep_code=b.substep_code
+                        and b.substep_state<>-11 and a.substep_serial=c.substep_serial
+                        and a.cstate=0 and a.step_code={step_code} and a.substep_code={substep_code}
+                        and a.project_code=p.project_code and p.project_state={step_code} and p.project_sub_state={substep_code}
+                        order by c.p_serial desc
+                        """
+        else:
+            sql = """
+                        select AA.* from 
+                        (select a.*
+                        from project_check_info as a,project_substep_info as b,project_substep_serial_info as c,
+                        project_info as p
+                        where a.project_code=b.project_code and a.step_code=b.step_code and a.substep_code=b.substep_code
+                        and b.substep_state<>-11 and a.substep_serial=c.substep_serial
+                        and a.cstate=0 and a.step_code={step_code} and a.substep_code={substep_code}
+                        and a.project_code=p.project_code and p.project_state={step_code} and p.project_sub_state={substep_code}
+                        order by c.p_serial desc
+                        ) as AA 
+                        group by AA.project_code
+                        """
+    else:
+        sql = """
+                    select a.* from project_check_info as a,project_substep_info as b
+                    where a.project_code=b.project_code and a.step_code=b.step_code and a.substep_code=b.substep_code
+                    and b.substep_state=-11
+                    and a.cstate=0
+                    group by a.project_code
+                    """
+    sql = sql.format(step_code=step_code, substep_code=substep_code)
+    raw_queryset = ProjectCheckInfo.objects.raw(sql)
+
+    # 获取当前账号所属部门及子部门 上级能查看审核下级
+    dept_code = request.user.dept_code
+    # 只要返回空列表我就认为你的部门是一级部门
+    dept_codes = get_dept_codes(dept_code)
+    # writeLog('yzw_py.log', 'getProjectByDept', sys._getframe().f_code.co_filename, str(sys._getframe().f_lineno))
+    if dept_codes == None or len(dept_codes) == 0:
+        # 需要审核的项目
+        projectcheckinfos = ProjectCheckInfo.objects.filter(p_serial__in=[i.p_serial for i in raw_queryset]).order_by(
+            "-p_serial")
+    else:
+        # 当前部门所有账号
+        account_codes = [account.account_code for account in
+                         AccountInfo.objects.only('dept_code').filter(dept_code__in=dept_codes, state=1)]
+        # 当前部门账号相关的技术经济人代码
+        brokers = [broker.broker_code for broker in
+                   BrokerBaseinfo.objects.filter(account_code__in=account_codes, state=1)]
+        # 技术经济人相关的项目
+        project_codes = [projectbrokerinfo.project_code for projectbrokerinfo in
+                         ProjectBrokerInfo.objects.filter(broker_code__in=brokers)]
+        # 需要审核的项目
+        projectcheckinfos = ProjectCheckInfo.objects.filter(p_serial__in=[i.p_serial for i in raw_queryset],
+                                                            project_code__in=project_codes).order_by("-p_serial")
+
+    # 分页数据
+    page = self.paginate_queryset(projectcheckinfos)
+    if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
+        page = None
+    if page is not None:
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    serializer = self.get_serializer(projectcheckinfos, many=True)
+    return self.get_paginated_response(serializer.data)
 
 
 class ProjectStepInfoViewSet(viewsets.ModelViewSet):
@@ -973,20 +973,6 @@ class ProjectStepInfoViewSet(viewsets.ModelViewSet):
     ordering_fields = ("project_code", "step_code")
     filter_fields = ("project_code", "step_code")
     search_fields = ("project_code", "step_code")
-
-    # def list(self, request, *args, **kwargs):
-    #     project_code = request.GET.get('project_code')
-    #     queryset = ProjectStepInfo.objects.filter(project_code=project_code).order_by('step_code')
-    #
-    #     page = self.paginate_queryset(queryset)
-    #     if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
-    #         page = None
-    #     if page is not None:
-    #         serializer = self.get_serializer(page, many=True)
-    #         return self.get_paginated_response(serializer.data)
-    #
-    #     serializer = self.get_serializer(queryset, many=True)
-    #     return self.get_paginated_response(serializer.data)
 
 
 

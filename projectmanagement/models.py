@@ -49,11 +49,11 @@ class ProjectInfo(models.Model):
     # 项目当前子步骤流水
     @property
     def substep_serial_info(self):
-        q = ProjectSubstepSerialInfo.objects.filter(project_code=self.project_code,step_code=self.project_state,substep_code=self.project_sub_state).order_by('-p_serial')
-        if q != None and len(q)>0:
-            substep_serial_info = q[0]
-        else:
-            substep_serial_info = {}
+        substep_serial_info = ProjectSubstepSerialInfo.objects.filter(project_code=self.project_code,step_code=self.project_state,substep_code=self.project_sub_state).order_by('-p_serial')
+        # if q != None and len(q)>0:
+        #     substep_serial_info = q[0]
+        # else:
+        #     substep_serial_info = {}
         return substep_serial_info
 
     # 项目审核信息
@@ -91,46 +91,6 @@ class ProjectInfo(models.Model):
     def expert_info(self):
         expert_info = ProjectExpertInfo.objects.filter(project_code=self.project_code)
         return expert_info
-
-    # @property
-    # def rr_result(self):
-    #     # results = []
-    #     # pris = ProjectRrInfo.objects.filter(project_code=self.project_code, rr_type=1)
-    #     # for pri in pris:
-    #     #     item = {}
-    #     #     rr_main = pri.rr_main
-    #     #     rr_code = pri.rr_code
-    #     #     ri = ResultsInfo.objects.values('r_name').get(r_code=rr_code)
-    #     #     item['rr_type'] = pri.rr_type
-    #     #     item['rr_main'] = rr_main
-    #     #     item['rr_code'] = rr_code
-    #     #     item['rr_name'] = ri['r_name']
-    #     #     results.append(item)
-    #     # return results
-    #
-    #     result_codes = [r.rr_code for r in ProjectRrInfo.objects.filter(project_code=self.project_code, rr_type=1)]
-    #     results = [r.r_name for r in ResultsInfo.objects.filter(r_code__in=result_codes)]
-    #     return results
-    #
-    # @property
-    # def rr_requirement(self):
-    #     # requirements = []
-    #     # pris = ProjectRrInfo.objects.filter(project_code=self.project_code, rr_type=2)
-    #     # for pri in pris:
-    #     #     item = {}
-    #     #     rr_main = pri.rr_main
-    #     #     rr_code = pri.rr_code
-    #     #     ri = RequirementsInfo.objects.values('req_name').get(req_code=rr_code)
-    #     #     item['rr_type'] = pri.rr_type
-    #     #     item['rr_main'] = rr_main
-    #     #     item['rr_code'] = rr_code
-    #     #     item['rr_name'] = ri['req_name']
-    #     #     requirements.append(item)
-    #     # return requirements
-    #
-    #     requirement_codes = [r.rr_code for r in ProjectRrInfo.objects.filter(project_code=self.project_code, rr_type=2)]
-    #     requirements = [r.req_name for r in RequirementsInfo.objects.filter(req_code__in=requirement_codes)]
-    #     return requirements
 
     @property
     def rr(self):
@@ -256,6 +216,16 @@ class ProjectSubstepSerialInfo(models.Model):
     substep_serial_type = models.IntegerField(blank=True, null=True)
     substep_serial_state = models.IntegerField(blank=True, null=True)
     step_msg = models.CharField(max_length=255,blank=True, null=True)
+
+    #项目审核信息
+    @property
+    def check_info(self):
+        q = ProjectCheckInfo.objects.filter(project_code=self.project_code,step_code=self.step_code,substep_code=self.substep_code,substep_serial=self.substep_serial).values('project_code','cstate','cmsg').order_by('-p_serial')
+        if q != None and len(q)>0:
+            check_info = q[0]
+        else:
+            check_info = {}
+        return check_info
 
     class Meta:
         managed = False
