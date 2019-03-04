@@ -57,12 +57,14 @@ class PersonViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         pid_type = request.data.get('pid_type')
         pid = request.data.get('pid')
-        try:
-            check_card_id(pid_type,pid)
-        except Exception as e:
-            return Response({"detail": "创建失败：%s" % str(e)}, status=400)
+        if pid_type and pid:
+            try:
+                check_card_id(pid_type,pid)
+            except Exception as e:
+                return Response({"detail": "创建失败：%s" % str(e)}, status=400)
 
         form_data = request.data
+        form_data['state'] = form_data['state'] if form_data['state'] else 2
         form_data['creater'] = request.user.account
         serializer = self.get_serializer(data=form_data)
         serializer.is_valid(raise_exception=True)
@@ -77,11 +79,17 @@ class PersonViewSet(viewsets.ModelViewSet):
             return Response({"detail": "关联帐号不允许变更"}, status=400)
         pid_type = request.data.get('pid_type')
         pid = request.data.get('pid')
-        try:
-            check_card_id(pid_type, pid)
-        except Exception as e:
-            return Response({"detail": "创建失败：%s" % str(e)}, status=400)
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        if pid_type and pid:
+            try:
+                check_card_id(pid_type, pid)
+            except Exception as e:
+                return Response({"detail": "创建失败：%s" % str(e)}, status=400)
+        form_data = request.data
+        form_data['psex'] = form_data['psex'] if form_data['psex'] else None
+        form_data['pid_type'] = form_data['pid_type'] if form_data['pid_type'] else None
+        form_data['peducation'] = form_data['peducation'] if form_data['peducation'] else None
+        form_data['state'] = form_data['state'] if form_data['state'] else 2
+        serializer = self.get_serializer(instance, data=form_data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
