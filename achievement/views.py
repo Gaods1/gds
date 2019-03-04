@@ -1235,7 +1235,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 data['creater'] = request.user.account
                 serializer = self.get_serializer(data=data)
                 serializer.is_valid(raise_exception=True)
-                self.perform_create(serializer)
+                element = self.perform_create(serializer)
 
                 serializer_ecode = serializer.data['r_code']
 
@@ -1286,8 +1286,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                # 图片
                 for key,value in single_dict.items():
-
-                    tcode = AttachmentFileType.objects.get(tname=key).tcode
+                    if len(key)==32:
+                        tcode = AttachmentFileType.objects.get(tname='consultEditor').tcode
+                    else:
+                        tcode = AttachmentFileType.objects.get(tname=key).tcode
                     url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
                     if not os.path.exists(url_x_c):
                         os.makedirs(url_x_c)
@@ -1316,11 +1318,12 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     path = '{}/{}/{}/'.format(param_value,tcode,serializer_ecode)
                     list1.append(AttachmentFileinfo(tcode=tcode,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1))
 
-                    if key=='consultEditor':
+                    if len(key)==32:
                         url_j_f = url_j_jpg.replace(absolute_path,absolute_path_front)
                         dict_editor = {}
                         dict_editor[url_j_f]=url_x_f
                         list3.append(dict_editor)
+
                 for attachment in attachment_list:
                     url_l = attachment.split('/')
                     url_file = url_l[-1]
@@ -1375,7 +1378,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         shutil.move(url_j, url_x)
 
                 if list3:
-                    element = ResultsInfo.objects.get(r_code=serializer_ecode)
+                    #element = ResultsInfo.objects.get(r_code=serializer_ecode)
                     detail = element.r_abstract_detail
                     for i in list3:
                         detail = detail.replace(list(i)[0],i[list(i)[0]])
