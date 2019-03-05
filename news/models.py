@@ -1,5 +1,6 @@
 from django.db import models
 from misc.misc import gen_uuid32
+from public_models.models import AttachmentFileinfo,AttachmentFileType,ParamInfo
 
 # Create your models here.
 
@@ -12,6 +13,17 @@ class NewsGroupInfo(models.Model):
     group_memo = models.CharField(verbose_name='新闻栏目描述',max_length=255, blank=True, null=True)
     logo = models.CharField(verbose_name='新闻栏目logo',max_length=255, blank=True, null=True)
     state = models.IntegerField(blank=True, null=True)
+
+    @property
+    def logo_path(self):
+        logo_path = ''
+        tcode = AttachmentFileType.objects.get(tname='logoPhoto').tcode
+        attach_fileinfo = AttachmentFileinfo.objects.filter(ecode=self.group_code, tcode=tcode, file_name=self.logo)
+        if attach_fileinfo:
+            attach_path = attach_fileinfo[0].path
+            attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value
+            logo_path = '{}{}'.format(attachment_dir, attach_path)
+        return logo_path
 
     class Meta:
         managed = False
@@ -52,11 +64,22 @@ class NewsInfo(models.Model):
 # 政策栏目信息表 *
 class PolicyGroupInfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    group_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    group_code = models.CharField(unique=True, max_length=64, default=gen_uuid32())
     group_name = models.CharField(unique=True,verbose_name='政策法规栏目名称',max_length=64)
     group_memo = models.CharField(verbose_name='政策法规栏目描述',max_length=255, blank=True, null=True)
     logo = models.CharField(verbose_name='政策法规栏目logo',max_length=255, blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)
+    state = models.IntegerField(default=1)
+
+    @property
+    def logo_path(self):
+        logo_path = ''
+        tcode = AttachmentFileType.objects.get(tname='logoPhoto').tcode
+        attach_fileinfo = AttachmentFileinfo.objects.filter(ecode=self.group_code,tcode=tcode,file_name=self.logo)
+        if attach_fileinfo:
+            attach_path = attach_fileinfo[0].path
+            attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value
+            logo_path = '{}{}'.format(attachment_dir,attach_path)
+        return logo_path
 
     class Meta:
         managed = False
