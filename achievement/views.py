@@ -1235,7 +1235,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 data['creater'] = request.user.account
                 serializer = self.get_serializer(data=data)
                 serializer.is_valid(raise_exception=True)
-                element = self.perform_create(serializer)
+                self.perform_create(serializer)
 
                 serializer_ecode = serializer.data['r_code']
 
@@ -1323,6 +1323,13 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         dict_editor = {}
                         dict_editor[url_j_f]=url_x_f
                         list3.append(dict_editor)
+                if list3:
+                    element = ResultsInfo.objects.get(r_code=serializer_ecode)
+                    detail = element.r_abstract_detail
+                    for i in list3:
+                        detail = detail.replace(list(i)[0],i[list(i)[0]])
+                    element.r_abstract_detail=detail
+                    element.save()
 
                 for attachment in attachment_list:
                     url_l = attachment.split('/')
@@ -1377,13 +1384,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         # 将doc临时目录转移到正式目录
                         shutil.move(url_j, url_x)
 
-                if list3:
-                    #element = ResultsInfo.objects.get(r_code=serializer_ecode)
-                    detail = element.r_abstract_detail
-                    for i in list3:
-                        detail = detail.replace(list(i)[0],i[list(i)[0]])
-                    element.r_abstract_detail=detail
-                    element.save()
+
 
                 for url_j_jpg,url_x_jpg in dict_jpg.items():
                     # 将jpg临时目录转移到正式目录
@@ -1534,12 +1535,14 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 dict = {}
                 list1 = []
                 list2 = []
+                list3 = []
                 dict_jpg = {}
 
                 # 临时目录当前登录账户文件夹
                 account_code_office = request.user.account_code
 
                 absolute_path = ParamInfo.objects.get(param_code=1).param_value
+                absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
                 relative_path_front = ParamInfo.objects.get(param_code=4).param_value
                 param_value = ParamInfo.objects.get(param_code=6).param_value
@@ -1547,7 +1550,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 if single_dict:
                     # 图片
                     for key,value in single_dict.items():
-                        tcode = AttachmentFileType.objects.get(tname=key).tcode
+                        if len(key) == 32:
+                            tcode = AttachmentFileType.objects.get(tname='consultEditor').tcode
+                        else:
+                            tcode = AttachmentFileType.objects.get(tname=key).tcode
                         url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
                         if not os.path.exists(url_x_c):
                             os.makedirs(url_x_c)
@@ -1578,6 +1584,19 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         list1.append(
                             AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
                                                operation_state=3, state=1))
+                        if len(key) == 32:
+                            url_j_f = url_j_jpg.replace(absolute_path, absolute_path_front)
+                            dict_editor = {}
+                            dict_editor[url_j_f] = url_x_f
+                            list3.append(dict_editor)
+                    if list3:
+                        element = ResultsInfo.objects.get(r_code=serializer_ecode)
+                        detail = element.r_abstract_detail
+                        for i in list3:
+                            detail = detail.replace(list(i)[0], i[list(i)[0]])
+                        element.r_abstract_detail = detail
+                        element.save()
+
 
                 if attachment_list:
                     tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
@@ -1811,14 +1830,14 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 # 2 创建合作方式表
                 dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
-                ResultsCooperationTypeInfo.objects.create(r_type=1,
+                ResultsCooperationTypeInfo.objects.create(r_type=2,
                                                           rr_code=serializer_ecode, cooperation_code=cooperation_code,
                                                           cooperation_name=dict_coop[cooperation_code], state=state)
 
                 # 3 创建持有人信息表
                 ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
                                                 owner_type=owner_type, owner_code=pcode_or_ecode, main_owner=main_owner,
-                                                state=state, r_type=1)
+                                                state=state, r_type=2)
 
                 # 4 创建关键字表
                 key_list = []
@@ -1835,6 +1854,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 # 6 转移附件创建ecode表
                 absolute_path = ParamInfo.objects.get(param_code=1).param_value
+                absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
                 relative_path_front = ParamInfo.objects.get(param_code=4).param_value
                 tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
@@ -1847,6 +1867,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 dict = {}
                 list1 = []
                 list2 = []
+                list3 = []
                 dict_jpg = {}
 
                 # 临时目录当前登录账户文件夹
@@ -1854,8 +1875,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 # 封面
                 for key, value in single_dict.items():
-
-                    tcode = AttachmentFileType.objects.get(tname=key).tcode
+                    if len(key)==32:
+                        tcode = AttachmentFileType.objects.get(tname='consultEditor').tcode
+                    else:
+                        tcode = AttachmentFileType.objects.get(tname=key).tcode
                     url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
                     if not os.path.exists(url_x_c):
                         os.makedirs(url_x_c)
@@ -1884,6 +1907,18 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
                     list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
                                                     operation_state=3, state=1))
+                    if len(key) == 32:
+                        url_j_f = url_j_jpg.replace(absolute_path, absolute_path_front)
+                        dict_editor = {}
+                        dict_editor[url_j_f] = url_x_f
+                        list3.append(dict_editor)
+                if list3:
+                    element = RequirementsInfo.objects.get(req_code=serializer_ecode)
+                    detail = element.r_abstract_detail
+                    for i in list3:
+                        detail = detail.replace(list(i)[0], i[list(i)[0]])
+                    element.r_abstract_detail = detail
+                    element.save()
 
                 for attachment in attachment_list:
                     url_l = attachment.split('/')
@@ -2061,13 +2096,13 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 # 2 创建合作方式表
                 dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
                 ResultsCooperationTypeInfo.objects.filter(rr_code=serializer_ecode).update(
-                    rr_code=serializer_ecode, r_type=1, cooperation_code=cooperation_code,
+                    rr_code=serializer_ecode, r_type=2, cooperation_code=cooperation_code,
                     cooperation_name=dict_coop[cooperation_code], state=state)
 
                 # 3 更新持有人信息表
                 ResultsOwnerInfo.objects.filter(r_code=serializer_ecode).update(
                     owner_type=owner_type, owner_code=pcode_or_ecode, main_owner=main_owner,
-                    state=state, r_type=1)
+                    state=state, r_type=2)
 
                 # 4 更新关键字表
                 KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
@@ -2086,12 +2121,14 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 dict = {}
                 list1 = []
                 list2 = []
+                list3 = []
                 dict_jpg = {}
 
                 # 临时目录当前登录账户文件夹
                 account_code_office = request.user.account_code
 
                 absolute_path = ParamInfo.objects.get(param_code=1).param_value
+                absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
                 relative_path_front = ParamInfo.objects.get(param_code=4).param_value
                 param_value = ParamInfo.objects.get(param_code=7).param_value
@@ -2099,7 +2136,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 if single_dict:
                     # 图片
                     for key, value in single_dict.items():
-                        tcode = AttachmentFileType.objects.get(tname=key).tcode
+                        if len(key) == 32:
+                            tcode = AttachmentFileType.objects.get(tname='consultEditor').tcode
+                        else:
+                            tcode = AttachmentFileType.objects.get(tname=key).tcode
                         url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
                         if not os.path.exists(url_x_c):
                             os.makedirs(url_x_c)
@@ -2131,6 +2171,18 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         list1.append(
                             AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
                                                operation_state=3, state=1))
+                        if len(key) == 32:
+                            url_j_f = url_j_jpg.replace(absolute_path, absolute_path_front)
+                            dict_editor = {}
+                            dict_editor[url_j_f] = url_x_f
+                            list3.append(dict_editor)
+                    if list3:
+                        element = RequirementsInfo.objects.get(req_code=serializer_ecode)
+                        detail = element.r_abstract_detail
+                        for i in list3:
+                            detail = detail.replace(list(i)[0], i[list(i)[0]])
+                        element.r_abstract_detail = detail
+                        element.save()
 
                 if attachment_list:
                     tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode

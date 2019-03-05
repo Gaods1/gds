@@ -3,6 +3,8 @@ import subprocess
 import base64
 
 import shutil
+import uuid
+
 from misc.misc import gen_uuid32
 
 import time
@@ -122,7 +124,7 @@ class PublicInfo(APIView):
                         jpg = self.absolute_path_front + 'temporary/' + account_code + '/'+ u_z
 
                         if flag=='consultEditor':
-                            dict[gen_uuid32]=jpg
+                            dict[''.join(str(uuid.uuid1()).split('-'))]=jpg
                         else:
                             dict[flag] = jpg
                 except Exception as e:
