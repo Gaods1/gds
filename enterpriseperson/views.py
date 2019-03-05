@@ -189,7 +189,8 @@ class EnterpriseViewSet(viewsets.ModelViewSet):
                         year = time.strftime('%Y', time.localtime(time.time()))
                         month = time.strftime('%m', time.localtime(time.time()))
                         day = time.strftime('%d', time.localtime(time.time()))
-                        date_dir = f'{year}{month}{day}'
+                        # date_dir = f'{year}{month}{day}'
+                        date_dir = '{}{}{}'.format(year,month,day)
 
                         # 将图片从临时目录移动到正式目录
                         for temp_img_str in temp_imgs_list:
@@ -198,7 +199,8 @@ class EnterpriseViewSet(viewsets.ModelViewSet):
                             new_img = gen_uuid32() + '.' + img_ext
                             img_temp_path = temp_img_str.replace(attachment_temp_dir, upload_temp_dir)
                             online_path = upload_dir.rstrip('/') + '/enterprise/' + date_dir + '/' + ecode + '/'
-                            img_online_path = f'{online_path}{new_img}'
+                            # img_online_path = f'{online_path}{new_img}'
+                            img_online_path = '{}{}'.format(online_path,new_img)
                             form_imgs_dict[img_temp_path] = img_online_path
                             # 新的线上显示地址
                             online_attachment_dir = attachment_dir.rstrip('/') + '/enterprise/' + date_dir + '/' + ecode + '/' + new_img
@@ -321,6 +323,7 @@ class EnterpriseViewSet(viewsets.ModelViewSet):
                 upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value  # 富文本编辑器图片上传的临时保存目录
                 upload_dir = ParamInfo.objects.get(param_name='upload_dir').param_value  # 富文本编辑器图片上传的正式保存目录
                 attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
+                date_dir = ''
                 # 更新后需要删除的图片
                 if del_imgs_set:
                     for img in del_imgs_set:
@@ -335,14 +338,16 @@ class EnterpriseViewSet(viewsets.ModelViewSet):
                     year = time.strftime('%Y',time.strptime(str(insert_time), "%Y-%m-%d %H:%M:%S"))
                     month = time.strftime('%m',time.strptime(str(insert_time), "%Y-%m-%d %H:%M:%S"))
                     day = time.strftime('%d',time.strptime(str(insert_time), "%Y-%m-%d %H:%M:%S"))
-                    date_dir = f'{year}{month}{day}'
+                    # date_dir = f'{year}{month}{day}'
+                    date_dir = '{}{}{}'.format(year, month, day)
                     for img in add_imgs_set:
                         img_list = img.split('.')
                         img_ext = img_list.pop()
                         new_img = gen_uuid32()+'.'+img_ext
                         img_temp_path = img.replace(attachment_temp_dir,upload_temp_dir)
                         online_path = upload_dir.rstrip('/')+'/enterprise/' + date_dir + '/' + instance.ecode + '/'
-                        img_online_path = f'{online_path}{new_img}'
+                        # img_online_path = f'{online_path}{new_img}'
+                        img_online_path = '{}{}'.format(online_path, new_img)
                         add_imgs_dict[img_temp_path]=img_online_path
                         # 新的线上显示地址
                         online_attachment_dir = attachment_dir.rstrip('/') + '/enterprise/' + date_dir+'/'+instance.ecode+'/'+new_img
