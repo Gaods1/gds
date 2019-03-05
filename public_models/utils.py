@@ -156,24 +156,43 @@ def get_single(tname_single,ecode):
     relative_path_front = ParamInfo.objects.get(param_code=4).param_value
     tcode_single = AttachmentFileType.objects.get(tname=tname_single).tcode
     ecode = ecode
-    try:
-        file = AttachmentFileinfo.objects.filter(tcode=tcode_single, ecode=ecode, operation_state__in=[1,3], state=1).order_by('-insert_time')[0]
-        #新增待审和状态
-        if file.operation_state == 1:
-            url = '{}{}{}'.format(absolute_path, file.path,file.file_name)
-            if not os.path.exists(url):
-                    return ''
-            url = url.replace(absolute_path, absolute_path_front)
-            return url
-        #审核通过状态
-        else:
-            url = '{}{}{}'.format(relative_path, file.path, file.file_name)
-            if not os.path.exists(url):
-                    return ''
-            url = url.replace(relative_path, relative_path_front)
-            return url
-    except Exception as e:
-        return ''
+
+    # 富文本内容
+    if tcode_single=='0113':
+        list_url = []
+        try:
+            file_list = AttachmentFileinfo.objects.filter(tcode=tcode_single, ecode=ecode, operation_state=3,
+                                                     state=1).order_by('-insert_time')
+            if file_list:
+                for file in file_list:
+                    if file.operation_state==3:
+                        url = '{}{}{}'.format(relative_path, file.path, file.file_name)
+                        if os.path.exists(url):
+                            url = url.replace(relative_path, relative_path_front)
+                            list_url.append(url)
+                return list_url
+            return list_url
+        except Exception as e:
+            return []
+    else:
+        try:
+            file = AttachmentFileinfo.objects.filter(tcode=tcode_single, ecode=ecode, operation_state__in=[1,3], state=1).order_by('-insert_time')[0]
+            #新增待审和状态
+            if file.operation_state == 1:
+                url = '{}{}{}'.format(absolute_path, file.path,file.file_name)
+                if not os.path.exists(url):
+                        return ''
+                url = url.replace(absolute_path, absolute_path_front)
+                return url
+            #审核通过状态
+            else:
+                url = '{}{}{}'.format(relative_path, file.path, file.file_name)
+                if not os.path.exists(url):
+                        return ''
+                url = url.replace(relative_path, relative_path_front)
+                return url
+        except Exception as e:
+            return ''
 
 def move_attachment(tname_attachment,ecode):
     absolute_path = ParamInfo.objects.get(param_code=1).param_value

@@ -123,6 +123,7 @@ class PublicInfo(APIView):
                         u_z = url.split('/')[-1]
                         jpg = self.absolute_path_front + 'temporary/' + account_code + '/'+ u_z
 
+                        # 富文本内容
                         if flag=='consultEditor':
                             dict[''.join(str(uuid.uuid1()).split('-'))]=jpg
                         else:
