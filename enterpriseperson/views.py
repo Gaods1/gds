@@ -105,7 +105,7 @@ class PersonViewSet(viewsets.ModelViewSet):
         # serializer = self.get_serializer(instance, data=delete_data, partial=partial)
         # serializer.is_valid(raise_exception=True)
         # self.perform_update(serializer)
-        data = request.data
+        data = request.data if request.data else []
         instance = self.get_object()
         serial_list = [instance.serial]
         del_serial = serial_list + data
@@ -410,7 +410,7 @@ class EnterpriseViewSet(viewsets.ModelViewSet):
         # serializer = self.get_serializer(instance, data=delete_data, partial=partial)
         # serializer.is_valid(raise_exception=True)
         # self.perform_update(serializer)
-        data = request.data
+        data = request.data if request.data else []
         instance = self.get_object()
         serial_list = [instance.serial]
         del_serial = serial_list + data

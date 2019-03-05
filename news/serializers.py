@@ -4,8 +4,7 @@ from misc.serializers.serializers import PatclubModelSerializer
 
 # 新闻栏目信息管理序列器
 class NewsGroupInfoSerializers(PatclubModelSerializer):
-    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-
+    logo_path = serializers.CharField(read_only=True)
 
     class Meta:
         model = NewsGroupInfo
@@ -15,6 +14,7 @@ class NewsGroupInfoSerializers(PatclubModelSerializer):
                   'group_memo',
                   'logo',
                   'state',
+                  'logo_path',
                   ]
 
 
@@ -51,8 +51,7 @@ class NewsinfoSerializers(PatclubModelSerializer):
 
 # 政策法规栏目信息管理序列器
 class PolicyGroupInfoSerializers(PatclubModelSerializer):
-    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-
+    logo_path = serializers.CharField(read_only=True)
 
     class Meta:
         model = PolicyGroupInfo
@@ -62,6 +61,7 @@ class PolicyGroupInfoSerializers(PatclubModelSerializer):
                   'group_memo',
                   'logo',
                   'state',
+                  'logo_path',
                   ]
 
 
