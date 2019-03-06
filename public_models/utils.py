@@ -187,7 +187,7 @@ def get_single(tname_single,ecode):
                 return url
             #审核通过状态
             else:
-                url = '{}{}{}'.format(relative_path, file.path, file.file_caption)
+                url = '{}{}{}'.format(relative_path, file.path, file.file_name)
                 if not os.path.exists(url):
                         return ''
                 url = url.replace(relative_path, relative_path_front)
