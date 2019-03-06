@@ -66,16 +66,15 @@ def get_detcode_str(code):
 """
 
 def content_type(a,b,c,d,e):
-    dict ={}
-    dict['type'] = a
-    dict['name'] = b
-    dict['look'] = c
-    dict['down'] = d
-    dict['file_caption'] = e
-    return dict
+    dict_a ={}
+    dict_a['type'] = a
+    dict_a['name'] = b
+    dict_a['look'] = c
+    dict_a['down'] = d
+    dict_a['file_caption'] = e
+    return dict_a
 
 def get_content_type(path,path_front,file):
-    list_a = []
 
     url = '{}{}{}'.format(path, file.path, file.file_name)
     if not os.path.exists(url):
@@ -94,34 +93,34 @@ def get_content_type(path,path_front,file):
         url = url.replace(path, path_front)
 
         type = 'excel' if url.endswith('xls') or url.endswith('xlsx') else 'doc'
-        dict_office = content_type(type, file.file_name, url_pdf, url,file.file_caption)
+        dict_a = content_type(type, file.file_name, url_pdf, url,file.file_caption)
 
-        list_a.append(dict_office)
+
 
     # 如果是图片或者是pdf
     elif url.endswith('jpg') or url.endswith('png') or url.endswith('jpeg') or url.endswith('bmp') or url.endswith(
             'gif') or url.endswith('pdf'):
         type = 'pdf' if url.endswith('pdf') else 'image'
         url_jpg_pdf = url.replace(path, path_front)
-        dict = content_type(type, file.file_name, url_jpg_pdf, url_jpg_pdf,file.file_caption)
-        list_a.append(dict)
+        dict_a = content_type(type, file.file_name, url_jpg_pdf, url_jpg_pdf,file.file_caption)
+
 
     # 如果是txt或者zip
     elif url.endswith('txt') or url.endswith('zip'):
         url_t_z = url.replace(path, path_front)
         type = 'txt' if url.endswith('txt') else 'zip'
-        dict = content_type(type, file.file_name, url_t_z, url_t_z,file.file_caption)
-        list_a.append(dict)
+        dict_a = content_type(type, file.file_name, url_t_z, url_t_z,file.file_caption)
+
 
     # 如果是ppt或者其他
     else:
         url_other_type = url.split('.')[-1]
         url_other = url.replace(path, path_front)
         type = 'ppt' if url_other_type == 'ppt' else url_other_type
-        dict = content_type(type, file.file_name, url_other, url_other,file.file_caption)
-        list_a.append(dict)
+        dict_a = content_type(type, file.file_name, url_other, url_other,file.file_caption)
 
-    return list_a
+
+    return dict_a
 
 
 # operation_state_list = [file.operation_state for file in files]
@@ -133,19 +132,21 @@ def get_attachment(tname_attachment,ecode):
     tcode_attachment = AttachmentFileType.objects.get(tname=tname_attachment).tcode
     ecode = ecode
     files = AttachmentFileinfo.objects.filter(tcode=tcode_attachment, ecode=ecode, operation_state__in=[1,3], state=1)
-    list_a = []
+    list_content = []
     if files:
         try:
             for file in files:
                 #新增待审和状态
                 if file.operation_state == 1:
-                    list_a = get_content_type(absolute_path,absolute_path_front,file)
+                    dict_a = get_content_type(absolute_path,absolute_path_front,file)
+                    list_content.append(dict_a)
 
                 #审核通过状态
                 else:
-                    list_a = get_content_type(relative_path,relative_path_front,file)
+                    dict_a = get_content_type(relative_path,relative_path_front,file)
+                    list_content.append(dict_a)
 
-            return list_a
+            return list_content
         except Exception as e:
             return None
 
