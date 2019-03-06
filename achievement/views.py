@@ -1111,7 +1111,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
 
 class ManagementpViewSet(viewsets.ModelViewSet):
-    queryset = ResultsInfo.objects.filter(show_state__in=[1, 2]).order_by('-show_state')
+    queryset = ResultsInfo.objects.filter(show_state__in=[1, 2]).order_by('-insert_time')
     serializer_class = ResultsInfoSerializer
     filter_backends = (
         filters.SearchFilter,
@@ -1324,7 +1324,9 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                     # 拼接ecode表中的path
                     path = '{}/{}/{}/'.format(param_value,tcode,serializer_ecode)
-                    list1.append(AttachmentFileinfo(tcode=tcode,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1))
+                    # 32位随机字符串内容
+                    file_caption = url_file[33:]
+                    list1.append(AttachmentFileinfo(tcode=tcode,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1,file_caption=file_caption))
                     # 富文本内容
                     if len(key)==32:
                         url_j_f = url_j_jpg.replace(absolute_path,absolute_path_front)
@@ -1365,7 +1367,9 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
 
                     path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                    list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,operation_state=3, state=1))
+                    # 32位随机字符串内容
+                    file_caption = url_file[33:]
+                    list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,operation_state=3, state=1,file_caption=file_caption))
 
                     # 同路经下有pdf文件
                     if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx'):
@@ -1390,7 +1394,9 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         dict_items[url_j]=url_x
                         dict_items[url_j_pdf]=url_x_pdf
 
-                        list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file_pdf, path=path,operation_state=3, state=1))
+                        # 32位随机字符串内容
+                        file_caption_pdf = url_file_pdf[33:]
+                        list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file_pdf, path=path,operation_state=3, state=1,file_caption=file_caption_pdf))
                         url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                         list2.append(url_x_f_pdf)
                     else:
@@ -1598,9 +1604,11 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         # 拼接ecode表中的path
                         path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
 
+                        # 32位随机字符串内容
+                        file_caption = url_file[33:]
                         list1.append(
                             AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
-                                               operation_state=3, state=1))
+                                               operation_state=3, state=1,file_caption=file_caption))
                         # 富文本内容
                         if len(key) == 32:
                             url_j_f = url_j_jpg.replace(absolute_path, absolute_path_front)
@@ -1647,9 +1655,12 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         list2.append(url_x_f)
 
                         path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+
+                        # 32位随机字符串内容
+                        file_caption = url_file[33:]
                         list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
                                                         file_name=url_file, path=path, operation_state=3,
-                                                        state=1))
+                                                        state=1,file_caption=file_caption))
 
                         # 同路经下有pdf文件
                         if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx'):
@@ -1675,9 +1686,11 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             dict_items[url_j]=url_x
                             dict_items[url_j_pdf] = url_x_pdf
 
+                            # 32位随机字符串内容
+                            file_caption_pdf=url_file_pdf[33:]
                             list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
                                                             file_name=url_file_pdf, path=path, operation_state=3,
-                                                            state=1))
+                                                            state=1,file_caption=file_caption_pdf))
                             url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                             list2.append(url_x_f_pdf)
                         else:
@@ -1723,7 +1736,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
             return Response({'message':'ok'})
 
 class ManagementrViewSet(viewsets.ModelViewSet):
-    queryset = RequirementsInfo.objects.filter(show_state__in=[1, 2]).order_by('-show_state')
+    queryset = RequirementsInfo.objects.filter(show_state__in=[1, 2]).order_by('-insert_time')
     serializer_class = RequirementsInfoSerializer
     filter_backends = (
         filters.SearchFilter,
@@ -1938,8 +1951,9 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                     # 拼接ecode表中的path
                     path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
+                    file_caption=url_file[33:]
                     list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
-                                                    operation_state=3, state=1))
+                                                    operation_state=3, state=1,file_caption=file_caption))
                     if len(key) == 32:
                         url_j_f = url_j_jpg.replace(absolute_path, absolute_path_front)
                         dict_editor = {}
@@ -1976,8 +1990,9 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     list2.append(url_x_f)
 
                     path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                    file_caption=url_file[33:]
                     list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file,
-                                                    path=path, operation_state=3, state=1))
+                                                    path=path, operation_state=3, state=1,file_caption=file_caption))
 
                     # 同路经下有pdf文件
                     if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith(
@@ -2002,9 +2017,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         dict_items[url_j]=url_x
                         dict_items[url_j_pdf]=url_x_pdf
 
+                        file_caption_pdf=url_file_pdf[33:]
                         list1.append(
                             AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file_pdf,
-                                               path=path, operation_state=3, state=1))
+                                               path=path, operation_state=3, state=1,file_caption=file_caption_pdf))
                         url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                         list2.append(url_x_f_pdf)
                     else:
@@ -2205,10 +2221,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                         # 拼接ecode表中的path
                         path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
-
+                        file_caption=url_file[33:]
                         list1.append(
                             AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
-                                               operation_state=3, state=1))
+                                               operation_state=3, state=1,file_caption=file_caption))
                         if len(key) == 32:
                             url_j_f = url_j_jpg.replace(absolute_path, absolute_path_front)
                             dict_editor = {}
@@ -2252,9 +2268,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         list2.append(url_x_f)
 
                         path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                        file_caption = url_file[33:]
                         list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
                                                         file_name=url_file, path=path, operation_state=3,
-                                                        state=1))
+                                                        state=1,file_caption=file_caption))
 
                         # 同路经下有pdf文件
                         if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith(
@@ -2280,6 +2297,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                             dict_items[url_j]=url_x
                             dict_items[url_j_pdf] = url_x_pdf
 
+                            file_caption_pdf=url_file_pdf[33:]
                             list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
                                                             file_name=url_file_pdf, path=path, operation_state=3,
                                                             state=1))
