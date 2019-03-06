@@ -89,9 +89,9 @@ class PolicyGroupInfo(models.Model):
 # 政策信息表 *
 class PolicyInfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    group_code = models.CharField(max_length=64, blank=True, null=True)
+    group_code = models.CharField(max_length=64)
     policy_code = models.CharField(max_length=64, default=gen_uuid32)
-    caption = models.CharField(verbose_name='政策法规主标题',max_length=64, blank=True, null=True)
+    caption = models.CharField(verbose_name='政策法规主标题',max_length=64)
     caption_ext = models.CharField(verbose_name='政策法规副标题',max_length=64, blank=True, null=True)
     author = models.CharField(verbose_name='作者名称',max_length=64, blank=True, null=True)
     publisher = models.CharField(verbose_name='发行单位',max_length=64, blank=True, null=True)
@@ -99,10 +99,10 @@ class PolicyInfo(models.Model):
     top_tag = models.IntegerField(verbose_name='是否置顶',blank=True, null=True)
     face_pic = models.CharField(verbose_name='政策法规导引图片',max_length=255, blank=True, null=True)
     news_body = models.TextField(verbose_name='政策法规详情',blank=True, null=True)
-    state = models.IntegerField(verbose_name='政策法规状态',blank=True, null=True)
+    state = models.IntegerField(verbose_name='政策法规状态')
     creater = models.CharField(verbose_name='政策法规创建者',max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(verbose_name='政策法规创建时间',blank=True, null=True)
-    district_id = models.IntegerField(verbose_name='政策法规所属地区',blank=True, null=True)
+    district_id = models.IntegerField(verbose_name='政策法规所属地区')
     source = models.CharField(verbose_name='政策法规来源',max_length=255, blank=True, null=True)
 
     class Meta:
