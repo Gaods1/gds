@@ -1111,7 +1111,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
 
 class ManagementpViewSet(viewsets.ModelViewSet):
-    queryset = ResultsInfo.objects.filter(show_state__in=[1, 2]).order_by('-show_state')
+    queryset = ResultsInfo.objects.filter(show_state__in=[1, 2]).order_by('-insert_time')
     serializer_class = ResultsInfoSerializer
     filter_backends = (
         filters.SearchFilter,
@@ -1158,7 +1158,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 # 所属领域表
                 mname_list = request.data.pop('mname',None)
                 # 成果/需求合作方式信息表
-                cooperation_code = request.data.pop('cooperation_code', None)
+                cooperation_name = request.data.pop('cooperation_name', None)
                 # 成果持有人信息表
                 main_owner = request.data.pop('main_owner', None)
                 owner_type = request.data.get('owner_type', None)
@@ -1175,7 +1175,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 obtain_type = request.data.get('obtain_type',None)
 
-                if not mname_list or not cooperation_code or not main_owner or not owner_type or not key_info_list or not user_name or not obtain_type or not owner_type :
+                if not mname_list or not cooperation_name  or not owner_type or not key_info_list or not user_name or not obtain_type or not owner_type :
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail':'请完善相关信息'},status=400)
 
@@ -1186,6 +1186,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 account_code_list = AccountInfo.objects.filter(user_name=user_name)
 
                 if not account_code_list:
+                    transaction.savepoint_rollback(save_id)
                     return Response({'detail':'该用户名不存在'},status=400)
                 account_code = account_code_list[0].account_code
 
@@ -1199,6 +1200,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         pname = request.data.pop('pname', None)
                         pname_element = PersonalInfo.objects.filter(pname=pname)
                         if not pname_element:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该个人基本信息不存在'}, status=400)
                         pcode = pname_element[0].pcode
 
@@ -1206,6 +1208,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         ename = request.data.pop('ename', None)
                         ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
                         if not ename_element:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该企业基本信息不存在'}, status=400)
                         ecode = ename_element[0].ecode
                 else:
@@ -1213,17 +1216,21 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         pname = request.data.pop('pname', None)
                         pname_element = PersonalInfo.objects.filter(pname=pname)
                         if not pname_element:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该个人基本信息不存在'}, status=400)
                         pcode = pname_element[0].pcode
                         if account_code != pname_element[0].account_code:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
                     else:
                         ename = request.data.pop('ename', None)
                         ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
                         if not ename_element:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该企业基本信息不存在'}, status=400)
                         ecode = ename_element[0].ecode
                         if account_code != ename_element[0].account_code:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
 
                 pcode_or_ecode = pcode if pcode else ecode
@@ -1242,8 +1249,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 #2 创建合作方式表
                 dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
                 ResultsCooperationTypeInfo.objects.create(r_type=1,
-                rr_code=serializer_ecode, cooperation_code=cooperation_code,
-                cooperation_name=dict_coop[cooperation_code], state=state)
+                rr_code=serializer_ecode,
+                cooperation_name=cooperation_name, state=state)
 
                 #3 创建持有人信息表
                 ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
@@ -1279,13 +1286,14 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 list1 = []  # 入库用的列表
                 list2 = []  # 抛给前端用的列表
                 list3 = []  # 富文本用的列表
-                dict_jpg = {}   # 收集图片临时和正式目录用的字典
+                dict_items = {}   # 收集临时和正式目录用的字典
 
                 # 临时目录当前登录账户文件夹
                 account_code_office = request.user.account_code
 
                # 图片
                 for key,value in single_dict.items():
+                    # 富文本内容
                     if len(key)==32:
                         tcode = AttachmentFileType.objects.get(tname='consultEditor').tcode
                     else:
@@ -1308,7 +1316,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
 
                     # 收集临时路径和正式路径
-                    dict_jpg[url_j_jpg]=url_x_jpg
+                    dict_items[url_j_jpg]=url_x_jpg
 
                     # 拼接给前端的的地址
                     url_x_f = url_x_jpg.replace(relative_path,relative_path_front)
@@ -1316,16 +1324,20 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                     # 拼接ecode表中的path
                     path = '{}/{}/{}/'.format(param_value,tcode,serializer_ecode)
-                    list1.append(AttachmentFileinfo(tcode=tcode,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1))
-
+                    # 32位随机字符串内容
+                    file_caption = url_file[33:]
+                    list1.append(AttachmentFileinfo(tcode=tcode,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1,file_caption=file_caption))
+                    # 富文本内容
                     if len(key)==32:
                         url_j_f = url_j_jpg.replace(absolute_path,absolute_path_front)
                         dict_editor = {}
                         dict_editor[url_j_f]=url_x_f
                         list3.append(dict_editor)
+                # 富文本内容
                 if list3:
                     element = ResultsInfo.objects.get(r_code=serializer_ecode)
                     detail = element.r_abstract_detail
+                    #detail = serializer.data['r_abstract_detail']
                     for i in list3:
                         detail = detail.replace(list(i)[0],i[list(i)[0]])
                     element.r_abstract_detail=detail
@@ -1355,7 +1367,9 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
 
                     path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                    list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,operation_state=3, state=1))
+                    # 32位随机字符串内容
+                    file_caption = url_file[33:]
+                    list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,operation_state=3, state=1,file_caption=file_caption))
 
                     # 同路经下有pdf文件
                     if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx'):
@@ -1374,27 +1388,31 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
 
                         # 将doc临时目录转移到正式目录
-                        shutil.move(url_j, url_x)
+                        #shutil.move(url_j, url_x)
                         # 将pdf临时目录转移到正式目录
-                        shutil.move(url_j_pdf, url_x_pdf)
-                        list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file_pdf, path=path,operation_state=3, state=1))
+                        #shutil.move(url_j_pdf, url_x_pdf)
+                        dict_items[url_j]=url_x
+                        dict_items[url_j_pdf]=url_x_pdf
+
+                        # 32位随机字符串内容
+                        file_caption_pdf = url_file_pdf[33:]
+                        list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file_pdf, path=path,operation_state=3, state=1,file_caption=file_caption_pdf))
                         url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                         list2.append(url_x_f_pdf)
                     else:
                         # 将doc临时目录转移到正式目录
-                        shutil.move(url_j, url_x)
-
-
-
-                for url_j_jpg,url_x_jpg in dict_jpg.items():
-                    # 将jpg临时目录转移到正式目录
-                    shutil.move(url_j_jpg, url_x_jpg)
+                        #shutil.move(url_j, url_x)
+                        dict_items[url_j]=url_x
 
                 # 创建atachmentinfo表
                 AttachmentFileinfo.objects.bulk_create(list1)
 
+                # 将临时目录转移到正式目录
+                for k,v in dict_items.items():
+                    shutil.move(k, v)
+
                 # 删除临时目录
-                shutil.rmtree(absolute_path+'temporary/'+ account_code_office,ignore_errors=True)
+                #shutil.rmtree(absolute_path+'temporary/'+ account_code_office,ignore_errors=True)
 
                 # 给前端抛正式目录
                 dict['url'] = list2
@@ -1428,7 +1446,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 # 所属领域
                 mname_list = request.data.pop('mname',None)
                 # 成果/需求合作方式信息表
-                cooperation_code = request.data.pop('cooperation_code', None)
+                cooperation_name = request.data.pop('cooperation_name', None)
                 # 成果持有人信息表
                 main_owner = request.data.pop('main_owner', None)
                 owner_type = request.data.get('owner_type', None)
@@ -1445,7 +1463,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 obtain_type = request.data.get('obtain_type', None)
 
-                if not mname_list or not cooperation_code or not main_owner or not owner_type or not key_info_list or not obtain_type or not owner_type or not user_name:
+                if not mname_list or not cooperation_name  or not owner_type or not key_info_list or not obtain_type or not owner_type or not user_name:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '请完善相关信息'}, status=400)
                 account_code_list = AccountInfo.objects.filter(user_name=user_name)
@@ -1464,6 +1482,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         pname = request.data.pop('pname', None)
                         pname_element = PersonalInfo.objects.filter(pname=pname)
                         if not pname_element:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该个人基本信息不存在'}, status=400)
                         pcode = pname_element[0].pcode
 
@@ -1471,6 +1490,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         ename = request.data.pop('ename', None)
                         ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
                         if not ename_element:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该企业基本信息不存在'}, status=400)
                         ecode = ename_element[0].ecode
                 else:
@@ -1478,6 +1498,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         pname = request.data.pop('pname', None)
                         pname_element = PersonalInfo.objects.filter(pname=pname)
                         if not pname_element:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该个人基本信息不存在'}, status=400)
                         pcode = pname_element[0].pcode
                         if account_code != pname_element[0].account_code:
@@ -1486,6 +1507,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         ename = request.data.pop('ename', None)
                         ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
                         if not ename_element:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该企业基本信息不存在'}, status=400)
                         ecode = ename_element[0].ecode
                         if account_code != ename_element[0].account_code:
@@ -1509,8 +1531,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 # 2 创建合作方式表
                 dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
                 ResultsCooperationTypeInfo.objects.filter(rr_code=serializer_ecode).update(
-                rr_code=serializer_ecode,r_type=1,cooperation_code=cooperation_code,
-                cooperation_name=dict_coop[cooperation_code], state=state)
+                rr_code=serializer_ecode,r_type=1,
+                cooperation_name=cooperation_name, state=state)
 
                 # 3 更新持有人信息表
                 ResultsOwnerInfo.objects.filter(r_code=serializer_ecode).update(
@@ -1536,7 +1558,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 list1 = []
                 list2 = []
                 list3 = []
-                dict_jpg = {}
+                dict_items = {}
 
                 # 临时目录当前登录账户文件夹
                 account_code_office = request.user.account_code
@@ -1550,6 +1572,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 if single_dict:
                     # 图片
                     for key,value in single_dict.items():
+                        # 富文本内容
                         if len(key) == 32:
                             tcode = AttachmentFileType.objects.get(tname='consultEditor').tcode
                         else:
@@ -1572,7 +1595,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
 
                         #收集临时路径和正式路径
-                        dict_jpg[url_j_jpg]=url_x_jpg
+                        dict_items[url_j_jpg]=url_x_jpg
 
                         # 拼接给前端的的地址
                         url_x_f = url_x_jpg.replace(relative_path, relative_path_front)
@@ -1581,14 +1604,18 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         # 拼接ecode表中的path
                         path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
 
+                        # 32位随机字符串内容
+                        file_caption = url_file[33:]
                         list1.append(
                             AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
-                                               operation_state=3, state=1))
+                                               operation_state=3, state=1,file_caption=file_caption))
+                        # 富文本内容
                         if len(key) == 32:
                             url_j_f = url_j_jpg.replace(absolute_path, absolute_path_front)
                             dict_editor = {}
                             dict_editor[url_j_f] = url_x_f
                             list3.append(dict_editor)
+                    # 富文本内容
                     if list3:
                         element = ResultsInfo.objects.get(r_code=serializer_ecode)
                         detail = element.r_abstract_detail
@@ -1628,9 +1655,12 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         list2.append(url_x_f)
 
                         path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+
+                        # 32位随机字符串内容
+                        file_caption = url_file[33:]
                         list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
                                                         file_name=url_file, path=path, operation_state=3,
-                                                        state=1))
+                                                        state=1,file_caption=file_caption))
 
                         # 同路经下有pdf文件
                         if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx'):
@@ -1649,28 +1679,37 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                                 return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
 
                             # 将doc临时目录转移到正式目录
-                            shutil.move(url_j, url_x)
+                            #shutil.move(url_j, url_x)
                             # 将pdf临时目录转移到正式目录
-                            shutil.move(url_j_pdf, url_x_pdf)
+                            #shutil.move(url_j_pdf, url_x_pdf)
+
+                            dict_items[url_j]=url_x
+                            dict_items[url_j_pdf] = url_x_pdf
+
+                            # 32位随机字符串内容
+                            file_caption_pdf=url_file_pdf[33:]
                             list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
                                                             file_name=url_file_pdf, path=path, operation_state=3,
-                                                            state=1))
+                                                            state=1,file_caption=file_caption_pdf))
                             url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                             list2.append(url_x_f_pdf)
                         else:
                             # 将doc临时目录转移到正式目录
-                            shutil.move(url_j, url_x)
+                            #shutil.move(url_j, url_x)
+                            dict_items[url_j]=url_x
 
-                if len(dict_jpg)!=0:
-                    for url_j_jpg,url_x_jpg in dict_jpg.items():
-                        # 将jpg临时目录转移到正式目录
-                        shutil.move(url_j_jpg, url_x_jpg)
+
                 if list1:
                     # 创建atachmentinfo表
                     AttachmentFileinfo.objects.bulk_create(list1)
 
+                if len(dict_items) != 0:
+                    for k, v in dict_items.items():
+                        # 将临时目录转移到正式目录
+                        shutil.move(k, v)
+
                     # 删除临时目录
-                    shutil.rmtree(absolute_path+'temporary/' + account_code_office,ignore_errors=True)
+                    #shutil.rmtree(absolute_path+'temporary/' + account_code_office,ignore_errors=True)
 
                     # 给前端抛正式目录
                     dict['url'] = list2
@@ -1697,7 +1736,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
             return Response({'message':'ok'})
 
 class ManagementrViewSet(viewsets.ModelViewSet):
-    queryset = RequirementsInfo.objects.filter(show_state__in=[1, 2]).order_by('-show_state')
+    queryset = RequirementsInfo.objects.filter(show_state__in=[1, 2]).order_by('-insert_time')
     serializer_class = RequirementsInfoSerializer
     filter_backends = (
         filters.SearchFilter,
@@ -1744,7 +1783,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 # 所属领域表
                 mname_list = request.data.pop('mname', None)
                 # 成果/需求合作方式信息表
-                cooperation_code = request.data.pop('cooperation_code', None)
+                cooperation_name = request.data.pop('cooperation_name', None)
                 # 成果持有人信息表
                 main_owner = request.data.pop('main_owner', None)
                 owner_type = request.data.get('owner_type', None)
@@ -1761,7 +1800,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 obtain_type = request.data.get('obtain_type', None)
 
-                if not mname_list or not cooperation_code or not main_owner or not owner_type or not key_info_list or not obtain_type or not user_name:
+                if not mname_list or not cooperation_name  or not owner_type or not key_info_list or not obtain_type or not user_name:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '请完善相关信息'}, status=400)
 
@@ -1776,6 +1815,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 account_code_list = AccountInfo.objects.filter(user_name=user_name)
 
                 if not account_code_list:
+                    transaction.savepoint_rollback(save_id)
                     return Response({'detail': '该用户名不存在'}, status=400)
                 account_code = account_code_list[0].account_code
 
@@ -1789,6 +1829,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         pname = request.data.pop('pname', None)
                         pname_element = PersonalInfo.objects.filter(pname=pname)
                         if not pname_element:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该个人基本信息不存在'}, status=400)
                         pcode = pname_element[0].pcode
 
@@ -1796,6 +1837,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         ename = request.data.pop('ename', None)
                         ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
                         if not ename_element:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该企业基本信息不存在'}, status=400)
                         ecode = ename_element[0].ecode
                 else:
@@ -1803,17 +1845,21 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         pname = request.data.pop('pname', None)
                         pname_element = PersonalInfo.objects.filter(pname=pname)
                         if not pname_element:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该个人基本信息不存在'}, status=400)
                         pcode = pname_element[0].pcode
                         if account_code != pname_element[0].account_code:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
                     else:
                         ename = request.data.pop('ename', None)
                         ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
                         if not ename_element:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该企业基本信息不存在'}, status=400)
                         ecode = ename_element[0].ecode
                         if account_code != ename_element[0].account_code:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
 
                 pcode_or_ecode = pcode if pcode else ecode
@@ -1831,8 +1877,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 # 2 创建合作方式表
                 dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
                 ResultsCooperationTypeInfo.objects.create(r_type=2,
-                                                          rr_code=serializer_ecode, cooperation_code=cooperation_code,
-                                                          cooperation_name=dict_coop[cooperation_code], state=state)
+                                                          rr_code=serializer_ecode,
+                                                          cooperation_name=cooperation_name, state=state)
 
                 # 3 创建持有人信息表
                 ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
@@ -1868,7 +1914,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 list1 = []
                 list2 = []
                 list3 = []
-                dict_jpg = {}
+                dict_items = {}
 
                 # 临时目录当前登录账户文件夹
                 account_code_office = request.user.account_code
@@ -1897,7 +1943,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
 
                     # 收集临时路径和正式路径
-                    dict_jpg[url_j_jpg] = url_x_jpg
+                    dict_items[url_j_jpg] = url_x_jpg
 
                     # 拼接给前端的的地址
                     url_x_f = url_x_jpg.replace(relative_path, relative_path_front)
@@ -1905,8 +1951,9 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                     # 拼接ecode表中的path
                     path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
+                    file_caption=url_file[33:]
                     list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
-                                                    operation_state=3, state=1))
+                                                    operation_state=3, state=1,file_caption=file_caption))
                     if len(key) == 32:
                         url_j_f = url_j_jpg.replace(absolute_path, absolute_path_front)
                         dict_editor = {}
@@ -1943,8 +1990,9 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     list2.append(url_x_f)
 
                     path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                    file_caption=url_file[33:]
                     list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file,
-                                                    path=path, operation_state=3, state=1))
+                                                    path=path, operation_state=3, state=1,file_caption=file_caption))
 
                     # 同路经下有pdf文件
                     if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith(
@@ -1963,26 +2011,32 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                             return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
 
                         # 将doc临时目录转移到正式目录
-                        shutil.move(url_j, url_x)
+                        #shutil.move(url_j, url_x)
                         # 将pdf临时目录转移到正式目录
-                        shutil.move(url_j_pdf, url_x_pdf)
+                        #shutil.move(url_j_pdf, url_x_pdf)
+                        dict_items[url_j]=url_x
+                        dict_items[url_j_pdf]=url_x_pdf
+
+                        file_caption_pdf=url_file_pdf[33:]
                         list1.append(
                             AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file_pdf,
-                                               path=path, operation_state=3, state=1))
+                                               path=path, operation_state=3, state=1,file_caption=file_caption_pdf))
                         url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                         list2.append(url_x_f_pdf)
                     else:
                         # 将doc临时目录转移到正式目录
-                        shutil.move(url_j, url_x)
-                for url_j_jpg, url_x_jpg in dict_jpg.items():
-                    # 将jpg临时目录转移到正式目录
-                    shutil.move(url_j_jpg, url_x_jpg)
+                        #shutil.move(url_j, url_x)
+                        dict_items[url_j]=url_x
 
                 # 创建atachmentinfo表
                 AttachmentFileinfo.objects.bulk_create(list1)
 
+                # 将临时目录转移到正式目录
+                for k, v in dict_items.items():
+                    shutil.move(k, v)
+
                 # 删除临时目录
-                shutil.rmtree(absolute_path + 'temporary/' + account_code_office, ignore_errors=True)
+                #shutil.rmtree(absolute_path + 'temporary/' + account_code_office, ignore_errors=True)
 
                 # 给前端抛正式目录
                 dict['url'] = list2
@@ -2014,7 +2068,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 # 所属领域
                 mname_list = request.data.pop('mname', None)
                 # 成果/需求合作方式信息表
-                cooperation_code = request.data.pop('cooperation_code', None)
+                cooperation_name = request.data.pop('cooperation_name', None)
                 # 成果持有人信息表
                 main_owner = request.data.pop('main_owner', None)
                 owner_type = request.data.get('owner_type', None)
@@ -2031,7 +2085,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 obtain_type = request.data.get('obtain_type', None)
 
-                if not mname_list or not cooperation_code or not main_owner or not owner_type or not key_info_list or not obtain_type or not user_name:
+                if not mname_list or not cooperation_name  or not owner_type or not key_info_list or not obtain_type or not user_name:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '请完善相关信息'}, status=400)
 
@@ -2096,8 +2150,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 # 2 创建合作方式表
                 dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
                 ResultsCooperationTypeInfo.objects.filter(rr_code=serializer_ecode).update(
-                    rr_code=serializer_ecode, r_type=2, cooperation_code=cooperation_code,
-                    cooperation_name=dict_coop[cooperation_code], state=state)
+                    rr_code=serializer_ecode, r_type=2,
+                    cooperation_name=cooperation_name, state=state)
 
                 # 3 更新持有人信息表
                 ResultsOwnerInfo.objects.filter(r_code=serializer_ecode).update(
@@ -2122,7 +2176,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 list1 = []
                 list2 = []
                 list3 = []
-                dict_jpg = {}
+                dict_items = {}
 
                 # 临时目录当前登录账户文件夹
                 account_code_office = request.user.account_code
@@ -2159,7 +2213,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                             return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
 
                         # 收集临时路径和正式路径
-                        dict_jpg[url_j_jpg] = url_x_jpg
+                        dict_items[url_j_jpg] = url_x_jpg
 
                         # 拼接给前端的的地址
                         url_x_f = url_x_jpg.replace(relative_path, relative_path_front)
@@ -2167,10 +2221,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                         # 拼接ecode表中的path
                         path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
-
+                        file_caption=url_file[33:]
                         list1.append(
                             AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
-                                               operation_state=3, state=1))
+                                               operation_state=3, state=1,file_caption=file_caption))
                         if len(key) == 32:
                             url_j_f = url_j_jpg.replace(absolute_path, absolute_path_front)
                             dict_editor = {}
@@ -2214,9 +2268,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         list2.append(url_x_f)
 
                         path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                        file_caption = url_file[33:]
                         list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
                                                         file_name=url_file, path=path, operation_state=3,
-                                                        state=1))
+                                                        state=1,file_caption=file_caption))
 
                         # 同路经下有pdf文件
                         if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith(
@@ -2236,9 +2291,13 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                                 return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
 
                             # 将doc临时目录转移到正式目录
-                            shutil.move(url_j, url_x)
+                            #shutil.move(url_j, url_x)
                             # 将pdf临时目录转移到正式目录
-                            shutil.move(url_j_pdf, url_x_pdf)
+                            #shutil.move(url_j_pdf, url_x_pdf)
+                            dict_items[url_j]=url_x
+                            dict_items[url_j_pdf] = url_x_pdf
+
+                            file_caption_pdf=url_file_pdf[33:]
                             list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
                                                             file_name=url_file_pdf, path=path, operation_state=3,
                                                             state=1))
@@ -2246,19 +2305,22 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                             list2.append(url_x_f_pdf)
                         else:
                             # 将doc临时目录转移到正式目录
-                            shutil.move(url_j, url_x)
+                            #shutil.move(url_j, url_x)
+                            dict_items[url_j]=url_x
 
-                if len(dict_jpg) != 0:
-                    for url_j_jpg, url_x_jpg in dict_jpg.items():
-                        # 将jpg临时目录转移到正式目录
-                        shutil.move(url_j_jpg, url_x_jpg)
+
                 if list1:
                     # 创建atachmentinfo表
                     AttachmentFileinfo.objects.bulk_create(list1)
 
+                # 将临时目录转移到正式目录
+                if len(dict_items) != 0:
+                    for k, v in dict_items.items():
+                        shutil.move(k, v)
+
                     # 删除临时目录
-                    shutil.rmtree(absolute_path + 'temporary/' + account_code_office,
-                                  ignore_errors=True)
+                    #shutil.rmtree(absolute_path + 'temporary/' + account_code_office,
+                                  #ignore_errors=True)
 
                     # 给前端抛正式目录
                     dict['url'] = list2

@@ -166,6 +166,11 @@ class RequirementsInfo(models.Model):
         Enterprise = EnterpriseBaseinfo.objects.values_list('ename', flat=True).get(ecode=owner_code)
         return Enterprise
 
+    @property
+    def consultEditor(self):
+        list_url = get_single('consultEditor', self.req_code)
+        return list_url
+
     class Meta:
         managed = False
         db_table = 'requirements_info'
@@ -281,6 +286,11 @@ class ResultsInfo(models.Model):
         owner_code = ResultsOwnerInfo.objects.get(r_code=self.r_code).owner_code
         Enterprise = EnterpriseBaseinfo.objects.values_list('ename', flat=True).get(ecode=owner_code)
         return Enterprise
+
+    @property
+    def consultEditor(self):
+        list_url = get_single('consultEditor', self.r_code)
+        return list_url
 
     class Meta:
         managed =False

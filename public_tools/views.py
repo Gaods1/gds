@@ -74,7 +74,10 @@ class PublicInfo(APIView):
                         if not os.path.exists(url):
                             os.makedirs(url)
                         #上传服务器的路径
-                        url = url + file.name
+                        #url = url + file.name
+                        # 32位随机字符串内容
+                        file_name = '{}_{}'.format(gen_uuid32(), file.name)
+                        url = url + file_name
                         if os.path.exists(url):
                             return Response({'detail': '该附件已上传到服务器,如果要继续上传请重命名'},status=400)
                         # 创建对象
@@ -110,7 +113,10 @@ class PublicInfo(APIView):
                         url = self.MEDIA_ROOT + 'temporary/' + account_code + '/'
                         if not os.path.exists(url):
                             os.makedirs(url)
-                        url = url + file.name
+                        # 32位随机字符串内容
+                        file_name = '{}_{}'.format(gen_uuid32(),file.name)
+
+                        url = url + file_name
                         if not url.endswith('jpg') and not url.endswith('png') and not url.endswith('jpeg') and not url.endswith('bmp') and not url.endswith('gif'):
                             return Response({'detail': '请上传图片类型'},status=400)
                         if os.path.exists(url):
@@ -123,6 +129,7 @@ class PublicInfo(APIView):
                         u_z = url.split('/')[-1]
                         jpg = self.absolute_path_front + 'temporary/' + account_code + '/'+ u_z
 
+                        # 富文本内容
                         if flag=='consultEditor':
                             dict[''.join(str(uuid.uuid1()).split('-'))]=jpg
                         else:
