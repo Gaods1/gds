@@ -1,6 +1,7 @@
 from django.db import models
 from misc.misc import gen_uuid32
 from public_models.models import AttachmentFileinfo,AttachmentFileType,ParamInfo
+from public_models.models import SystemDistrict
 
 # Create your models here.
 
@@ -48,7 +49,7 @@ class NewsInfo(models.Model):
     news_body = models.TextField(verbose_name='新闻详情',blank=True, null=True)
     state = models.IntegerField(verbose_name='新闻状态',blank=True, null=True)
     creater = models.CharField(verbose_name='新闻创建者',max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(verbose_name='新闻创建时间',blank=True, null=True)
+    insert_time = models.DateTimeField(verbose_name='新闻创建时间',auto_now_add=True)
     district_id = models.IntegerField(verbose_name='新闻所属地区', blank=True, null=True)
     source = models.IntegerField(verbose_name='新闻来源',blank=True, null=True)
     account_code = models.CharField(verbose_name='审核人',max_length=32, blank=True, null=True)
@@ -101,9 +102,47 @@ class PolicyInfo(models.Model):
     news_body = models.TextField(verbose_name='政策法规详情',blank=True, null=True)
     state = models.IntegerField(verbose_name='政策法规状态')
     creater = models.CharField(verbose_name='政策法规创建者',max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(verbose_name='政策法规创建时间',blank=True, null=True)
+    insert_time = models.DateTimeField(verbose_name='政策法规创建时间',auto_now_add=True)
     district_id = models.IntegerField(verbose_name='政策法规所属地区')
     source = models.CharField(verbose_name='政策法规来源',max_length=255, blank=True, null=True)
+
+    @property
+    def face_pic_path(self):
+        face_pic_path = ''
+        tcode = AttachmentFileType.objects.get(tname='guidePhoto').tcode
+        attach_fileinfo = AttachmentFileinfo.objects.filter(ecode=self.policy_code, tcode=tcode, file_name=self.face_pic)
+        if attach_fileinfo:
+            attach_path = attach_fileinfo[0].path
+            attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value
+            face_pic_path = '{}{}'.format(attachment_dir, attach_path)
+        return face_pic_path
+
+    @property
+    def group_name(self):
+        return PolicyGroupInfo.objects.get(group_code=self.group_code).group_name
+
+    @property
+    def district_name(self):
+        return SystemDistrict.objects.get(district_id=self.district_id).district_name
+
+    @property
+    def attachments(self):
+        tcode = AttachmentFileType.objects.get(tname='attachment').tcode
+        attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value
+        attachments = AttachmentFileinfo.objects.filter(
+            ecode= self.policy_code,
+            tcode = tcode,
+            state=1,
+        )
+        attachments_list = []
+        attach_info = {}
+        if attachments:
+            for attach in attachments:
+                attach_info['file_caption'] = attach.file_caption
+                attach_info['file_path'] = '{}{}{}'.format(attachment_dir,attach.path,attach.file_name)
+                attachments_list.append(attach_info)
+
+        return attachments_list
 
     class Meta:
         managed = False

@@ -68,6 +68,10 @@ class PolicyGroupInfoSerializers(PatclubModelSerializer):
 # 政策法规信息管理序列器
 class PolicyInfoSerializers(PatclubModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    face_pic_path = serializers.CharField(read_only=True)
+    group_name = serializers.CharField(read_only=True)
+    district_name = serializers.CharField(read_only=True)
+    attachments = serializers.ListField(read_only=True)
 
     class Meta:
         model = PolicyInfo
@@ -87,4 +91,8 @@ class PolicyInfoSerializers(PatclubModelSerializer):
                   'insert_time',
                   'district_id',
                   'source',
+                  'face_pic_path',
+                  'group_name',
+                  'district_name',
+                  'attachments',
                   ]
