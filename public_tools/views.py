@@ -24,7 +24,6 @@ from public_models.models import AttachmentFileType, ParamInfo, AttachmentFilein
 from python_backend import settings
 from django.core.files.storage import FileSystemStorage
 
-
 from django_redis import get_redis_connection
 
 """
