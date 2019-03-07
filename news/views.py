@@ -16,7 +16,7 @@ from misc.misc import gen_uuid32
 from public_models.utils import move_attachment,move_single,get_detcode_str,get_dept_codes
 from django.core.exceptions import ValidationError
 from public_models.models import  AttachmentFileinfo,AttachmentFileType,ParamInfo
-import time,os,shutil
+import time,os,shutil,re
 
 
 #新闻栏目管理
@@ -490,25 +490,393 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
 
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        with transaction.atomic():
+            save_id = transaction.savepoint()
+            try:
+                form_data = request.data
+                policy_code = gen_uuid32()
+                form_data['policy_code'] = policy_code
+                form_face_pic = form_data['face_pic']['guidePhoto'] if form_data['face_pic'] else ''
+                # 政策法规导引图是否上传
+                if form_face_pic:
+                    attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
+                    upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value  # 富文本编辑器图片上传的临时保存目录
+                    upload_dir = ParamInfo.objects.get(param_name='upload_dir').param_value  # 富文本编辑器图片上传的正式保存目录
+                    attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
+                    logo_temp_path = form_face_pic.replace(attachment_temp_dir, upload_temp_dir)
+                    if not os.path.exists(logo_temp_path):
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '上传的导引图片不存在'}, 400)
+
+                    year = time.strftime('%Y', time.localtime(time.time()))
+                    month = time.strftime('%m', time.localtime(time.time()))
+                    day = time.strftime('%d', time.localtime(time.time()))
+                    date_dir = '{}{}{}'.format(year, month, day)
+                    form_logo_list = form_face_pic.split('/')
+                    file_caption = form_logo_list.pop()  # 原图片名词及后缀
+                    logo_list = file_caption.split('.')
+                    logo_ext = logo_list.pop()
+                    new_logo = policy_code + '.' + logo_ext  # 导引图新名称和policy_code一致
+                    logo_online_dir = upload_dir.rstrip('/') + '/policy/guide/' + date_dir + '/' + policy_code + '/'
+                    logo_online_path = logo_online_dir + new_logo
+                    attach_path = 'policy/guide/' + date_dir + '/' + policy_code + '/'  # 保存到附件表
+                    form_data['face_pic'] = new_logo  # face_pic字段只保存图片名称 显示时通过附件表检索拼接显示
+                    tcode = AttachmentFileType.objects.get(tname='guidePhoto').tcode
+                    attach_fileinfo = AttachmentFileinfo.objects.create(
+                        ecode=policy_code,
+                        tcode=tcode,
+                        file_format=1,
+                        file_name=new_logo,
+                        state=1,
+                        publish=1,
+                        operation_state=1,
+                        creater=request.user.account_code,
+                        insert_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                        path=attach_path,
+                        file_caption=file_caption
+                    )
+                    if not attach_fileinfo:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": "导引图附件信息保存失败"}, status=400)
+
+                form_news_body = form_data['news_body']
+                editor_imgs_dict = {}
+                img_pattern = re.compile(r'src=\"(.*?)\"')
+                temp_imgs_list = img_pattern.findall(form_news_body)
+                #政策法规富文本编辑器图片是否上传
+                if temp_imgs_list:
+                    upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value  # 富文本编辑器图片上传的临时保存目录
+                    upload_dir = ParamInfo.objects.get(param_name='upload_dir').param_value  # 富文本编辑器图片上传的正式保存目录
+                    attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
+                    year = time.strftime('%Y', time.localtime(time.time()))
+                    month = time.strftime('%m', time.localtime(time.time()))
+                    day = time.strftime('%d', time.localtime(time.time()))
+                    date_dir = '{}{}{}'.format(year, month, day)
+                    editor_path = 'policy/editor/' + date_dir + '/' + policy_code + '/'  # 保存到附件表
+                    tcode = AttachmentFileType.objects.get(tname='consultEditor').tcode
+                    editor_attachment_list = []
+                    for temp_img_str in temp_imgs_list:
+                        editor_img_temp = temp_img_str.replace(attachment_temp_dir, upload_temp_dir)
+                        if not os.path.exists(editor_img_temp):
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '上传的富文本图片不存在'}, 400)
+                        editor_img_list = temp_img_str.split('/')
+                        file_caption = editor_img_list.pop()  # 原图片名词及后缀
+                        img_list = file_caption.split('.')
+                        img_ext = img_list.pop()
+                        new_img = gen_uuid32() + '.' + img_ext
+                        #新的线上显示地址
+                        editor_img_online = upload_dir.rstrip('/') + '/policy/editor/' + date_dir + '/' + policy_code + '/'+ new_img #移动图片用
+                        img_online_path = attachment_dir.rstrip('/') + '/policy/editor/' + date_dir + '/' + policy_code + '/' + new_img #保存到表字段显示用
+
+                        editor_imgs_dict[editor_img_temp] = editor_img_online
+                        form_news_body = form_news_body.replace(temp_img_str,img_online_path)
+                        attachmentFileinfo_obj  = AttachmentFileinfo(
+                            ecode=policy_code,
+                            tcode=tcode,
+                            file_format=1,
+                            file_name=new_img,
+                            state=1,
+                            publish=1,
+                            operation_state=1,
+                            creater=request.user.account_code,
+                            insert_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                            path=editor_path,
+                            file_caption=file_caption
+                        )
+                        editor_attachment_list.append(attachmentFileinfo_obj)
+
+                    attach_fileinfo = AttachmentFileinfo.objects.bulk_create(editor_attachment_list)
+                    if not attach_fileinfo:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": "导引图附件信息保存失败"}, status=400)
+                    form_data['news_body'] = form_news_body #将更新后的news_body赋值给form表单字段news_body
+
+                # 政策法规附件是否上传(限制最多上传5个附件)
+                attach_tcode = AttachmentFileType.objects.get(tname='attachment').tcode
+                attachment_list = []
+                attach_imgs_dict = {}
+                for i in range(1,6):
+                    form_attach = form_data['attach'+i]
+                    if form_attach:
+                        attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
+                        upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value  # 富文本编辑器图片上传的临时保存目录
+                        upload_dir = ParamInfo.objects.get(param_name='upload_dir').param_value  # 富文本编辑器图片上传的正式保存目录
+                        attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
+                        attach_temp_path = form_attach.replace(attachment_temp_dir, upload_temp_dir)
+                        if not os.path.exists(attach_temp_path):
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '上传的附件不存在'}, 400)
+
+                        year = time.strftime('%Y', time.localtime(time.time()))
+                        month = time.strftime('%m', time.localtime(time.time()))
+                        day = time.strftime('%d', time.localtime(time.time()))
+                        date_dir = '{}{}{}'.format(year, month, day)
+                        form_attach_list = form_attach.split('/')
+                        file_caption = form_attach_list.pop()  # 原附件名词及后缀
+                        attach_list = file_caption.split('.')
+                        attach_ext = attach_list.pop()
+                        new_attach = gen_uuid32() + '.' + attach_ext
+                        attach_path = 'policy/attach/' + date_dir + '/' + policy_code + '/'  # 保存到附件表
+                        online_path = upload_dir.rstrip('/') + '/policy/attach/' + date_dir + '/' + policy_code + '/'
+                        img_online_path = '{}{}'.format(online_path, new_attach)
+                        attach_imgs_dict[attach_temp_path] = img_online_path
+                        attachmentFileinfo_obj = AttachmentFileinfo(
+                            ecode=policy_code,
+                            tcode=attach_tcode,
+                            file_format=0,
+                            file_name=new_attach,
+                            add_id= 'attach'+i, #用于表单回显时使用
+                            state=1,
+                            publish=1,
+                            operation_state=1,
+                            creater=request.user.account_code,
+                            insert_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                            path=attach_path,
+                            file_caption=file_caption
+                        )
+                        attachment_list.append(attachmentFileinfo_obj)
+
+                if attachment_list:
+                    attach_fileinfo = AttachmentFileinfo.objects.create(
+                        ecode=policy_code,
+                        tcode=tcode,
+                        file_format=1,
+                        file_name=new_logo,
+                        state=1,
+                        publish=1,
+                        operation_state=1,
+                        creater=request.user.account_code,
+                        insert_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                        path=attach_path,
+                        file_caption=file_caption
+                    )
+                    if not attach_fileinfo:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": "导引图附件信息保存失败"}, status=400)
+
+
+                serializer = self.get_serializer(data=form_data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
+
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return Response({"detail": "创建政策法规失败：%s" % str(e)})
+
+
+            upload_file_temp = []
+            #创建导引图片目录
+            if form_face_pic:
+                #创建目录
+                if not os.path.exists(logo_online_dir):
+                    try:
+                        os.makedirs(logo_online_dir)
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail":"导引图片上传目录创建失败"}, status=400)
+                #移动图片
+                try:
+                    shutil.move(logo_temp_path, logo_online_path)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": "导引图片移动到正式目录失败"}, status=400)
+
+            #创建富文本图片目录
+            if editor_imgs_dict:
+                for img_temp_path in editor_imgs_dict:
+                    try:
+                        shutil.move(img_temp_path, editor_imgs_dict[img_temp_path])
+                        # shutil.copy(img_temp_path, img_online_path)
+                        #将移动成果的图片附件保存到upload_file_temp  防止后续移动失败造成垃圾数据
+                        upload_file_temp.append(editor_imgs_dict[img_temp_path])
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        # 删除移动到正式目录的垃圾数据
+                        if upload_file_temp:
+                            for file in upload_file_temp:
+                                os.remove(file)
+                        return Response({"detail":"富文本图片移动失败"}, status=400)
+
+            #创建附件目录
+            if attach_imgs_dict:
+                for img_temp_path in attach_imgs_dict:
+                    try:
+                        shutil.move(img_temp_path, attach_imgs_dict[img_temp_path])
+                        # shutil.copy(img_temp_path, img_online_path)
+                        upload_file_temp.append(attach_imgs_dict[img_temp_path])
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        # 删除移动到正式目录的垃圾数据
+                        if upload_file_temp:
+                            for file in upload_file_temp:
+                                os.remove(file)
+                        return Response({"detail":"附件移动失败"}, status=400)
+
+
+            transaction.savepoint_commit(save_id)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
 
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+        with transaction.atomic():
+            save_id = transaction.savepoint()
+            try:
+                partial = kwargs.pop('partial', False)
+                instance = self.get_object()
+                form_dict = request.data
 
-        if getattr(instance, '_prefetched_objects_cache', None):
-            # If 'prefetch_related' has been applied to a queryset, we need to
-            # forcibly invalidate the prefetch cache on the instance.
-            instance._prefetched_objects_cache = {}
+                #########  导引图处理    ##########
+                face_pic = instance.face_pic
+                form_face_pic = form_dict['face_pic']['guidePhoto'] if form_dict['face_pic'] else ''
+                # 政策法规导引图是否上传
+                if form_face_pic:
+                    attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
+                    upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value  # 富文本编辑器图片上传的临时保存目录
+                    upload_dir = ParamInfo.objects.get(param_name='upload_dir').param_value  # 富文本编辑器图片上传的正式保存目录
+                    attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
+                    logo_temp_path = form_face_pic.replace(attachment_temp_dir, upload_temp_dir)
+                    if not os.path.exists(logo_temp_path):
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '上传的导引图片不存在'}, 400)
 
-        return Response(serializer.data)
+                    year = time.strftime('%Y', time.localtime(time.time()))
+                    month = time.strftime('%m', time.localtime(time.time()))
+                    day = time.strftime('%d', time.localtime(time.time()))
+                    date_dir = '{}{}{}'.format(year, month, day)
+                    form_logo_list = form_face_pic.split('/')
+                    file_caption = form_logo_list.pop()  # 原图片名词及后缀
+                    logo_list = file_caption.split('.')
+                    logo_ext = logo_list.pop()
+                    new_logo = instance.policy_code + '.' + logo_ext  # 导引新名称和policy_code一致
+                    logo_online_dir = upload_dir.rstrip('/') + '/policy/guide/' + date_dir + '/' + instance.policy_code + '/'
+                    logo_online_path = logo_online_dir + new_logo
+                    attach_path = 'policy/guide/' + date_dir + '/' + instance.policy_code + '/'  # 保存到附件表
+                    form_dict['face_pic'] = new_logo  # logo字段只保存图片名称 显示时通过附件表检索拼接显示
+                    tcode = AttachmentFileType.objects.get(tname='guidePhoto').tcode
+                    attach_exist = AttachmentFileinfo.objects.filter(ecode=instance.policy_code, tcode=tcode, file_name=new_logo)
+                    if attach_exist:
+                        attach_fileinfo = AttachmentFileinfo.objects.filter(ecode=instance.policy_code, tcode=tcode,file_name=new_logo).update(file_caption=file_caption)
+                    else:
+                        attach_fileinfo = AttachmentFileinfo.objects.create(
+                            ecode=instance.policy_code,
+                            tcode=tcode,
+                            file_format=1,
+                            file_name=new_logo,
+                            state=1,
+                            publish=1,
+                            operation_state=1,
+                            creater=request.user.account_code,
+                            insert_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                            path=attach_path,
+                            file_caption=file_caption
+                        )
+                    if not attach_fileinfo:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": "logo附件信息保存失败"}, status=400)
+                #########  导引图处理    ##########
+
+                #########  富文本图片上传 ############
+                news_body = instance.news_body  #更新前详情
+                form_news_body = request.data.get('news_body')#表单提交的详情
+                img_pattern = re.compile(r'src=\"(.*?)\"')
+                if news_body:
+                    imgs_list = img_pattern.findall(news_body)
+                else:
+                    imgs_list = []
+                if form_news_body:
+                    form_imgs_list = img_pattern.findall(form_news_body)
+                else:
+                    form_imgs_list = []
+                imgs_set = set(imgs_list)
+                form_imgs_set = set(form_imgs_list)
+                del_imgs_set = imgs_set - form_imgs_set
+                add_imgs_set = form_imgs_set - imgs_set
+                add_imgs_dict = {}
+                attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
+                upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value  # 富文本编辑器图片上传的临时保存目录
+                upload_dir = ParamInfo.objects.get(param_name='upload_dir').param_value  # 富文本编辑器图片上传的正式保存目录
+                attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
+                date_dir = ''
+                # 更新后需要删除的图片
+                if del_imgs_set:
+                    for img in del_imgs_set:
+                        del_img = img.replace(attachment_dir,upload_dir)
+                        if os.path.exists(del_img):
+                            form_news_body = form_news_body.replace(img,'') #将删除图片链接替换为空
+
+                # 更新后需要新增的图片
+                if add_imgs_set:
+                    insert_time = instance.insert_time
+                    year = time.strftime('%Y',time.strptime(str(insert_time), "%Y-%m-%d %H:%M:%S"))
+                    month = time.strftime('%m',time.strptime(str(insert_time), "%Y-%m-%d %H:%M:%S"))
+                    day = time.strftime('%d',time.strptime(str(insert_time), "%Y-%m-%d %H:%M:%S"))
+                    date_dir = '{}{}{}'.format(year, month, day)
+                    for img in add_imgs_set:
+                        img_list = img.split('.')
+                        img_ext = img_list.pop()
+                        new_img = gen_uuid32()+'.'+img_ext
+                        img_temp_path = img.replace(attachment_temp_dir,upload_temp_dir)
+                        online_path = upload_dir.rstrip('/')+'/policy/editor/' + date_dir + '/' + instance.policy_code + '/'
+                        img_online_path = '{}{}'.format(online_path, new_img)
+                        add_imgs_dict[img_temp_path]=img_online_path
+                        # 新的线上显示地址
+                        online_attachment_dir = attachment_dir.rstrip('/') + '/policy/editor/' + date_dir+'/'+instance.policy_code+'/'+new_img
+                        # 图片移动成功后将临时网址改为正式网址
+                        form_news_body = form_news_body.replace(img,online_attachment_dir)
+
+                form_dict['news_body'] = form_news_body
+                form_dict['top_tag'] = form_dict['top_tag'] if form_dict['top_tag'] else None
+                #########  富文本图片上传############
+
+                serializer = self.get_serializer(instance, data=form_dict, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return Response({"detail": "更新失败：%s" % str(e)})
+
+
+
+            # 移动富文本图片到新目录
+            if add_imgs_dict:
+                # 富文本编辑器处理图片
+                editor_online_path = upload_dir.rstrip('/') + '/policy/editor/' + date_dir + '/' + instance.policy_code + '/'
+                # 创建目录
+                if not os.path.exists(editor_online_path):
+                    try:
+                        os.makedirs(editor_online_path)
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": "创建富文本图片目录" + editor_online_path + "失败"}, 400)
+
+                for img_temp_path in add_imgs_dict:
+                    if os.path.exists(img_temp_path):
+                        try:
+                            shutil.move(img_temp_path,add_imgs_dict[img_temp_path])
+                        except Exception as e:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({"detail": "移动图片" + img_temp_path + "失败"}, 400)
+            # 删除富文本图片
+            if del_imgs_set:
+                for img in del_imgs_set:
+                    del_img = img.replace(attachment_dir, upload_dir)
+                    if os.path.exists(del_img):
+                        try:
+                            os.remove(del_img)
+                        except Exception as e:
+                            transaction.savepoint_rollback(save_id)  #删除图片失败回滚
+                            return Response({"detail":"富文本图片"+del_img+"删除失败"},400)
+
+
+            if getattr(instance, '_prefetched_objects_cache', None):
+                instance._prefetched_objects_cache = {}
+
+            transaction.savepoint_commit(save_id)
+            return Response(serializer.data)
+
+
 
     def destroy(self, request, *args, **kwargs):
         data = request.data
@@ -518,9 +886,6 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
 
         res = PolicyInfo.objects.filter(serial__in=del_serial).update(state=0)
         if res:
-            # del_instance = self.get_object()
-            # serializer = self.get_serializer(del_instance)
-            # return Response(serializer.data)
             return Response("删除成功")
         else:
             return Response("删除失败",status=400)
