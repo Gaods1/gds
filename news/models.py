@@ -133,12 +133,16 @@ class PolicyInfo(models.Model):
             ecode= self.policy_code,
             tcode = tcode,
             state=1,
-        )
+        ).all()
         attachments_list = []
-        attach_info = {}
+
         if attachments:
             for attach in attachments:
+                attach_info = {}
+                file_arr = attach.file_caption.split('.')
+                file_ext = file_arr.pop()
                 attach_info['file_caption'] = attach.file_caption
+                attach_info['type'] = file_ext
                 attach_info['file_path'] = '{}{}{}'.format(attachment_dir,attach.path,attach.file_name)
                 attachments_list.append(attach_info)
 

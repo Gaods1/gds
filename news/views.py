@@ -640,8 +640,8 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                 try:
                     for guide_img in face_pic_dict:
                         if guide_img != 'file_normal_dir':
-                            shutil.move(guide_img['file_temp_path'], guide_img['file_normal_path'])
-                            upload_file_cache.append(guide_img['file_normal_path'])
+                            shutil.move(face_pic_dict[guide_img]['file_temp_path'], face_pic_dict[guide_img]['file_normal_path'])
+                            upload_file_cache.append(face_pic_dict[guide_img]['file_normal_path'])
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": "导引图片移动到正式目录失败"}, status=400)
@@ -659,8 +659,8 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                 try:
                     for editor_img in editor_dict:
                         if editor_img != 'file_normal_dir':
-                            shutil.move(editor_img['file_temp_path'], editor_img['file_normal_path'])
-                            upload_file_cache.append(editor_img['file_normal_path'])
+                            shutil.move(editor_dict[editor_img]['file_temp_path'], editor_dict[editor_img]['file_normal_path'])
+                            upload_file_cache.append(editor_dict[editor_img]['file_normal_path'])
                 except Exception as e:
                     os.remove(upload_file_cache[0])
                     transaction.savepoint_rollback(save_id)
@@ -680,8 +680,8 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                 try:
                     for attach_file in attach_dict:
                         if attach_file != 'file_normal_dir':
-                            shutil.move(attach_dict['file_temp_path'], attach_dict['file_normal_path'])
-                            upload_file_cache.append(attach_dict['file_normal_path'])
+                            shutil.move(attach_dict[attach_file]['file_temp_path'], attach_dict[attach_file]['file_normal_path'])
+                            upload_file_cache.append(attach_dict[attach_file]['file_normal_path'])
                 except Exception as e:
                     for del_file in upload_file_cache:
                         os.remove(del_file)
@@ -699,15 +699,17 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
             save_id = transaction.savepoint()
             try:
                 partial = kwargs.pop('partial', False)
+                params_dict = get_attach_params()
                 instance = self.get_object()
                 form_data = request.data
-                form_data['top_tag'] = form_data['top_tag'] if form_data['top_tag'] else None
-                form_face_pic = form_data['face_pic']['guidePhoto'] if form_data['face_pic'] else ''
+                form_data['top_tag'] = form_data['top_tag'] if int(form_data['top_tag']) else None
+                # form_face_pic = form_data['face_pic']['guidePhoto'] if type(form_data['face_pic']).__name__ =='dict' else ''
+                form_face_pic = form_data['face_pic'] if re.search(params_dict[3],form_data['face_pic']) else None
                 ########## 政策法规导引图 ########
                 face_pic_dict = {}
                 face_pic_del = ''
                 if form_face_pic:
-                    params_dict = get_attach_params()
+                    # params_dict = get_attach_params()
                     face_pic_temppath = form_face_pic.replace(params_dict[3], params_dict[1])
                     if not os.path.exists(face_pic_temppath):
                         transaction.savepoint_rollback(save_id)
@@ -767,7 +769,7 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                 form_imgs_set = set(editorImgs_list)
                 del_imgs_set = imgs_set - form_imgs_set
                 add_imgs_set = form_imgs_set - imgs_set
-                params_dict = get_attach_params()
+                # params_dict = get_attach_params()
                 tcode = AttachmentFileType.objects.get(tname='consultEditor').tcode
                 if del_imgs_set:
                     del_nameList = []
@@ -777,7 +779,7 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                         del_file_info = img.split('/')
                         del_file_name = del_file_info.pop()
                         del_nameList.append(del_file_name)
-                    del_result = AttachmentFileinfo(
+                    del_result = AttachmentFileinfo.objects.filter(
                         ecode=instance.policy_code,
                         tcode=tcode,
                         file_name__in=del_nameList
@@ -821,165 +823,154 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                     form_data['news_body'] = form_news_body  # 将更新后的news_body赋值给form表单字段news_body
                 ##########  富文本编辑器图片  #########
 
-
-                #########  附件上传  #############
+                ##########  附件(限制最多上传5个附件)    #########
                 attach_tcode = AttachmentFileType.objects.get(tname='attachment').tcode
-                attachment_del_list = []  #更新某附件 则删除原来附件
-                attach_imgs_dict = {}  #更新信息时上传了某附件 则保存附件信息
+                form_attach_dict = {}
+                form_attach_list = []
+                attach_dict = {}
+                attach_del = []
                 for i in range(1, 6):
-                    form_attach = ''
-                    attachForm_list = []
-                    form_name = '{}{}'.format('attach',i)
-                    if not form_name in form_dict.keys():
-                        continue
-                    attachForm_list= form_dict[form_name]
-                    if attachForm_list:
-                        form_attach = attachForm_list[0]
-                    if form_attach:
-                        attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
-                        upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value  # 富文本编辑器图片上传的临时保存目录
-                        upload_dir = ParamInfo.objects.get(param_name='upload_dir').param_value  # 富文本编辑器图片上传的正式保存目录
-                        attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
-                        attach_temp_path = form_attach.replace(attachment_temp_dir, upload_temp_dir)
-                        if not os.path.exists(attach_temp_path):
+                    form_name = '{}{}'.format('attach', i)
+                    formAttach_list = form_data[form_name] if form_name in form_data else ''
+                    if formAttach_list:
+                        form_attach = formAttach_list[0]
+                        form_attach_list.append(form_attach)
+                        form_attach_dict[form_attach] = form_name
+
+                if form_attach_list:
+                    # params_dict = get_attach_params()
+                    for attach_file in form_attach_list:
+                        attach_temppath = attach_file.replace(params_dict[3], params_dict[1])
+                        if not os.path.exists(attach_temppath):
                             transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '上传的附件不存在'}, 400)
-                        #判断附件是否已在附件表中存在
-                        attach_exist = AttachmentFileinfo.objects.filter(
-                            ecode = instance.policy_code,
-                            tcode = attach_tcode,
-                            file_format=0,
-                            add_id = form_name
-                        )
-                        #附件信息
-                        form_attach_list = form_attach.split('/')
-                        file_caption = form_attach_list.pop()  # 原附件名词及后缀
-                        attach_list = file_caption.split('.')
-                        attach_ext = attach_list.pop()
-                        new_attach = gen_uuid32() + '.' + attach_ext
-                        if attach_exist:  #创建时上传了该附件则直接移动附件并更新附件表信息
-                            update_attach = AttachmentFileinfo.objects.filter(
+                            return Response({'detail': '附件' + attach_file + '不存在'}, 400)
+
+                    attach_dict = get_attach_info(form_attach_list, 'policy', 'attach', instance.policy_code, params_dict)
+                    attachment_list = []
+                    for attach in attach_dict:
+                        if attach == 'file_normal_dir':
+                            continue
+                        attach_exist = AttachmentFileinfo.objects.filter(ecode=instance.policy_code, tcode=attach_tcode,add_id=form_attach_dict[attach])
+                        if attach_exist:
+                            attach_del.append('{}/{}/{}'.format(params_dict[2].rstrip('/'),attach_exist[0].path.rstrip('/'),attach_exist[0].file_name))
+                            attach_update = AttachmentFileinfo.objects.filter(
                                 ecode=instance.policy_code,
                                 tcode=attach_tcode,
-                                file_format=0,
-                                add_id=form_name
-                            ).update(file_name=new_attach)
-                            if not update_attach:
+                                add_id=form_attach_dict[attach]
+                            ).update(
+                                file_name=attach_dict[attach]['file_name'],
+                                path=attach_dict[attach]['attach_path'],
+                                file_caption=attach_dict[attach]['file_caption']
+                            )
+                            if not attach_update:
                                 transaction.savepoint_rollback(save_id)
-                                return Response({'detail':'第'+i+'个附件更新失败'},400)
-                            attachment_del_list.append(upload_dir.rstrip('/')+(attach_exist[0].path).rstrip('/')+attach_exist[0].file_name)
-                        else:   #更新时才上传了该附件
-                            year = time.strftime('%Y', time.localtime(time.time()))
-                            month = time.strftime('%m', time.localtime(time.time()))
-                            day = time.strftime('%d', time.localtime(time.time()))
-                            date_dir = '{}{}{}'.format(year, month, day)
-                            attach_path = 'policy/attach/' + date_dir + '/' + instance.policy_code + '/'  # 保存到附件表
-                            online_path = upload_dir.rstrip('/') + '/policy/attach/' + date_dir + '/' + instance.policy_code + '/'
-                            img_online_path = '{}{}'.format(online_path, new_attach)
-                            attach_imgs_dict[attach_temp_path] = img_online_path
-                            attachmentFileinfo_add = AttachmentFileinfo.objects.create(
+                                return Response({"detail": "附件信息更新失败"}, status=400)
+                        else:
+                            attach_create = AttachmentFileinfo.objects.create(
                                 ecode=instance.policy_code,
                                 tcode=attach_tcode,
                                 file_format=0,
-                                file_name=new_attach,
-                                add_id=form_name,  # 用于表单回显时使用
+                                file_name=attach_dict[attach]['file_name'],
+                                add_id=form_attach_dict[attach],  # 用于表单回显时使用 attach1,attach2,attach3 ...
                                 state=1,
                                 publish=1,
                                 operation_state=1,
                                 creater=request.user.account_code,
                                 insert_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                                path=attach_path,
-                                file_caption=file_caption
+                                path=attach_dict[attach]['attach_path'],
+                                file_caption=attach_dict[attach]['file_caption'],
                             )
-                            if not attachmentFileinfo_add:
+                            if not attach_create:
                                 transaction.savepoint_rollback(save_id)
-                                return Response({"detail": "第"+i+"个附件信息保存失败"}, status=400)
-                #########  附件上传  #############
+                                return Response({"detail": "新上传的附件信息保存s失败"}, status=400)
+                ##########  附件(限制最多上传5个附件)    #########
 
-                serializer = self.get_serializer(instance, data=form_dict, partial=partial)
+                serializer = self.get_serializer(instance, data=form_data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
             except Exception as e:
                 transaction.savepoint_rollback(save_id)
                 return Response({"detail": "更新失败：%s" % str(e)})
 
-            # 移动导引图
-            if form_face_pic:
-                #创建目录
-                if not os.path.exists(logo_online_dir):
+            upload_file_cache = []
+            # 创建导引图片目录
+            if face_pic_dict:
+                if not os.path.exists(face_pic_dict['file_normal_dir']):
                     try:
-                        os.makedirs(logo_online_dir)
+                        os.makedirs(face_pic_dict['file_normal_dir'])
                     except Exception as e:
                         transaction.savepoint_rollback(save_id)
-                        return Response({"detail": "创建导引图目录" + logo_online_dir + "失败"}, 400)
-                if face_pic_del:
-                    try:
-                        os.remove(face_pic_del)
-                    except Exception as e:
-                        transaction.savepoint_rollback(save_id)
-                        Response({"detail": "删除导引图失败" + face_pic_del + "失败"}, 400)
-                if face_pic_dict:
-                    for img_temp_path in face_pic_dict:
-                        try:
-                            shutil.move(img_temp_path, face_pic_dict[img_temp_path])
-                        except Exception as e:
-                            transaction.savepoint_rollback(save_id)
-                            return Response({"detail": "移动图片" + img_temp_path + "失败"}, 400)
+                        return Response({"detail": "导引图片上传目录创建失败"}, status=400)
+                # 移动图片
+                try:
+                    for guide_img in face_pic_dict:
+                        if guide_img != 'file_normal_dir':
+                            shutil.move(face_pic_dict[guide_img]['file_temp_path'], face_pic_dict[guide_img]['file_normal_path'])
+                            upload_file_cache.append(face_pic_dict[guide_img]['file_normal_path'])
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": "导引图片移动到正式目录失败"}, status=400)
 
-            # 移动富文本图片到新目录
-            if add_imgs_dict:
-                # 富文本编辑器处理图片
-                editor_online_path = upload_dir.rstrip('/') + '/policy/editor/' + date_dir + '/' + instance.policy_code + '/'
-                # 创建目录
-                if not os.path.exists(editor_online_path):
+            # 创建富文本图片目录
+            if editor_dict:
+                if not os.path.exists(editor_dict['file_normal_dir']):
                     try:
-                        os.makedirs(editor_online_path)
+                        os.makedirs(editor_dict['file_normal_dir'])
                     except Exception as e:
+                        os.remove(upload_file_cache[0])
                         transaction.savepoint_rollback(save_id)
-                        return Response({"detail": "创建富文本图片目录" + editor_online_path + "失败"}, 400)
+                        return Response({"detail": "富文本图片上传目录创建失败"}, status=400)
 
-                for img_temp_path in add_imgs_dict:
-                    if os.path.exists(img_temp_path):
-                        try:
-                            shutil.move(img_temp_path,add_imgs_dict[img_temp_path])
-                        except Exception as e:
-                            transaction.savepoint_rollback(save_id)
-                            return Response({"detail": "移动图片" + img_temp_path + "失败"}, 400)
-            # 删除富文本图片
-            if del_imgs_set:
-                for img in del_imgs_set:
-                    del_img = img.replace(attachment_dir, upload_dir)
-                    if os.path.exists(del_img):
-                        try:
-                            os.remove(del_img)
-                        except Exception as e:
-                            transaction.savepoint_rollback(save_id)  #删除图片失败回滚
-                            return Response({"detail":"富文本图片"+del_img+"删除失败"},400)
+                try:
+                    for editor_img in editor_dict:
+                        if editor_img != 'file_normal_dir':
+                            shutil.move(editor_dict[editor_img]['file_temp_path'], editor_dict[editor_img]['file_normal_path'])
+                            upload_file_cache.append(editor_dict[editor_img]['file_normal_path'])
+                except Exception as e:
+                    os.remove(upload_file_cache[0])
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": "富文本图片移动到正式目录失败"}, status=400)
 
-            # 处理附件
-            if attachment_del_list:
-                for attach in attachment_del_list:
+            # 创建附件目录
+            if attach_dict:
+                if not os.path.exists(attach_dict['file_normal_dir']):
                     try:
-                        os.remove(attach)
+                        os.makedirs(attach_dict['file_normal_dir'])
                     except Exception as e:
+                        for del_file in upload_file_cache:
+                            os.remove(del_file)
                         transaction.savepoint_rollback(save_id)
-                        return Response({"detail":"附件"+attach+"删除失败"},400)
-            if attach_imgs_dict:
-                for attach_temp in attach_imgs_dict:
-                    if os.path.exists(attach_temp):
-                        try:
-                            img_arr = attach_imgs_dict[attach_temp].split('/')
-                            online_attach_dir = ''.join(img_arr)
-                            if not os.path.exists(online_attach_dir):
-                                try:
-                                    os.makedirs(online_attach_dir)
-                                except Exception as e:
-                                    transaction.savepoint_rollback(save_id)
-                                    return Response({"detail": "创建附件目录" + online_attach_dir + "失败"}, 400)
-                            shutil.move(attach_temp,attach_imgs_dict[attach_temp])
-                        except Exception as e:
-                            transaction.savepoint_rollback(save_id)
-                            return Response({"detail": "移动附件" + attach_temp + "失败"}, 400)
+                        return Response({"detail": "附件上传目录创建失败"}, status=400)
+
+                try:
+                    for attach_file in attach_dict:
+                        if attach_file != 'file_normal_dir':
+                            shutil.move(attach_dict[attach_file]['file_temp_path'], attach_dict[attach_file]['file_normal_path'])
+                            upload_file_cache.append(attach_dict[attach_file]['file_normal_path'])
+                except Exception as e:
+                    for del_file in upload_file_cache:
+                        os.remove(del_file)
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": "附件移动到正式目录失败"}, status=400)
+
+            if face_pic_del:
+                try:
+                    os.remove(face_pic_del)
+                except Exception as e:
+                    pass
+
+            if editor_del:
+                try:
+                    for del_editor_img in editor_del:
+                        os.remove(del_editor_img)
+                except Exception as e:
+                    pass
+            if attach_del:
+                try:
+                    for del_attach_file in attach_del:
+                        os.remove(del_attach_file)
+                except Exception as e:
+                    pass
 
 
             if getattr(instance, '_prefetched_objects_cache', None):

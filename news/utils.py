@@ -14,7 +14,7 @@ def get_attach_params():
     params_dict = {}
     if params:
         for obj in params:
-            params_dict[obj.param_code] = obj.param_value
+            params_dict[int(obj.param_code)] = obj.param_value
     return params_dict
 
 
@@ -41,7 +41,7 @@ def get_attach_info(file_list,module_type,file_type,file_dir,params_dict):
             file_arr = file_caption.split('.')
             file_ext = file_arr.pop()           #上传的文件后缀
             file_name = '{}.{}'.format(gen_uuid32(),file_ext)  #新的文件名保存到附件表
-            file_temp_path = file_info.replact(params_dict[3],params_dict[1]) #文件保存临时绝对路径
+            file_temp_path = file_info.replace(params_dict[3],params_dict[1]) #文件保存临时绝对路径
             file_normal_path = '{}/{}'.format(file_normal_dir,file_name)     #文件保存正式绝对路径
             file_normal_url = file_normal_path.replace(params_dict[2],params_dict[4]) #文件显示正式网址
             attach_path = '{}/{}/{}/{}/'.format(module_type,file_type,date_dir,file_dir)
