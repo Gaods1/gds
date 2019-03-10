@@ -45,17 +45,59 @@ class NewsInfo(models.Model):
     down_time = models.DateTimeField(verbose_name='下架时间', blank=True, null=True)
     top_tag = models.IntegerField(verbose_name='是否置顶',blank=True, null=True)
     top_time = models.DateTimeField(verbose_name='置顶时间',blank=True, null=True)
-    face_pic = models.CharField(verbose_name='新闻导引图片',max_length=255, blank=True, null=True)
+    face_pic = models.CharField(verbose_name='新闻导引图片',max_length=64, blank=True, null=True)
     news_body = models.TextField(verbose_name='新闻详情',blank=True, null=True)
-    state = models.IntegerField(verbose_name='新闻状态',blank=True, null=True)
+    state = models.IntegerField(verbose_name='新闻状态')
     creater = models.CharField(verbose_name='新闻创建者',max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(verbose_name='新闻创建时间',auto_now_add=True)
-    district_id = models.IntegerField(verbose_name='新闻所属地区', blank=True, null=True)
-    source = models.IntegerField(verbose_name='新闻来源',blank=True, null=True)
+    district_id = models.IntegerField(verbose_name='新闻所属地区')
+    source = models.IntegerField(verbose_name='新闻来源',blank=True, null=True,default=1)
     account_code = models.CharField(verbose_name='审核人',max_length=32, blank=True, null=True)
     check_time = models.DateTimeField(verbose_name='审核时间',blank=True, null=True)
     check_state = models.IntegerField(verbose_name='审核状态',blank=True, null=True)
     count = models.IntegerField(verbose_name='点击量',blank=True, null=True)
+
+    @property
+    def face_pic_path(self):
+        face_pic_path = ''
+        tcode = AttachmentFileType.objects.get(tname='guidePhoto').tcode
+        attach_fileinfo = AttachmentFileinfo.objects.filter(ecode=self.news_code, tcode=tcode,file_name=self.face_pic)
+        if attach_fileinfo:
+            attach_path = attach_fileinfo[0].path
+            attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value
+            face_pic_path = '{}{}'.format(attachment_dir, attach_path)
+        return face_pic_path
+
+    @property
+    def group_name(self):
+        return NewsGroupInfo.objects.get(group_code=self.group_code).group_name
+
+    @property
+    def district_name(self):
+        return SystemDistrict.objects.get(district_id=self.district_id).district_name
+
+    @property
+    def attachments(self):
+        tcode = AttachmentFileType.objects.get(tname='attachment').tcode
+        attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value
+        attachments = AttachmentFileinfo.objects.filter(
+            ecode=self.news_code,
+            tcode=tcode,
+            state=1,
+        ).all()
+        attachments_list = []
+
+        if attachments:
+            for attach in attachments:
+                attach_info = {}
+                file_arr = attach.file_caption.split('.')
+                file_ext = file_arr.pop()
+                attach_info['file_caption'] = attach.file_caption
+                attach_info['type'] = file_ext
+                attach_info['file_path'] = '{}{}{}'.format(attachment_dir, attach.path, attach.file_name)
+                attachments_list.append(attach_info)
+
+        return attachments_list
 
     class Meta:
         managed = False
@@ -98,7 +140,7 @@ class PolicyInfo(models.Model):
     publisher = models.CharField(verbose_name='发行单位',max_length=64, blank=True, null=True)
     release_date = models.DateTimeField(verbose_name='发布时间',blank=True, null=True)
     top_tag = models.IntegerField(verbose_name='是否置顶',blank=True, null=True)
-    face_pic = models.CharField(verbose_name='政策法规导引图片',max_length=255, blank=True, null=True)
+    face_pic = models.CharField(verbose_name='政策法规导引图片',max_length=64, blank=True, null=True)
     news_body = models.TextField(verbose_name='政策法规详情',blank=True, null=True)
     state = models.IntegerField(verbose_name='政策法规状态')
     creater = models.CharField(verbose_name='政策法规创建者',max_length=32, blank=True, null=True)

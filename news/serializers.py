@@ -21,6 +21,10 @@ class NewsGroupInfoSerializers(PatclubModelSerializer):
 # 新闻信息管理序列器
 class NewsinfoSerializers(PatclubModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    face_pic_path = serializers.CharField(read_only=True)
+    group_name = serializers.CharField(read_only=True)
+    district_name = serializers.CharField(read_only=True)
+    attachments = serializers.ListField(read_only=True)
 
     class Meta:
         model = NewsInfo
@@ -47,6 +51,10 @@ class NewsinfoSerializers(PatclubModelSerializer):
                   'check_time',
                   'check_state',
                   'count',
+                  'face_pic_path',
+                  'group_name',
+                  'district_name',
+                  'attachments',
                   ]
 
 # 政策法规栏目信息管理序列器
