@@ -289,7 +289,7 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                         if not os.path.exists(editor_temppath):
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '富文本图片'+editor_img+'不存在'}, 400)
-                    editor_dict = get_attach_info(editor_imgs_list,'policy','editor',news_code,params_dict)
+                    editor_dict = get_attach_info(editor_imgs_list,'news','editor',news_code,params_dict)
                     editor_attachment_list = []
                     for editor in editor_dict:
                         if editor == 'file_normal_dir':
@@ -339,7 +339,7 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '附件'+attach_file+'不存在'}, 400)
 
-                    attach_dict = get_attach_info(form_attach_list, 'policy', 'attach', news_code, params_dict)
+                    attach_dict = get_attach_info(form_attach_list, 'news', 'attach', news_code, params_dict)
                     attachment_list = []
                     for attach in attach_dict:
                         if attach == 'file_normal_dir':
@@ -461,7 +461,7 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                     if not os.path.exists(face_pic_temppath):
                         transaction.savepoint_rollback(save_id)
                         return Response({'detail': '上传的导引图片不存在'}, 400)
-                    face_pic_dict = get_attach_info([form_face_pic], 'policy', 'guide', instance.news_code, params_dict)
+                    face_pic_dict = get_attach_info([form_face_pic], 'news', 'guide', instance.news_code, params_dict)
                     tcode = AttachmentFileType.objects.get(tname='guidePhoto').tcode
                     attach_facepic_exist = AttachmentFileinfo.objects.filter(ecode=instance.news_code, tcode=tcode)
                     if attach_facepic_exist:
@@ -542,7 +542,7 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                         if not os.path.exists(editor_temppath):
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '富文本图片' + editor_img + '不存在'}, 400)
-                    editor_dict = get_attach_info(editor_imgs_list, 'policy', 'editor', instance.news_code, params_dict)
+                    editor_dict = get_attach_info(editor_imgs_list, 'news', 'editor', instance.news_code, params_dict)
                     editor_attachment_list = []
                     for editor in editor_dict:
                         if editor == 'file_normal_dir':
@@ -592,7 +592,7 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '附件' + attach_file + '不存在'}, 400)
 
-                    attach_dict = get_attach_info(form_attach_list, 'policy', 'attach', instance.news_code, params_dict)
+                    attach_dict = get_attach_info(form_attach_list, 'news', 'attach', instance.news_code, params_dict)
                     attachment_list = []
                     for attach in attach_dict:
                         if attach == 'file_normal_dir':
