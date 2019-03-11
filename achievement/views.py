@@ -1171,24 +1171,17 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 # 激活状态
                 state = request.data.get('show_state', None)
                 # 关联帐号
-                user_name = request.data.pop('username', None)
+                account_code = request.data.get('account_code', None)
 
                 obtain_type = request.data.get('obtain_type',None)
 
-                if not mname_list or not cooperation_name  or not owner_type or not key_info_list or not user_name or not obtain_type or not owner_type :
+                if not mname_list or not cooperation_name  or not owner_type or not key_info_list or not account_code or not obtain_type:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail':'请完善相关信息'},status=400)
 
                 if not single_dict or not attachment_list:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail':'请先上传相关文件'},status=400)
-
-                account_code_list = AccountInfo.objects.filter(user_name=user_name)
-
-                if not account_code_list:
-                    transaction.savepoint_rollback(save_id)
-                    return Response({'detail':'该用户名不存在'},status=400)
-                account_code = account_code_list[0].account_code
 
                 pcode = None
                 ecode = None
@@ -1197,39 +1190,41 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 if obtain_type==1:
                     # 个人或者团队
                     if owner_type in [1, 3]:
-                        pname = request.data.pop('pname', None)
-                        pname_element = PersonalInfo.objects.filter(pname=pname)
-                        if not pname_element:
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该个人基本信息不存在'}, status=400)
-                        pcode = pname_element[0].pcode
+                        #pname = request.data.pop('pname', None)
+                        #pname_element = PersonalInfo.objects.filter(pname=pname)
+                        #if not pname_element:
+                            #transaction.savepoint_rollback(save_id)
+                            #return Response({'detail': '该个人基本信息不存在'}, status=400)
+                        pcode = request.data.pop('pcode', None)
 
                     else:
-                        ename = request.data.pop('ename', None)
-                        ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
-                        if not ename_element:
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该企业基本信息不存在'}, status=400)
-                        ecode = ename_element[0].ecode
+                        #ename = request.data.pop('ename', None)
+                        #ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
+                        #if not ename_element:
+                            #transaction.savepoint_rollback(save_id)
+                            #return Response({'detail': '该企业基本信息不存在'}, status=400)
+                        ecode = request.data.pop('ecode', None)
                 else:
                     if owner_type in [1, 3]:
-                        pname = request.data.pop('pname', None)
-                        pname_element = PersonalInfo.objects.filter(pname=pname)
-                        if not pname_element:
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该个人基本信息不存在'}, status=400)
-                        pcode = pname_element[0].pcode
-                        if account_code != pname_element[0].account_code:
+                        #pname = request.data.pop('pname', None)
+                        #pname_element = PersonalInfo.objects.filter(pname=pname)
+                        #if not pname_element:
+                            #transaction.savepoint_rollback(save_id)
+                            #return Response({'detail': '该个人基本信息不存在'}, status=400)
+                        pcode = request.data.pop('pcode', None)
+                        p_account_code = PersonalInfo.objects.get(pcode=pcode).account_code
+                        if account_code != p_account_code:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
                     else:
-                        ename = request.data.pop('ename', None)
-                        ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
-                        if not ename_element:
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该企业基本信息不存在'}, status=400)
-                        ecode = ename_element[0].ecode
-                        if account_code != ename_element[0].account_code:
+                        #ename = request.data.pop('ename', None)
+                        #ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
+                        #if not ename_element:
+                            #transaction.savepoint_rollback(save_id)
+                            #return Response({'detail': '该企业基本信息不存在'}, status=400)
+                        ecode = request.data.pop('ecode', None)
+                        e_account_code = EnterpriseBaseinfo.objects.get(ecode=ecode).account_code
+                        if account_code != e_account_code:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
 
@@ -1459,18 +1454,13 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 # 激活状态
                 state = request.data.get('show_state', None)
                 # 关联帐号
-                user_name = request.data.pop('username', None)
+                account_code = request.data.get('account_code', None)
 
                 obtain_type = request.data.get('obtain_type', None)
 
-                if not mname_list or not cooperation_name  or not owner_type or not key_info_list or not obtain_type or not owner_type or not user_name:
+                if not mname_list or not cooperation_name  or not owner_type or not key_info_list or not obtain_type or not owner_type or not account_code:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '请完善相关信息'}, status=400)
-                account_code_list = AccountInfo.objects.filter(user_name=user_name)
-
-                if not account_code_list:
-                    return Response({'detail': '该用户名不存在'}, status=400)
-                account_code = account_code_list[0].account_code
 
                 pcode = None
                 ecode = None
@@ -1479,38 +1469,20 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 if obtain_type == 1:
                     # 个人或者团队
                     if owner_type in [1, 3]:
-                        pname = request.data.pop('pname', None)
-                        pname_element = PersonalInfo.objects.filter(pname=pname)
-                        if not pname_element:
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该个人基本信息不存在'}, status=400)
-                        pcode = pname_element[0].pcode
+                        pcode = request.data.pop('pcode', None)
 
                     else:
-                        ename = request.data.pop('ename', None)
-                        ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
-                        if not ename_element:
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该企业基本信息不存在'}, status=400)
-                        ecode = ename_element[0].ecode
+                        ecode = request.data.pop('ecode', None)
                 else:
                     if owner_type in [1, 3]:
-                        pname = request.data.pop('pname', None)
-                        pname_element = PersonalInfo.objects.filter(pname=pname)
-                        if not pname_element:
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该个人基本信息不存在'}, status=400)
-                        pcode = pname_element[0].pcode
-                        if account_code != pname_element[0].account_code:
+                        pcode = request.data.pop('pcode', None)
+                        p_account_code = PersonalInfo.objects.get(pcode=pcode).account_code
+                        if account_code != p_account_code:
                             return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
                     else:
-                        ename = request.data.pop('ename', None)
-                        ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
-                        if not ename_element:
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该企业基本信息不存在'}, status=400)
-                        ecode = ename_element[0].ecode
-                        if account_code != ename_element[0].account_code:
+                        ecode = request.data.pop('ecode', None)
+                        e_account_code = EnterpriseBaseinfo.objects.get(ecode=ecode).account_code
+                        if account_code != e_account_code:
                             return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
 
                 pcode_or_ecode = pcode if pcode else ecode
