@@ -21,7 +21,7 @@ logger = logging.getLogger('django')
 
 # 领域专家管理
 class ExpertViewSet(viewsets.ModelViewSet):
-    queryset = ExpertBaseinfo.objects.all().order_by('state', '-serial')
+    queryset = ExpertBaseinfo.objects.filter(state__in=[1, 2]).order_by('state', '-serial')
     serializer_class = ExpertBaseInfoSerializers
 
     filter_backends = (
@@ -54,7 +54,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
             raw_queryset = ExpertBaseinfo.objects.raw(
                 "select e.serial  from expert_baseinfo as e left join "
                 "account_info as ai on  e.account_code=ai.account_code "
-                "where ai.dept_code  in (" + dept_codes_str + ") ")
+                "where ai.dept_code  in (" + dept_codes_str + ")")
             queryset = ExpertBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
         else:
             queryset = self.queryset
