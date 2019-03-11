@@ -206,6 +206,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
                 id_type = data['expert_id_type']
                 pid = data['expert_id']
                 account_code = data['account_code']
+                data['creater'] = creater
 
                 major = data.pop('major', None)  # 相关领域（列表）
                 head = url_to_path(data.pop('head', None))  # 头像
@@ -231,7 +232,6 @@ class ExpertViewSet(viewsets.ModelViewSet):
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 9,
-                    'iab_time': datetime.datetime.now(),
                     'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
                     'state': 2 if data['state'] == 1 else 0,
                     'creater': creater
@@ -264,7 +264,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
                 data['pcode'] = pcode
 
                 partial = kwargs.pop('partial', False)
-                serializer = self.get_serializer(instance, data=request.data, partial=partial)
+                serializer = self.get_serializer(instance, data=data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
                 ecode = serializer.data['expert_code']
@@ -460,7 +460,9 @@ class BrokerViewSet(viewsets.ModelViewSet):
         )
         dept_codes_str = get_detcode_str(self.request.user.dept_code)
         if dept_codes_str:
-            raw_queryset = BrokerBaseinfo.objects.raw("select b.serial  from broker_baseinfo as b left join account_info as ai on  b.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
+            raw_queryset = BrokerBaseinfo.objects.raw(
+                "select b.serial  from broker_baseinfo as b left join account_info as ai "
+                "on  b.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
             queryset = BrokerBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
         else:
             queryset = self.queryset
