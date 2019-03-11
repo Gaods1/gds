@@ -212,6 +212,10 @@ class ExpertViewSet(viewsets.ModelViewSet):
                 idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
                 idback = url_to_path(data.pop('idback', None))     # 身份证背面
                 idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
+                instance = self.get_object()  # 原纪录
+
+                if account_code != instance.account_code:
+                    raise ValueError('不允许更改关联账号')
                 if not major:
                     raise ValueError('所属领域是必填项')
                 if not head:
@@ -222,6 +226,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
                     raise ValueError('证件照背面是必填项')
                 if not idphoto:
                     raise ValueError('手持身份证是必填项')
+
                 # 身份信息关联表基本信息
                 identity_info = {
                     'account_code': account_code,
@@ -259,7 +264,6 @@ class ExpertViewSet(viewsets.ModelViewSet):
                 data['pcode'] = pcode
 
                 partial = kwargs.pop('partial', False)
-                instance = self.get_object()
                 serializer = self.get_serializer(instance, data=request.data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
