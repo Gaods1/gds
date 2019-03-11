@@ -1,11 +1,9 @@
-from public_models.models import PersonalInfo, Message, EnterpriseBaseinfo
-import time,requests
+import requests
 from .models import *
 import datetime
 from django.db.models import Q
 import os
 import shutil
-from enterpriseperson.serializers import PersonalInfoSerializers
 
 
 # 更新或创建个人信息
@@ -129,7 +127,7 @@ def check_identity(account_code, identity, info):
         IdentityAuthorizationInfo.objects.get(account_code=account_code, identity_code=identity)
         raise ValueError('所选账号已经认证当前身份')
     except IdentityAuthorizationInfo.DoesNotExist:
-        identity = IdentityAuthorizationInfo.objects.create(**info)
+        IdentityAuthorizationInfo.objects.create(**info)
 
 
 # 验证前端账号是否具有当前信息
@@ -142,8 +140,8 @@ def check_identity2(account_code, identity, info):
 
 
 # 验证证件号码是否已注册
-def check_id(account_code, id_type, id):
-    p = PersonalInfo.objects.filter(pid_type=id_type, pid=id)
+def check_id(account_code, id_type, pid):
+    p = PersonalInfo.objects.filter(pid_type=id_type, pid=pid)
     if p and p[0].account_code != account_code:
         raise ValueError('此证件号码已被他人使用')
 
@@ -162,8 +160,8 @@ def create_or_update_person(account_code, info):
 
 # 插入领域与身份相关表
 def crete_major(mtype, user_type, user_code, majors):
+    MajorUserinfo.objects.filter(user_code=user_code, user_type=user_type, mtype=mtype).delete()
     if majors:
-        MajorUserinfo.objects.filter(user_code=user_code).delete()
         major_user_info = {
             'mtype': mtype,
             'user_type': user_type,
@@ -193,13 +191,13 @@ def url_to_path(url):
 
 
 # 复制图片到正式路径
-def copy_img(url, identity, type, ecode, creater):
+def copy_img(url, identity, img_type, ecode, creater):
     try:
         upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value
         if upload_temp_dir in url and os.path.isfile(url):
             file_name = url.split('/')[-1]
             formal_path = ParamInfo.objects.get(param_name='upload_dir').param_value
-            tcode = AttachmentFileType.objects.get(tname=type).tcode
+            tcode = AttachmentFileType.objects.get(tname=img_type).tcode
             file_formal_path = os.path.join(formal_path, identity, tcode, ecode)
             file_path = os.path.join(file_formal_path, file_name)
             if not os.path.exists(file_formal_path):
@@ -207,9 +205,9 @@ def copy_img(url, identity, type, ecode, creater):
             formal_file = shutil.copyfile(url, file_path)
             path = os.path.join(identity, tcode, ecode) + '/'
             AttachmentFileinfo.objects.filter(ecode=ecode, tcode=tcode, file_name=file_name).delete()
-            attachment = AttachmentFileinfo.objects.create(ecode=ecode, tcode=tcode, file_format=1, file_name=file_name,
-                                                           state=1,publish=1, file_order=0, operation_state=3,
-                                                           creater=creater,path=path, file_caption=file_name)
+            AttachmentFileinfo.objects.create(ecode=ecode, tcode=tcode, file_format=1, file_name=file_name,
+                                              state=1, publish=1, file_order=0, operation_state=3,
+                                              creater=creater, path=path, file_caption=file_name)
             return formal_file
         return None
     except Exception as e:
