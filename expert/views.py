@@ -1,5 +1,3 @@
-import os
-import shutil
 from django.http import HttpResponse
 from django.core.files.storage import FileSystemStorage
 from python_backend import settings
@@ -13,18 +11,17 @@ from .utils import *
 import threading
 from public_models.utils import move_single, get_detcode_str
 from django.db.models.query import QuerySet
-from public_models.models import IdentityAuthorizationInfo
 from misc.filter.search import ViewSearch
 import logging
-from misc.validate import check_card_id
-
+from .models import *
+from rest_framework.serializers import ValidationError
 
 logger = logging.getLogger('django')
 
 
 # 领域专家管理
 class ExpertViewSet(viewsets.ModelViewSet):
-    queryset = ExpertBaseinfo.objects.all().order_by('state', '-serial')
+    queryset = ExpertBaseinfo.objects.filter(state__in=[1, 2]).order_by('state', '-serial')
     serializer_class = ExpertBaseInfoSerializers
 
     filter_backends = (
@@ -55,7 +52,9 @@ class ExpertViewSet(viewsets.ModelViewSet):
         dept_codes_str = get_detcode_str(self.request.user.dept_code)
         if dept_codes_str:
             raw_queryset = ExpertBaseinfo.objects.raw(
-                "select e.serial  from expert_baseinfo as e left join account_info as ai on  e.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
+                "select e.serial  from expert_baseinfo as e left join "
+                "account_info as ai on  e.account_code=ai.account_code "
+                "where ai.dept_code  in (" + dept_codes_str + ")")
             queryset = ExpertBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
         else:
             queryset = self.queryset
@@ -66,45 +65,249 @@ class ExpertViewSet(viewsets.ModelViewSet):
         return queryset
 
     def create(self, request, *args, **kwargs):
+        formal_head = None
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
         try:
             with transaction.atomic():
+                # 正式路径（避免回滚后找不到变量）
                 data = request.data
-                # 查询所绑定的账号是否有此身份
-                account_code = data['account_code']
-                check_identity(account_code=account_code, identity=9)
-
-                # 验证证件号码
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
                 id_type = data['expert_id_type']
-                id = data['expert_id']
-                check_card_id(id_type, id)
+                pid = data['expert_id']
+                account_code = data['account_code']
 
-                # 获取当前后台登陆账号作为创建者
-                creater = request.user.account
-                # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                major = data.pop('major', None)  # 相关领域（列表）
+                head = url_to_path(data.pop('head', None))  # 头像
+                idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
+                idback = url_to_path(data.pop('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
+                if not major:
+                    raise ValueError('所属领域是必填项')
+                if not head:
+                    raise ValueError('头像是必填项')
+                if not idfront:
+                    raise ValueError('证件照正面是必填项')
+                if not idback:
+                    raise ValueError('证件照背面是必填项')
+                if not idphoto:
+                    raise ValueError('手持身份证是必填项')
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 9,
+                    'iab_time': datetime.datetime.now(),
+                    'iae_time': None,
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
+
+                # 个人基本信息表
                 pinfo = {
-                    'pname': data['expert_name'],
+                    'pname': data.get('expert_name', None),
                     'pid_type': id_type,
-                    'pid': id,
-                    'pmobile': data['expert_mobile'],
-                    'ptel': data['expert_tel'],
-                    'pemail': data['expert_email'],
-                    'peducation': data['education'],
-                    'pabstract': data['expert_abstract'],
+                    'pid': pid,
+                    'pmobile': data.get('expert_mobile', None),
+                    'ptel': data.get('expert_tel', None),
+                    'pemail': data.get('expert_email', None),
+                    'peducation': data.get('education', None),
+                    'pabstract': data.get('expert_abstract', None),
                     'state': 2,
                     'creater': creater,
                     'account_code': account_code
                 }
-                raise ValueError('测试')
-                serializer = self.get_serializer(data=data)
-                serializer.is_valid(raise_exception=True)
-                self.perform_create(serializer)
-                headers = self.get_success_headers(serializer.data)
+
+                # 查询当前账号有没有伪删除身份
+                expert = ExpertBaseinfo.objects.filter(account_code=account_code, state=3)
+                if expert:
+                    # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
+                    check_identity2(account_code=account_code, identity=9, info=identity_info)
+
+                    # 验证证件号码
+                    check_card_id(id_type, pid)  # 验证有效性
+
+                    # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                    pcode = create_or_update_person(account_code, pinfo)
+                    data['pcode'] = pcode
+
+                    # 更新expert
+                    expert.update(**data)
+                    new_expert = ExpertBaseinfo.objects.filter(account_code=account_code)
+                    serializer = self.get_serializer(new_expert, many=True)
+                    return_data = serializer.data[0]
+                    ecode = new_expert[0].expert_code
+
+                    # 插入领域相关
+                    crete_major(2, 1, ecode, major)
+
+                    # 复制图片到正式目录
+                    formal_head = copy_img(head, 'Expert', 'headPhoto', ecode, creater)
+                    formal_idfront = copy_img(idfront, 'Expert', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'Expert', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'Expert', 'handIdentityPhoto', ecode, creater)
+                    # 如果未回滚则删除临时目录的图片
+                    for f in [head, idfront, idback, idphoto]:
+                        remove_img(f)
+
+                else:
+                    # 查询所绑定的账号是否有此身份（若有则报错，没有则创建）
+                    check_identity(account_code=account_code, identity=9, info=identity_info)
+
+                    # 验证证件号码
+                    check_card_id(id_type, pid)  # 验证有效性
+                    # check_id(account_code=account_code, id_type=id_type, id=id)  # 验证唯一性
+
+                    # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                    pcode = create_or_update_person(account_code, pinfo)
+                    data['pcode'] = pcode
+
+                    serializer = self.get_serializer(data=data)
+                    serializer.is_valid(raise_exception=True)
+                    self.perform_create(serializer)
+                    return_data = serializer.data
+                    ecode = serializer.data['expert_code']
+
+                    # 插入领域相关
+                    crete_major(2, 1, ecode, major)
+
+                    # 复制图片到正式目录
+                    formal_head = copy_img(head, 'Expert', 'headPhoto', ecode, creater)
+                    formal_idfront = copy_img(idfront, 'Expert', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'Expert', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'Expert', 'handIdentityPhoto', ecode, creater)
+                    # 如果未回滚则删除临时目录的图片
+                    for f in [head, idfront, idback, idphoto]:
+                        remove_img(f)
+        except ValidationError:
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            raise
         except Exception as e:
-            if isinstance(e, ValidationError):
-                e = e.message
+            # 如果已经回滚则删除正式目录的图片
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
             return Response({"detail": "创建失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(return_data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        # 正式路径（避免回滚后找不到变量）
+        formal_head = None
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
+        try:
+            with transaction.atomic():
+                data = request.data
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
+                id_type = data['expert_id_type']
+                pid = data['expert_id']
+                account_code = data['account_code']
+                data['creater'] = creater
+
+                major = data.pop('major', None)  # 相关领域（列表）
+                head = url_to_path(data.pop('head', None))  # 头像
+                idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
+                idback = url_to_path(data.pop('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
+                instance = self.get_object()  # 原纪录
+
+                if account_code != instance.account_code:
+                    raise ValueError('不允许更改关联账号')
+                if not major:
+                    raise ValueError('所属领域是必填项')
+                if not head:
+                    raise ValueError('头像是必填项')
+                if not idfront:
+                    raise ValueError('证件照正面是必填项')
+                if not idback:
+                    raise ValueError('证件照背面是必填项')
+                if not idphoto:
+                    raise ValueError('手持身份证是必填项')
+
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 9,
+                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
+
+                # 个人基本信息表
+                pinfo = {
+                    'pname': data.get('expert_name', None),
+                    'pid_type': id_type,
+                    'pid': pid,
+                    'pmobile': data.get('expert_mobile', None),
+                    'ptel': data.get('expert_tel', None),
+                    'pemail': data.get('expert_email', None),
+                    'peducation': data.get('education', None),
+                    'pabstract': data.get('expert_abstract', None),
+                    'state': 2,
+                    'creater': creater,
+                    'account_code': account_code
+                }
+
+                # 验证证件号码
+                check_card_id(id_type, pid)  # 验证有效性
+
+                # 更新身份信息关联表
+                IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                         identity_code=9).update(**identity_info)
+
+                # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                pcode = create_or_update_person(account_code, pinfo)
+                data['pcode'] = pcode
+
+                partial = kwargs.pop('partial', False)
+                serializer = self.get_serializer(instance, data=data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+                ecode = serializer.data['expert_code']
+
+                # 插入领域相关
+                crete_major(2, 1, ecode, major)
+
+                # 复制图片到正式目录
+                formal_head = copy_img(head, 'Expert', 'headPhoto', ecode, creater)
+                formal_idfront = copy_img(idfront, 'Expert', 'identityFront', ecode, creater)
+                formal_idback = copy_img(idback, 'Expert', 'identityBack', ecode, creater)
+                formal_idphoto = copy_img(idphoto, 'Expert', 'handIdentityPhoto', ecode, creater)
+                # 如果未回滚则删除临时目录的图片
+                for f in [head, idfront, idback, idphoto]:
+                    remove_img(f)
+
+                if getattr(instance, '_prefetched_objects_cache', None):
+                    # If 'prefetch_related' has been applied to a queryset, we need to
+                    # forcibly invalidate the prefetch cache on the instance.
+                    instance._prefetched_objects_cache = {}
+        except ValidationError:
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            raise
+        except Exception as e:
+            # 如果已经回滚则删除正式目录的图片
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            return Response({"detail": "创建失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        data = request.data
+        pks = data.get('pks', [])
+        pks.append(kwargs['pk'])
+        expert = ExpertBaseinfo.objects.filter(serial__in=pks)
+        accounts = expert.values_list('account_code', flat=True)
+        identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=9)
+        expert.update(state=3)
+        identity.update(state=0)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # 领域专家申请视图
@@ -257,7 +460,9 @@ class BrokerViewSet(viewsets.ModelViewSet):
         )
         dept_codes_str = get_detcode_str(self.request.user.dept_code)
         if dept_codes_str:
-            raw_queryset = BrokerBaseinfo.objects.raw("select b.serial  from broker_baseinfo as b left join account_info as ai on  b.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
+            raw_queryset = BrokerBaseinfo.objects.raw(
+                "select b.serial  from broker_baseinfo as b left join account_info as ai "
+                "on  b.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
             queryset = BrokerBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
         else:
             queryset = self.queryset

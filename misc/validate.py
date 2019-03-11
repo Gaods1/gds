@@ -1,5 +1,5 @@
 import re
-from django.core.exceptions import ValidationError
+from rest_framework.serializers import ValidationError
 
 
 # 验证手机号
@@ -80,14 +80,44 @@ def validate_account_book(value):
     if not re.match(r'(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)', value):
         raise ValidationError('港澳居民来往内地通行证号码格式错误')
 
+# 验证身份证
+def validate_id1(value):
+    # (^\d{15}$)|(^\d{18}}$)|(^\d{17}(\d|X|x)$) 15位18位身份证号码
+    if not re.match(r'^\d{6}(18|19|20)?\d{2}(0[1-9]|1[012])(0[1-9]|[12]\d|3[01])\d{3}(\d|X)$', value):
+        raise ValueError('身份证号码格式错误')
+
+
+# 验证护照
+def validate_passport1(value):
+    # 规则： 14/15开头 + 7位数字, G + 8位数字, P + 7位数字, S/D + 7或8位数字,等
+    # 样本： 141234567, G12345678, P1234567
+    r = r'^1[45][0-9]{7}$|([P|p|S|s]\d{7}$)|([S|s|G|g]\d{8}$)|' \
+        r'([Gg|Tt|Ss|Ll|Qq|Dd|Aa|Ff]\d{8}$)|([H|h|M|m]\d{8,10})$'
+    if not re.match(r, value):
+        raise ValueError('护照格式错误')
+
+
+# 验证驾照
+def validate_driver_license1(value):
+    if not re.match(r'^\d{6}(18|19|20)?\d{2}(0[1-9]|1[012])(0[1-9]|[12]\d|3[01])\d{3}(\d|X)$', value):
+        raise ValueError('驾驶证号码格式错误')
+
+
+# 验证军官证
+def validate_military_officer_card1(value):
+    # 规则： 军 / 兵 / 士 / 文 / 职 / 广 /（其他中文） + "字第" + 4到8位字母或数字 + "号"
+    # 样本： 军字第2001988号, 士字第P011816X号
+    if not re.match(r'^[\u4E00-\u9FA5](字第)([0-9a-zA-Z]{4,8})(号?)$', value):
+        raise ValueError('军官证号码格式错误')
+
 
 # 后台验证证件号码（根据不同的证件）
 def check_card_id(type, value):
     card_validate = {
-        1: validate_id,     # 身份证
-        2: validate_passport,   # 护照
-        3: validate_driver_license,  # 驾照
-        4: validate_military_officer_card  # 军官证
+        1: validate_id1,     # 身份证
+        2: validate_passport1,   # 护照
+        3: validate_driver_license1,  # 驾照
+        4: validate_military_officer_card1  # 军官证
     }
     card_validate[type](value)
 

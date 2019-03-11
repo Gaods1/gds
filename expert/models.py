@@ -72,20 +72,20 @@ class ExpertApplyHistory(models.Model):
 # 领域专家基本信息表 *
 class ExpertBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    expert_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
+    expert_code = models.CharField(verbose_name='专家编码', unique=True, max_length=64, default=gen_uuid32)
     pcode = models.CharField(max_length=64, blank=True, null=True)
-    expert_name = models.CharField(max_length=64)
+    expert_name = models.CharField(verbose_name='专家姓名', max_length=64)
     expert_tel = models.CharField(max_length=16, blank=True, null=True, validators=[validate_tel])
-    expert_mobile = models.CharField(max_length=16, blank=True, null=True, validators=[validate_mobile])
+    expert_mobile = models.CharField(verbose_name='手机号码', max_length=16, validators=[validate_mobile])
     expert_email = models.CharField(max_length=64, blank=True, null=True, validators=[validate_email])
-    expert_id_type = models.IntegerField(default=1)     # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
-    expert_id = models.CharField(max_length=32, blank=True, null=True)
-    expert_abstract = models.TextField(blank=True, null=True)
-    education = models.CharField(max_length=8, default="本科")    # 默认本科 中专，大专，本科， 研究生，硕士， 博士，MBA， EMBA
+    expert_id_type = models.IntegerField(verbose_name='证件类型', default=1)     # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
+    expert_id = models.CharField(verbose_name='证件号码', max_length=32,)
+    expert_abstract = models.TextField(verbose_name='自我介绍')
+    education = models.CharField(verbose_name='学历', max_length=8, default=3)    # 默认本科 中专，大专，本科， 研究生，硕士， 博士，MBA， EMBA
 
-    expert_city = models.IntegerField(blank=True, null=True)     # 专家所属城市
-    expert_university = models.CharField(max_length=64, blank=True, null=True)  # 专家毕业院校
-    expert_major = models.CharField(max_length=64, blank=True, null=True)   # 所属院系
+    expert_city = models.IntegerField(verbose_name='归属城市')     # 专家所属城市
+    expert_university = models.CharField(verbose_name='毕业院校', max_length=64)  # 专家毕业院校
+    expert_major = models.CharField(verbose_name='专业', max_length=64)   # 所属院系
 
     expert_caption = models.CharField(max_length=32, blank=True, null=True)     # 专家头衔
     homepage = models.URLField(max_length=128, blank=True, null=True)

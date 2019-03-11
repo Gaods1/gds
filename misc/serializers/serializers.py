@@ -9,6 +9,7 @@ class PatclubModelSerializer(serializers.ModelSerializer):
             'null': self.null_errors_message,
             'unique': self.non_filed_errors_message,
             'invalid': self.invalid_errors_message,
+            'blank': self.blank_errors_message
         }
         return _errors_message
 
@@ -39,6 +40,10 @@ class PatclubModelSerializer(serializers.ModelSerializer):
     def required_errors_message(self, key, value):
         f = self.fields[key].label
         return '【{}】是必填项'.format(f)
+
+    def blank_errors_message(self, key, value):
+        f = self.fields[key].label
+        return '【{}】不能为空'.format(f)
 
     def non_filed_errors_message(self, key, value):
         r_unique_toger = "字段(.*?)必须能构成唯一集合。"
