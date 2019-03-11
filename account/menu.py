@@ -57,6 +57,12 @@ main_menu = {
         'index': "ep",
         'title': "企业个人信息管理",
         'subs': []
+    },
+    '新闻政策法规管理': {
+        'icon': "el-icon-lx-edit",
+        'index': "newspolicy",
+        'title': "新闻政策法规管理",
+        'subs': []
     }
 }
 
@@ -228,5 +234,21 @@ sub_menu = {
     '个人信息管理':{
         'title':"个人信息管理",
         'index':"person"
-    }
+    },
+    '新闻栏目管理':{
+        'title':"新闻栏目管理",
+        'index':"news_group"
+    },
+    '新闻管理':{
+        'title':"新闻管理",
+        'index':"news"
+    },
+    '政策法规栏目管理':{
+        'title':"政策法规栏目管理",
+        'index':"policy_group"
+    },
+    '政策法规管理':{
+        'title':"政策法规管理",
+        'index':"policy"
+    },
 }

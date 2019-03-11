@@ -44,4 +44,5 @@ urlpatterns = [
     path('imagecodes/', get_image_code,name='imagecodes'),
     path('index',include('index.urls')),
     path('ep/',include('enterpriseperson.urls')),
+    path('newspolicy/',include('news.urls')),
 ]

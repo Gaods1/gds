@@ -3,6 +3,8 @@ import subprocess
 import base64
 
 import shutil
+import uuid
+
 from misc.misc import gen_uuid32
 
 import time
@@ -21,7 +23,6 @@ from misc.misc import gen_uuid32
 from public_models.models import AttachmentFileType, ParamInfo, AttachmentFileinfo
 from python_backend import settings
 from django.core.files.storage import FileSystemStorage
-
 
 from django_redis import get_redis_connection
 
@@ -44,12 +45,11 @@ class PublicInfo(APIView):
 
     absolute_path = ParamInfo.objects.get(param_code=1).param_value
     absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
+    relative_path = ParamInfo.objects.get(param_code=2).param_value
+    relative_path_front = ParamInfo.objects.get(param_code=4).param_value
     MEDIA_ROOT = absolute_path
 
     def post(self, request):
-        #absolute_path = ParamInfo.objects.get(param_code=1).param_value
-        #absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
-        #MEDIA_ROOT = absolute_path
         if not request.method == "POST":
             return Response({"detail": u"不支持此种请求"},status=400)
 
@@ -73,9 +73,12 @@ class PublicInfo(APIView):
                         if not os.path.exists(url):
                             os.makedirs(url)
                         #上传服务器的路径
-                        url = url + file.name
+                        #url = url + file.name
+                        # 32位随机字符串内容
+                        file_name = '{}_{}'.format(gen_uuid32(), file.name)
+                        url = url + file_name
                         if os.path.exists(url):
-                            return Response({'detail': '该附件已上传到服务器'},status=400)
+                            return Response({'detail': '该附件已上传到服务器,如果要继续上传请重命名'},status=400)
                         # 创建对象
                         a = FileSystemStorage(location=self.MEDIA_ROOT)
                         # 上传服务器
@@ -109,31 +112,27 @@ class PublicInfo(APIView):
                         url = self.MEDIA_ROOT + 'temporary/' + account_code + '/'
                         if not os.path.exists(url):
                             os.makedirs(url)
-                        url = url + file.name
+                        # 32位随机字符串内容
+                        file_name = '{}_{}'.format(gen_uuid32(),file.name)
+
+                        url = url + file_name
                         if not url.endswith('jpg') and not url.endswith('png') and not url.endswith('jpeg') and not url.endswith('bmp') and not url.endswith('gif'):
                             return Response({'detail': '请上传图片类型'},status=400)
                         if os.path.exists(url):
-                            return Response({'detail': '该图片已上传到服务器'},status=400)
+                            return Response({'detail': '该图片已上传到服务器,如果要继续上传请重命名'},status=400)
                         # 创建对象
                         a = FileSystemStorage(location=self.MEDIA_ROOT)
                         # 上传服务器
                         url = a._save(url, file)
-                        # 判断如果是office文件
-                        #if url.endswith('doc') or url.endswith('xls') or url.endswith('xlsx') or url.endswith('docx'):
-
-                            # 转换office文件为pdf文件
-                            #child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + settings.MEDIA_ROOT + ' ' + url, stdout=subprocess.PIPE,shell=True)
-                            # 拼接转换pdf后的路径
-                            #url_pdf = os.path.splitext(url)[0] + '.pdf'
-                            # 给前端抛出pdf路径
-                            #u_z = url_pdf.split('/')[-1]
-                            #pdf = settings.media_root_front + u_z
-                            #dict[flag] = pdf
-
                         # 给前端抛出文件路径
                         u_z = url.split('/')[-1]
                         jpg = self.absolute_path_front + 'temporary/' + account_code + '/'+ u_z
-                        dict[flag] = jpg
+
+                        # 富文本内容
+                        if flag=='consultEditor':
+                            dict[''.join(str(uuid.uuid1()).split('-'))]=jpg
+                        else:
+                            dict[flag] = jpg
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '上传失败%s' % str(e)},status=400)
@@ -141,10 +140,6 @@ class PublicInfo(APIView):
                 transaction.savepoint_commit(save_id)
                 return Response(dict)
     def delete(self,request):
-
-        #absolute_path = ParamInfo.objects.get(param_code=1).param_value
-        #absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
-        #MEDIA_ROOT = absolute_path
 
         if not request.method == "DELETE":
             return Response({"detail": u"不支持此种请求"},status=400)
@@ -197,24 +192,19 @@ class PublicInfo(APIView):
                     path_list = AttachmentFileinfo.objects.filter(file_name=name)
                     if path_list:
                         path = path_list.order_by('-insert_time')[0].path
-                        url = self.MEDIA_ROOT + 'uploads/' + path + name
+                        url = self.relative_path + path + name
                         # 判断该路径下是否有该文件
                         if not os.path.exists(url):
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该正式路径下不存在该文件'},status=400)
-
-                        #url = url + name
-                        # 创建对象
-                        a = FileSystemStorage(location=self.MEDIA_ROOT)
-                        # 删除文件
-                        a.delete(url)
+                        os.remove(url)
                         # 相同路径下删除pdf文件
                         #name_pdf= name.split('.')[-1]
                         name_pdf = os.path.splitext(name)[0] + '.pdf'
                         #name_pdf = name.replace(name_pdf, 'pdf')
                         url_pdf = url.replace(name,name_pdf)
                         if os.path.exists(url_pdf):
-                            a.delete(url_pdf)
+                            os.remove(url_pdf)
                         # 删除表记录
                         AttachmentFileinfo.objects.filter(file_name=name).order_by('-insert_time')[0].delete()
                         # 删除表(pdf)记录

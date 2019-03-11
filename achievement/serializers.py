@@ -95,10 +95,10 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
     EntLicense = serializers.CharField(read_only=True)
     username = serializers.CharField(read_only=True)
     cooperation_name = serializers.CharField(read_only=True)
-    #owner_type = serializers.CharField(read_only=True)
     Keywords = serializers.ListField(read_only=True)
     Personal = serializers.CharField(read_only=True)
     Enterprise = serializers.CharField(read_only=True)
+    consultEditor = serializers.ListField(read_only=True)
 
     class Meta:
         model = ResultsInfo
@@ -142,6 +142,7 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
                   'Keywords',
                   'Personal',
                   'Enterprise',
+                  'consultEditor',
                   ]
 
 # 需求信息表序列化
@@ -165,7 +166,7 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
     Keywords = serializers.ListField(read_only=True)
     Personal = serializers.CharField(read_only=True)
     Enterprise = serializers.CharField(read_only=True)
-
+    consultEditor = serializers.ListField(read_only=True)
 
     class Meta:
         model = RequirementsInfo
@@ -210,7 +211,7 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
             'Keywords',
             'Personal',
             'Enterprise',
-
+            'consultEditor',
         ]
 
 
