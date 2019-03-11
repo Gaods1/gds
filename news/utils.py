@@ -38,6 +38,7 @@ def get_attach_info(file_list,module_type,file_type,file_dir,params_dict):
             file_dict = {}
             file_info_arr= file_info.split('/')
             file_caption = file_info_arr.pop()  #上传的原文件名
+            real_file_caption = file_caption[33:]
             file_arr = file_caption.split('.')
             file_ext = file_arr.pop()           #上传的文件后缀
             file_name = '{}.{}'.format(gen_uuid32(),file_ext)  #新的文件名保存到附件表
@@ -49,7 +50,7 @@ def get_attach_info(file_list,module_type,file_type,file_dir,params_dict):
             file_dict['file_normal_path'] = file_normal_path
             file_dict['attach_path'] = attach_path
             file_dict['file_name'] = file_name
-            file_dict['file_caption'] = file_caption
+            file_dict['file_caption'] = real_file_caption
             file_dict['file_temp_url'] = file_info
             file_dict['file_normal_url'] = file_normal_url
             fileinfo_dict[file_info] = file_dict
@@ -57,6 +58,34 @@ def get_attach_info(file_list,module_type,file_type,file_dir,params_dict):
         fileinfo_dict['file_normal_dir'] = file_normal_dir
 
     return fileinfo_dict
+
+
+
+
+def model_get_attach(AttachmentFileType,AttachmentFileinfo,add_id,news_code):
+    tcode = AttachmentFileType.objects.get(tname='attachment').tcode
+    attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value
+    attachments = AttachmentFileinfo.objects.filter(
+        ecode=news_code,
+        add_id=add_id,
+        tcode=tcode,
+        state=1,
+    ).all()
+    attachments_list = []
+
+    if attachments:
+        for attach in attachments:
+            attach_info = {}
+            file_arr = attach.file_caption.split('.')
+            file_ext = file_arr.pop()
+            attach_info['file_caption'] = attach.file_caption
+            attach_info['type'] = file_ext
+            attach_info['look'] = '{}{}{}'.format(attachment_dir, attach.path, attach.file_name)
+            attach_info['down'] = '{}{}{}'.format(attachment_dir, attach.path, attach.file_name)
+            attach_info['name'] = attach.file_name
+            attachments_list.append(attach_info)
+
+    return attachments_list
 
 
 
