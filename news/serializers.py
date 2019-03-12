@@ -22,9 +22,14 @@ class NewsGroupInfoSerializers(PatclubModelSerializer):
 class NewsinfoSerializers(PatclubModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     face_pic_path = serializers.CharField(read_only=True)
+    face_pic_url = serializers.CharField(read_only=True)
     group_name = serializers.CharField(read_only=True)
     district_name = serializers.CharField(read_only=True)
-    attachments = serializers.ListField(read_only=True)
+    attach1 = serializers.ListField(read_only=True)
+    attach2 = serializers.ListField(read_only=True)
+    attach3 = serializers.ListField(read_only=True)
+    attach4 = serializers.ListField(read_only=True)
+    attach5 = serializers.ListField(read_only=True)
 
     class Meta:
         model = NewsInfo
@@ -52,9 +57,14 @@ class NewsinfoSerializers(PatclubModelSerializer):
                   'check_state',
                   'count',
                   'face_pic_path',
+                  'face_pic_url',
                   'group_name',
                   'district_name',
-                  'attachments',
+                  'attach1',
+                  'attach2',
+                  'attach3',
+                  'attach4',
+                  'attach5',
                   ]
 
 # 政策法规栏目信息管理序列器
@@ -77,9 +87,14 @@ class PolicyGroupInfoSerializers(PatclubModelSerializer):
 class PolicyInfoSerializers(PatclubModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     face_pic_path = serializers.CharField(read_only=True)
+    face_pic_url = serializers.CharField(read_only=True)
     group_name = serializers.CharField(read_only=True)
     district_name = serializers.CharField(read_only=True)
-    attachments = serializers.ListField(read_only=True)
+    attach1 = serializers.ListField(read_only=True)
+    attach2 = serializers.ListField(read_only=True)
+    attach3 = serializers.ListField(read_only=True)
+    attach4 = serializers.ListField(read_only=True)
+    attach5 = serializers.ListField(read_only=True)
 
     class Meta:
         model = PolicyInfo
@@ -100,7 +115,12 @@ class PolicyInfoSerializers(PatclubModelSerializer):
                   'district_id',
                   'source',
                   'face_pic_path',
+                  'face_pic_url',
                   'group_name',
                   'district_name',
-                  'attachments',
+                  'attach1',
+                  'attach2',
+                  'attach3',
+                  'attach4',
+                  'attach5',
                   ]

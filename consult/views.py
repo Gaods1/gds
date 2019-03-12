@@ -180,7 +180,8 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                                                           sms_phone=expert_baseinfo.expert_mobile,
                                                           email=0,
                                                           email_state=0,
-                                                          email_account='')
+                                                          email_account='',
+                                                          type=2)
                                     message_list.append(message_obj)
                                     enable_expert_list.append(expert_baseinfo.expert_code)
 
@@ -388,7 +389,8 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
                                                   sms_phone=user_mobile,
                                                   email=0,
                                                   email_state=0,
-                                                  email_account='')]
+                                                  email_account='',
+                                                  type=2)]
                             Message.objects.bulk_create(message_list)
             except Exception as e:
                 fail_msg = "审核失败%s" % str(e)

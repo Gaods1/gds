@@ -98,6 +98,7 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
     Keywords = serializers.ListField(read_only=True)
     Personal = serializers.CharField(read_only=True)
     Enterprise = serializers.CharField(read_only=True)
+    owner_code = serializers.CharField(read_only=True)
     consultEditor = serializers.ListField(read_only=True)
 
     class Meta:
@@ -142,6 +143,7 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
                   'Keywords',
                   'Personal',
                   'Enterprise',
+                  'owner_code',
                   'consultEditor',
                   ]
 
@@ -166,6 +168,7 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
     Keywords = serializers.ListField(read_only=True)
     Personal = serializers.CharField(read_only=True)
     Enterprise = serializers.CharField(read_only=True)
+    owner_code = serializers.CharField(read_only=True)
     consultEditor = serializers.ListField(read_only=True)
 
     class Meta:
@@ -211,6 +214,7 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
             'Keywords',
             'Personal',
             'Enterprise',
+            'owner_code',
             'consultEditor',
         ]
 
