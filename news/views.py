@@ -243,7 +243,8 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                 form_data = request.data
                 news_code = gen_uuid32()
                 form_data['news_code'] = news_code
-                form_face_pic = form_data['face_pic']['guidePhoto'] if form_data['face_pic'] else ''
+                # form_face_pic = form_data['face_pic']['guidePhoto'] if form_data['face_pic'] else ''
+                form_face_pic = form_data['face_pic_url']['guidePhoto'] if form_data['face_pic_url'] else ''
                 ########## 新闻导引图 ########
                 face_pic_dict = {}
                 if form_face_pic:
@@ -447,11 +448,13 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                 params_dict = get_attach_params()
                 instance = self.get_object()
                 form_data = request.data
-                form_data['top_tag'] = form_data['top_tag'] if int(form_data['top_tag']) else None
-                form_data['source'] = form_data['source'] if int(form_data['source']) else None
-                form_data['check_state'] = form_data['check_state'] if int(form_data['check_state']) else None
+                # form_data['top_tag'] = form_data['top_tag'] if int(form_data['top_tag']) else None
+                # form_data['source'] = form_data['source'] if int(form_data['source']) else None
+                # form_data['check_state'] = form_data['check_state'] if int(form_data['check_state']) else None
+                form_data['top_time'] = form_data['top_time'] if form_data['top_time'] else None
                 # form_face_pic = form_data['face_pic']['guidePhoto'] if type(form_data['face_pic']).__name__ =='dict' else ''
-                form_face_pic = form_data['face_pic'] if re.search(params_dict[3],form_data['face_pic']) else None
+                form_face_pic = form_data['face_pic_url']['guidePhoto'] if type(form_data['face_pic_url']).__name__ == 'dict' else ''
+                # form_face_pic = form_data['face_pic'] if re.search(params_dict[3],form_data['face_pic']) else None
                 ########## 新闻导引图 ########
                 face_pic_dict = {}
                 face_pic_del = ''
@@ -579,7 +582,7 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                 for i in range(1, 6):
                     form_name = '{}{}'.format('attach', i)
                     formAttach_list = form_data[form_name] if form_name in form_data else ''
-                    if formAttach_list:
+                    if formAttach_list and type(formAttach_list[0]).__name__ == 'str':
                         form_attach = formAttach_list[0]
                         form_attach_list.append(form_attach)
                         form_attach_dict[form_attach] = form_name
@@ -963,7 +966,8 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                 form_data = request.data
                 policy_code = gen_uuid32()
                 form_data['policy_code'] = policy_code
-                form_face_pic = form_data['face_pic']['guidePhoto'] if form_data['face_pic'] else ''
+                form_face_pic = form_data['face_pic_url']['guidePhoto'] if form_data['face_pic_url'] else ''
+                # form_face_pic = form_data['face_pic']['guidePhoto'] if form_data['face_pic'] else ''
                 ########## 政策法规导引图 ########
                 face_pic_dict = {}
                 if form_face_pic:
@@ -1168,9 +1172,10 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                 params_dict = get_attach_params()
                 instance = self.get_object()
                 form_data = request.data
-                form_data['top_tag'] = form_data['top_tag'] if int(form_data['top_tag']) else None
+                # form_data['top_tag'] = form_data['top_tag'] if form_data['top_tag'] else None
                 # form_face_pic = form_data['face_pic']['guidePhoto'] if type(form_data['face_pic']).__name__ =='dict' else ''
-                form_face_pic = form_data['face_pic'] if re.search(params_dict[3],form_data['face_pic']) else None
+                form_face_pic = form_data['face_pic_url']['guidePhoto'] if type(form_data['face_pic_url']).__name__ == 'dict' else ''
+                # form_face_pic = form_data['face_pic'] if re.search(params_dict[3],form_data['face_pic']) else None
                 ########## 政策法规导引图 ########
                 face_pic_dict = {}
                 face_pic_del = ''
@@ -1298,7 +1303,7 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                 for i in range(1, 6):
                     form_name = '{}{}'.format('attach', i)
                     formAttach_list = form_data[form_name] if form_name in form_data else ''
-                    if formAttach_list:
+                    if formAttach_list  and type(formAttach_list[0]).__name__ == 'str':
                         form_attach = formAttach_list[0]
                         form_attach_list.append(form_attach)
                         form_attach_dict[form_attach] = form_name
