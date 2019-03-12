@@ -92,7 +92,7 @@ def send_msg(tel, name, state, account_code, sender):
         message_content = "您认证的身份信息{}审核未通过。请登录平台查看。".format(name)
 
     mag_ret = eval(requests.post(msg_url, data=msg_data, headers=headers).text)['ret']
-    if mag_ret == '1':
+    if int(mag_ret) == 1:
         Message.objects.create(
             message_title='{}认证信息审核结果通知'.format(name),
             message_content=message_content,
