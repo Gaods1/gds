@@ -798,7 +798,8 @@ def upCheckinfo(self, request):
                                               sms_phone=phone,
                                               email=0,
                                               email_state=0,
-                                              email_account='')
+                                              email_account='',
+                                              type=2)
                         message_list.append(message_obj)
 
                         # broker_mobiles = [phone]
