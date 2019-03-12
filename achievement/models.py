@@ -167,6 +167,11 @@ class RequirementsInfo(models.Model):
         return Enterprise
 
     @property
+    def owner_code(self):
+        owner_code = ResultsOwnerInfo.objects.get(r_code=self.req_code).owner_code
+        return owner_code
+
+    @property
     def consultEditor(self):
         list_url = get_single('consultEditor', self.req_code)
         return list_url
@@ -281,11 +286,17 @@ class ResultsInfo(models.Model):
         Personal = PersonalInfo.objects.values_list('pname', flat=True).get(pcode=owner_code)
         return Personal
 
+
     @property
     def Enterprise(self):
         owner_code = ResultsOwnerInfo.objects.get(r_code=self.r_code).owner_code
         Enterprise = EnterpriseBaseinfo.objects.values_list('ename', flat=True).get(ecode=owner_code)
         return Enterprise
+
+    @property
+    def owner_code(self):
+        owner_code = ResultsOwnerInfo.objects.get(r_code=self.r_code).owner_code
+        return owner_code
 
     @property
     def consultEditor(self):
