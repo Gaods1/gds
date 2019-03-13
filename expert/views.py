@@ -293,7 +293,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
             # 如果已经回滚则删除正式目录的图片
             for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
                 remove_img(f)
-            return Response({"detail": "创建失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "更新失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(serializer.data)
 
@@ -729,7 +729,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
             # 如果已经回滚则删除正式目录的图片
             for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
                 remove_img(f)
-            return Response({"detail": "创建失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "更新失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(serializer.data)
 
@@ -1150,7 +1150,7 @@ class CollectorViewSet(viewsets.ModelViewSet):
             # 如果已经回滚则删除正式目录的图片
             for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
                 remove_img(f)
-            return Response({"detail": "创建失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "更新失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(serializer.data)
 
@@ -1591,7 +1591,7 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
             # 如果已经回滚则删除正式目录的图片
             for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
                 remove_img(f)
-            return Response({"detail": "创建失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "更新失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(serializer.data)
 
@@ -1999,131 +1999,154 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
         return Response(return_data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
-        # 建立事物机制
-        with transaction.atomic():
-            # 创建一个保存点
-            save_id = transaction.savepoint()
-            try:
-                partial = kwargs.pop('partial', False)
-                instance = self.get_object()
-                serializer_ecode = instance.owner_code
-                account_code = instance.account_code
-
+        # 正式路径（避免回滚后找不到变量）
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
+        formal_license = None
+        formal_logo = None
+        formal_promotional = None
+        editor_imgs_path = {}  # 富文本编辑器图片对照
+        formal_editor_imgs_path = {}
+        try:
+            with transaction.atomic():
                 data = request.data
-                single_dict = request.data.pop('single', None)
-                mcode_list = request.data.pop('mcode', None)
-                identity_code = request.data.pop('identity_code', None)
+                data['type'] = 1
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
+                account_code = data['account_code']
 
-                if not mcode_list or not identity_code:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请完善相关信息')
+                major = data.pop('major', None)  # 相关领域（列表）
+                idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
+                idback = url_to_path(data.pop('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
+                owner_license = url_to_path(data.pop('license', None))  # 营业执照
+                logo = url_to_path(data.pop('logo', None))  # logo
+                promotional = url_to_path(data.pop('promotional', None))  # 宣传照
+                owner_abstract_detail = data.get('owner_abstract_detail', '')  # 富文本
 
-                if not single_dict:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请先上传相关文件')
+                if owner_abstract_detail:
+                    img_pattern = re.compile(r'src=\'(.*?)\'')
+                    editor_imgs_list = img_pattern.findall(owner_abstract_detail)
+                    for e in editor_imgs_list:
+                        editor_imgs_path[e] = url_to_path(e)
 
-                if len(single_dict) != 4:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('证件照需要上传4张')
+                instance = self.get_object()  # 原纪录
 
-                # 1 更新所属领域
-                MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
+                if account_code != instance.account_code:
+                    raise ValueError('不允许更改关联账号')
+                if not major:
+                    raise ValueError('所属领域是必填项')
+                if not idfront:
+                    raise ValueError('证件照正面是必填项')
+                if not idback:
+                    raise ValueError('证件照背面是必填项')
+                if not idphoto:
+                    raise ValueError('手持身份证是必填项')
+                if not owner_license:
+                    raise ValueError('营业执照是必填项')
 
-                major_list = []
-                for mcode in mcode_list:
-                    major_list.append(MajorUserinfo(mcode=mcode, user_type=6, user_code=serializer_ecode, mtype=2))
-                MajorUserinfo.objects.bulk_create(major_list)
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 5,
+                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
 
-                # 2 更新identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
+                # 企业基本信息表
+                einfo = {
+                    'ename': data.get('owner_name', None),  # 企业名称
+                    'eabbr': data.get('owner_name_abbr', None),  # 简称
+                    'business_license': data.get('owner_license', None),  # 企业营业执照统一社会信用码
+                    'eabstract': data.get('owner_abstract', None),  # 简介
+                    'eabstract_detail': data.get('owner_abstract_detail', None),
+                    'homepage': data.get('homepage', None),  # 企业主页url
+                    'etel': data.get('owner_tel', None),  # 企业电话
+                    'manager': data.get('legal_person', None),  # 企业联系人
+                    'emobile': data.get('owner_mobile', None),  # 企业手机
+                    'eemail': data.get('owner_email', None),  # 企业邮箱
+                    'state': 2,
+                    'manager_id': data.get('owner_id', None),
+                    'manager_idtype': data.get('owner_idtype', None),
+                    'creater': creater,
+                    'account_code': account_code
+                }
 
-                IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
+                # # 验证证件号码
+                # check_card_id(id_type, pid)  # 验证有效性
 
-                                                         state=2, creater=request.user.account)
-                # 3 转移附件创建ecode表
-                absolute_path = ParamInfo.objects.get(param_code=1).param_value
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-                identityFront_tcode = AttachmentFileType.objects.get(tname='identityFront').tcode
-                identityBack_tcode = AttachmentFileType.objects.get(tname='identityBack').tcode
-                handIdentityPhoto_tcode = AttachmentFileType.objects.get(tname='handIdentityPhoto').tcode
-                headPhoto_tcode = AttachmentFileType.objects.get(tname='headPhoto').tcode
-                param_value = ParamInfo.objects.get(param_code=9).param_value
+                # 更新身份信息关联表
+                IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                         identity_code=5).update(**identity_info)
 
-                url_x_f = '{}{}/{}/{}'.format(relative_path, param_value, identityFront_tcode, serializer_ecode)
-                url_x_b = '{}{}/{}/{}'.format(relative_path, param_value, identityBack_tcode, serializer_ecode)
-                url_x_p = '{}{}/{}/{}'.format(relative_path, param_value, handIdentityPhoto_tcode, serializer_ecode)
-                url_x_h = '{}{}/{}/{}'.format(relative_path, param_value, headPhoto_tcode, serializer_ecode)
+                # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                encode = create_or_update_enterprise(account_code, einfo)
+                data['ecode'] = encode
 
-                if not os.path.exists(url_x_f):
-                    os.makedirs(url_x_f)
-                if not os.path.exists(url_x_b):
-                    os.makedirs(url_x_b)
-                if not os.path.exists(url_x_p):
-                    os.makedirs(url_x_p)
-                if not os.path.exists(url_x_h):
-                    os.makedirs(url_x_h)
-
-                dict = {}
-                list1 = []
-                list2 = []
-
-                for key, value in single_dict.items():
-                    # 判断各个图片类型是否正确
-                    if key not in ['identityFront', 'identityBack', 'handIdentityPhoto', 'headPhoto']:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('某个图片所属类型不正确')
-
-                    url_l = value.split('/')
-                    url_file = url_l[-1]
-
-                    # 判断该临时路径下的文件是否正确
-                    url_j = settings.MEDIA_ROOT + url_file
-                    if not os.path.exists(url_j):
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('该临时路径下不存在该文件,可能文件名称错误')
-
-                    # 通过key值拿取相应的tcode
-                    tcode = AttachmentFileType.objects.get(tname=key).tcode
-
-                    # 拼接正式路径
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
-                                                   url_file)
-
-                    # 拼接给前端的的地址
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
-
-                    # 拼接ecode表中的path
-                    path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
-                    list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file,
-                                                    path=path, operation_state=3, state=1))
-
-                    # 将临时目录转移到正式目录
-                    shutil.move(url_j, url_x)
-
-                # 创建atachmentinfo表
-                AttachmentFileinfo.objects.bulk_create(list1)
-
-                # 删除临时目录
-                shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
-
-                # 给前端抛正式目录
-                dict['url'] = list2
-
-                serializer = self.get_serializer(instance, data=request.data, partial=partial)
+                partial = kwargs.pop('partial', False)
+                serializer = self.get_serializer(instance, data=data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
+                ecode = serializer.data['owner_code']
+
+                # 插入领域相关
+                crete_major(2, 6, ecode, major)
+
+                # 复制图片到正式目录
+                formal_idfront = copy_img(idfront, 'ResultOwnerEnt', 'identityFront', ecode, creater)
+                formal_idback = copy_img(idback, 'ResultOwnerEnt', 'identityBack', ecode, creater)
+                formal_idphoto = copy_img(idphoto, 'ResultOwnerEnt', 'handIdentityPhoto', ecode, creater)
+                formal_license = copy_img(owner_license, 'ResultOwnerEnt', "entLicense", ecode, creater)
+                formal_logo = copy_img(logo, 'ResultOwnerEnt', "logoPhoto", ecode, creater)
+                formal_promotional = copy_img(promotional, 'ResultOwnerEnt', "Propaganda", ecode, creater)
+
+                for k, v in editor_imgs_path.items():
+                    formal_editor_imgs_path[k] = copy_img(v, 'ResultOwnerEnt', 'consultEditor', ecode, creater)
+
+                for k, v in formal_editor_imgs_path.items():
+                    if v:
+                        new_v = v.replace(ParamInfo.objects.get(param_name='upload_dir').param_value,
+                                          ParamInfo.objects.get(param_name='attachment_dir').param_value)
+                        owner_abstract_detail = owner_abstract_detail.replace(k, new_v)
+                ResultOwnereBaseinfo.objects.filter(owner_code=ecode).update(
+                    owner_abstract_detail=owner_abstract_detail)
+                # 如果未回滚则删除临时目录的图片
+                old_img_list = [idfront, idback, idphoto, owner_license, logo, promotional]
+                old_img_list.extend(editor_imgs_path.values())
+                for f in old_img_list:
+                    remove_img(f)
 
                 if getattr(instance, '_prefetched_objects_cache', None):
                     # If 'prefetch_related' has been applied to a queryset, we need to
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('创建失败%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return Response(dict)
+        except ValidationError:
+            old_formal_imglist = [formal_idfront,
+                                   formal_idback,
+                                   formal_idphoto,
+                                   formal_license,
+                                   formal_logo,
+                                   formal_promotional]
+            old_formal_imglist.extend(formal_editor_imgs_path.values())
+            for f in old_formal_imglist:
+                remove_img(f)
+            raise
+        except Exception as e:
+            # 如果已经回滚则删除正式目录的图片
+            old_formal_imglist = [formal_idfront,
+                                   formal_idback,
+                                   formal_idphoto,
+                                   formal_license,
+                                   formal_logo,
+                                   formal_promotional]
+            old_formal_imglist.extend(formal_editor_imgs_path.values())
+            for f in old_formal_imglist:
+                remove_img(f)
+            return Response({"detail": "更新失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
         try:
