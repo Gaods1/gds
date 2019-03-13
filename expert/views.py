@@ -1873,7 +1873,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 }
 
                 # 查询当前账号有没有伪删除身份
-                obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, state=3, type=1)
+                obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, state=3, type=1)
                 if obj:
                     # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
                     check_identity2(account_code=account_code, identity=5, info=identity_info)
