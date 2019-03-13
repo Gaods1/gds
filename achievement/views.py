@@ -1257,8 +1257,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 #2 创建合作方式表
                 dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
                 ResultsCooperationTypeInfo.objects.create(r_type=1,
-                rr_code=serializer_ecode,
-                cooperation_name=cooperation_name, state=state)
+                rr_code=serializer_ecode,cooperation_code=cooperation_name,
+                cooperation_name=dict_coop[cooperation_name], state=state)
 
                 #3 创建持有人信息表
                 ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
@@ -1538,8 +1538,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 # 2 创建合作方式表
                 dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
                 ResultsCooperationTypeInfo.objects.filter(rr_code=serializer_ecode).update(
-                rr_code=serializer_ecode,r_type=1,
-                cooperation_name=cooperation_name, state=state)
+                rr_code=serializer_ecode,r_type=1,cooperation_code=cooperation_name,
+                cooperation_name=dict_coop[cooperation_name], state=state)
 
                 # 3 更新持有人信息表
                 ResultsOwnerInfo.objects.filter(r_code=serializer_ecode).update(
@@ -1901,8 +1901,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 # 2 创建合作方式表
                 dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
                 ResultsCooperationTypeInfo.objects.create(r_type=2,
-                                                          rr_code=serializer_ecode,
-                                                          cooperation_name=cooperation_name, state=state)
+                                                          rr_code=serializer_ecode,cooperation_code=cooperation_name,
+                                                          cooperation_name=dict_coop[cooperation_name], state=state)
 
                 # 3 创建持有人信息表
                 ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
@@ -2183,8 +2183,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 # 2 创建合作方式表
                 dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
                 ResultsCooperationTypeInfo.objects.filter(rr_code=serializer_ecode).update(
-                    rr_code=serializer_ecode, r_type=2,
-                    cooperation_name=cooperation_name, state=state)
+                    rr_code=serializer_ecode, r_type=2,cooperation_code=cooperation_name,
+                    cooperation_name=dict_coop[cooperation_name], state=state)
 
                 # 3 更新持有人信息表
                 ResultsOwnerInfo.objects.filter(r_code=serializer_ecode).update(
