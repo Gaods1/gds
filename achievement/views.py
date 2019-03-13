@@ -250,7 +250,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             'sms_phone': tel,
                             'email': 1,
                             'email_state': 1,
-                            'email_account': ''
+                            'email_account': '',
+                            'type':2
 
                         })
 
@@ -330,7 +331,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             'sms_phone': tel,
                             'email': 1,
                             'email_state': 1,
-                            'email_account': ''
+                            'email_account': '',
+                            'type': 2
 
                         })
 
@@ -474,7 +476,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             'sms_phone': tel,
                             'email': 1,
                             'email_state': 1,
-                            'email_account': ''
+                            'email_account': '',
+                            'type': 2
 
                         })
 
@@ -550,7 +553,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             'sms_phone': tel,
                             'email': 1,
                             'email_state': 1,
-                            'email_account': ''
+                            'email_account': '',
+                            'type': 2
 
                         })
 
@@ -785,7 +789,8 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             'sms_phone': tel,
                             'email': 1,
                             'email_state': 1,
-                            'email_account': ''
+                            'email_account': '',
+                            'type': 2
 
                         })
 
@@ -865,7 +870,8 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             'sms_phone': tel,
                             'email': 1,
                             'email_state': 1,
-                            'email_account': ''
+                            'email_account': '',
+                            'type': 2
 
                         })
 
@@ -1010,7 +1016,8 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             'sms_phone': tel,
                             'email': 1,
                             'email_state': 1,
-                            'email_account': ''
+                            'email_account': '',
+                            'type': 2
 
                         })
 
@@ -1086,7 +1093,8 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             'sms_phone': tel,
                             'email': 1,
                             'email_state': 1,
-                            'email_account': ''
+                            'email_account': '',
+                            'type': 2
 
                         })
 
@@ -1442,9 +1450,9 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 data = request.data
                 # 图片
-                single_dict = request.data.pop('Cover', None)
+                #single_dict = request.data.pop('Cover', None)
                 # 附件
-                attachment_list = request.data.pop('Attach', None)
+                #attachment_list = request.data.pop('Attach', None)
                 # 所属领域
                 mname_list = request.data.pop('mname',None)
                 # 成果/需求合作方式信息表
