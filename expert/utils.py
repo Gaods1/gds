@@ -158,6 +158,21 @@ def create_or_update_person(account_code, info):
         return p.pcode
 
 
+# 根据 account_code 来更新或者创建e_info
+def create_or_update_enterprise(account_code, info):
+    e = EnterpriseBaseinfo.objects.filter(business_license=info['business_license'])
+    if e and e[0].account_code != account_code:
+        raise ValueError('此统一社会信用代码已被他人使用')
+    einfo = EnterpriseBaseinfo.objects.filter(account_code=account_code)
+    if einfo:
+        einfo.update(**info)
+        return einfo[0].ecode
+    else:
+        ee = EnterpriseBaseinfo.objects.create(**info)
+        return ee.ecode
+
+
+
 # 插入领域与身份相关表
 def crete_major(mtype, user_type, user_code, majors):
     MajorUserinfo.objects.filter(user_code=user_code, user_type=user_type, mtype=mtype).delete()
