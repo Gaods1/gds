@@ -1815,6 +1815,8 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
         formal_license = None
         formal_logo = None
         formal_promotional = None
+        editor_imgs_path = {}  # 富文本编辑器图片对照
+        formal_editor_imgs_path = {}
         try:
             with transaction.atomic():
                 # 正式路径（避免回滚后找不到变量）
@@ -1831,6 +1833,12 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 owner_license = url_to_path(data.pop('license', None))  # 营业执照
                 logo = url_to_path(data.pop('logo', None))  # logo
                 promotional = url_to_path(data.pop('promotional', None))  # 宣传照
+                owner_abstract_detail = data.get('owner_abstract_detail', '')  # 富文本
+                if owner_abstract_detail:
+                    img_pattern = re.compile(r'src=\'(.*?)\'')
+                    editor_imgs_list = img_pattern.findall(owner_abstract_detail)
+                    for e in editor_imgs_list:
+                        editor_imgs_path[e] = url_to_path(e)
 
                 if not major:
                     raise ValueError('所属领域是必填项')
@@ -1896,16 +1904,29 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                     crete_major(2, 6, ecode, major)
 
                     # 复制图片到正式目录
-                    formal_idfront = copy_img(idfront, 'ResultOwnerPer', 'identityFront', ecode, creater)
-                    formal_idback = copy_img(idback, 'ResultOwnerPer', 'identityBack', ecode, creater)
-                    formal_idphoto = copy_img(idphoto, 'ResultOwnerPer', 'handIdentityPhoto', ecode, creater)
-                    formal_license = copy_img(owner_license, 'ResultOwnerPer', "entLicense", ecode, creater)
-                    formal_logo = copy_img(logo, 'ResultOwnerPer', "logoPhoto", ecode, creater)
-                    formal_promotional = copy_img(promotional, 'ResultOwnerPer', "Propaganda", ecode, creater)
-                    # 如果未回滚则删除临时目录的图片
-                    for f in [idfront, idback, idphoto, owner_license, logo, promotional]:
-                        remove_img(f)
+                    formal_idfront = copy_img(idfront, 'ResultOwnerEnt', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'ResultOwnerEnt', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'ResultOwnerEnt', 'handIdentityPhoto', ecode, creater)
+                    formal_license = copy_img(owner_license, 'ResultOwnerEnt', "entLicense", ecode, creater)
+                    formal_logo = copy_img(logo, 'ResultOwnerEnt', "logoPhoto", ecode, creater)
+                    formal_promotional = copy_img(promotional, 'ResultOwnerEnt', "Propaganda", ecode, creater)
 
+                    for k, v in editor_imgs_path.items():
+                        formal_editor_imgs_path[k] = copy_img(v, 'ResultOwnerEnt', 'consultEditor', ecode, creater)
+
+                    for k, v in formal_editor_imgs_path.items():
+                        if v:
+                            new_v = v.replace(ParamInfo.objects.get(param_name='upload_dir').param_value,
+                                              ParamInfo.objects.get(param_name='attachment_dir').param_value)
+                            owner_abstract_detail = owner_abstract_detail.replace(k, new_v)
+
+                    # 更新 富文本内容
+                    new_obj.update(owner_abstract_detail=owner_abstract_detail)
+                    # 如果未回滚则删除临时目录的图片
+                    old_img_list = [idfront, idback, idphoto, owner_license, logo, promotional]
+                    old_img_list.extend(editor_imgs_path.values())
+                    for f in old_img_list:
+                        remove_img(f)
                 else:
                     # 查询所绑定的账号是否有此身份（若有则报错，没有则创建）
                     check_identity(account_code=account_code, identity=5, info=identity_info)
@@ -1925,25 +1946,53 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                     ecode = serializer.data['owner_code']
 
                     # 插入领域相关
-                    crete_major(2, 8, ecode, major)
+                    crete_major(2, 6, ecode, major)
 
                     # 复制图片到正式目录
-                    formal_idfront = copy_img(idfront, 'ResultOwnerPer', 'identityFront', ecode, creater)
-                    formal_idback = copy_img(idback, 'ResultOwnerPer', 'identityBack', ecode, creater)
-                    formal_idphoto = copy_img(idphoto, 'ResultOwnerPer', 'handIdentityPhoto', ecode, creater)
-                    formal_license = copy_img(owner_license, 'ResultOwnerPer', "entLicense", ecode, creater)
-                    formal_logo = copy_img(logo, 'ResultOwnerPer', "logoPhoto", ecode, creater)
-                    formal_promotional = copy_img(promotional, 'ResultOwnerPer', "Propaganda", ecode, creater)
+                    formal_idfront = copy_img(idfront, 'ResultOwnerEnt', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'ResultOwnerEnt', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'ResultOwnerEnt', 'handIdentityPhoto', ecode, creater)
+                    formal_license = copy_img(owner_license, 'ResultOwnerEnt', "entLicense", ecode, creater)
+                    formal_logo = copy_img(logo, 'ResultOwnerEnt', "logoPhoto", ecode, creater)
+                    formal_promotional = copy_img(promotional, 'ResultOwnerEnt', "Propaganda", ecode, creater)
+
+                    for k, v in editor_imgs_path.items():
+                        formal_editor_imgs_path[k] = copy_img(v, 'ResultOwnerEnt', 'consultEditor', ecode, creater)
+
+                    for k, v in formal_editor_imgs_path.items():
+                        if v:
+                            new_v = v.replace(ParamInfo.objects.get(param_name='upload_dir').param_value,
+                                              ParamInfo.objects.get(param_name='attachment_dir').param_value)
+                            owner_abstract_detail = owner_abstract_detail.replace(k, new_v)
+                    ResultOwnereBaseinfo.objects.filter(owner_code=ecode).update(
+                        owner_abstract_detail=owner_abstract_detail)
+
                     # 如果未回滚则删除临时目录的图片
-                    for f in [idfront, idback, idphoto, owner_license, logo, promotional]:
+                    old_img_list = [idfront, idback, idphoto, owner_license, logo, promotional]
+                    old_img_list.extend(editor_imgs_path.values())
+                    for f in old_img_list:
                         remove_img(f)
         except ValidationError:
-            for f in [formal_idfront, formal_idback, formal_idphoto, formal_license, formal_logo, formal_promotional]:
+            old_formal_imglist = [formal_idfront,
+                                   formal_idback,
+                                   formal_idphoto,
+                                   formal_license,
+                                   formal_logo,
+                                   formal_promotional]
+            old_formal_imglist.extend(formal_editor_imgs_path.values())
+            for f in old_formal_imglist:
                 remove_img(f)
             raise
         except Exception as e:
             # 如果已经回滚则删除正式目录的图片
-            for f in [formal_idfront, formal_idback, formal_idphoto, formal_license, formal_logo, formal_promotional]:
+            old_formal_imglist = [formal_idfront,
+                                   formal_idback,
+                                   formal_idphoto,
+                                   formal_license,
+                                   formal_logo,
+                                   formal_promotional]
+            old_formal_imglist.extend(formal_editor_imgs_path.values())
+            for f in old_formal_imglist:
                 remove_img(f)
             return Response({"detail": "创建失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
