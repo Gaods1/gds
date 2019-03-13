@@ -208,9 +208,9 @@ class PublicInfo(APIView):
                         # 删除表记录
                         AttachmentFileinfo.objects.filter(file_name=name).order_by('-insert_time')[0].delete()
                         # 删除表(pdf)记录
-                        path_pdf = AttachmentFileinfo.objects.filter(file_name=name_pdf)
-                        if path_pdf:
-                            path_pdf.order_by('-insert_time')[0].delete()
+                        #path_pdf = AttachmentFileinfo.objects.filter(file_name=name_pdf)
+                        #if path_pdf:
+                            #path_pdf.order_by('-insert_time')[0].delete()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '删除失败' % str(e)},status=400)
