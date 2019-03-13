@@ -42,7 +42,7 @@ class IdentityInfo(models.Model):
 # 领域专家审核申请表 *
 class ExpertApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
-    apply_code = models.CharField(max_length=64, default=gen_uuid32)
+    apply_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     expert_code = models.CharField(max_length=64)
     account_code = models.CharField(max_length=64, blank=True, null=True)
     state = models.IntegerField(default=1)
@@ -164,7 +164,7 @@ class ExpertCheckHistory(models.Model):
 # 技术经纪人审核申请表 *
 class BrokerApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
-    apply_code = models.CharField(max_length=64, default=gen_uuid32)
+    apply_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     broker_code = models.CharField(max_length=64, blank=True, null=True)     # 与技术经纪人基本信息表关联字段
     account_code = models.CharField(max_length=64, blank=True, null=True)    # 提交人，应该不会处理
     state = models.IntegerField(blank=True, null=True)                  # 审核状态  1， 待审核  2， 通过   3， 未通过
@@ -283,7 +283,7 @@ class BrokerCheckHistory(models.Model):
 # 采集员审核申请表 *
 class CollectorApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
-    apply_code = models.CharField(max_length=64, blank=True, null=True)
+    apply_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     collector_code = models.CharField(max_length=64, blank=True, null=True)
     account_code = models.CharField(max_length=64, blank=True, null=True)
     state = models.IntegerField(blank=True, null=True)      # 审核状态。 1：录入完毕，等待审核；2：审核通过，可以呈现；3：审核未通过；
@@ -387,7 +387,7 @@ class CollectorCheckHistory(models.Model):
 # 成果/需求持有人审核申请表 *
 class OwnerApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
-    apply_code = models.CharField(max_length=64, blank=True, null=True)
+    apply_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     owner_code = models.CharField(max_length=64, blank=True, null=True)      # 持有人角色code
     account_code = models.CharField(max_length=64, blank=True, null=True)   # 提交人
     state = models.IntegerField(blank=True, null=True)      # 审核状态。 1：录入完毕，等待审核；2：审核通过，可以呈现；3：审核未通过；
@@ -499,7 +499,7 @@ class OwnerpCheckHistory(models.Model):
 # 成果/需求持有人（企业）审核申请表 *
 class OwnereApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
-    apply_code = models.CharField(max_length=64, blank=True, null=True)
+    apply_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     owner_code = models.CharField(max_length=64, blank=True, null=True)      # 持有人角色编号
     state = models.IntegerField(blank=True, null=True)  # 审核状态。 1：录入完毕，等待审核；2：审核通过，可以呈现；3：审核未通过；
     apply_time = models.DateTimeField(auto_now_add=True)
@@ -730,7 +730,7 @@ class ProjectTeamMember(models.Model):
 # 技术团队审核申请表 *
 class TeamApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
-    apply_code = models.CharField(max_length=64, default=gen_uuid32)
+    apply_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     team_code = models.CharField(max_length=64, blank=True, null=True)  # 与技术团队关联字段
     account_code = models.CharField(max_length=64, blank=True, null=True)
     state = models.IntegerField(blank=True, null=True)

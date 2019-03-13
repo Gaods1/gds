@@ -298,14 +298,41 @@ class ExpertViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
-        data = request.data
-        pks = data.get('pks', [])
-        pks.append(kwargs['pk'])
-        expert = ExpertBaseinfo.objects.filter(serial__in=pks)
-        accounts = expert.values_list('account_code', flat=True)
-        identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=9)
-        expert.update(state=3)
-        identity.update(state=0, iae_time=datetime.datetime.now())
+        try:
+            with transaction.atomic():
+                data = request.data
+                pks = data.get('pks', [])
+                pks.append(kwargs['pk'])
+                expert = ExpertBaseinfo.objects.filter(serial__in=pks)
+                accounts = expert.values_list('account_code', flat=True)
+                expert_code = expert.values_list('expert_code', flat=True)
+                expert_apply_inserter = []
+                account = request.user.account
+                account_code = AccountInfo.objects.get(account=account).account_code
+                for ecode in expert_code:
+                    expert_apply_inserter.append(ExpertApplyHistory(
+                        expert_code=ecode,
+                        account_code=account_code,
+                        state=2, apply_time=datetime.datetime.now(),
+                        apply_type=3))
+                es = ExpertApplyHistory.objects.bulk_create(expert_apply_inserter)
+                check_history_inserter = []
+                for e in es:
+                    check_history_inserter.append(ExpertCheckHistory(
+                        apply_code=e.apply_code,
+                        opinion="管理系统关闭身份",
+                        result=2,
+                        check_time=datetime.datetime.now(),
+                        account=account,
+                    ))
+                ExpertCheckHistory.objects.bulk_create(check_history_inserter)
+                identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=9)
+                expert.update(state=3)
+                identity.update(state=0, iae_time=datetime.datetime.now())
+        except ValidationError:
+            raise
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -707,14 +734,42 @@ class BrokerViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
-        data = request.data
-        pks = data.get('pks', [])
-        pks.append(kwargs['pk'])
-        expert = BrokerBaseinfo.objects.filter(serial__in=pks)
-        accounts = expert.values_list('account_code', flat=True)
-        identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=2)
-        expert.update(state=3)
-        identity.update(state=0, iae_time=datetime.datetime.now())
+        try:
+            with transaction.atomic():
+                data = request.data
+                pks = data.get('pks', [])
+                pks.append(kwargs['pk'])
+                expert = BrokerBaseinfo.objects.filter(serial__in=pks)
+                accounts = expert.values_list('account_code', flat=True)
+                expert_code = expert.values_list('broker_code', flat=True)
+                expert_apply_inserter = []
+                account = request.user.account
+                account_code = AccountInfo.objects.get(account=account).account_code
+                for ecode in expert_code:
+                    expert_apply_inserter.append(BrokerApplyHistory(
+                        broker_code=ecode,
+                        account_code=account_code,
+                        state=2,
+                        apply_time=datetime.datetime.now(),
+                        apply_type=3))
+                es = BrokerApplyHistory.objects.bulk_create(expert_apply_inserter)
+                check_history_inserter = []
+                for e in es:
+                    check_history_inserter.append(BrokerCheckHistory(
+                        apply_code=e.apply_code,
+                        opinion="管理系统关闭身份",
+                        result=2,
+                        check_time=datetime.datetime.now(),
+                        account=account,
+                    ))
+                BrokerCheckHistory.objects.bulk_create(check_history_inserter)
+                identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=2)
+                expert.update(state=3)
+                identity.update(state=0, iae_time=datetime.datetime.now())
+        except ValidationError:
+            raise
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -1100,14 +1155,42 @@ class CollectorViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
-        data = request.data
-        pks = data.get('pks', [])
-        pks.append(kwargs['pk'])
-        expert = CollectorBaseinfo.objects.filter(serial__in=pks)
-        accounts = expert.values_list('account_code', flat=True)
-        identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=1)
-        expert.update(state=3)
-        identity.update(state=0, iae_time=datetime.datetime.now())
+        try:
+            with transaction.atomic():
+                data = request.data
+                pks = data.get('pks', [])
+                pks.append(kwargs['pk'])
+                expert = CollectorBaseinfo.objects.filter(serial__in=pks)
+                accounts = expert.values_list('account_code', flat=True)
+                expert_code = expert.values_list('collector_code', flat=True)
+                expert_apply_inserter = []
+                account = request.user.account
+                account_code = AccountInfo.objects.get(account=account).account_code
+                for ecode in expert_code:
+                    expert_apply_inserter.append(CollectorApplyHistory(
+                        collector_code=ecode,
+                        account_code=account_code,
+                        state=2,
+                        apply_time=datetime.datetime.now(),
+                        apply_type=3))
+                es = CollectorApplyHistory.objects.bulk_create(expert_apply_inserter)
+                check_history_inserter = []
+                for e in es:
+                    check_history_inserter.append(CollectorCheckHistory(
+                        apply_code=e.apply_code,
+                        opinion="管理系统关闭身份",
+                        result=2,
+                        check_time=datetime.datetime.now(),
+                        account=account,
+                    ))
+                CollectorCheckHistory.objects.bulk_create(check_history_inserter)
+                identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=1)
+                expert.update(state=3)
+                identity.update(state=0, iae_time=datetime.datetime.now())
+        except ValidationError:
+            raise
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -1513,14 +1596,42 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
-        data = request.data
-        pks = data.get('pks', [])
-        pks.append(kwargs['pk'])
-        expert = ResultOwnerpBaseinfo.objects.filter(serial__in=pks)
-        accounts = expert.values_list('account_code', flat=True)
-        identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=4)
-        expert.update(state=3)
-        identity.update(state=0, iae_time=datetime.datetime.now())
+        try:
+            with transaction.atomic():
+                data = request.data
+                pks = data.get('pks', [])
+                pks.append(kwargs['pk'])
+                expert = ResultOwnerpBaseinfo.objects.filter(serial__in=pks)
+                accounts = expert.values_list('account_code', flat=True)
+                expert_code = expert.values_list('owner_code', flat=True)
+                expert_apply_inserter = []
+                account = request.user.account
+                account_code = AccountInfo.objects.get(account=account).account_code
+                for ecode in expert_code:
+                    expert_apply_inserter.append(OwnerApplyHistory(
+                        owner_code=ecode,
+                        account_code=account_code,
+                        state=2,
+                        apply_time=datetime.datetime.now(),
+                        apply_type=3))
+                es = OwnerApplyHistory.objects.bulk_create(expert_apply_inserter)
+                check_history_inserter = []
+                for e in es:
+                    check_history_inserter.append(OwnerpCheckHistory(
+                        apply_code=e.apply_code,
+                        opinion="管理系统关闭身份",
+                        result=2,
+                        check_time=datetime.datetime.now(),
+                        account=account,
+                    ))
+                OwnerpCheckHistory.objects.bulk_create(check_history_inserter)
+                identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=4)
+                expert.update(state=3)
+                identity.update(state=0, iae_time=datetime.datetime.now())
+        except ValidationError:
+            raise
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -1554,7 +1665,9 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
             "or override the `get_queryset()` method."
             % self.__class__.__name__
         )
-        queryset = self.queryset.filter(owner_code__in=ResultOwnerpBaseinfo.objects.values_list('owner_code').filter(type=1))
+        queryset = self.queryset.filter(owner_code__in=ResultOwnerpBaseinfo.objects.values_list(
+            'owner_code'
+        ).filter(type=1))
         if isinstance(queryset, QuerySet):
             queryset = queryset.all()
         return queryset
@@ -1603,7 +1716,8 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
                         pcode = update_or_crete_person(baseinfo.pcode, pinfo)
 
                         # 更新角色基本信息表
-                        update_baseinfo(ResultOwnerpBaseinfo, {'owner_code': baseinfo.owner_code}, {'state': 1, 'pcode': pcode})
+                        update_baseinfo(ResultOwnerpBaseinfo, {'owner_code': baseinfo.owner_code},
+                                        {'state': 1, 'pcode': pcode})
 
                         # 给账号绑定角色
                         # if baseinfo.account_code:
@@ -1759,7 +1873,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 }
 
                 # 查询当前账号有没有伪删除身份
-                obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, state=3, type=1)
+                obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, state=3, type=1)
                 if obj:
                     # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
                     check_identity2(account_code=account_code, identity=5, info=identity_info)
@@ -1962,45 +2076,43 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
             transaction.savepoint_commit(save_id)
             return Response(dict)
 
-
     def destroy(self, request, *args, **kwargs):
-        with transaction.atomic():
-            save_id = transaction.savepoint()
+        try:
+            with transaction.atomic():
+                data = request.data
+                pks = data.get('pks', [])
+                pks.append(kwargs['pk'])
+                expert = ResultOwnereBaseinfo.objects.filter(serial__in=pks)
+                accounts = expert.values_list('account_code', flat=True)
+                expert_code = expert.values_list('owner_code', flat=True)
+                expert_apply_inserter = []
+                account = request.user.account
+                for ecode in expert_code:
+                    expert_apply_inserter.append(OwnereApplyHistory(
+                        owner_code=ecode,
+                        state=2,
+                        apply_time=datetime.datetime.now(),
+                        apply_type=3))
+                es = OwnereApplyHistory.objects.bulk_create(expert_apply_inserter)
+                check_history_inserter = []
+                for e in es:
+                    check_history_inserter.append(OwnereCheckHistory(
+                        apply_code=e.apply_code,
+                        opinion="管理系统关闭身份",
+                        result=2,
+                        check_time=datetime.datetime.now(),
+                        account=account,
+                    ))
+                OwnereCheckHistory.objects.bulk_create(check_history_inserter)
+                identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=5)
+                expert.update(state=3)
+                identity.update(state=0, iae_time=datetime.datetime.now())
+        except ValidationError:
+            raise
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-            try:
-                instance = self.get_object()
-                serializer_ecode = instance.owner_code
-                account_code = instance.account_code
-
-                # 1 删除所属领域表记录
-                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
-
-                # 2 删除identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
-
-                # 3 删除文件以及ecode表记录
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
-                if obj:
-                    try:
-                        for i in obj:
-                            url = '{}{}{}'.format(relative_path, i.path, i.file_name)
-                            # 创建对象
-                            a = FileSystemStorage()
-                            # 删除文件
-                            a.delete(url)
-                            # 删除表记录
-                            i.delete()
-                    except Exception as e:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('删除失败' % str(e))
-
-                self.perform_destroy(instance)
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('删除失败%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return HttpResponse('OK')
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # 成果持有人（企业）申请视图
@@ -2433,43 +2545,44 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
             return Response(dict)
 
     def destroy(self, request, *args, **kwargs):
-        with transaction.atomic():
-            save_id = transaction.savepoint()
+        try:
+            with transaction.atomic():
+                data = request.data
+                pks = data.get('pks', [])
+                pks.append(kwargs['pk'])
+                expert = ResultOwnerpBaseinfo.objects.filter(serial__in=pks)
+                accounts = expert.values_list('account_code', flat=True)
+                expert_code = expert.values_list('owner_code', flat=True)
+                expert_apply_inserter = []
+                account = request.user.account
+                account_code = AccountInfo.objects.get(account=account).account_code
+                for ecode in expert_code:
+                    expert_apply_inserter.append(OwnerApplyHistory(
+                        owner_code=ecode,
+                        account_code=account_code,
+                        state=2,
+                        apply_time=datetime.datetime.now(),
+                        apply_type=3))
+                es = OwnerApplyHistory.objects.bulk_create(expert_apply_inserter)
+                check_history_inserter = []
+                for e in es:
+                    check_history_inserter.append(OwnerpCheckHistory(
+                        apply_code=e.apply_code,
+                        opinion="管理系统关闭身份",
+                        result=2,
+                        check_time=datetime.datetime.now(),
+                        account=account,
+                    ))
+                OwnerpCheckHistory.objects.bulk_create(check_history_inserter)
+                identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=6)
+                expert.update(state=3)
+                identity.update(state=0, iae_time=datetime.datetime.now())
+        except ValidationError:
+            raise
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-            try:
-                instance = self.get_object()
-                serializer_ecode = instance.owner_code
-                account_code = instance.account_code
-
-                # 1 删除所属领域表记录
-                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
-
-                # 2 删除identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
-
-                # 3 删除文件以及ecode表记录
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
-                if obj:
-                    try:
-                        for i in obj:
-                            url = '{}{}{}'.format(relative_path, i.path, i.file_name)
-                            # 创建对象
-                            a = FileSystemStorage()
-                            # 删除文件
-                            a.delete(url)
-                            # 删除表记录
-                            i.delete()
-                    except Exception as e:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('删除失败' % str(e))
-
-                self.perform_destroy(instance)
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('删除失败%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return HttpResponse('OK')
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # 需求持有人申请视图
@@ -2891,43 +3004,42 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
             return Response(dict)
 
     def destroy(self, request, *args, **kwargs):
-        with transaction.atomic():
-            save_id = transaction.savepoint()
+        try:
+            with transaction.atomic():
+                data = request.data
+                pks = data.get('pks', [])
+                pks.append(kwargs['pk'])
+                expert = ResultOwnereBaseinfo.objects.filter(serial__in=pks)
+                accounts = expert.values_list('account_code', flat=True)
+                expert_code = expert.values_list('owner_code', flat=True)
+                expert_apply_inserter = []
+                account = request.user.account
+                for ecode in expert_code:
+                    expert_apply_inserter.append(OwnereApplyHistory(
+                        owner_code=ecode,
+                        state=2,
+                        apply_time=datetime.datetime.now(),
+                        apply_type=3))
+                es = OwnereApplyHistory.objects.bulk_create(expert_apply_inserter)
+                check_history_inserter = []
+                for e in es:
+                    check_history_inserter.append(OwnereCheckHistory(
+                        apply_code=e.apply_code,
+                        opinion="管理系统关闭身份",
+                        result=2,
+                        check_time=datetime.datetime.now(),
+                        account=account,
+                    ))
+                OwnereCheckHistory.objects.bulk_create(check_history_inserter)
+                identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=7)
+                expert.update(state=3)
+                identity.update(state=0, iae_time=datetime.datetime.now())
+        except ValidationError:
+            raise
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-            try:
-                instance = self.get_object()
-                serializer_ecode = instance.owner_code
-                account_code = instance.account_code
-
-                # 1 删除所属领域表记录
-                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
-
-                # 2 删除identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
-
-                # 3 删除文件以及ecode表记录
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
-                if obj:
-                    try:
-                        for i in obj:
-                            url = '{}{}{}'.format(relative_path, i.path, i.file_name)
-                            # 创建对象
-                            a = FileSystemStorage()
-                            # 删除文件
-                            a.delete(url)
-                            # 删除表记录
-                            i.delete()
-                    except Exception as e:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('删除失败%s' % str(e))
-
-                self.perform_destroy(instance)
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('删除失败%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return HttpResponse('OK')
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # 需求持有企业申请视图
@@ -3133,6 +3245,46 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
             return JsonResponse({"state": 0, "msg": fail_msg})
 
         return JsonResponse({"state": 1, "msg": "创建成功"})
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                data = request.data
+                pks = data.get('pks', [])
+                pks.append(kwargs['pk'])
+                expert = ProjectTeamBaseinfo.objects.filter(serial__in=pks)
+                accounts = expert.values_list('account_code', flat=True)
+                expert_code = expert.values_list('pt_code', flat=True)
+                expert_apply_inserter = []
+                account = request.user.account
+                account_code = AccountInfo.objects.get(account=account).account_code
+                for ecode in expert_code:
+                    expert_apply_inserter.append(TeamApplyHistory(
+                        team_code=ecode,
+                        account_code=account_code,
+                        state=2, apply_time=datetime.datetime.now(),
+                        apply_type=3))
+                es = TeamApplyHistory.objects.bulk_create(expert_apply_inserter)
+                check_history_inserter = []
+                for e in es:
+                    check_history_inserter.append(TeamCheckHistory(
+                        apply_code=e.apply_code,
+                        opinion="管理系统关闭身份",
+                        result=2,
+                        check_time=datetime.datetime.now(),
+                        account=account,
+                    ))
+                TeamCheckHistory.objects.bulk_create(check_history_inserter)
+                identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=3)
+                expert.update(state=3)
+                identity.update(state=0, iae_time=datetime.datetime.now())
+        except ValidationError:
+            raise
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 
 # 技术团队申请视图
