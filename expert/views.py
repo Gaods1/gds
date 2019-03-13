@@ -1416,6 +1416,9 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                     'account_code': account_code
                 }
 
+                # 查询是否存在成果持有企业身份
+                if ResultOwnereBaseinfo.objects.filter(account_code=account_code, type=1, state__in=[1, 2]):
+                    raise ValueError('此账号已申请成果持有企业身份，不能成为持有个人')
                 # 查询当前账号有没有伪删除身份
                 obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, state=3, type=1)
                 if obj:
@@ -1879,6 +1882,9 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                     'creater': creater,
                     'account_code': account_code
                 }
+                # 验证是否存在成果持有人个人身份
+                if ResultOwnerpBaseinfo.objects.filter(account_code=account_code, type=1, state__in=[1, 2]):
+                    raise ValueError('此账号已申请成果持有企业身份，不能成为持有个人')
 
                 # 查询当前账号有没有伪删除身份
                 obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, state=3, type=1)
