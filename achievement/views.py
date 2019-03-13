@@ -241,7 +241,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         mm = Message.objects.create(**{
                             'message_title': '成果消息审核通知',
                             'message_content': history.opinion,
-                            'account_code': request.user.account_code,
+                            'account_code': Results.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                             'sender': request.user.account,
@@ -321,7 +321,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         mm = Message.objects.create(**{
                             'message_title': '成果消息审核通知',
                             'message_content': history.opinion,
-                            'account_code': request.user.account_code,
+                            'account_code': Results.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                             'sender': request.user.account,
@@ -465,7 +465,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         mm = Message.objects.create(**{
                             'message_title': '成果消息审核通知',
                             'message_content': history.opinion,
-                            'account_code': request.user.account_code,
+                            'account_code': Results.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                             'sender': request.user.account,
@@ -541,7 +541,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         mm = Message.objects.create(**{
                             'message_title': '成果消息审核通知',
                             'message_content': history.opinion,
-                            'account_code': request.user.account_code,
+                            'account_code': Results.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                             'sender': request.user.account,
@@ -776,7 +776,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         mm = Message.objects.create(**{
                             'message_title': '需求消息审核通知',
                             'message_content': history.opinion,
-                            'account_code': request.user.account_code,
+                            'account_code': Requirements.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                             'sender': request.user.account,
@@ -856,7 +856,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         mm = Message.objects.create(**{
                             'message_title': '需求消息审核通知',
                             'message_content': history.opinion,
-                            'account_code': request.user.account_code,
+                            'account_code': Requirements.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                             'sender': request.user.account,
@@ -1001,7 +1001,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         mm = Message.objects.create(**{
                             'message_title': '需求消息审核通知',
                             'message_content': history.opinion,
-                            'account_code': request.user.account_code,
+                            'account_code': Requirements.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                             'sender': request.user.account,
@@ -1077,7 +1077,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         mm = Message.objects.create(**{
                             'message_title': '需求消息审核通知',
                             'message_content': history.opinion,
-                            'account_code': request.user.account_code,
+                            'account_code': Requirements.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                             'sender': request.user.account,
@@ -1182,6 +1182,11 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 if not single_dict or not attachment_list:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail':'请先上传相关文件'},status=400)
+
+                # 时间空字符串处理
+                list = ['expiry_dateb','expiry_datee','rexpiry_dateb','rexpiry_datee']
+                for key in list:
+                    request.data[key] = request.data[key] if request.data.get(key, None) else None
 
                 pcode = None
                 ecode = None
@@ -1463,6 +1468,11 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 if not mname_list or not cooperation_name  or not owner_type or not key_info_list or not obtain_type or not owner_type or not account_code:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '请完善相关信息'}, status=400)
+
+                # 时间空字符串处理
+                list = ['expiry_dateb', 'expiry_datee', 'rexpiry_dateb', 'rexpiry_datee']
+                for key in list:
+                    request.data[key] = request.data[key] if request.data.get(key, None) else None
 
                 pcode = None
                 ecode = None
@@ -1797,6 +1807,11 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     #return Response({'detail': '该用户名不存在'}, status=400)
                 #account_code = account_code_list[0].account_code
 
+                # 时间空字符串处理
+                list = ['expiry_dateb', 'expiry_datee']
+                for key in list:
+                    request.data[key] = request.data[key] if request.data.get(key, None) else None
+
                 pcode = None
                 ecode = None
 
@@ -2075,6 +2090,11 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 #if not account_code_list:
                     #return Response({'detail': '该用户名不存在'}, status=400)
                 #account_code = account_code_list[0].account_code
+
+                # 时间空字符串处理
+                list = ['expiry_dateb', 'expiry_datee']
+                for key in list:
+                    request.data[key] = request.data[key] if request.data.get(key, None) else None
 
                 pcode = None
                 ecode = None
