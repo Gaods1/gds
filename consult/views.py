@@ -212,6 +212,27 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                                 # 7 保存短信发送记录
                                 if int(sms_ret) == 1:
                                     Message.objects.bulk_create(message_list)
+
+                    #添加给征询发布者发送通知消息
+                    if check_state == 1:
+                        check_result = '通过'
+                    else:
+                        check_result = '未通过'
+                    Message.objects.create(
+                        message_title='征询审核结果通知',
+                        message_content='您的征询:' + consult_info.consult_title + '审核'+check_result+'，请登陆平台到个人中心查看',
+                        account_code=consult_info.consulter,
+                        state=0,
+                        send_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                        sender=request.user.account,
+                        sms=0,
+                        sms_state=0,
+                        sms_phone='',
+                        email=0,
+                        email_state=0,
+                        email_account='',
+                        type=2
+                    )
             except Exception as e:
                 fail_msg = "审核失败%s" % str(e)
                 return JsonResponse({"state" : 0, "msg" : fail_msg})
