@@ -1244,8 +1244,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 #2 创建合作方式表
                 dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
                 ResultsCooperationTypeInfo.objects.create(r_type=1,
-                rr_code=serializer_ecode,
-                cooperation_name=cooperation_name, state=state)
+                rr_code=serializer_ecode,cooperation_code=cooperation_name,
+                cooperation_name=dict_coop[cooperation_name], state=state)
 
                 #3 创建持有人信息表
                 ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
@@ -1503,8 +1503,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 # 2 创建合作方式表
                 dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
                 ResultsCooperationTypeInfo.objects.filter(rr_code=serializer_ecode).update(
-                rr_code=serializer_ecode,r_type=1,
-                cooperation_name=cooperation_name, state=state)
+                rr_code=serializer_ecode,r_type=1,cooperation_code=cooperation_name,
+                cooperation_name=dict_coop[cooperation_name], state=state)
 
                 # 3 更新持有人信息表
                 ResultsOwnerInfo.objects.filter(r_code=serializer_ecode).update(
@@ -1798,42 +1798,43 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 if obtain_type == 1:
                     # 个人或者团队
                     if owner_type in [1, 3]:
-                        pname = request.data.pop('pname', None)
-                        pname_element = PersonalInfo.objects.filter(pname=pname)
-                        if not pname_element:
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该个人基本信息不存在'}, status=400)
-                        pcode = pname_element[0].pcode
+                        # pname = request.data.pop('pname', None)
+                        # pname_element = PersonalInfo.objects.filter(pname=pname)
+                        # if not pname_element:
+                        # transaction.savepoint_rollback(save_id)
+                        # return Response({'detail': '该个人基本信息不存在'}, status=400)
+                        pcode = request.data.pop('pcode', None)
 
                     else:
-                        ename = request.data.pop('ename', None)
-                        ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
-                        if not ename_element:
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该企业基本信息不存在'}, status=400)
-                        ecode = ename_element[0].ecode
+                        # ename = request.data.pop('ename', None)
+                        # ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
+                        # if not ename_element:
+                        # transaction.savepoint_rollback(save_id)
+                        # return Response({'detail': '该企业基本信息不存在'}, status=400)
+                        ecode = request.data.pop('ecode', None)
                 else:
                     if owner_type in [1, 3]:
-                        pname = request.data.pop('pname', None)
-                        pname_element = PersonalInfo.objects.filter(pname=pname)
-                        if not pname_element:
+                        # pname = request.data.pop('pname', None)
+                        # pname_element = PersonalInfo.objects.filter(pname=pname)
+                        # if not pname_element:
+                        # transaction.savepoint_rollback(save_id)
+                        # return Response({'detail': '该个人基本信息不存在'}, status=400)
+                        pcode = request.data.pop('pcode', None)
+                        p_account_code = PersonalInfo.objects.get(pcode=pcode).account_code
+                        if account_code != p_account_code:
                             transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该个人基本信息不存在'}, status=400)
-                        pcode = pname_element[0].pcode
-                        if account_code != pname_element[0].account_code:
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
+                            return Response({'detail': '该角色不是需求持有人(个人)身份'}, status=400)
                     else:
-                        ename = request.data.pop('ename', None)
-                        ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
-                        if not ename_element:
+                        # ename = request.data.pop('ename', None)
+                        # ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
+                        # if not ename_element:
+                        # transaction.savepoint_rollback(save_id)
+                        # return Response({'detail': '该企业基本信息不存在'}, status=400)
+                        ecode = request.data.pop('ecode', None)
+                        e_account_code = EnterpriseBaseinfo.objects.get(ecode=ecode).account_code
+                        if account_code != e_account_code:
                             transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该企业基本信息不存在'}, status=400)
-                        ecode = ename_element[0].ecode
-                        if account_code != ename_element[0].account_code:
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
-
+                            return Response({'detail': '该角色不是需求持有人(个人)身份'}, status=400)
                 pcode_or_ecode = pcode if pcode else ecode
 
                 # 1 创建resultsinfo表
@@ -1849,8 +1850,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 # 2 创建合作方式表
                 dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
                 ResultsCooperationTypeInfo.objects.create(r_type=2,
-                                                          rr_code=serializer_ecode,
-                                                          cooperation_name=cooperation_name, state=state)
+                                                          rr_code=serializer_ecode,cooperation_code=cooperation_name,
+                                                          cooperation_name=dict_coop[cooperation_name], state=state)
 
                 # 3 创建持有人信息表
                 ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
@@ -2074,35 +2075,21 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 if obtain_type == 1:
                     # 个人或者团队
                     if owner_type in [1, 3]:
-                        pname = request.data.pop('pname', None)
-                        pname_element = PersonalInfo.objects.filter(pname=pname)
-                        if not pname_element:
-                            return Response({'detail': '该个人基本信息不存在'}, status=400)
-                        pcode = pname_element[0].pcode
+                        pcode = request.data.pop('pcode', None)
 
                     else:
-                        ename = request.data.pop('ename', None)
-                        ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
-                        if not ename_element:
-                            return Response({'detail': '该企业基本信息不存在'}, status=400)
-                        ecode = ename_element[0].ecode
+                        ecode = request.data.pop('ecode', None)
                 else:
                     if owner_type in [1, 3]:
-                        pname = request.data.pop('pname', None)
-                        pname_element = PersonalInfo.objects.filter(pname=pname)
-                        if not pname_element:
-                            return Response({'detail': '该个人基本信息不存在'}, status=400)
-                        pcode = pname_element[0].pcode
-                        if account_code != pname_element[0].account_code:
-                            return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
+                        pcode = request.data.pop('pcode', None)
+                        p_account_code = PersonalInfo.objects.get(pcode=pcode).account_code
+                        if account_code != p_account_code:
+                            return Response({'detail': '该角色不是需求持有人(个人)身份'}, status=400)
                     else:
-                        ename = request.data.pop('ename', None)
-                        ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
-                        if not ename_element:
-                            return Response({'detail': '该企业基本信息不存在'}, status=400)
-                        ecode = ename_element[0].ecode
-                        if account_code != ename_element[0].account_code:
-                            return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
+                        ecode = request.data.pop('ecode', None)
+                        e_account_code = EnterpriseBaseinfo.objects.get(ecode=ecode).account_code
+                        if account_code != e_account_code:
+                            return Response({'detail': '该角色不是需求持有人(个人)身份'}, status=400)
 
                 pcode_or_ecode = pcode if pcode else ecode
 
@@ -2122,8 +2109,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 # 2 创建合作方式表
                 dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
                 ResultsCooperationTypeInfo.objects.filter(rr_code=serializer_ecode).update(
-                    rr_code=serializer_ecode, r_type=2,
-                    cooperation_name=cooperation_name, state=state)
+                    rr_code=serializer_ecode, r_type=2,cooperation_code=cooperation_name,
+                    cooperation_name=dict_coop[cooperation_name], state=state)
 
                 # 3 更新持有人信息表
                 ResultsOwnerInfo.objects.filter(r_code=serializer_ecode).update(
