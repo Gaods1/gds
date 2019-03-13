@@ -79,11 +79,11 @@ class KeywordsInfoSerializer(serializers.ModelSerializer):
 # 成果信息表序列化
 class ResultsInfoSerializer(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    expiry_dateb = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
-    expiry_datee = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
-    rexpiry_dateb = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
-    rexpiry_datee = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
-    sniff_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    expiry_dateb = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False,allow_null=True)
+    expiry_datee = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False,allow_null=True)
+    rexpiry_dateb = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False,allow_null=True)
+    rexpiry_datee = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False,allow_null=True)
+    sniff_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False,allow_null=True)
     mcode = serializers.ListField(max_length=16, read_only=True)
     mname = serializers.ListField(max_length=16, read_only=True)
     Attach = serializers.ListField(read_only=True)
@@ -150,9 +150,9 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
 # 需求信息表序列化
 class RequirementsInfoSerializer(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    expiry_dateb = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
-    expiry_datee = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
-    sniff_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    expiry_dateb = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False,allow_null=True)
+    expiry_datee = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False,allow_null=True)
+    sniff_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False,allow_null=True)
     mcode = serializers.ListField(max_length=16, read_only=True)
     mname = serializers.ListField(max_length=16, read_only=True)
     Attach = serializers.ListField(read_only=True)
