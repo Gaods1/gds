@@ -241,7 +241,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         mm = Message.objects.create(**{
                             'message_title': '成果消息审核通知',
                             'message_content': history.opinion,
-                            'account_code': owner.owner_code,
+                            'account_code': request.user.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                             'sender': request.user.account,
@@ -321,7 +321,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         mm = Message.objects.create(**{
                             'message_title': '成果消息审核通知',
                             'message_content': history.opinion,
-                            'account_code': owner.owner_code,
+                            'account_code': request.user.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                             'sender': request.user.account,
@@ -465,7 +465,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         mm = Message.objects.create(**{
                             'message_title': '成果消息审核通知',
                             'message_content': history.opinion,
-                            'account_code': owner.owner_code,
+                            'account_code': request.user.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                             'sender': request.user.account,
@@ -541,7 +541,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         mm = Message.objects.create(**{
                             'message_title': '成果消息审核通知',
                             'message_content': history.opinion,
-                            'account_code': owner.owner_code,
+                            'account_code': request.user.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                             'sender': request.user.account,
@@ -776,7 +776,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         mm = Message.objects.create(**{
                             'message_title': '需求消息审核通知',
                             'message_content': history.opinion,
-                            'account_code': owner.owner_code,
+                            'account_code': request.user.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                             'sender': request.user.account,
@@ -856,7 +856,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         mm = Message.objects.create(**{
                             'message_title': '需求消息审核通知',
                             'message_content': history.opinion,
-                            'account_code': owner.owner_code,
+                            'account_code': request.user.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                             'sender': request.user.account,
@@ -1001,7 +1001,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         mm = Message.objects.create(**{
                             'message_title': '需求消息审核通知',
                             'message_content': history.opinion,
-                            'account_code': owner.owner_code,
+                            'account_code': request.user.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                             'sender': request.user.account,
@@ -1077,7 +1077,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         mm = Message.objects.create(**{
                             'message_title': '需求消息审核通知',
                             'message_content': history.opinion,
-                            'account_code': owner.owner_code,
+                            'account_code': request.user.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                             'sender': request.user.account,
@@ -1299,6 +1299,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                     url_l = value.split('/')
                     url_file = url_l[-1]
+                    #url_32 = url_l[-2]
 
                     url_j_jpg = absolute_path+'temporary/' + account_code_office + '/' + url_file
                     if not os.path.exists(url_j_jpg):
@@ -1341,6 +1342,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 for attachment in attachment_list:
                     url_l = attachment.split('/')
                     url_file = url_l[-1]
+                    #url_32 = url_l[-2]
 
                     url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
                     #doc = os.path.splitext(url_file)[-1]
@@ -1555,6 +1557,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                         url_l = value.split('/')
                         url_file = url_l[-1]
+                        #url_32 = url_l[-2]
 
                         url_j_jpg = absolute_path+'temporary/' + account_code_office + '/' + url_file
                         if not os.path.exists(url_j_jpg):
@@ -1607,6 +1610,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     for attachment in attachment_list:
                         url_l = attachment.split('/')
                         url_file = url_l[-1]
+                        #url_32 = url_l[-2]
 
                         url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
                         #doc = os.path.split(url_file)[-1]
@@ -1768,7 +1772,9 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 # 激活状态
                 state = request.data.get('show_state', None)
                 # 关联帐号
-                user_name = request.data.pop('username', None)
+                #user_name = request.data.pop('username', None)
+
+                account_code = request.data.get('account_code', None)
 
                 obtain_type = request.data.get('obtain_type', None)
 
@@ -1782,14 +1788,14 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 if len(single_dict) != 1:
                     transaction.savepoint_rollback(save_id)
-                    return Response({'detail': '封面只能上传一张'}, status=400)
+                    return Response({'detail': '图片只能上传一张'}, status=400)
 
-                account_code_list = AccountInfo.objects.filter(user_name=user_name)
+                #account_code_list = AccountInfo.objects.filter(user_name=user_name)
 
-                if not account_code_list:
-                    transaction.savepoint_rollback(save_id)
-                    return Response({'detail': '该用户名不存在'}, status=400)
-                account_code = account_code_list[0].account_code
+                #if not account_code_list:
+                    #transaction.savepoint_rollback(save_id)
+                    #return Response({'detail': '该用户名不存在'}, status=400)
+                #account_code = account_code_list[0].account_code
 
                 pcode = None
                 ecode = None
@@ -2054,7 +2060,9 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 # 激活状态
                 state = request.data.get('show_state', None)
                 # 关联帐号
-                user_name = request.data.pop('username', None)
+                #user_name = request.data.pop('username', None)
+
+                account_code = request.data.get('account_code', None)
 
                 obtain_type = request.data.get('obtain_type', None)
 
@@ -2062,11 +2070,11 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '请完善相关信息'}, status=400)
 
-                account_code_list = AccountInfo.objects.filter(user_name=user_name)
+                #account_code_list = AccountInfo.objects.filter(user_name=user_name)
 
-                if not account_code_list:
-                    return Response({'detail': '该用户名不存在'}, status=400)
-                account_code = account_code_list[0].account_code
+                #if not account_code_list:
+                    #return Response({'detail': '该用户名不存在'}, status=400)
+                #account_code = account_code_list[0].account_code
 
                 pcode = None
                 ecode = None
