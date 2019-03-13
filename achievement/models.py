@@ -256,6 +256,7 @@ class ResultsInfo(models.Model):
         mname = MajorInfo.objects.values_list('mname',flat=True).filter(mcode__in=mcode)
         return mname
 
+
     @property
     def username(self):
         username = AccountInfo.objects.values_list('user_name', flat=True).get(account_code=self.account_code,state=1)
