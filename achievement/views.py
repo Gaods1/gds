@@ -1405,8 +1405,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         dict_items[url_j_pdf]=url_x_pdf
 
                         # 32位随机字符串内容
-                        file_caption_pdf = url_file_pdf[33:]
-                        list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file_pdf, path=path,operation_state=3, state=1,file_caption=file_caption_pdf))
+                        #file_caption_pdf = url_file_pdf[33:]
+                        #list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file_pdf, path=path,operation_state=3, state=1,file_caption=file_caption_pdf))
                         url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                         list2.append(url_x_f_pdf)
                     else:
@@ -1703,10 +1703,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         dict_items[url_j_pdf] = url_x_pdf
 
                         # 32位随机字符串内容
-                        file_caption_pdf=url_file_pdf[33:]
-                        list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
-                                                        file_name=url_file_pdf, path=path, operation_state=3,
-                                                        state=1,file_caption=file_caption_pdf))
+                        #file_caption_pdf=url_file_pdf[33:]
+                        #list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
+                                                        #file_name=url_file_pdf, path=path, operation_state=3,
+                                                        #state=1,file_caption=file_caption_pdf))
                         url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                         list2.append(url_x_f_pdf)
                     else:
@@ -1943,7 +1943,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 # 临时目录当前登录账户文件夹
                 account_code_office = request.user.account_code
 
-                # 封面
+
                 for key, value in single_dict.items():
                     if len(key)==32:
                         tcode = AttachmentFileType.objects.get(tname='consultEditor').tcode
@@ -2041,10 +2041,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         dict_items[url_j]=url_x
                         dict_items[url_j_pdf]=url_x_pdf
 
-                        file_caption_pdf=url_file_pdf[33:]
-                        list1.append(
-                            AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file_pdf,
-                                               path=path, operation_state=3, state=1,file_caption=file_caption_pdf))
+                        #file_caption_pdf=url_file_pdf[33:]
+                        #list1.append(
+                            #AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file_pdf,
+                                               #path=path, operation_state=3, state=1,file_caption=file_caption_pdf))
                         url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                         list2.append(url_x_f_pdf)
                     else:
@@ -2338,10 +2338,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         dict_items[url_j]=url_x
                         dict_items[url_j_pdf] = url_x_pdf
 
-                        file_caption_pdf=url_file_pdf[33:]
-                        list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
-                                                        file_name=url_file_pdf, path=path, operation_state=3,
-                                                        state=1))
+                        #file_caption_pdf=url_file_pdf[33:]
+                        #list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
+                                                        #file_name=url_file_pdf, path=path, operation_state=3,
+                                                        #state=1))
                         url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                         list2.append(url_x_f_pdf)
                     else:
