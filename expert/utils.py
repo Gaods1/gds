@@ -205,8 +205,8 @@ def url_to_path(url):
         temp_url = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 读取多媒体文件的正式路径
         if temp_url in url:
             path = url.replace(temp_url, temp_path)
-        elif formal_url in url:
-            path = url.replace(formal_url, formal_path)
+        # elif formal_url in url:
+        #     path = url.replace(formal_url, formal_path)
     return path
 
 
