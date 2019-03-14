@@ -1829,7 +1829,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 creater = AccountInfo.objects.get(account=request.user.account).account_code
                 account_code = data['account_code']
 
-                major = data.pop('major', None)  # 相关领域（列表）
+                major = data.pop('major_code', None)  # 相关领域（列表）
                 idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
                 idback = url_to_path(data.pop('idback', None))     # 身份证背面
                 idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
@@ -2024,7 +2024,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 creater = AccountInfo.objects.get(account=request.user.account).account_code
                 account_code = data['account_code']
 
-                major = data.pop('major', None)  # 相关领域（列表）
+                major = data.pop('major_code', None)  # 相关领域（列表）
                 idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
                 idback = url_to_path(data.pop('idback', None))     # 身份证背面
                 idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
