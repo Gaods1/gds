@@ -91,8 +91,8 @@ class ExpertBaseinfo(models.Model):
     homepage = models.URLField(max_length=128, blank=True, null=True)
     expert_addr = models.CharField(max_length=255, blank=True, null=True)
     ecode = models.CharField(max_length=64, blank=True, null=True)
-    expert_level = models.IntegerField(default=1)
-    credit_value = models.IntegerField(default=0)
+    expert_level = models.IntegerField(default=1, null=True)
+    credit_value = models.IntegerField(default=0, null=True)
     expert_integral = models.IntegerField(blank=True, null=True)
     state = models.IntegerField(default=2)  # 1 正常， 2 暂停 3 伪删除
     creater = models.CharField(max_length=32, blank=True, null=True)
