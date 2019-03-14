@@ -127,12 +127,7 @@ class PublicInfo(APIView):
                         # 给前端抛出文件路径
                         u_z = url.split('/')[-1]
                         jpg = self.absolute_path_front + 'temporary/' + account_code + '/'+ u_z
-
-                        # 富文本内容
-                        if flag=='consultEditor':
-                            dict[''.join(str(uuid.uuid1()).split('-'))]=jpg
-                        else:
-                            dict[flag] = jpg
+                        dict[flag] = jpg
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '上传失败%s' % str(e)},status=400)
