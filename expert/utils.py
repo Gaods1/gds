@@ -224,7 +224,7 @@ def copy_img(url, identity, img_type, ecode, creater):
                 os.makedirs(file_formal_path)
             formal_file = shutil.copyfile(url, file_path)
             path = os.path.join(identity, tcode, ecode) + '/'
-            if not img_type != 'consultEditor':
+            if img_type != 'consultEditor':
                 AttachmentFileinfo.objects.filter(ecode=ecode, tcode=tcode, file_name=file_name).delete()
                 AttachmentFileinfo.objects.create(ecode=ecode, tcode=tcode, file_format=1, file_name=file_name,
                                                   state=1, publish=1, file_order=0, operation_state=3,
