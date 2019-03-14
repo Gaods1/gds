@@ -1161,6 +1161,12 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 data = request.data
                 # 图片
                 single_dict = request.data.pop('Cover', None)
+
+                identityFront = single_dict.get('identityFront', None)
+                identityBack = single_dict.get('identityBack', None)
+                handIdentityPhoto = single_dict.get('handIdentityPhoto', None)
+                entLicense = single_dict.get('entLicense', None)
+                agreement = single_dict.get('agreement', None)
                 # 附件
                 attachment_list = request.data.pop('Attach', None)
                 # 所属领域表
@@ -1180,16 +1186,22 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 state = request.data.get('show_state', None)
                 # 关联帐号
                 account_code = request.data.get('account_code', None)
-
+                # 获取方式
                 obtain_type = request.data.get('obtain_type',None)
 
-                if not mname_list or not cooperation_name  or not owner_type or not key_info_list or not account_code or not obtain_type:
+                r_name = request.data.get('r_name',None)
+                expiry_dateb = request.data.get('expiry_dateb',None)
+                expiry_datee = request.data.get('expiry_datee',None)
+                r_form_type = request.data.get('r_form_type',None)
+                use_type = request.data.get('use_type', None)
+                patent_number = request.data.get('patent_number',None)
+                r_abstract = request.data.get('r_abstract',None)
+
+
+                if not mname_list or not cooperation_name or not owner_type or not key_info_list or not account_code or not obtain_type or not r_name or not expiry_dateb or not expiry_datee or not r_form_type or not use_type or not patent_number or not r_abstract:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail':'请完善相关信息'},status=400)
 
-                if not single_dict or not attachment_list:
-                    transaction.savepoint_rollback(save_id)
-                    return Response({'detail':'请先上传相关文件'},status=400)
 
                 # 时间空字符串处理
                 list = ['expiry_dateb','expiry_datee','rexpiry_dateb','rexpiry_datee']
@@ -1203,38 +1215,23 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 if obtain_type==1:
                     # 个人或者团队
                     if owner_type in [1, 3]:
-                        #pname = request.data.pop('pname', None)
-                        #pname_element = PersonalInfo.objects.filter(pname=pname)
-                        #if not pname_element:
-                            #transaction.savepoint_rollback(save_id)
-                            #return Response({'detail': '该个人基本信息不存在'}, status=400)
+                        if not identityFront or not identityBack or not handIdentityPhoto or not agreement:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请上传相关证件照'}, status=400)
                         pcode = request.data.pop('pcode', None)
-
                     else:
-                        #ename = request.data.pop('ename', None)
-                        #ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
-                        #if not ename_element:
-                            #transaction.savepoint_rollback(save_id)
-                            #return Response({'detail': '该企业基本信息不存在'}, status=400)
+                        if not identityFront or not identityBack or not handIdentityPhoto or not agreement or not entLicense:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请上传相关证件照'}, status=400)
                         ecode = request.data.pop('ecode', None)
                 else:
                     if owner_type in [1, 3]:
-                        #pname = request.data.pop('pname', None)
-                        #pname_element = PersonalInfo.objects.filter(pname=pname)
-                        #if not pname_element:
-                            #transaction.savepoint_rollback(save_id)
-                            #return Response({'detail': '该个人基本信息不存在'}, status=400)
                         pcode = request.data.pop('pcode', None)
                         Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
                         if not Identity_account_code:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
                     else:
-                        #ename = request.data.pop('ename', None)
-                        #ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
-                        #if not ename_element:
-                            #transaction.savepoint_rollback(save_id)
-                            #return Response({'detail': '该企业基本信息不存在'}, status=400)
                         ecode = request.data.pop('ecode', None)
                         Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
                         if not Identity_account_code:
@@ -1242,6 +1239,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             return Response({'detail': '该角色不是成果持有人(企业)身份'}, status=400)
 
                 pcode_or_ecode = pcode if pcode else ecode
+                if not pcode_or_ecode:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '请选择个人基本信息或企业基本信息'}, status=400)
+
 
 
                 #1 创建resultsinfo表
@@ -1300,116 +1301,110 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 account_code_office = request.user.account_code
 
                # 图片
-                for key,value in single_dict.items():
+                if single_dict:
+                    for key,value in single_dict.items():
 
-                    tcode = AttachmentFileType.objects.get(tname=key).tcode
-                    tcode_editor = AttachmentFileType.objects.get(tname='consultEditor').tcode
-                    url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
-                    if not os.path.exists(url_x_c):
-                        os.makedirs(url_x_c)
+                        tcode = AttachmentFileType.objects.get(tname=key).tcode
+                        tcode_editor = AttachmentFileType.objects.get(tname='consultEditor').tcode
+                        url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
+                        if not os.path.exists(url_x_c):
+                            os.makedirs(url_x_c)
 
-                    url_l = value.split('/')
-                    url_file = url_l[-1]
-                    #url_32 = url_l[-2]
+                        url_l = value.split('/')
+                        url_file = url_l[-1]
 
-                    url_j_jpg = absolute_path+'temporary/' + account_code_office + '/' + url_file
-                    if not os.path.exists(url_j_jpg):
-                        transaction.savepoint_rollback(save_id)
-                        return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
-
-                    url_x_jpg = '{}{}/{}/{}/{}'.format(relative_path,param_value,tcode,serializer_ecode, url_file)
-                    if os.path.exists(url_x_jpg):
-                        transaction.savepoint_rollback(save_id)
-                        return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
-
-                    # 收集临时路径和正式路径
-                    dict_items[url_j_jpg]=url_x_jpg
-
-                    # 拼接给前端的的地址
-                    url_x_f = url_x_jpg.replace(relative_path,relative_path_front)
-                    list2.append(url_x_f)
-
-                    # 拼接ecode表中的path
-                    path = '{}/{}/{}/'.format(param_value,tcode,serializer_ecode)
-                    # 32位随机字符串内容
-                    file_caption = url_file[33:]
-                    list1.append(AttachmentFileinfo(tcode=tcode,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1,file_caption=file_caption))
-                    
-
-                for attachment in attachment_list:
-                    url_l = attachment.split('/')
-                    url_file = url_l[-1]
-                    #url_32 = url_l[-2]
-
-                    url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
-                    #doc = os.path.splitext(url_file)[-1]
-
-                    url_j = absolute_path+'temporary/' + account_code_office + '/' + url_file
-                    if not os.path.exists(url_j):
-                        transaction.savepoint_rollback(save_id)
-                        return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
-
-
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path,param_value,tcode_attachment, serializer_ecode, url_file)
-
-                    if os.path.exists(url_x):
-                        transaction.savepoint_rollback(save_id)
-                        return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
-
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
-
-
-                    path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                    # 32位随机字符串内容
-                    file_caption = url_file[33:]
-                    list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,operation_state=3, state=1,file_caption=file_caption))
-
-                    # 同路经下有pdf文件
-                    if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx'):
-                        #url_j_pdf = url_j.replace(doc,'pdf')
-                        #url_x_pdf = url_x.replace(doc,'pdf')
-                        url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
-                        url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
-
-
-                        if not os.path.exists(url_j_pdf):
+                        url_j_jpg = absolute_path+'temporary/' + account_code_office + '/' + url_file
+                        if not os.path.exists(url_j_jpg):
                             transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该临时路径下不存在该pdf文件,可能系统没有生成pdf文件'}, status=400)
+                            return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
 
-                        if os.path.exists(url_x_pdf):
+                        url_x_jpg = '{}{}/{}/{}/{}'.format(relative_path,param_value,tcode,serializer_ecode, url_file)
+                        if os.path.exists(url_x_jpg):
                             transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
+                            return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
 
-                        # 将doc临时目录转移到正式目录
-                        #shutil.move(url_j, url_x)
-                        # 将pdf临时目录转移到正式目录
-                        #shutil.move(url_j_pdf, url_x_pdf)
-                        dict_items[url_j]=url_x
-                        dict_items[url_j_pdf]=url_x_pdf
+                        # 收集临时路径和正式路径
+                        dict_items[url_j_jpg]=url_x_jpg
 
+                        # 拼接给前端的的地址
+                        url_x_f = url_x_jpg.replace(relative_path,relative_path_front)
+                        list2.append(url_x_f)
+
+                        # 拼接ecode表中的path
+                        path = '{}/{}/{}/'.format(param_value,tcode,serializer_ecode)
                         # 32位随机字符串内容
-                        #file_caption_pdf = url_file_pdf[33:]
-                        #list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file_pdf, path=path,operation_state=3, state=1,file_caption=file_caption_pdf))
-                        url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
-                        list2.append(url_x_f_pdf)
-                    else:
-                        # 将doc临时目录转移到正式目录
-                        #shutil.move(url_j, url_x)
-                        dict_items[url_j]=url_x
+                        file_caption = url_file[33:]
+                        list1.append(AttachmentFileinfo(tcode=tcode,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1,file_caption=file_caption,publish=1,file_format=1))
 
-                # 创建atachmentinfo表
-                AttachmentFileinfo.objects.bulk_create(list1)
+                if attachment_list:
+                    for attachment in attachment_list:
+                        url_l = attachment.split('/')
+                        url_file = url_l[-1]
+                        #url_32 = url_l[-2]
 
-                # 将临时目录转移到正式目录
-                for k,v in dict_items.items():
-                    shutil.move(k, v)
+                        url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
 
-                # 删除临时目录
-                #shutil.rmtree(absolute_path+'temporary/'+ account_code_office,ignore_errors=True)
+                        url_j = absolute_path+'temporary/' + account_code_office + '/' + url_file
+                        if not os.path.exists(url_j):
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
 
-                # 给前端抛正式目录
-                dict['url'] = list2
+
+                        url_x = '{}{}/{}/{}/{}'.format(relative_path,param_value,tcode_attachment, serializer_ecode, url_file)
+
+                        if os.path.exists(url_x):
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
+
+                        url_x_f = url_x.replace(relative_path, relative_path_front)
+                        list2.append(url_x_f)
+
+
+                        path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                        # 32位随机字符串内容
+                        file_caption = url_file[33:]
+                        list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,operation_state=3, state=1,file_caption=file_caption,publish=1,file_format=0))
+
+                        # 同路经下有pdf文件
+                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx'):
+                            url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
+                            url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
+
+
+                            if not os.path.exists(url_j_pdf):
+                                transaction.savepoint_rollback(save_id)
+                                return Response({'detail': '该临时路径下不存在该pdf文件,可能系统没有生成pdf文件'}, status=400)
+
+                            if os.path.exists(url_x_pdf):
+                                transaction.savepoint_rollback(save_id)
+                                return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
+
+                            # 将doc临时目录转移到正式目录
+                            dict_items[url_j]=url_x
+                            dict_items[url_j_pdf]=url_x_pdf
+
+                            # 32位随机字符串内容
+                            #file_caption_pdf = url_file_pdf[33:]
+                            #list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file_pdf, path=path,operation_state=3, state=1,file_caption=file_caption_pdf))
+                            url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
+                            list2.append(url_x_f_pdf)
+                        else:
+                            # 将doc临时目录转移到正式目录
+                            dict_items[url_j]=url_x
+                if list1:
+                    # 创建atachmentinfo表
+                    AttachmentFileinfo.objects.bulk_create(list1)
+
+                if dict_items:
+                    # 将临时目录转移到正式目录
+                    for k,v in dict_items.items():
+                        shutil.move(k, v)
+
+                    # 删除临时目录
+                    #shutil.rmtree(absolute_path+'temporary/'+ account_code_office,ignore_errors=True)
+
+                    # 给前端抛正式目录
+                    dict['url'] = list2
 
                 headers = self.get_success_headers(serializer.data)
                 #return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
@@ -1433,10 +1428,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 serializer_ecode = instance.r_code
 
                 data = request.data
-                # 图片
-                #single_dict = request.data.pop('Cover', None)
-                # 附件
-                #attachment_list = request.data.pop('Attach', None)
+
                 # 所属领域
                 mname_list = request.data.pop('mname',None)
                 # 成果/需求合作方式信息表
@@ -1446,9 +1438,6 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 owner_type = request.data.get('owner_type', None)
                 # 关键字表
                 key_info_list = request.data.pop('Keywords', None)
-                # 个人基本信息表或者企业基本信息表
-                #pcode_or_ecode = request.data.pop('pcode', None) if request.data.pop('pcode', None) else request.data.pop('ecode', None)
-                #pcode_or_ecode = request.data.pop('pcode', None)
 
                 # 激活状态
                 state = request.data.get('show_state', None)
@@ -1456,6 +1445,16 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 account_code = request.data.get('account_code', None)
 
                 obtain_type = request.data.get('obtain_type', None)
+
+                r_name = request.data.get('r_name', None)
+                expiry_dateb = request.data.get('expiry_dateb', None)
+                expiry_datee = request.data.get('expiry_datee', None)
+                r_form_type = request.data.get('r_form_type', None)
+                use_type = request.data.get('use_type', None)
+                patent_number = request.data.get('patent_number', None)
+                r_abstract = request.data.get('r_abstract',None)
+
+
                 # 附件
                 attachment_list = request.data.pop('Attach',None)
                 # 图片
@@ -1465,13 +1464,13 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 PerIdBack = request.data.pop('PerIdBack',None)
                 PerHandId = request.data.pop('PerHandId',None)
                 EntLicense = request.data.pop('EntLicense',None)
-                #consultEditor = request.data.pop('consultEditor',None)
+
 
                 single_dict={'identityFront':PerIdFront,'identityBack':PerIdBack,
                              'coverImg':Cover,'handIdentityPhoto':PerHandId,
                              'agreement':AgencyImg,'entLicense':EntLicense}
 
-                if not mname_list or not cooperation_name  or not owner_type or not key_info_list or not obtain_type or not owner_type or not account_code:
+                if not mname_list or not cooperation_name or not owner_type or not key_info_list or not account_code or not obtain_type or not r_name or not expiry_dateb or not expiry_datee or not r_form_type or not use_type or not patent_number or not r_abstract:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '请完善相关信息'}, status=400)
 
@@ -1488,9 +1487,15 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 if obtain_type == 1:
                     # 个人或者团队
                     if owner_type in [1, 3]:
+                        if not AgencyImg or not PerIdFront or not PerIdBack or not PerHandId:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请上传相关证件照'}, status=400)
                         pcode = request.data.pop('pcode', None)
 
                     else:
+                        if not AgencyImg or not PerIdFront or not PerIdBack or not PerHandId or not EntLicense:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请上传相关证件照'}, status=400)
                         ecode = request.data.pop('ecode', None)
                 else:
                     if owner_type in [1, 3]:
@@ -1505,6 +1510,9 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             return Response({'detail': '该角色不是成果持有人(企业)身份'}, status=400)
 
                 pcode_or_ecode = pcode if pcode else ecode
+                if not pcode_or_ecode:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '请选择个人基本信息或企业基本信息'}, status=400)
 
                 #1 更新resultsinfo表
                 data['obtain_source'] = pcode_or_ecode
@@ -1562,11 +1570,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 # 图片
                 for key,value in single_dict.items():
-                    # 富文本内容
-                    if len(key) == 32:
-                        tcode = AttachmentFileType.objects.get(tname='consultEditor').tcode
-                    else:
-                        tcode = AttachmentFileType.objects.get(tname=key).tcode
+
+                    tcode = AttachmentFileType.objects.get(tname=key).tcode
                     url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
                     if not os.path.exists(url_x_c):
                         os.makedirs(url_x_c)
@@ -1574,7 +1579,6 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         continue
                     url_l = value.split('/')
                     url_file = url_l[-1]
-                    #url_32 = url_l[-2]
 
                     element_a = AttachmentFileinfo.objects.filter(tcode=tcode,ecode=serializer_ecode,file_name=url_file)
                     if len(element_a)!=0:
@@ -1603,100 +1607,78 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     file_caption = url_file[33:]
                     list1.append(
                         AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
-                                           operation_state=3, state=1,file_caption=file_caption))
-                    # 富文本内容
-                    if len(key) == 32:
-                        url_j_f = url_j_jpg.replace(absolute_path, absolute_path_front)
-                        dict_editor = {}
-                        dict_editor[url_j_f] = url_x_f
-                        list3.append(dict_editor)
-                # 富文本内容
-                if list3:
-                    element = ResultsInfo.objects.get(r_code=serializer_ecode)
-                    detail = element.r_abstract_detail
-                    for i in list3:
-                        detail = detail.replace(list(i)[0], i[list(i)[0]])
-                    element.r_abstract_detail = detail
-                    element.save()
+                                           operation_state=3, state=1,file_caption=file_caption,publish=1,file_format=1))
 
                 # 附件
-                for attachment in attachment_list:
+                if attachment_list:
+                    for attachment in attachment_list:
 
-                    tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
-                    url_x_a = '{}{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode)
+                        tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
+                        url_x_a = '{}{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode)
 
-                    if not os.path.exists(url_x_a):
-                        os.makedirs(url_x_a)
+                        if not os.path.exists(url_x_a):
+                            os.makedirs(url_x_a)
 
-                    url_l = attachment.split('/')
-                    url_file = url_l[-1]
-                    #url_32 = url_l[-2]
+                        url_l = attachment.split('/')
+                        url_file = url_l[-1]
 
-                    url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
-                    #doc = os.path.split(url_file)[-1]
+                        url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
 
-                    element_a = AttachmentFileinfo.objects.filter(tcode=tcode_attachment,ecode=serializer_ecode,file_name=url_file)
-                    if len(element_a)!=0:
-                        continue
+                        element_a = AttachmentFileinfo.objects.filter(tcode=tcode_attachment,ecode=serializer_ecode,file_name=url_file)
+                        if len(element_a)!=0:
+                            continue
 
-                    url_j = absolute_path + 'temporary/' + account_code_office + '/'  + url_file
-                    if not os.path.exists(url_j):
-                        transaction.savepoint_rollback(save_id)
-                        return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
-
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment,
-                                                   serializer_ecode, url_file)
-
-                    if os.path.exists(url_x):
-                        transaction.savepoint_rollback(save_id)
-                        return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
-
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
-
-                    path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-
-                    # 32位随机字符串内容
-                    file_caption = url_file[33:]
-                    list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
-                                                    file_name=url_file, path=path, operation_state=3,
-                                                    state=1,file_caption=file_caption))
-
-                    # 同路经下有pdf文件
-                    if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx'):
-
-                        #url_j_pdf = url_j.replace(doc, 'pdf')
-                        #url_x_pdf = url_x.replace(doc, 'pdf')
-                        url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
-                        url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
-
-                        if not os.path.exists(url_j_pdf):
+                        url_j = absolute_path + 'temporary/' + account_code_office + '/'  + url_file
+                        if not os.path.exists(url_j):
                             transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该临时路径下不存在该pdf文件,可能系统没有生成pdf文件'}, status=400)
+                            return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
 
-                        if os.path.exists(url_x_pdf):
+                        url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment,
+                                                       serializer_ecode, url_file)
+
+                        if os.path.exists(url_x):
                             transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
+                            return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
 
-                        # 将doc临时目录转移到正式目录
-                        #shutil.move(url_j, url_x)
-                        # 将pdf临时目录转移到正式目录
-                        #shutil.move(url_j_pdf, url_x_pdf)
+                        url_x_f = url_x.replace(relative_path, relative_path_front)
+                        list2.append(url_x_f)
 
-                        dict_items[url_j]=url_x
-                        dict_items[url_j_pdf] = url_x_pdf
+                        path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
 
                         # 32位随机字符串内容
-                        #file_caption_pdf=url_file_pdf[33:]
-                        #list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
-                                                        #file_name=url_file_pdf, path=path, operation_state=3,
-                                                        #state=1,file_caption=file_caption_pdf))
-                        url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
-                        list2.append(url_x_f_pdf)
-                    else:
-                        # 将doc临时目录转移到正式目录
-                        #shutil.move(url_j, url_x)
-                        dict_items[url_j]=url_x
+                        file_caption = url_file[33:]
+                        list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
+                                                        file_name=url_file, path=path, operation_state=3,
+                                                        state=1,file_caption=file_caption,publish=1,file_format=0))
+
+                        # 同路经下有pdf文件
+                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx'):
+
+                            url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
+                            url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
+
+                            if not os.path.exists(url_j_pdf):
+                                transaction.savepoint_rollback(save_id)
+                                return Response({'detail': '该临时路径下不存在该pdf文件,可能系统没有生成pdf文件'}, status=400)
+
+                            if os.path.exists(url_x_pdf):
+                                transaction.savepoint_rollback(save_id)
+                                return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
+
+                            # 将doc临时目录转移到正式目录
+                            dict_items[url_j]=url_x
+                            dict_items[url_j_pdf] = url_x_pdf
+
+                            # 32位随机字符串内容
+                            #file_caption_pdf=url_file_pdf[33:]
+                            #list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
+                                                            #file_name=url_file_pdf, path=path, operation_state=3,
+                                                            #state=1,file_caption=file_caption_pdf))
+                            url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
+                            list2.append(url_x_f_pdf)
+                        else:
+                            # 将doc临时目录转移到正式目录
+                            dict_items[url_j]=url_x
 
 
                 if list1:
@@ -1778,6 +1760,11 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 data = request.data
                 # 图片
                 single_dict = request.data.pop('Cover', None)
+                identityFront = single_dict.get('identityFront', None)
+                identityBack = single_dict.get('identityBack', None)
+                handIdentityPhoto = single_dict.get('handIdentityPhoto', None)
+                entLicense = single_dict.get('entLicense', None)
+                agreement = single_dict.get('agreement', None)
                 # 附件
                 attachment_list = request.data.pop('Attach', None)
                 # 所属领域表
@@ -1789,9 +1776,6 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 owner_type = request.data.get('owner_type', None)
                 # 关键字表
                 key_info_list = request.data.pop('Keywords', None)
-                # 个人基本信息表或者企业基本信息表
-                # pcode_or_ecode = request.data.pop('pcode', None) if request.data.pop('pcode', None) else request.data.pop('ecode', None)
-                #pcode_or_ecode = request.data.pop('pcode', None)
 
                 # 激活状态
                 state = request.data.get('show_state', None)
@@ -1802,24 +1786,16 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 obtain_type = request.data.get('obtain_type', None)
 
-                if not mname_list or not cooperation_name  or not owner_type or not key_info_list or not obtain_type or not user_name:
+                req_name = request.data.get('req_name', None)
+                expiry_dateb = request.data.get('expiry_dateb', None)
+                expiry_datee = request.data.get('expiry_datee', None)
+                req_form_type = request.data.get('req_form_type', None)
+                use_type = request.data.get('use_type', None)
+                r_abstract = request.data.get('r_abstract', None)
+
+                if not mname_list or not cooperation_name or not owner_type or not key_info_list or not account_code or not obtain_type or not req_name or not expiry_dateb or not expiry_datee or not req_form_type or not use_type or not r_abstract:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '请完善相关信息'}, status=400)
-
-                if not single_dict or not attachment_list:
-                    transaction.savepoint_rollback(save_id)
-                    return Response({'detail': '请先上传相关文件'}, status=400)
-
-                if len(single_dict) != 1:
-                    transaction.savepoint_rollback(save_id)
-                    return Response({'detail': '图片只能上传一张'}, status=400)
-
-                #account_code_list = AccountInfo.objects.filter(user_name=user_name)
-
-                #if not account_code_list:
-                    #transaction.savepoint_rollback(save_id)
-                    #return Response({'detail': '该用户名不存在'}, status=400)
-                #account_code = account_code_list[0].account_code
 
                 # 时间空字符串处理
                 list = ['expiry_dateb', 'expiry_datee']
@@ -1833,44 +1809,32 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 if obtain_type == 1:
                     # 个人或者团队
                     if owner_type in [1, 3]:
-                        # pname = request.data.pop('pname', None)
-                        # pname_element = PersonalInfo.objects.filter(pname=pname)
-                        # if not pname_element:
-                        # transaction.savepoint_rollback(save_id)
-                        # return Response({'detail': '该个人基本信息不存在'}, status=400)
+                        if not identityFront or not identityBack or not handIdentityPhoto or not agreement:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请上传相关证件照'}, status=400)
                         pcode = request.data.pop('pcode', None)
-
                     else:
-                        # ename = request.data.pop('ename', None)
-                        # ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
-                        # if not ename_element:
-                        # transaction.savepoint_rollback(save_id)
-                        # return Response({'detail': '该企业基本信息不存在'}, status=400)
+                        if not identityFront or not identityBack or not handIdentityPhoto or not agreement or not entLicense:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请上传相关证件照'}, status=400)
                         ecode = request.data.pop('ecode', None)
                 else:
                     if owner_type in [1, 3]:
-                        # pname = request.data.pop('pname', None)
-                        # pname_element = PersonalInfo.objects.filter(pname=pname)
-                        # if not pname_element:
-                        # transaction.savepoint_rollback(save_id)
-                        # return Response({'detail': '该个人基本信息不存在'}, status=400)
                         pcode = request.data.pop('pcode', None)
                         Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
                         if not Identity_account_code:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是需求持有人(个人)身份'}, status=400)
                     else:
-                        # ename = request.data.pop('ename', None)
-                        # ename_element = EnterpriseBaseinfo.objects.filter(ename=ename)
-                        # if not ename_element:
-                        # transaction.savepoint_rollback(save_id)
-                        # return Response({'detail': '该企业基本信息不存在'}, status=400)
                         ecode = request.data.pop('ecode', None)
                         Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
                         if not Identity_account_code:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是需求持有人(企业)身份'}, status=400)
                 pcode_or_ecode = pcode if pcode else ecode
+                if not pcode_or_ecode:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '请选择个人基本信息或企业基本信息'}, status=400)
 
                 # 1 创建resultsinfo表
                 data['obtain_source'] = pcode_or_ecode
@@ -1927,127 +1891,105 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 # 临时目录当前登录账户文件夹
                 account_code_office = request.user.account_code
 
+                if single_dict:
+                    for key, value in single_dict.items():
 
-                for key, value in single_dict.items():
-                    if len(key)==32:
-                        tcode = AttachmentFileType.objects.get(tname='consultEditor').tcode
-                    else:
                         tcode = AttachmentFileType.objects.get(tname=key).tcode
-                    url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
-                    if not os.path.exists(url_x_c):
-                        os.makedirs(url_x_c)
+                        url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
+                        if not os.path.exists(url_x_c):
+                            os.makedirs(url_x_c)
 
-                    url_l = value.split('/')
-                    url_file = url_l[-1]
+                        url_l = value.split('/')
+                        url_file = url_l[-1]
 
-                    url_j_jpg = absolute_path + 'temporary/' + account_code_office + '/' + url_file
-                    if not os.path.exists(url_j_jpg):
-                        transaction.savepoint_rollback(save_id)
-                        return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
-
-                    url_x_jpg = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode, url_file)
-                    if os.path.exists(url_x_jpg):
-                        transaction.savepoint_rollback(save_id)
-                        return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
-
-                    # 收集临时路径和正式路径
-                    dict_items[url_j_jpg] = url_x_jpg
-
-                    # 拼接给前端的的地址
-                    url_x_f = url_x_jpg.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
-
-                    # 拼接ecode表中的path
-                    path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
-                    file_caption=url_file[33:]
-                    list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
-                                                    operation_state=3, state=1,file_caption=file_caption))
-                    if len(key) == 32:
-                        url_j_f = url_j_jpg.replace(absolute_path, absolute_path_front)
-                        dict_editor = {}
-                        dict_editor[url_j_f] = url_x_f
-                        list3.append(dict_editor)
-                if list3:
-                    element = RequirementsInfo.objects.get(req_code=serializer_ecode)
-                    detail = element.r_abstract_detail
-                    for i in list3:
-                        detail = detail.replace(list(i)[0], i[list(i)[0]])
-                    element.r_abstract_detail = detail
-                    element.save()
-
-                for attachment in attachment_list:
-                    url_l = attachment.split('/')
-                    url_file = url_l[-1]
-
-                    url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
-                    # doc = os.path.splitext(url_file)[-1]
-
-                    url_j = absolute_path + 'temporary/' + account_code_office + '/' + url_file
-                    if not os.path.exists(url_j):
-                        transaction.savepoint_rollback(save_id)
-                        return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
-
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode,
-                                                   url_file)
-
-                    if os.path.exists(url_x):
-                        transaction.savepoint_rollback(save_id)
-                        return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
-
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
-
-                    path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                    file_caption=url_file[33:]
-                    list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file,
-                                                    path=path, operation_state=3, state=1,file_caption=file_caption))
-
-                    # 同路经下有pdf文件
-                    if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith(
-                            'docx'):
-                        # url_j_pdf = url_j.replace(doc,'pdf')
-                        # url_x_pdf = url_x.replace(doc,'pdf')
-                        url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
-                        url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
-
-                        if not os.path.exists(url_j_pdf):
+                        url_j_jpg = absolute_path + 'temporary/' + account_code_office + '/' + url_file
+                        if not os.path.exists(url_j_jpg):
                             transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该临时路径下不存在该pdf文件,可能系统没有生成pdf文件'}, status=400)
+                            return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
 
-                        if os.path.exists(url_x_pdf):
+                        url_x_jpg = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode, url_file)
+                        if os.path.exists(url_x_jpg):
                             transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
+                            return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
 
-                        # 将doc临时目录转移到正式目录
-                        #shutil.move(url_j, url_x)
-                        # 将pdf临时目录转移到正式目录
-                        #shutil.move(url_j_pdf, url_x_pdf)
-                        dict_items[url_j]=url_x
-                        dict_items[url_j_pdf]=url_x_pdf
+                        # 收集临时路径和正式路径
+                        dict_items[url_j_jpg] = url_x_jpg
 
-                        #file_caption_pdf=url_file_pdf[33:]
-                        #list1.append(
-                            #AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file_pdf,
-                                               #path=path, operation_state=3, state=1,file_caption=file_caption_pdf))
-                        url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
-                        list2.append(url_x_f_pdf)
-                    else:
-                        # 将doc临时目录转移到正式目录
-                        #shutil.move(url_j, url_x)
-                        dict_items[url_j]=url_x
+                        # 拼接给前端的的地址
+                        url_x_f = url_x_jpg.replace(relative_path, relative_path_front)
+                        list2.append(url_x_f)
 
-                # 创建atachmentinfo表
-                AttachmentFileinfo.objects.bulk_create(list1)
+                        # 拼接ecode表中的path
+                        path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
+                        file_caption=url_file[33:]
+                        list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
+                                                        operation_state=3, state=1,file_caption=file_caption,publish=1,file_format=1))
+                if attachment_list:
+                    for attachment in attachment_list:
+                        url_l = attachment.split('/')
+                        url_file = url_l[-1]
 
-                # 将临时目录转移到正式目录
-                for k, v in dict_items.items():
-                    shutil.move(k, v)
+                        url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
+                        url_j = absolute_path + 'temporary/' + account_code_office + '/' + url_file
+                        if not os.path.exists(url_j):
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
 
-                # 删除临时目录
-                #shutil.rmtree(absolute_path + 'temporary/' + account_code_office, ignore_errors=True)
+                        url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode,
+                                                       url_file)
 
-                # 给前端抛正式目录
-                dict['url'] = list2
+                        if os.path.exists(url_x):
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
+
+                        url_x_f = url_x.replace(relative_path, relative_path_front)
+                        list2.append(url_x_f)
+
+                        path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                        file_caption=url_file[33:]
+                        list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file,
+                                                        path=path, operation_state=3, state=1,file_caption=file_caption,publish=1,file_format=0))
+
+                        # 同路经下有pdf文件
+                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith(
+                                'docx'):
+                            url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
+                            url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
+
+                            if not os.path.exists(url_j_pdf):
+                                transaction.savepoint_rollback(save_id)
+                                return Response({'detail': '该临时路径下不存在该pdf文件,可能系统没有生成pdf文件'}, status=400)
+
+                            if os.path.exists(url_x_pdf):
+                                transaction.savepoint_rollback(save_id)
+                                return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
+
+                            # 将doc临时目录转移到正式目录
+                            dict_items[url_j]=url_x
+                            dict_items[url_j_pdf]=url_x_pdf
+
+                            #file_caption_pdf=url_file_pdf[33:]
+                            #list1.append(
+                                #AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file_pdf,
+                                                   #path=path, operation_state=3, state=1,file_caption=file_caption_pdf))
+                            url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
+                            list2.append(url_x_f_pdf)
+                        else:
+                            # 将doc临时目录转移到正式目录
+                            dict_items[url_j]=url_x
+                if list1:
+                    # 创建atachmentinfo表
+                    AttachmentFileinfo.objects.bulk_create(list1)
+                if dict_items:
+                    # 将临时目录转移到正式目录
+                    for k, v in dict_items.items():
+                        shutil.move(k, v)
+
+                    # 删除临时目录
+                    #shutil.rmtree(absolute_path + 'temporary/' + account_code_office, ignore_errors=True)
+
+                    # 给前端抛正式目录
+                    dict['url'] = list2
 
                 headers = self.get_success_headers(serializer.data)
                 # return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
@@ -2069,10 +2011,6 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 serializer_ecode = instance.req_code
 
                 data = request.data
-                # 图片
-                #single_dict = request.data.pop('Cover', None)
-                # 附件
-                #attachment_list = request.data.pop('Attach', None)
                 # 所属领域
                 mname_list = request.data.pop('mname', None)
                 # 成果/需求合作方式信息表
@@ -2082,9 +2020,6 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 owner_type = request.data.get('owner_type', None)
                 # 关键字表
                 key_info_list = request.data.pop('Keywords', None)
-                # 个人基本信息表或者企业基本信息表
-                # pcode_or_ecode = request.data.pop('pcode', None) if request.data.pop('pcode', None) else request.data.pop('ecode', None)
-                #pcode_or_ecode = request.data.pop('pcode', None)
 
                 # 激活状态
                 state = request.data.get('show_state', None)
@@ -2095,7 +2030,14 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 obtain_type = request.data.get('obtain_type', None)
 
-                if not mname_list or not cooperation_name  or not owner_type or not key_info_list or not obtain_type or not user_name:
+                req_name = request.data.get('req_name', None)
+                expiry_dateb = request.data.get('expiry_dateb', None)
+                expiry_datee = request.data.get('expiry_datee', None)
+                req_form_type = request.data.get('req_form_type', None)
+                use_type = request.data.get('use_type', None)
+                r_abstract = request.data.get('r_abstract', None)
+
+                if not mname_list or not cooperation_name or not owner_type or not key_info_list or not account_code or not obtain_type or not req_name or not expiry_dateb or not expiry_datee or not req_form_type or not use_type or not r_abstract:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '请完善相关信息'}, status=400)
 
@@ -2108,18 +2050,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 PerIdBack = request.data.pop('PerIdBack', None)
                 PerHandId = request.data.pop('PerHandId', None)
                 EntLicense = request.data.pop('EntLicense', None)
-                # consultEditor = request.data.pop('consultEditor',None)
 
                 single_dict = {'identityFront': PerIdFront, 'identityBack': PerIdBack,
                                'coverImg': Cover, 'handIdentityPhoto': PerHandId,
                                'agreement': AgencyImg, 'entLicense': EntLicense}
-
-
-                    #account_code_list = AccountInfo.objects.filter(user_name=user_name)
-
-                #if not account_code_list:
-                    #return Response({'detail': '该用户名不存在'}, status=400)
-                #account_code = account_code_list[0].account_code
 
                 # 时间空字符串处理
                 list = ['expiry_dateb', 'expiry_datee']
@@ -2133,9 +2067,15 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 if obtain_type == 1:
                     # 个人或者团队
                     if owner_type in [1, 3]:
+                        if not AgencyImg or not PerIdFront or not PerIdBack or not PerHandId:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请上传相关证件照'}, status=400)
                         pcode = request.data.pop('pcode', None)
 
                     else:
+                        if not AgencyImg or not PerIdFront or not PerIdBack or not PerHandId or not EntLicense:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请上传相关证件照'}, status=400)
                         ecode = request.data.pop('ecode', None)
                 else:
                     if owner_type in [1, 3]:
@@ -2150,6 +2090,9 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                             return Response({'detail': '该角色不是需求持有人(企业)身份'}, status=400)
 
                 pcode_or_ecode = pcode if pcode else ecode
+                if not pcode_or_ecode:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '请选择个人基本信息或企业基本信息'}, status=400)
 
                 # 1 更新resultsinfo表
                 data['obtain_source'] = pcode_or_ecode
@@ -2207,10 +2150,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 # 图片
                 for key, value in single_dict.items():
-                    if len(key) == 32:
-                        tcode = AttachmentFileType.objects.get(tname='consultEditor').tcode
-                    else:
-                        tcode = AttachmentFileType.objects.get(tname=key).tcode
+
+                    tcode = AttachmentFileType.objects.get(tname=key).tcode
                     url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
                     if not os.path.exists(url_x_c):
                         os.makedirs(url_x_c)
@@ -2246,92 +2187,73 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     file_caption=url_file[33:]
                     list1.append(
                         AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
-                                           operation_state=3, state=1,file_caption=file_caption))
-                    if len(key) == 32:
-                        url_j_f = url_j_jpg.replace(absolute_path, absolute_path_front)
-                        dict_editor = {}
-                        dict_editor[url_j_f] = url_x_f
-                        list3.append(dict_editor)
-                if list3:
-                    element = RequirementsInfo.objects.get(req_code=serializer_ecode)
-                    detail = element.r_abstract_detail
-                    for i in list3:
-                        detail = detail.replace(list(i)[0], i[list(i)[0]])
-                    element.r_abstract_detail = detail
-                    element.save()
+                                           operation_state=3, state=1,file_caption=file_caption,publish=1,file_format=1))
+                if attachment_list:
+                    for attachment in attachment_list:
+                        tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
+                        url_x_a = '{}{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode)
 
-                for attachment in attachment_list:
-                    tcode_attachment = AttachmentFileType.objects.get(tname='attachment').tcode
-                    url_x_a = '{}{}/{}/{}'.format(relative_path, param_value, tcode_attachment, serializer_ecode)
+                        if not os.path.exists(url_x_a):
+                            os.makedirs(url_x_a)
+                        url_l = attachment.split('/')
+                        url_file = url_l[-1]
 
-                    if not os.path.exists(url_x_a):
-                        os.makedirs(url_x_a)
-                    url_l = attachment.split('/')
-                    url_file = url_l[-1]
+                        element_a = AttachmentFileinfo.objects.filter(tcode=tcode_attachment, ecode=serializer_ecode,
+                                                                      file_name=url_file)
+                        if len(element_a) != 0:
+                            continue
 
-                    element_a = AttachmentFileinfo.objects.filter(tcode=tcode_attachment, ecode=serializer_ecode,
-                                                                  file_name=url_file)
-                    if len(element_a) != 0:
-                        continue
+                        url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
 
-                    url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
-                    # doc = os.path.split(url_file)[-1]
-
-                    url_j = absolute_path + 'temporary/' + account_code_office + '/' + url_file
-                    if not os.path.exists(url_j):
-                        transaction.savepoint_rollback(save_id)
-                        return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
-
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment,
-                                                   serializer_ecode, url_file)
-
-                    if os.path.exists(url_x):
-                        transaction.savepoint_rollback(save_id)
-                        return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
-
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
-
-                    path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                    file_caption = url_file[33:]
-                    list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
-                                                    file_name=url_file, path=path, operation_state=3,
-                                                    state=1,file_caption=file_caption))
-
-                    # 同路经下有pdf文件
-                    if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith(
-                            'docx'):
-
-                        # url_j_pdf = url_j.replace(doc, 'pdf')
-                        # url_x_pdf = url_x.replace(doc, 'pdf')
-                        url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
-                        url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
-
-                        if not os.path.exists(url_j_pdf):
+                        url_j = absolute_path + 'temporary/' + account_code_office + '/' + url_file
+                        if not os.path.exists(url_j):
                             transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该临时路径下不存在该pdf文件,可能系统没有生成pdf文件'}, status=400)
+                            return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
 
-                        if os.path.exists(url_x_pdf):
+                        url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment,
+                                                       serializer_ecode, url_file)
+
+                        if os.path.exists(url_x):
                             transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
+                            return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
 
-                        # 将doc临时目录转移到正式目录
-                        #shutil.move(url_j, url_x)
-                        # 将pdf临时目录转移到正式目录
-                        #shutil.move(url_j_pdf, url_x_pdf)
-                        dict_items[url_j]=url_x
-                        dict_items[url_j_pdf] = url_x_pdf
+                        url_x_f = url_x.replace(relative_path, relative_path_front)
+                        list2.append(url_x_f)
 
-                        #file_caption_pdf=url_file_pdf[33:]
-                        #list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
-                                                        #file_name=url_file_pdf, path=path, operation_state=3,
-                                                        #state=1))
-                        url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
-                        list2.append(url_x_f_pdf)
-                    else:
-                        # 将doc临时目录转移到正式目录
-                        #shutil.move(url_j, url_x)
-                        dict_items[url_j]=url_x
+                        path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
+                        file_caption = url_file[33:]
+                        list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
+                                                        file_name=url_file, path=path, operation_state=3,
+                                                        state=1,file_caption=file_caption,publish=1,file_format=0))
+
+                        # 同路经下有pdf文件
+                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith(
+                                'docx'):
+
+                            url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
+                            url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
+
+                            if not os.path.exists(url_j_pdf):
+                                transaction.savepoint_rollback(save_id)
+                                return Response({'detail': '该临时路径下不存在该pdf文件,可能系统没有生成pdf文件'}, status=400)
+
+                            if os.path.exists(url_x_pdf):
+                                transaction.savepoint_rollback(save_id)
+                                return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
+
+                            # 将doc临时目录转移到正式目录
+                            dict_items[url_j]=url_x
+                            dict_items[url_j_pdf] = url_x_pdf
+
+                            #file_caption_pdf=url_file_pdf[33:]
+                            #list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
+                                                            #file_name=url_file_pdf, path=path, operation_state=3,
+                                                            #state=1))
+                            url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
+                            list2.append(url_x_f_pdf)
+                        else:
+                            # 将doc临时目录转移到正式目录
+                            dict_items[url_j]=url_x
 
 
                 if list1:
