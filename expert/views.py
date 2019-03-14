@@ -2036,6 +2036,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 if owner_abstract_detail:
                     img_pattern = re.compile(r'src=\"(.*?)\"')
                     editor_imgs_list = img_pattern.findall(owner_abstract_detail)
+                    raise ValueError(editor_imgs_list)
                     for e in editor_imgs_list:
                         if url_to_path(e):
                             editor_imgs_path[e] = url_to_path(e)
