@@ -2037,7 +2037,8 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                     img_pattern = re.compile(r'src=\"(.*?)\"')
                     editor_imgs_list = img_pattern.findall(owner_abstract_detail)
                     for e in editor_imgs_list:
-                        editor_imgs_path[e] = url_to_path(e)
+                        if url_to_path(e):
+                            editor_imgs_path[e] = url_to_path(e)
 
                 instance = self.get_object()  # 原纪录
 
