@@ -34,7 +34,7 @@ class PersonViewSet(viewsets.ModelViewSet):
 
     ordering_fields = ("insert_time", "state")
     filter_fields = ("state", "pid", "pcode", "pid_type", "pmobile")
-    search_fields = ("pname", "pabstract")
+    search_fields = ("pname", "pabstract","account_code")
 
     def get_queryset(self):
         assert self.queryset is not None, (
@@ -149,7 +149,7 @@ class EnterpriseViewSet(viewsets.ModelViewSet):
 
     ordering_fields = ("insert_time", "state")
     filter_fields = ("state", "ecode", "emobile")
-    search_fields = ("ename", "eabbr","eabstract")
+    search_fields = ("ename", "eabbr","eabstract","account_code")
 
     def get_queryset(self):
         assert self.queryset is not None, (
