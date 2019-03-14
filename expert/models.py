@@ -213,7 +213,7 @@ class BrokerBaseinfo(models.Model):
     ecode = models.CharField(max_length=64, blank=True, null=True)  # 技术经纪人归属企业的企业代码。worktype =1 时无效
     broker_level = models.IntegerField(default=1, null=True)   # 业务能力的内部的评级。以星级表示，1-5 表示一星到五星，默认为一星
     credit_value = models.IntegerField(default=0, null=True)   # 信用值。取值范围0-100，默认0
-    broker_integral = models.IntegerField(default=0)    # 积分。目前尚未使用，默认为0
+    broker_integral = models.IntegerField(default=0, null=True)    # 积分。目前尚未使用，默认为0
     state = models.IntegerField(default=1)  # 状态。1：正常 2：暂停；3：伪删除
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
