@@ -10,7 +10,7 @@ import threading
 import time
 import shutil
 
-
+from expert.models import IdentityAuthorizationInfo
 from misc.filter.search import ViewSearch
 from public_models.utils import  move_attachment, move_single, get_detcode_str
 from python_backend import settings
@@ -1225,8 +1225,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             #transaction.savepoint_rollback(save_id)
                             #return Response({'detail': '该个人基本信息不存在'}, status=400)
                         pcode = request.data.pop('pcode', None)
-                        p_account_code = PersonalInfo.objects.get(pcode=pcode).account_code
-                        if account_code != p_account_code:
+                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
+                        if not Identity_account_code:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
                     else:
@@ -1236,10 +1236,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             #transaction.savepoint_rollback(save_id)
                             #return Response({'detail': '该企业基本信息不存在'}, status=400)
                         ecode = request.data.pop('ecode', None)
-                        e_account_code = EnterpriseBaseinfo.objects.get(ecode=ecode).account_code
-                        if account_code != e_account_code:
+                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
+                        if not Identity_account_code:
                             transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
+                            return Response({'detail': '该角色不是成果持有人(企业)身份'}, status=400)
 
                 pcode_or_ecode = pcode if pcode else ecode
 
@@ -1262,7 +1262,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 #3 创建持有人信息表
                 ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
-                owner_type=owner_type, owner_code=pcode_or_ecode, main_owner=main_owner,
+                owner_type=owner_type, owner_code=pcode_or_ecode, main_owner=1,
                 state=state, r_type=1)
 
                 #4 创建关键字表
@@ -1301,11 +1301,9 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                # 图片
                 for key,value in single_dict.items():
-                    # 富文本内容
-                    if len(key)==32:
-                        tcode = AttachmentFileType.objects.get(tname='consultEditor').tcode
-                    else:
-                        tcode = AttachmentFileType.objects.get(tname=key).tcode
+
+                    tcode = AttachmentFileType.objects.get(tname=key).tcode
+                    tcode_editor = AttachmentFileType.objects.get(tname='consultEditor').tcode
                     url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
                     if not os.path.exists(url_x_c):
                         os.makedirs(url_x_c)
@@ -1336,21 +1334,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     # 32位随机字符串内容
                     file_caption = url_file[33:]
                     list1.append(AttachmentFileinfo(tcode=tcode,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1,file_caption=file_caption))
-                    # 富文本内容
-                    if len(key)==32:
-                        url_j_f = url_j_jpg.replace(absolute_path,absolute_path_front)
-                        dict_editor = {}
-                        dict_editor[url_j_f]=url_x_f
-                        list3.append(dict_editor)
-                # 富文本内容
-                if list3:
-                    element = ResultsInfo.objects.get(r_code=serializer_ecode)
-                    detail = element.r_abstract_detail
-                    #detail = serializer.data['r_abstract_detail']
-                    for i in list3:
-                        detail = detail.replace(list(i)[0],i[list(i)[0]])
-                    element.r_abstract_detail=detail
-                    element.save()
+                    
 
                 for attachment in attachment_list:
                     url_l = attachment.split('/')
@@ -1511,14 +1495,14 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 else:
                     if owner_type in [1, 3]:
                         pcode = request.data.pop('pcode', None)
-                        p_account_code = PersonalInfo.objects.get(pcode=pcode).account_code
-                        if account_code != p_account_code:
+                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
+                        if not Identity_account_code:
                             return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
                     else:
                         ecode = request.data.pop('ecode', None)
-                        e_account_code = EnterpriseBaseinfo.objects.get(ecode=ecode).account_code
-                        if account_code != e_account_code:
-                            return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
+                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
+                        if not Identity_account_code:
+                            return Response({'detail': '该角色不是成果持有人(企业)身份'}, status=400)
 
                 pcode_or_ecode = pcode if pcode else ecode
 
@@ -1543,7 +1527,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 # 3 更新持有人信息表
                 ResultsOwnerInfo.objects.filter(r_code=serializer_ecode).update(
-                owner_type=owner_type, owner_code=pcode_or_ecode,main_owner=main_owner,
+                owner_type=owner_type, owner_code=pcode_or_ecode,main_owner=1,
                 state=state, r_type=1)
 
                 # 4 更新关键字表
@@ -1871,8 +1855,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         # transaction.savepoint_rollback(save_id)
                         # return Response({'detail': '该个人基本信息不存在'}, status=400)
                         pcode = request.data.pop('pcode', None)
-                        p_account_code = PersonalInfo.objects.get(pcode=pcode).account_code
-                        if account_code != p_account_code:
+                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
+                        if not Identity_account_code:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是需求持有人(个人)身份'}, status=400)
                     else:
@@ -1882,10 +1866,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         # transaction.savepoint_rollback(save_id)
                         # return Response({'detail': '该企业基本信息不存在'}, status=400)
                         ecode = request.data.pop('ecode', None)
-                        e_account_code = EnterpriseBaseinfo.objects.get(ecode=ecode).account_code
-                        if account_code != e_account_code:
+                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
+                        if not Identity_account_code:
                             transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该角色不是需求持有人(个人)身份'}, status=400)
+                            return Response({'detail': '该角色不是需求持有人(企业)身份'}, status=400)
                 pcode_or_ecode = pcode if pcode else ecode
 
                 # 1 创建resultsinfo表
@@ -1906,7 +1890,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 # 3 创建持有人信息表
                 ResultsOwnerInfo.objects.create(r_code=serializer_ecode,
-                                                owner_type=owner_type, owner_code=pcode_or_ecode, main_owner=main_owner,
+                                                owner_type=owner_type, owner_code=pcode_or_ecode, main_owner=1,
                                                 state=state, r_type=2)
 
                 # 4 创建关键字表
@@ -2156,14 +2140,14 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 else:
                     if owner_type in [1, 3]:
                         pcode = request.data.pop('pcode', None)
-                        p_account_code = PersonalInfo.objects.get(pcode=pcode).account_code
-                        if account_code != p_account_code:
+                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
+                        if not Identity_account_code:
                             return Response({'detail': '该角色不是需求持有人(个人)身份'}, status=400)
                     else:
                         ecode = request.data.pop('ecode', None)
-                        e_account_code = EnterpriseBaseinfo.objects.get(ecode=ecode).account_code
-                        if account_code != e_account_code:
-                            return Response({'detail': '该角色不是需求持有人(个人)身份'}, status=400)
+                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
+                        if not Identity_account_code:
+                            return Response({'detail': '该角色不是需求持有人(企业)身份'}, status=400)
 
                 pcode_or_ecode = pcode if pcode else ecode
 
@@ -2188,7 +2172,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 # 3 更新持有人信息表
                 ResultsOwnerInfo.objects.filter(r_code=serializer_ecode).update(
-                    owner_type=owner_type, owner_code=pcode_or_ecode, main_owner=main_owner,
+                    owner_type=owner_type, owner_code=pcode_or_ecode, main_owner=1,
                     state=state, r_type=2)
 
                 # 4 更新关键字表
