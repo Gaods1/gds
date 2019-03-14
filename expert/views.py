@@ -2045,13 +2045,13 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                     raise ValueError('不允许更改关联账号')
                 if not major:
                     raise ValueError('所属领域是必填项')
-                if not idfront:
+                if not data.pop('idfront', None):
                     raise ValueError('证件照正面是必填项')
-                if not idback:
+                if not data.pop('idback', None):
                     raise ValueError('证件照背面是必填项')
-                if not idphoto:
+                if not data.pop('idphoto', None):
                     raise ValueError('手持身份证是必填项')
-                if not owner_license:
+                if not data.pop('license', None):
                     raise ValueError('营业执照是必填项')
 
                 # 身份信息关联表基本信息
