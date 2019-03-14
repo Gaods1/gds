@@ -2093,12 +2093,12 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
                 encode = create_or_update_enterprise(account_code, einfo)
                 data['ecode'] = encode
-                raise ValueError(encode)
                 partial = kwargs.pop('partial', False)
                 serializer = self.get_serializer(instance, data=data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
                 ecode = serializer.data['owner_code']
+                raise ValueError(ecode)
 
                 # 插入领域相关
                 crete_major(2, 6, ecode, major)
