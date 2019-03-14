@@ -2025,6 +2025,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 account_code = data['account_code']
 
                 major = data.pop('major_code', None)  # 相关领域（列表）
+                raise ValueError(data.pop('idfront', None))
                 idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
                 idback = url_to_path(data.get('idback', None))     # 身份证背面
                 idphoto = url_to_path(data.get('idphoto', None))    # 手持身份证
