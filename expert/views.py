@@ -2102,8 +2102,6 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 # 插入领域相关
                 crete_major(2, 6, ecode, major)
 
-                raise ValueError(ecode)
-
                 # 复制图片到正式目录
                 formal_idfront = copy_img(idfront, 'ResultOwnerEnt', 'identityFront', ecode, creater)
                 formal_idback = copy_img(idback, 'ResultOwnerEnt', 'identityBack', ecode, creater)
@@ -2111,6 +2109,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 formal_license = copy_img(owner_license, 'ResultOwnerEnt', "entLicense", ecode, creater)
                 formal_logo = copy_img(logo, 'ResultOwnerEnt', "logoPhoto", ecode, creater)
                 formal_promotional = copy_img(promotional, 'ResultOwnerEnt', "Propaganda", ecode, creater)
+                raise ValueError(editor_imgs_path.items())
                 for k, v in editor_imgs_path.items():
                     formal_editor_imgs_path[k] = copy_img(v, 'ResultOwnerEnt', 'consultEditor', ecode, creater)
 
