@@ -1960,7 +1960,6 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                     formal_idback = copy_img(idback, 'ResultOwnerEnt', 'identityBack', ecode, creater)
                     formal_idphoto = copy_img(idphoto, 'ResultOwnerEnt', 'handIdentityPhoto', ecode, creater)
                     formal_license = copy_img(owner_license, 'ResultOwnerEnt', "entLicense", ecode, creater)
-                    raise ValueError(formal_license)
                     formal_logo = copy_img(logo, 'ResultOwnerEnt', "logoPhoto", ecode, creater)
                     formal_promotional = copy_img(promotional, 'ResultOwnerEnt', "Propaganda", ecode, creater)
 
