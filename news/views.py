@@ -1185,6 +1185,7 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                 params_dict = get_attach_params()
                 instance = self.get_object()
                 form_data = request.data
+                form_data['top_time'] = form_data['top_time'] if form_data['top_time'] else None
                 # form_data['top_tag'] = form_data['top_tag'] if form_data['top_tag'] else None
                 # form_face_pic = form_data['face_pic']['guidePhoto'] if type(form_data['face_pic']).__name__ =='dict' else ''
                 form_face_pic = form_data['face_pic_url']['guidePhoto'] if type(form_data['face_pic_url']).__name__ == 'dict' else ''
