@@ -2104,12 +2104,12 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
 
                 # 复制图片到正式目录
                 formal_idfront = copy_img(idfront, 'ResultOwnerEnt', 'identityFront', ecode, creater)
+                raise ValueError(formal_idfront)
                 formal_idback = copy_img(idback, 'ResultOwnerEnt', 'identityBack', ecode, creater)
                 formal_idphoto = copy_img(idphoto, 'ResultOwnerEnt', 'handIdentityPhoto', ecode, creater)
                 formal_license = copy_img(owner_license, 'ResultOwnerEnt', "entLicense", ecode, creater)
                 formal_logo = copy_img(logo, 'ResultOwnerEnt', "logoPhoto", ecode, creater)
                 formal_promotional = copy_img(promotional, 'ResultOwnerEnt', "Propaganda", ecode, creater)
-                raise ValueError(editor_imgs_path.items())
                 for k, v in editor_imgs_path.items():
                     formal_editor_imgs_path[k] = copy_img(v, 'ResultOwnerEnt', 'consultEditor', ecode, creater)
 
