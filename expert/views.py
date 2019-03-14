@@ -2025,7 +2025,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 account_code = data['account_code']
 
                 major = data.pop('major_code', None)  # 相关领域（列表）
-                idfront = url_to_path(data.get('idfront', None))  # 身份证正面
+                idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
                 idback = url_to_path(data.get('idback', None))     # 身份证背面
                 idphoto = url_to_path(data.get('idphoto', None))    # 手持身份证
                 owner_license = url_to_path(data.get('license', None))  # 营业执照
@@ -2103,7 +2103,6 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 crete_major(2, 6, ecode, major)
 
                 # 复制图片到正式目录
-                raise ValueError(idfront)
                 formal_idfront = copy_img(idfront, 'ResultOwnerEnt', 'identityFront', ecode, creater)
                 formal_idback = copy_img(idback, 'ResultOwnerEnt', 'identityBack', ecode, creater)
                 formal_idphoto = copy_img(idphoto, 'ResultOwnerEnt', 'handIdentityPhoto', ecode, creater)
