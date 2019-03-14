@@ -1,6 +1,6 @@
 from public_models.models import *
 from public_models.utils import get_single
-from .utils import get_major
+from .utils import *
 from account.models import AccountInfo
 from misc.validate import validate_email, validate_mobile, validate_tel, validate_license
 # Create your models here.
@@ -108,10 +108,15 @@ class ExpertBaseinfo(models.Model):
         region_info = SystemDistrict.objects.get(district_id=self.expert_city)
         return region_info.district_name
 
+    # 领域code
+    @property
+    def major_code(self):
+        return get_major_code(1, self.expert_code)
+
     # 领域
     @property
     def major(self):
-        return get_major(1, self.expert_code)
+        return get_major(self.major_code)
 
     @property
     def enterprise(self):
@@ -229,8 +234,12 @@ class BrokerBaseinfo(models.Model):
         return region_info.district_name
 
     @property
+    def major_code(self):
+        return get_major_code(3, self.broker_code)
+
+    @property
     def major(self):
-        return get_major(3, self.broker_code)
+        return get_major(self.major_code)
 
     @property
     def enterprise(self):
@@ -447,11 +456,15 @@ class ResultOwnerpBaseinfo(models.Model):
         return region_info.district_name
 
     @property
-    def major(self):
+    def major_code(self):
         if self.type == 1:
-            return get_major(8, self.owner_code)
+            return get_major_code(8, self.owner_code)
         else:
-            return get_major(9, self.owner_code)
+            return get_major_code(9, self.owner_code)
+
+    @property
+    def major(self):
+        return get_major(self.major_code)
 
     @property
     def account(self):
@@ -576,11 +589,15 @@ class ResultOwnereBaseinfo(models.Model):
         return AccountInfo.objects.get(account_code=self.account_code).user_name
 
     @property
-    def major(self):
+    def major_code(self):
         if self.type == 1:
-            return get_major(6, self.owner_code)
+            return get_major_code(6, self.owner_code)
         else:
-            return get_major(7, self.owner_code)
+            return get_major_code(7, self.owner_code)
+
+    @property
+    def major(self):
+        return get_major(self.major_code)
 
     # 法人身份证正面
     @property
@@ -669,8 +686,12 @@ class ProjectTeamBaseinfo(models.Model):
         return account.account if account.account else account.user_name
 
     @property
+    def major_code(self):
+        return get_major_code(2, self.pt_code)
+
+    @property
     def major(self):
-        return get_major(2, self.pt_code)
+        return get_major(self.major_code)
 
     # 管理人员身份证正面
     @property

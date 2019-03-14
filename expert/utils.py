@@ -113,10 +113,15 @@ def update_baseinfo(obj, code, data):
     obj.objects.filter(**code).update(**data)
 
 
-# 获取领域
-def get_major(user_type, user_code):
+# 获取领域code
+def get_major_code(user_type, user_code):
     mcode = MajorUserinfo.objects.values_list('mcode', flat=True).filter(
         mtype=2, user_type=user_type, user_code=user_code)
+    return mcode
+
+
+# 获取领域
+def get_major(mcode):
     mname = MajorInfo.objects.values_list('mname', flat=True).filter(mcode__in=mcode, state=1)
     return mname
 
