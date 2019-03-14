@@ -214,7 +214,7 @@ def url_to_path(url):
 def copy_img(url, identity, img_type, ecode, creater):
     try:
         upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value
-        if upload_temp_dir in url and os.path.isfile(url):
+        if upload_temp_dir in url:
             raise ValueError('ceshi')
             file_name = url.split('/')[-1]
             formal_path = ParamInfo.objects.get(param_name='upload_dir').param_value
