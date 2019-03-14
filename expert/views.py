@@ -1957,7 +1957,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
 
                     # 复制图片到正式目录
                     formal_idfront = copy_img(idfront, 'ResultOwnerEnt', 'identityFront', ecode, creater)
-                    raise ValueError(formal_idfront)
+                    raise ValueError(idfront)
                     formal_idback = copy_img(idback, 'ResultOwnerEnt', 'identityBack', ecode, creater)
                     formal_idphoto = copy_img(idphoto, 'ResultOwnerEnt', 'handIdentityPhoto', ecode, creater)
                     formal_license = copy_img(owner_license, 'ResultOwnerEnt', "entLicense", ecode, creater)
