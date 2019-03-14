@@ -1895,6 +1895,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     for key, value in single_dict.items():
 
                         tcode = AttachmentFileType.objects.get(tname=key).tcode
+                        #tcode_editor = AttachmentFileType.objects.get(tname='consultEditor').tcode
+
                         url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
                         if not os.path.exists(url_x_c):
                             os.makedirs(url_x_c)
@@ -1924,6 +1926,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         file_caption=url_file[33:]
                         list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
                                                         operation_state=3, state=1,file_caption=file_caption,publish=1,file_format=1))
+
                 if attachment_list:
                     for attachment in attachment_list:
                         url_l = attachment.split('/')
@@ -1977,6 +1980,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         else:
                             # 将doc临时目录转移到正式目录
                             dict_items[url_j]=url_x
+
                 if list1:
                     # 创建atachmentinfo表
                     AttachmentFileinfo.objects.bulk_create(list1)
