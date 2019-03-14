@@ -1838,7 +1838,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 promotional = url_to_path(data.pop('promotional', None))  # 宣传照
                 owner_abstract_detail = data.get('owner_abstract_detail', '')  # 富文本
                 if owner_abstract_detail:
-                    img_pattern = re.compile(r'src=\'(.*?)\'')
+                    img_pattern = re.compile(r'src=\"(.*?)\"')
                     editor_imgs_list = img_pattern.findall(owner_abstract_detail)
                     for e in editor_imgs_list:
                         editor_imgs_path[e] = url_to_path(e)
@@ -2034,7 +2034,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 owner_abstract_detail = data.get('owner_abstract_detail', '')  # 富文本
 
                 if owner_abstract_detail:
-                    img_pattern = re.compile(r'src=\'(.*?)\'')
+                    img_pattern = re.compile(r'src=\"(.*?)\"')
                     editor_imgs_list = img_pattern.findall(owner_abstract_detail)
                     for e in editor_imgs_list:
                         editor_imgs_path[e] = url_to_path(e)
@@ -2854,7 +2854,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                 promotional = url_to_path(data.pop('promotional', None))  # 宣传照
                 owner_abstract_detail = data.get('owner_abstract_detail', '')  # 富文本
                 if owner_abstract_detail:
-                    img_pattern = re.compile(r'src=\'(.*?)\'')
+                    img_pattern = re.compile(r'src=\"(.*?)\"')
                     editor_imgs_list = img_pattern.findall(owner_abstract_detail)
                     for e in editor_imgs_list:
                         editor_imgs_path[e] = url_to_path(e)
@@ -3050,7 +3050,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                 owner_abstract_detail = data.get('owner_abstract_detail', '')  # 富文本
 
                 if owner_abstract_detail:
-                    img_pattern = re.compile(r'src=\'(.*?)\'')
+                    img_pattern = re.compile(r'src=\"(.*?)\"')
                     editor_imgs_list = img_pattern.findall(owner_abstract_detail)
                     for e in editor_imgs_list:
                         editor_imgs_path[e] = url_to_path(e)
@@ -3426,7 +3426,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                 promotional = url_to_path(data.pop('promotional', None))  # 宣传照
                 owner_abstract_detail = data.get('pt_describe', '')  # 富文本
                 if owner_abstract_detail:
-                    img_pattern = re.compile(r'src=\'(.*?)\'')
+                    img_pattern = re.compile(r'src=\"(.*?)\"')
                     editor_imgs_list = img_pattern.findall(owner_abstract_detail)
                     for e in editor_imgs_list:
                         editor_imgs_path[e] = url_to_path(e)
@@ -3631,7 +3631,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                 instance = self.get_object()  # 原纪录
 
                 if owner_abstract_detail:
-                    img_pattern = re.compile(r'src=\'(.*?)\'')
+                    img_pattern = re.compile(r'src=\"(.*?)\"')
                     editor_imgs_list = img_pattern.findall(owner_abstract_detail)
                     for e in editor_imgs_list:
                         editor_imgs_path[e] = url_to_path(e)
