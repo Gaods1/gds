@@ -155,6 +155,7 @@ class PolicyInfo(models.Model):
     publisher = models.CharField(verbose_name='发行单位',max_length=64)
     release_date = models.DateTimeField(verbose_name='发布时间')
     top_tag = models.IntegerField(verbose_name='是否置顶',blank=True)
+    top_time = models.DateTimeField(verbose_name='置顶时间', blank=True, null=True)
     face_pic = models.CharField(verbose_name='政策法规导引图片',max_length=64, blank=True, null=True)
     news_body = models.TextField(verbose_name='政策法规详情')
     state = models.IntegerField(verbose_name='政策法规状态')

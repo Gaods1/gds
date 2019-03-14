@@ -107,6 +107,7 @@ class PolicyInfoSerializers(PatclubModelSerializer):
                   'publisher',
                   'release_date',
                   'top_tag',
+                  'top_time',
                   'face_pic',
                   'news_body',
                   'state',

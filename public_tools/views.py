@@ -127,12 +127,7 @@ class PublicInfo(APIView):
                         # 给前端抛出文件路径
                         u_z = url.split('/')[-1]
                         jpg = self.absolute_path_front + 'temporary/' + account_code + '/'+ u_z
-
-                        # 富文本内容
-                        if flag=='consultEditor':
-                            dict[''.join(str(uuid.uuid1()).split('-'))]=jpg
-                        else:
-                            dict[flag] = jpg
+                        dict[flag] = jpg
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '上传失败%s' % str(e)},status=400)
@@ -208,9 +203,9 @@ class PublicInfo(APIView):
                         # 删除表记录
                         AttachmentFileinfo.objects.filter(file_name=name).order_by('-insert_time')[0].delete()
                         # 删除表(pdf)记录
-                        path_pdf = AttachmentFileinfo.objects.filter(file_name=name_pdf)
-                        if path_pdf:
-                            path_pdf.order_by('-insert_time')[0].delete()
+                        #path_pdf = AttachmentFileinfo.objects.filter(file_name=name_pdf)
+                        #if path_pdf:
+                            #path_pdf.order_by('-insert_time')[0].delete()
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '删除失败' % str(e)},status=400)
