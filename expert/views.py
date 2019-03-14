@@ -2036,7 +2036,6 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 if owner_abstract_detail:
                     img_pattern = re.compile(r'src=\"(.*?)\"')
                     editor_imgs_list = img_pattern.findall(owner_abstract_detail)
-                    raise ValueError(editor_imgs_list)
                     for e in editor_imgs_list:
                         if url_to_path(e):
                             editor_imgs_path[e] = url_to_path(e)
@@ -2111,7 +2110,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 formal_license = copy_img(owner_license, 'ResultOwnerEnt', "entLicense", ecode, creater)
                 formal_logo = copy_img(logo, 'ResultOwnerEnt', "logoPhoto", ecode, creater)
                 formal_promotional = copy_img(promotional, 'ResultOwnerEnt', "Propaganda", ecode, creater)
-
+                raise ValueError(editor_imgs_path)
                 for k, v in editor_imgs_path.items():
                     formal_editor_imgs_path[k] = copy_img(v, 'ResultOwnerEnt', 'consultEditor', ecode, creater)
 
