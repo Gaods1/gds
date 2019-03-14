@@ -2098,10 +2098,11 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
                 ecode = serializer.data['owner_code']
-                raise ValueError(ecode)
 
                 # 插入领域相关
                 crete_major(2, 6, ecode, major)
+
+                raise ValueError(ecode)
 
                 # 复制图片到正式目录
                 formal_idfront = copy_img(idfront, 'ResultOwnerEnt', 'identityFront', ecode, creater)
