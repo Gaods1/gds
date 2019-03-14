@@ -215,7 +215,6 @@ def copy_img(url, identity, img_type, ecode, creater):
     try:
         upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value
         if upload_temp_dir in url and os.path.isfile(url):
-            raise ValueError(url)
             file_name = url.split('/')[-1]
             formal_path = ParamInfo.objects.get(param_name='upload_dir').param_value
             tcode = AttachmentFileType.objects.get(tname=img_type).tcode
@@ -230,6 +229,7 @@ def copy_img(url, identity, img_type, ecode, creater):
                                               state=1, publish=1, file_order=0, operation_state=3,
                                               creater=creater, path=path, file_caption=file_name)
             return formal_file
+        raise ValueError(url)
         return None
     except Exception as e:
         raise ValueError(e)
