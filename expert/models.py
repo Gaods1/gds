@@ -414,7 +414,7 @@ class OwnerApplyHistory(models.Model):
 # 成果/需求持有人（个人）角色申请表（基本信息表) *
 class ResultOwnerpBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    owner_code = models.CharField(max_length=64, blank=True, null=True)
+    owner_code = models.CharField(max_length=64, default=gen_uuid32)
     pcode = models.CharField(max_length=64, blank=True, null=True)              # 与个人基本信息表关联字段
     type = models.IntegerField(blank=True, null=True)           # 申请类型      1： 成果持有人， 2： 需求持有人
     owner_name = models.CharField(verbose_name='姓名', max_length=64)
