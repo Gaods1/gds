@@ -1334,32 +1334,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     # 32位随机字符串内容
                     file_caption = url_file[33:]
                     list1.append(AttachmentFileinfo(tcode=tcode,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1,file_caption=file_caption))
-                    # 富文本内容
-
-                    element = ResultsInfo.objects.get(r_code=serializer_ecode)
-                    detail = element.r_abstract_detail
-                    if detail:
-                        img_pattern = re.compile(r'src=\"(.*?)\"')
-                        editor_imgs_list = img_pattern.findall(detail)
-                        if editor_imgs_list:
-                            for i in editor_imgs_list:
-                                editor_temppath = i.replace(absolute_path_front,absolute_path)
-                                if not os.path.exists(editor_temppath):
-                                    transaction.savepoint_rollback(save_id)
-                                    return Response({'detail': '富文本图片' + i + '不存在'}, 400)
-                                url_file_editor=i.split('/')[-1]
-
-                                editor_zhengshi = '{}{}/{}/{}'.format(relative_path,param_value,tcode_editor,serializer_ecode)
-                                if not os.path.exists(editor_zhengshi):
-                                    os.makedirs(editor_zhengshi)
-                                editor_zhengshi_file = editor_zhengshi + '/' + url_file_editor
-                                shutil.move(editor_temppath, editor_zhengshi_file)
-
-                                editor_zhengshi_f = editor_zhengshi_file.replace(relative_path,relative_path_front)
-                                detail=detail.replace(i,editor_zhengshi_f)
-
-                                element.r_abstract_detail=detail
-                                element.save()
+                    
 
                 for attachment in attachment_list:
                     url_l = attachment.split('/')
