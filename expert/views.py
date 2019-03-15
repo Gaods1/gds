@@ -3432,7 +3432,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                 logo = url_to_path(data.pop('logo', None))  # logo
                 promotional = url_to_path(data.pop('promotional', None))  # 宣传照
                 owner_abstract_detail = data.get('pt_describe', '')  # 富文本
-                raise ValueError('测试断电')
+                raise ValueError(owner_abstract_detail)
                 if owner_abstract_detail:
                     img_pattern = re.compile(r'src=\"(.*?)\"')
                     editor_imgs_list = img_pattern.findall(owner_abstract_detail)
