@@ -3559,9 +3559,9 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
 
                     # 复制图片到正式目录
                     formal_idfront = copy_img(idfront, 'Prteam', 'identityFront', ecode, creater)
+                    raise ValueError(formal_idfront)
                     formal_idback = copy_img(idback, 'Prteam', 'identityBack', ecode, creater)
                     formal_idphoto = copy_img(idphoto, 'Prteam', 'handIdentityPhoto', ecode, creater)
-                    raise ValueError('测试数据2')
                     for k, v in editor_imgs_path.items():
                         formal_editor_imgs_path[k] = copy_img(v, 'Prteam', 'consultEditor', ecode, creater)
 
