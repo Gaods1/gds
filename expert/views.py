@@ -490,9 +490,14 @@ class BrokerViewSet(viewsets.ModelViewSet):
             raw_queryset = BrokerBaseinfo.objects.raw(
                 "select b.serial  from broker_baseinfo as b left join account_info as ai "
                 "on  b.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
-            queryset = BrokerBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
+            queryset = BrokerBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset],
+                                                     state__in=[1, 2]).order_by("state")
+            queryset = queryset.exclude(broker_code__in=BrokerApplyHistory.objects.filter(
+                state__in=[1, 3]).values_list('broker_code', flat=True))
         else:
-            queryset = self.queryset
+            lq = BrokerApplyHistory.objects.filter(state__in=[1, 3]).values_list('broker_code', flat=True)
+            queryset = self.queryset.exclude(broker_code__in=BrokerApplyHistory.objects.filter(
+                state__in=[1, 3]).values_list('broker_code', flat=True))
 
         if isinstance(queryset, QuerySet):
             # Ensure queryset is re-evaluated on each request.
