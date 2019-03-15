@@ -1232,12 +1232,14 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         ecode = request.data.pop('ecode', None)
                 else:
                     if owner_type in [1, 3]:
+                        request.data['obtain_type']=2
                         pcode = request.data.pop('pcode', None)
                         Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
                         if not Identity_account_code:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
                     else:
+                        request.data['obtain_type']=3
                         ecode = request.data.pop('ecode', None)
                         Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
                         if not Identity_account_code:
@@ -1509,14 +1511,18 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         ecode = request.data.pop('ecode', None)
                 else:
                     if owner_type in [1, 3]:
+                        request.data['obtain_type']=2
                         pcode = request.data.pop('pcode', None)
                         Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
                         if not Identity_account_code:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
                     else:
+                        request.data['obtain_type']=3
                         ecode = request.data.pop('ecode', None)
                         Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
                         if not Identity_account_code:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是成果持有人(企业)身份'}, status=400)
 
                 pcode_or_ecode = pcode if pcode else ecode
@@ -1830,12 +1836,14 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         ecode = request.data.pop('ecode', None)
                 else:
                     if owner_type in [1, 3]:
+                        request.data['obtain_type']=2
                         pcode = request.data.pop('pcode', None)
                         Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
                         if not Identity_account_code:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是需求持有人(个人)身份'}, status=400)
                     else:
+                        request.data['obtain_type']=3
                         ecode = request.data.pop('ecode', None)
                         Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
                         if not Identity_account_code:
@@ -2095,14 +2103,18 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         ecode = request.data.pop('ecode', None)
                 else:
                     if owner_type in [1, 3]:
+                        request.data['obtain_type'] = 2
                         pcode = request.data.pop('pcode', None)
                         Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
                         if not Identity_account_code:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是需求持有人(个人)身份'}, status=400)
                     else:
+                        request.data['obtain_type'] = 3
                         ecode = request.data.pop('ecode', None)
                         Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
                         if not Identity_account_code:
+                            transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是需求持有人(企业)身份'}, status=400)
 
                 pcode_or_ecode = pcode if pcode else ecode
