@@ -1194,13 +1194,19 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 expiry_datee = request.data.get('expiry_datee',None)
                 r_form_type = request.data.get('r_form_type',None)
                 use_type = request.data.get('use_type', None)
-                patent_number = request.data.get('patent_number',None)
                 r_abstract = request.data.get('r_abstract',None)
+                patent_number = request.data.get('patent_number', None)
 
 
-                if not mname_list or not cooperation_name or not owner_type or not key_info_list or not account_code or not obtain_type or not r_name or not expiry_dateb or not expiry_datee or not r_form_type or not use_type or not patent_number or not r_abstract:
+                if not mname_list or not cooperation_name or not owner_type or not key_info_list or not account_code or not obtain_type or not r_name or not expiry_dateb or not expiry_datee or not r_form_type or not use_type or not r_abstract:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail':'请完善相关信息'},status=400)
+                # 形式类型判断论文编号
+                if r_form_type != 3:
+                    if not r_form_type:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '请填写专利/论文编号'}, status=400)
+
 
 
                 # 时间空字符串处理
@@ -1256,7 +1262,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 serializer_ecode = serializer.data['r_code']
 
                 #2 创建合作方式表
-                dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
+                dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式'}
                 ResultsCooperationTypeInfo.objects.create(r_type=1,
                 rr_code=serializer_ecode,cooperation_code=cooperation_name,
                 cooperation_name=dict_coop[cooperation_name], state=state)
@@ -1469,9 +1475,14 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                              'coverImg':Cover,'handIdentityPhoto':PerHandId,
                              'agreement':AgencyImg,'entLicense':EntLicense}
 
-                if not mname_list or not cooperation_name or not owner_type or not key_info_list or not account_code or not obtain_type or not r_name or not expiry_dateb or not expiry_datee or not r_form_type or not use_type or not patent_number or not r_abstract:
+                if not mname_list or not cooperation_name or not owner_type or not key_info_list or not account_code or not obtain_type or not r_name or not expiry_dateb or not expiry_datee or not r_form_type or not use_type or not r_abstract:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '请完善相关信息'}, status=400)
+                # 形式类型判断论文编号
+                if r_form_type != 3:
+                    if not r_form_type:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '请填写专利/论文编号'}, status=400)
 
 
                 # 时间空字符串处理
@@ -1527,7 +1538,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     instance._prefetched_objects_cache = {}
 
                 # 2 创建合作方式表
-                dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
+                dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式'}
                 ResultsCooperationTypeInfo.objects.filter(rr_code=serializer_ecode).update(
                 rr_code=serializer_ecode,r_type=1,cooperation_code=cooperation_name,
                 cooperation_name=dict_coop[cooperation_name], state=state)
@@ -1846,7 +1857,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 serializer_ecode = serializer.data['req_code']
 
                 # 2 创建合作方式表
-                dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
+                dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式'}
                 ResultsCooperationTypeInfo.objects.create(r_type=2,
                                                           rr_code=serializer_ecode,cooperation_code=cooperation_name,
                                                           cooperation_name=dict_coop[cooperation_name], state=state)
@@ -2113,7 +2124,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     instance._prefetched_objects_cache = {}
 
                 # 2 创建合作方式表
-                dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式另行确定'}
+                dict_coop = {1: '寻求资金', 2: '市场推广', 3: '方案落地', 4: '其他方式'}
                 ResultsCooperationTypeInfo.objects.filter(rr_code=serializer_ecode).update(
                     rr_code=serializer_ecode, r_type=2,cooperation_code=cooperation_name,
                     cooperation_name=dict_coop[cooperation_name], state=state)

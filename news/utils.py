@@ -38,7 +38,9 @@ def get_attach_info(file_list,module_type,file_type,file_dir,params_dict):
             file_dict = {}
             file_info_arr= file_info.split('/')
             file_caption = file_info_arr.pop()  #上传的原文件名
-            real_file_caption = file_caption[33:]
+            arr_file = file_caption.split('_')
+            real_file_caption = "_".join(arr_file[1:])
+            # real_file_caption = file_caption[33:]
             file_arr = file_caption.split('.')
             file_ext = file_arr.pop()           #上传的文件后缀
             file_name = '{}.{}'.format(gen_uuid32(),file_ext)  #新的文件名保存到附件表
