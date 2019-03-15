@@ -3558,7 +3558,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     crete_major(2, 2, ecode, major)
 
                     # 复制图片到正式目录
-                    raise ValueError(idfront)
+                    raise ValueError(ecode)
                     formal_idfront = copy_img(idfront, 'Prteam', 'identityFront', ecode, creater)
                     formal_idback = copy_img(idback, 'Prteam', 'identityBack', ecode, creater)
                     formal_idphoto = copy_img(idphoto, 'Prteam', 'handIdentityPhoto', ecode, creater)
