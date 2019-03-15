@@ -21,7 +21,7 @@ logger = logging.getLogger('django')
 
 # 领域专家管理
 class ExpertViewSet(viewsets.ModelViewSet):
-    queryset = ExpertBaseinfo.objects.filter(state__in=[1, 2]).order_by('state', '-serial')
+    queryset = ExpertBaseinfo.objects.filter(state__in=[1]).order_by('state', '-serial')
     serializer_class = ExpertBaseInfoSerializers
 
     filter_backends = (
@@ -55,7 +55,8 @@ class ExpertViewSet(viewsets.ModelViewSet):
                 "select e.serial  from expert_baseinfo as e left join "
                 "account_info as ai on  e.account_code=ai.account_code "
                 "where ai.dept_code  in (" + dept_codes_str + ")")
-            queryset = ExpertBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
+            queryset = ExpertBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset],
+                                                     state__in=[1]).order_by("state", '-serial')
         else:
             queryset = self.queryset
 
@@ -120,7 +121,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
                 }
 
                 # 查询当前账号有没有伪删除身份
-                expert = ExpertBaseinfo.objects.filter(account_code=account_code, state=3)
+                expert = ExpertBaseinfo.objects.filter(account_code=account_code, state__in=[2, 3])
                 if expert:
                     # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
                     check_identity2(account_code=account_code, identity=9, info=identity_info)
@@ -209,10 +210,10 @@ class ExpertViewSet(viewsets.ModelViewSet):
                 data['creater'] = creater
 
                 major = data.pop('major_code', None)  # 相关领域（列表）
-                head = url_to_path(data.pop('head', None))  # 头像
-                idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
-                idback = url_to_path(data.pop('idback', None))     # 身份证背面
-                idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
+                head = url_to_path(data.get('head', None))  # 头像
+                idfront = url_to_path(data.get('idfront', None))  # 身份证正面
+                idback = url_to_path(data.get('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.get('idphoto', None))    # 手持身份证
                 instance = self.get_object()  # 原纪录
 
                 if account_code != instance.account_code:
@@ -457,7 +458,7 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
 # 技术经纪人管理
 class BrokerViewSet(viewsets.ModelViewSet):
 
-    queryset = BrokerBaseinfo.objects.filter(state__in=[1, 2]).order_by('state', '-serial')
+    queryset = BrokerBaseinfo.objects.filter(state__in=[1]).order_by('state', '-serial')
     serializer_class = BrokerBaseInfoSerializers
 
     filter_backends = (
@@ -491,14 +492,9 @@ class BrokerViewSet(viewsets.ModelViewSet):
                 "select b.serial  from broker_baseinfo as b left join account_info as ai "
                 "on  b.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
             queryset = BrokerBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset],
-                                                     state__in=[1, 2]).order_by("state")
-            queryset = queryset.exclude(broker_code__in=BrokerApplyHistory.objects.filter(
-                state__in=[1, 3]).values_list('broker_code', flat=True))
+                                                     state__in=[1]).order_by("state")
         else:
-            lq = BrokerApplyHistory.objects.filter(state__in=[1, 3]).values_list('broker_code', flat=True)
-            queryset = self.queryset.exclude(broker_code__in=BrokerApplyHistory.objects.filter(
-                state__in=[1, 3]).values_list('broker_code', flat=True))
-
+            queryset = self.queryset
         if isinstance(queryset, QuerySet):
             # Ensure queryset is re-evaluated on each request.
             queryset = queryset.all()
@@ -561,7 +557,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
                 }
 
                 # 查询当前账号有没有伪删除身份
-                obj = BrokerBaseinfo.objects.filter(account_code=account_code, state=3)
+                obj = BrokerBaseinfo.objects.filter(account_code=account_code, state__in=[2, 3])
                 if obj:
                     # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
                     check_identity2(account_code=account_code, identity=2, info=identity_info)
@@ -901,7 +897,7 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
 
 # 采集员管理
 class CollectorViewSet(viewsets.ModelViewSet):
-    queryset = CollectorBaseinfo.objects.filter(state__in=[1, 2]).order_by('state', '-serial')
+    queryset = CollectorBaseinfo.objects.filter(state__in=[1]).order_by('state', '-serial')
     serializer_class = CollectorBaseInfoSerializers
 
     filter_backends = (
@@ -930,7 +926,8 @@ class CollectorViewSet(viewsets.ModelViewSet):
 
             raw_queryset = CollectorBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
             consult_reply_set = CollectorBaseinfo.objects.filter(
-                serial__in=[i.serial for i in raw_queryset]
+                serial__in=[i.serial for i in raw_queryset],
+                state__in=[1]
             ).order_by('state', '-serial')
             return consult_reply_set
         else:
@@ -994,7 +991,7 @@ class CollectorViewSet(viewsets.ModelViewSet):
                 }
 
                 # 查询当前账号有没有伪删除身份
-                obj = CollectorBaseinfo.objects.filter(account_code=account_code, state=3)
+                obj = CollectorBaseinfo.objects.filter(account_code=account_code, state__in=[2, 3])
                 if obj:
                     # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
                     check_identity2(account_code=account_code, identity=1, info=identity_info)
@@ -1076,21 +1073,21 @@ class CollectorViewSet(viewsets.ModelViewSet):
                 account_code = data['account_code']
                 data['creater'] = creater
 
-                head = url_to_path(data.pop('head', None))  # 头像
-                idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
-                idback = url_to_path(data.pop('idback', None))     # 身份证背面
-                idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
+                head = url_to_path(data.get('head', None))  # 头像
+                idfront = url_to_path(data.get('idfront', None))  # 身份证正面
+                idback = url_to_path(data.get('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.get('idphoto', None))    # 手持身份证
                 instance = self.get_object()  # 原纪录
 
                 if account_code != instance.account_code:
                     raise ValueError('不允许更改关联账号')
-                if not head:
+                if not data.pop('head', None):
                     raise ValueError('头像是必填项')
-                if not idfront:
+                if not data.pop('idfront', None):
                     raise ValueError('证件照正面是必填项')
-                if not idback:
+                if not data.pop('idback', None):
                     raise ValueError('证件照背面是必填项')
-                if not idphoto:
+                if not data.pop('idphoto', None):
                     raise ValueError('手持身份证是必填项')
 
                 # 身份信息关联表基本信息
@@ -1321,7 +1318,7 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
 
 # 成果持有人管理视图
 class ResultsOwnerViewSet(viewsets.ModelViewSet):
-    queryset = ResultOwnerpBaseinfo.objects.filter(type=1, state__in=[1, 2]).order_by('state', '-serial')
+    queryset = ResultOwnerpBaseinfo.objects.filter(type=1, state__in=[1]).order_by('state', '-serial')
     serializer_class = ResultOwnerpSerializers
 
     filter_backends = (
@@ -1355,7 +1352,8 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                     and result_ownerp_baseinfo.type=1"
 
             raw_queryset = ResultOwnerpBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = ResultOwnerpBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state', '-serial')
+            consult_reply_set = ResultOwnerpBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset],
+                                                                    state__in=[1]).order_by('state', '-serial')
             return consult_reply_set
         else:
             queryset = self.queryset
@@ -1515,10 +1513,10 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                 data['creater'] = creater
 
                 major = data.pop('major_code', None)  # 相关领域（列表）
-                head = url_to_path(data.pop('head', None))  # 头像
-                idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
-                idback = url_to_path(data.pop('idback', None))     # 身份证背面
-                idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
+                head = url_to_path(data.get('head', None))  # 头像
+                idfront = url_to_path(data.get('idfront', None))  # 身份证正面
+                idback = url_to_path(data.get('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.get('idphoto', None))    # 手持身份证
                 instance = self.get_object()  # 原纪录
 
                 if account_code != instance.account_code:
@@ -1772,7 +1770,7 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
 
 # 成果持有人（企业）管理视图
 class ResultsOwnereViewSet(viewsets.ModelViewSet):
-    queryset = ResultOwnereBaseinfo.objects.filter(type=1, state__in=[1, 2]).order_by('state', '-serial')
+    queryset = ResultOwnereBaseinfo.objects.filter(type=1, state__in=[1]).order_by('state', '-serial')
     serializer_class = ResultOwnereSerializers
 
     filter_backends = (
@@ -1806,7 +1804,8 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                     and result_ownere_baseinfo.type=2"
 
             raw_queryset = ResultOwnereBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = ResultOwnereBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state', '-serial')
+            consult_reply_set = ResultOwnereBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset],
+                                                                    state__in=[1]).order_by('state', '-serial')
             return consult_reply_set
         else:
             queryset = self.queryset
@@ -2336,7 +2335,7 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
 
 # 需求持有人管理视图
 class RequirementOwnerViewSet(viewsets.ModelViewSet):
-    queryset = ResultOwnerpBaseinfo.objects.filter(type=2, state__in=[1, 2]).order_by('state', '-serial')
+    queryset = ResultOwnerpBaseinfo.objects.filter(type=2, state__in=[1]).order_by('state', '-serial')
     serializer_class = ResultOwnerpSerializers
 
     filter_backends = (
@@ -2371,7 +2370,8 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                     and result_ownerp_baseinfo.type=2"
 
             raw_queryset = ResultOwnerpBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = ResultOwnerpBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state', '-serial')
+            consult_reply_set = ResultOwnerpBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset],
+                                                                    state__in=[1]).order_by('state', '-serial')
             return consult_reply_set
         else:
             queryset = self.queryset
@@ -2787,7 +2787,7 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
 
 # 需求持有人(企业)管理视图
 class RequirementOwnereViewSet(viewsets.ModelViewSet):
-    queryset = ResultOwnereBaseinfo.objects.filter(type=2).order_by('state', '-serial')
+    queryset = ResultOwnereBaseinfo.objects.filter(type=2, state__in=[1]).order_by('state', '-serial')
     serializer_class = ResultOwnereSerializers
 
     filter_backends = (
@@ -2821,7 +2821,8 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                     and result_ownere_baseinfo.type=2"
 
             raw_queryset = ResultOwnereBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = ResultOwnereBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state', '-serial')
+            consult_reply_set = ResultOwnereBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset],
+                                                                    state__in=[1]).order_by('state', '-serial')
             return consult_reply_set
         else:
             queryset = self.queryset
@@ -3045,10 +3046,10 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                 account_code = data['account_code']
 
                 major = data.pop('major_code', None)  # 相关领域（列表）
-                idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
-                idback = url_to_path(data.pop('idback', None))     # 身份证背面
-                idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
-                owner_license = url_to_path(data.pop('license', None))  # 营业执照
+                idfront = url_to_path(data.get('idfront', None))  # 身份证正面
+                idback = url_to_path(data.get('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.get('idphoto', None))    # 手持身份证
+                owner_license = url_to_path(data.get('license', None))  # 营业执照
                 logo = url_to_path(data.pop('logo', None))  # logo
                 promotional = url_to_path(data.pop('promotional', None))  # 宣传照
                 owner_abstract_detail = data.get('owner_abstract_detail', '')  # 富文本
@@ -3066,13 +3067,13 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                     raise ValueError('不允许更改关联账号')
                 if not major:
                     raise ValueError('所属领域是必填项')
-                if not idfront:
+                if not data.pop('idfront', None):
                     raise ValueError('证件照正面是必填项')
-                if not idback:
+                if not data.pop('idback', None):
                     raise ValueError('证件照背面是必填项')
-                if not idphoto:
+                if not data.pop('idphoto', None):
                     raise ValueError('手持身份证是必填项')
-                if not owner_license:
+                if not data.pop('license', None):
                     raise ValueError('营业执照是必填项')
 
                 # 身份信息关联表基本信息
@@ -3359,7 +3360,7 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
 
 # 技术团队视图
 class TeamBaseinfoViewSet(viewsets.ModelViewSet):
-    queryset = ProjectTeamBaseinfo.objects.filter(state__in=[1, 2]).order_by('state', '-serial')
+    queryset = ProjectTeamBaseinfo.objects.filter(state__in=[1]).order_by('state', '-serial')
     serializer_class = TeamBaseinfoSerializers
 
     filter_backends = (
@@ -3392,7 +3393,8 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
             raw_queryset = ProjectTeamBaseinfo.objects.raw(
                 "select p.serial  from project_team_baseinfo as p left join account_info as ai "
                 "on  p.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
-            queryset = ProjectTeamBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
+            queryset = ProjectTeamBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset],
+                                                          state__in=[1]).order_by("state", '-serial')
         else:
             queryset = self.queryset
 
@@ -3639,7 +3641,8 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     img_pattern = re.compile(r'src=\"(.*?)\"')
                     editor_imgs_list = img_pattern.findall(owner_abstract_detail)
                     for e in editor_imgs_list:
-                        editor_imgs_path[e] = url_to_path(e)
+                        if url_to_path(e):
+                            editor_imgs_path[e] = url_to_path(e)
 
                 if account_code != instance.account_code:
                     raise ValueError('不允许更改关联账号')
