@@ -27,6 +27,7 @@ class ExpertBaseInfoSerializers(PatclubModelSerializer):
             'expert_email',     # 邮箱
             'expert_city',  # 专家所属城市
             'city',
+            'major_code',
             'major',
             'expert_id_type',  # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
             'expert_id',    # 证件号码
@@ -103,6 +104,7 @@ class BrokerBaseInfoSerializers(PatclubModelSerializer):
             'broker_email',     # 邮箱
             'broker_city',  # 所属城市代码
             'city',         # 所属城市
+            'major_code',
             'major',
             'broker_id_type',  # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
             'broker_id',    # 证件号码
@@ -256,6 +258,7 @@ class ResultOwnerpSerializers(PatclubModelSerializer):
             'insert_time',
             'owner_city',
             'city',
+            'major_code',
             'major',
             'university',
             'profession',
@@ -324,6 +327,7 @@ class ResultOwnereSerializers(PatclubModelSerializer):
             'owner_name_abbr',
             'owner_city',
             'city',
+            'major_code',
             'major',
             'owner_abstract_detail',
             'legal_person',
@@ -382,6 +386,7 @@ class TeamBaseinfoSerializers(PatclubModelSerializer):
             'pt_type',     # 团队种类
             'pt_city',  # 团队所属城市
             'ecode',  #对于企业类型的项目团队，填写企业代码，其他类型团队，该字段无效
+            'major_code',
             'major',
             'pt_level',  # 业务能力的内部的评级。以星级表示，1-5 表示一星到五星，默认为一星
             'credit_value',    # 信用值取值范围0-100，默认0
