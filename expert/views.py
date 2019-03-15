@@ -3493,6 +3493,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                 # 查询当前账号有没有伪删除身份
                 obj = ProjectTeamBaseinfo.objects.filter(account_code=account_code, state=3)
                 if obj:
+                    raise ValueError('测试断电')
                     # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
                     check_identity2(account_code=account_code, identity=3, info=identity_info)
 
@@ -3515,7 +3516,6 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
 
                     # 插入领域相关
                     crete_major(2, 2, ecode, major)
-                    raise ValueError('测试断电')
 
                     # 复制图片到正式目录
                     formal_idfront = copy_img(idfront, 'Prteam', 'identityFront', ecode, creater)
