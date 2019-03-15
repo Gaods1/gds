@@ -3556,12 +3556,12 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     ecode = serializer.data['pt_code']
                     # 插入领域相关
                     crete_major(2, 2, ecode, major)
-                    raise ValueError('测试数据2')
+
                     # 复制图片到正式目录
                     formal_idfront = copy_img(idfront, 'Prteam', 'identityFront', ecode, creater)
                     formal_idback = copy_img(idback, 'Prteam', 'identityBack', ecode, creater)
                     formal_idphoto = copy_img(idphoto, 'Prteam', 'handIdentityPhoto', ecode, creater)
-
+                    raise ValueError('测试数据2')
                     for k, v in editor_imgs_path.items():
                         formal_editor_imgs_path[k] = copy_img(v, 'Prteam', 'consultEditor', ecode, creater)
 
