@@ -3437,7 +3437,6 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     editor_imgs_list = img_pattern.findall(owner_abstract_detail)
                     for e in editor_imgs_list:
                         editor_imgs_path[e] = url_to_path(e)
-                raise ValueError(owner_abstract_detail)
                 if not major:
                     raise ValueError('所属领域是必填项')
                 if not idfront:
@@ -3447,6 +3446,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                 if not idphoto:
                     raise ValueError('手持身份证是必填项')
                 # 身份信息关联表基本信息
+                raise ValueError('测试数据1')
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 3,
