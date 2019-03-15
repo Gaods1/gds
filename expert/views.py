@@ -3554,10 +3554,9 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     self.perform_create(serializer)
                     return_data = serializer.data
                     ecode = serializer.data['pt_code']
-                    raise ValueError('测试数据2')
                     # 插入领域相关
                     crete_major(2, 2, ecode, major)
-
+                    raise ValueError('测试数据2')
                     # 复制图片到正式目录
                     formal_idfront = copy_img(idfront, 'Prteam', 'identityFront', ecode, creater)
                     formal_idback = copy_img(idback, 'Prteam', 'identityBack', ecode, creater)
