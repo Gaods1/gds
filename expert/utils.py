@@ -113,10 +113,15 @@ def update_baseinfo(obj, code, data):
     obj.objects.filter(**code).update(**data)
 
 
-# 获取领域
-def get_major(user_type, user_code):
+# 获取领域code
+def get_major_code(user_type, user_code):
     mcode = MajorUserinfo.objects.values_list('mcode', flat=True).filter(
         mtype=2, user_type=user_type, user_code=user_code)
+    return mcode
+
+
+# 获取领域
+def get_major(mcode):
     mname = MajorInfo.objects.values_list('mname', flat=True).filter(mcode__in=mcode, state=1)
     return mname
 
@@ -200,8 +205,8 @@ def url_to_path(url):
         temp_url = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 读取多媒体文件的正式路径
         if temp_url in url:
             path = url.replace(temp_url, temp_path)
-        elif formal_url in url:
-            path = url.replace(formal_url, formal_path)
+        # elif formal_url in url:
+        #     path = url.replace(formal_url, formal_path)
     return path
 
 
@@ -209,7 +214,7 @@ def url_to_path(url):
 def copy_img(url, identity, img_type, ecode, creater):
     try:
         upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value
-        if upload_temp_dir in url and os.path.isfile(url):
+        if url and upload_temp_dir in url and os.path.isfile(url):
             file_name = url.split('/')[-1]
             formal_path = ParamInfo.objects.get(param_name='upload_dir').param_value
             tcode = AttachmentFileType.objects.get(tname=img_type).tcode
@@ -219,10 +224,11 @@ def copy_img(url, identity, img_type, ecode, creater):
                 os.makedirs(file_formal_path)
             formal_file = shutil.copyfile(url, file_path)
             path = os.path.join(identity, tcode, ecode) + '/'
-            AttachmentFileinfo.objects.filter(ecode=ecode, tcode=tcode, file_name=file_name).delete()
-            AttachmentFileinfo.objects.create(ecode=ecode, tcode=tcode, file_format=1, file_name=file_name,
-                                              state=1, publish=1, file_order=0, operation_state=3,
-                                              creater=creater, path=path, file_caption=file_name)
+            if img_type != 'consultEditor':
+                AttachmentFileinfo.objects.filter(ecode=ecode, tcode=tcode).delete()
+                AttachmentFileinfo.objects.create(ecode=ecode, tcode=tcode, file_format=1, file_name=file_name,
+                                                  state=1, publish=1, file_order=0, operation_state=3,
+                                                  creater=creater, path=path, file_caption=file_name)
             return formal_file
         return None
     except Exception as e:

@@ -5,7 +5,7 @@ import base64
 import shutil
 import uuid
 
-from misc.misc import gen_uuid32
+from misc.misc import gen_uuid32, gen_uuid6
 
 import time
 from django.db import transaction
@@ -19,7 +19,6 @@ from rest_framework.response import Response
 from rest_framework import viewsets
 from rest_framework.utils import json
 from rest_framework.views import APIView
-from misc.misc import gen_uuid32
 from public_models.models import AttachmentFileType, ParamInfo, AttachmentFileinfo
 from python_backend import settings
 from django.core.files.storage import FileSystemStorage
@@ -74,8 +73,8 @@ class PublicInfo(APIView):
                             os.makedirs(url)
                         #上传服务器的路径
                         #url = url + file.name
-                        # 32位随机字符串内容
-                        file_name = '{}_{}'.format(gen_uuid32(), file.name)
+                        # 6位随机字符串内容
+                        file_name = '{}_{}'.format(gen_uuid6(), file.name.replace(' ',''))
                         url = url + file_name
                         if os.path.exists(url):
                             return Response({'detail': '该附件已上传到服务器,如果要继续上传请重命名'},status=400)
@@ -112,8 +111,8 @@ class PublicInfo(APIView):
                         url = self.MEDIA_ROOT + 'temporary/' + account_code + '/'
                         if not os.path.exists(url):
                             os.makedirs(url)
-                        # 32位随机字符串内容
-                        file_name = '{}_{}'.format(gen_uuid32(),file.name)
+                        # 6位随机字符串内容
+                        file_name = '{}_{}'.format(gen_uuid6(),file.name)
 
                         url = url + file_name
                         if not url.endswith('jpg') and not url.endswith('png') and not url.endswith('jpeg') and not url.endswith('bmp') and not url.endswith('gif'):

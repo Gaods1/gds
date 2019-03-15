@@ -1,6 +1,6 @@
 from public_models.models import *
 from public_models.utils import get_single
-from .utils import get_major
+from .utils import *
 from account.models import AccountInfo
 from misc.validate import validate_email, validate_mobile, validate_tel, validate_license
 # Create your models here.
@@ -91,8 +91,8 @@ class ExpertBaseinfo(models.Model):
     homepage = models.URLField(max_length=128, blank=True, null=True)
     expert_addr = models.CharField(max_length=255, blank=True, null=True)
     ecode = models.CharField(max_length=64, blank=True, null=True)
-    expert_level = models.IntegerField(default=1)
-    credit_value = models.IntegerField(default=0)
+    expert_level = models.IntegerField(default=1, null=True)
+    credit_value = models.IntegerField(default=0, null=True)
     expert_integral = models.IntegerField(blank=True, null=True)
     state = models.IntegerField(default=2)  # 1 正常， 2 暂停 3 伪删除
     creater = models.CharField(max_length=32, blank=True, null=True)
@@ -108,10 +108,15 @@ class ExpertBaseinfo(models.Model):
         region_info = SystemDistrict.objects.get(district_id=self.expert_city)
         return region_info.district_name
 
+    # 领域code
+    @property
+    def major_code(self):
+        return get_major_code(1, self.expert_code)
+
     # 领域
     @property
     def major(self):
-        return get_major(1, self.expert_code)
+        return get_major(self.major_code)
 
     @property
     def enterprise(self):
@@ -193,27 +198,27 @@ class BrokerBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     broker_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     pcode = models.CharField(max_length=64, blank=True, null=True)
-    broker_name = models.CharField(max_length=64, blank=True, null=True)
+    broker_name = models.CharField(verbose_name='姓名', max_length=64)
     broker_tel = models.CharField(max_length=16, blank=True, null=True, validators=[validate_tel])
-    broker_mobile = models.CharField(max_length=16, blank=True, null=True, validators=[validate_mobile])
+    broker_mobile = models.CharField(verbose_name='手机号码', max_length=16, validators=[validate_mobile])
     broker_email = models.CharField(max_length=64, blank=True, null=True, validators=[validate_email])
-    broker_id_type = models.IntegerField(default=1)     # 技术经纪人证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
-    broker_id = models.CharField(max_length=32, blank=True, null=True)
+    broker_id_type = models.IntegerField(verbose_name='证件类型', default=1)     # 技术经纪人证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
+    broker_id = models.CharField(verbose_name='证件号码', max_length=32)
 
-    broker_graduate_school = models.CharField(max_length=255, blank=True, null=True)    # 经纪人毕业院校
-    broker_major = models.CharField(max_length=255, blank=True, null=True)  # 所属院系
+    broker_graduate_school = models.CharField(verbose_name='毕业院校', max_length=255)    # 经纪人毕业院校
+    broker_major = models.CharField(verbose_name='专业', max_length=255)  # 所属院系
     broker_address = models.CharField(max_length=255, blank=True, null=True)    # 技术经纪人通讯地址
-    broker_city = models.IntegerField(blank=True, null=True)    # 所属城市
+    broker_city = models.IntegerField(verbose_name='归属城市')    # 所属城市
 
-    broker_abstract = models.TextField(blank=True, null=True)
-    education = models.CharField(max_length=8, default="本科")   # 默认本科 中专，大专，本科， 研究生，硕士， 博士，MBA， EMBA
+    broker_abstract = models.TextField(verbose_name='自我介绍')
+    education = models.CharField(verbose_name='学历', max_length=8, default=3)   # 默认本科 中专，大专，本科， 研究生，硕士， 博士，MBA， EMBA
     broker_abbr = models.CharField(max_length=32, blank=True, null=True)    # 昵称
     broker_caption = models.CharField(max_length=32, blank=True, null=True)     # 头衔
-    work_type = models.IntegerField(default=1)      # 工作方式 1 全职 2 兼职
+    work_type = models.IntegerField(verbose_name='工作方式', default=1)      # 工作方式 1 全职 2 兼职
     ecode = models.CharField(max_length=64, blank=True, null=True)  # 技术经纪人归属企业的企业代码。worktype =1 时无效
-    broker_level = models.IntegerField(default=1)   # 业务能力的内部的评级。以星级表示，1-5 表示一星到五星，默认为一星
-    credit_value = models.IntegerField(default=0)   # 信用值。取值范围0-100，默认0
-    broker_integral = models.IntegerField(default=0)    # 积分。目前尚未使用，默认为0
+    broker_level = models.IntegerField(default=1, null=True)   # 业务能力的内部的评级。以星级表示，1-5 表示一星到五星，默认为一星
+    credit_value = models.IntegerField(default=0, null=True)   # 信用值。取值范围0-100，默认0
+    broker_integral = models.IntegerField(default=0, null=True)    # 积分。目前尚未使用，默认为0
     state = models.IntegerField(default=1)  # 状态。1：正常 2：暂停；3：伪删除
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
@@ -229,8 +234,12 @@ class BrokerBaseinfo(models.Model):
         return region_info.district_name
 
     @property
+    def major_code(self):
+        return get_major_code(3, self.broker_code)
+
+    @property
     def major(self):
-        return get_major(3, self.broker_code)
+        return get_major(self.major_code)
 
     @property
     def enterprise(self):
@@ -312,20 +321,20 @@ class CollectorBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
     collector_code = models.CharField(max_length=64, default=gen_uuid32)
     pcode = models.CharField(max_length=64, blank=True, null=True)      # 与个人基本信息表关联字段
-    collector_name = models.CharField(max_length=64, blank=True, null=True)
+    collector_name = models.CharField(verbose_name='姓名', max_length=64)
     collector_tel = models.CharField(max_length=16, blank=True, null=True, validators=[validate_tel])
-    collector_mobile = models.CharField(max_length=16, blank=True, null=True, validators=[validate_mobile])
+    collector_mobile = models.CharField(verbose_name='手机号码', max_length=16, validators=[validate_mobile])
     collector_email = models.CharField(max_length=64, blank=True, null=True, validators=[validate_email])
-    collector_idtype = models.IntegerField(default=1)   # 采集员证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
-    collector_id = models.CharField(max_length=32, blank=True, null=True)
+    collector_idtype = models.IntegerField(verbose_name='证件类型', default=1)   # 采集员证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
+    collector_id = models.CharField(verbose_name='证件号码', max_length=32)
 
-    collector_graduate_school = models.CharField(max_length=255, blank=True, null=True)    # 毕业院校
-    collector_major = models.CharField(max_length=255, blank=True, null=True)  # 所属院系
+    collector_graduate_school = models.CharField(verbose_name='毕业院校', max_length=255)    # 毕业院校
+    collector_major = models.CharField(verbose_name='专业', max_length=255)  # 所属院系
     collector_address = models.CharField(max_length=255, blank=True, null=True)    # 技术经纪人通讯地址
-    collector_city = models.IntegerField(blank=True, null=True)    # 所属城市
+    collector_city = models.IntegerField(verbose_name='归属城市')    # 所属城市
 
-    collector_abstract = models.TextField(blank=True, null=True)
-    education = models.CharField(max_length=8, blank=True, null=True)       # 默认本科 中专，大专，本科， 研究生，硕士， 博士，MBA， EMBA
+    collector_abstract = models.TextField(verbose_name='自我介绍')
+    education = models.CharField(verbose_name='学历', max_length=8)       # 默认本科 中专，大专，本科， 研究生，硕士， 博士，MBA， EMBA
     owner_zipcode = models.CharField(max_length=8, blank=True, null=True)
     state = models.IntegerField(default=1)   # 采集员状态。1：正常；2：暂停；3：伪删除
     account_code = models.CharField(max_length=64, blank=True, null=True)
@@ -414,17 +423,17 @@ class OwnerApplyHistory(models.Model):
 # 成果/需求持有人（个人）角色申请表（基本信息表) *
 class ResultOwnerpBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    owner_code = models.CharField(max_length=64, blank=True, null=True)
+    owner_code = models.CharField(max_length=64, default=gen_uuid32)
     pcode = models.CharField(max_length=64, blank=True, null=True)              # 与个人基本信息表关联字段
     type = models.IntegerField(blank=True, null=True)           # 申请类型      1： 成果持有人， 2： 需求持有人
-    owner_name = models.CharField(max_length=64, blank=True, null=True)
+    owner_name = models.CharField(verbose_name='姓名', max_length=64)
     owner_tel = models.CharField(max_length=16, blank=True, null=True, validators=[validate_tel])
-    owner_mobile = models.CharField(max_length=16, blank=True, null=True, validators=[validate_mobile])
+    owner_mobile = models.CharField(verbose_name='手机号码', max_length=16, validators=[validate_mobile])
     owner_email = models.CharField(max_length=64, blank=True, null=True, validators=[validate_email])
-    owner_idtype = models.IntegerField(default=1)       # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
-    owner_id = models.CharField(max_length=32, blank=True, null=True)           # 证件号码
-    owner_abstract = models.TextField(blank=True, null=True)
-    education = models.CharField(max_length=8, default="本科")           # 默认本科 中专，大专，本科， 研究生，硕士， 博士，MBA， EMBA
+    owner_idtype = models.IntegerField(verbose_name='证件类型', default=1)       # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
+    owner_id = models.CharField(verbose_name='证件号码', max_length=32)           # 证件号码
+    owner_abstract = models.TextField(verbose_name='自我介绍')
+    education = models.CharField(verbose_name='学历', max_length=8, default=3)           #  默认本科 中专，大专，本科， 研究生，硕士， 博士，MBA， EMBA
     owner_caption = models.CharField(max_length=32, blank=True, null=True)
     owner_addr = models.CharField(max_length=255, blank=True, null=True)
     owner_zipcode = models.CharField(max_length=8, blank=True, null=True)
@@ -433,9 +442,9 @@ class ResultOwnerpBaseinfo(models.Model):
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
 
-    owner_city = models.IntegerField(blank=True, null=True)     # 归属城市
-    university = models.CharField(max_length=64, blank=True, null=True)     # 毕业院校
-    profession = models.CharField(max_length=64, blank=True, null=True)     # 专业
+    owner_city = models.IntegerField(verbose_name='归属城市')     # 归属城市
+    university = models.CharField(verbose_name='毕业院校', max_length=64)     # 毕业院校
+    profession = models.CharField(verbose_name='专业', max_length=64)     # 专业
 
     @property
     def dept_code(self):
@@ -447,11 +456,15 @@ class ResultOwnerpBaseinfo(models.Model):
         return region_info.district_name
 
     @property
-    def major(self):
+    def major_code(self):
         if self.type == 1:
-            return get_major(8, self.owner_code)
+            return get_major_code(8, self.owner_code)
         else:
-            return get_major(9, self.owner_code)
+            return get_major_code(9, self.owner_code)
+
+    @property
+    def major(self):
+        return get_major(self.major_code)
 
     @property
     def account(self):
@@ -542,12 +555,12 @@ class ResultOwnereBaseinfo(models.Model):
     owner_code = models.CharField(max_length=64, default=gen_uuid32)    # 自身代码
     ecode = models.CharField(max_length=64, blank=True, null=True)      # 与企业基本信息表关联字段
     type = models.IntegerField(blank=True, null=True)                   # 持有人类型 1：成果持有人， 2：需求持有人
-    owner_name = models.CharField(max_length=64, blank=True, null=True)
-    owner_tel = models.CharField(max_length=16, blank=True, null=True, validators=[validate_tel])
+    owner_name = models.CharField(verbose_name='企业名称', max_length=64)
+    owner_tel = models.CharField(verbose_name='企业电话', max_length=16, validators=[validate_tel])
     owner_mobile = models.CharField(max_length=16, blank=True, null=True, validators=[validate_mobile])
     owner_email = models.CharField(max_length=64, blank=True, null=True, validators=[validate_email])
-    owner_license = models.CharField(max_length=64, blank=True, null=True, validators=[validate_license])
-    owner_abstract = models.TextField(blank=True, null=True)              # 企业简述
+    owner_license = models.CharField(verbose_name='统一社会信用代码', max_length=64, validators=[validate_license])
+    owner_abstract = models.TextField(verbose_name='企业简述')              # 企业简述
     homepage = models.URLField(max_length=128, blank=True, null=True)
     creditvalue = models.IntegerField(default=0)                            # 企业信用值。
     state = models.IntegerField(blank=True, null=True)                      # '持有人信息状态1：正常；2：暂停；3：伪删除'
@@ -555,8 +568,8 @@ class ResultOwnereBaseinfo(models.Model):
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
 
-    owner_name_abbr = models.CharField(max_length=32, blank=True, null=True)    # 企业简称
-    owner_city = models.IntegerField(blank=True, null=True)                     # 归属城市
+    owner_name_abbr = models.CharField(verbose_name='企业简称', max_length=32)    # 企业简称
+    owner_city = models.IntegerField(verbose_name='归属城市')                     # 归属城市
     owner_abstract_detail = models.TextField(blank=True, null=True)             # 企业描述
     legal_person = models.CharField(max_length=64, blank=True, null=True)                                # 法人姓名
     owner_idtype = models.IntegerField(default=1)   # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
@@ -576,11 +589,15 @@ class ResultOwnereBaseinfo(models.Model):
         return AccountInfo.objects.get(account_code=self.account_code).user_name
 
     @property
-    def major(self):
+    def major_code(self):
         if self.type == 1:
-            return get_major(6, self.owner_code)
+            return get_major_code(6, self.owner_code)
         else:
-            return get_major(7, self.owner_code)
+            return get_major_code(7, self.owner_code)
+
+    @property
+    def major(self):
+        return get_major(self.major_code)
 
     # 法人身份证正面
     @property
@@ -669,8 +686,12 @@ class ProjectTeamBaseinfo(models.Model):
         return account.account if account.account else account.user_name
 
     @property
+    def major_code(self):
+        return get_major_code(2, self.pt_code)
+
+    @property
     def major(self):
-        return get_major(2, self.pt_code)
+        return get_major(self.major_code)
 
     # 管理人员身份证正面
     @property
