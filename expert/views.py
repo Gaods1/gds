@@ -3454,7 +3454,6 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     'state': 2 if data['state'] == 1 else 0,
                     'creater': creater
                 }
-                raise ValueError('测试数据1')
                 if int(pt_type) != 0:
                     # 个人基本信息表
                     pinfo = {
@@ -3488,7 +3487,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                         'creater': creater,
                         'account_code': account_code
                     }
-
+                raise ValueError('测试数据1')
                 # 查询当前账号有没有伪删除身份
                 obj = ProjectTeamBaseinfo.objects.filter(account_code=account_code, state=3)
                 if obj:
