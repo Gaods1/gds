@@ -3621,7 +3621,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                 comp_name = data.get('comp_name', None) # 企业名称
                 owner_license = data.get('owner_license', None)  # 企业信用代码
 
-                major = data.pop('major', None)  # 相关领域（列表）
+                major = data.pop('major_code', None)  # 相关领域（列表）
                 idfront = url_to_path(data.get('idfront', None))  # 身份证正面
                 idback = url_to_path(data.get('idback', None))     # 身份证背面
                 idphoto = url_to_path(data.get('idphoto', None))    # 手持身份证
