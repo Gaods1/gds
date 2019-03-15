@@ -3487,10 +3487,10 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                         'creater': creater,
                         'account_code': account_code
                     }
-                raise ValueError('测试数据1')
                 # 查询当前账号有没有伪删除身份
                 obj = ProjectTeamBaseinfo.objects.filter(account_code=account_code, state=3)
                 if obj:
+                    raise ValueError('测试数据1')
                     # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
                     check_identity2(account_code=account_code, identity=3, info=identity_info)
 
@@ -3538,6 +3538,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     for f in old_img_list:
                         remove_img(f)
                 else:
+                    raise ValueError('测试数据2')
                     # 查询所绑定的账号是否有此身份（若有则报错，没有则创建）
                     check_identity(account_code=account_code, identity=3, info=identity_info)
 
