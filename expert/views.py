@@ -3517,6 +3517,8 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     formal_idfront = copy_img(idfront, 'Prteam', 'identityFront', ecode, creater)
                     formal_idback = copy_img(idback, 'Prteam', 'identityBack', ecode, creater)
                     formal_idphoto = copy_img(idphoto, 'Prteam', 'handIdentityPhoto', ecode, creater)
+                    formal_logo = copy_img(logo, 'Prteam', 'logoPhoto', ecode, creater)
+                    formal_promotional = copy_img(promotional, 'Prteam', 'Propaganda', ecode, creater)
 
                     for k, v in editor_imgs_path.items():
                         formal_editor_imgs_path[k] = copy_img(v, 'Prteam', 'consultEditor', ecode, creater)
@@ -3561,6 +3563,8 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     formal_idfront = copy_img(idfront, 'Prteam', 'identityFront', ecode, creater)
                     formal_idback = copy_img(idback, 'Prteam', 'identityBack', ecode, creater)
                     formal_idphoto = copy_img(idphoto, 'Prteam', 'handIdentityPhoto', ecode, creater)
+                    formal_logo = copy_img(logo, 'Prteam', 'logoPhoto', ecode, creater)
+                    formal_promotional = copy_img(promotional, 'Prteam', 'Propaganda', ecode, creater)
                     for k, v in editor_imgs_path.items():
                         formal_editor_imgs_path[k] = copy_img(v, 'Prteam', 'consultEditor', ecode, creater)
 
@@ -3630,7 +3634,6 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                 promotional = url_to_path(data.pop('promotional', None))  # 宣传照
                 owner_abstract_detail = data.get('pt_describe', '')  # 富文本
                 instance = self.get_object()  # 原纪录
-                raise ValueError(logo)
                 if owner_abstract_detail:
                     img_pattern = re.compile(r'src=\"(.*?)\"')
                     editor_imgs_list = img_pattern.findall(owner_abstract_detail)
@@ -3719,6 +3722,8 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                 formal_idfront = copy_img(idfront, 'Prteam', 'identityFront', ecode, creater)
                 formal_idback = copy_img(idback, 'Prteam', 'identityBack', ecode, creater)
                 formal_idphoto = copy_img(idphoto, 'Prteam', 'handIdentityPhoto', ecode, creater)
+                formal_logo = copy_img(logo, 'Prteam', 'logoPhoto', ecode, creater)
+                formal_promotional= copy_img(promotional, 'Prteam', 'Propaganda', ecode, creater)
 
                 for k, v in editor_imgs_path.items():
                     formal_editor_imgs_path[k] = copy_img(v, 'Prteam', 'consultEditor', ecode, creater)
