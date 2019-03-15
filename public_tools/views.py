@@ -74,7 +74,7 @@ class PublicInfo(APIView):
                         #上传服务器的路径
                         #url = url + file.name
                         # 6位随机字符串内容
-                        file_name = '{}_{}'.format(gen_uuid6(), file.name)
+                        file_name = '{}_{}'.format(gen_uuid6(), file.name.replace(' ',''))
                         url = url + file_name
                         if os.path.exists(url):
                             return Response({'detail': '该附件已上传到服务器,如果要继续上传请重命名'},status=400)
