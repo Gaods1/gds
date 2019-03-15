@@ -637,7 +637,7 @@ class ResultOwnereBaseinfo(models.Model):
 # 技术团队基本信息表 *
 class ProjectTeamBaseinfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    pt_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    pt_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     pt_name = models.CharField(max_length=64, blank=True, null=True)
 
     pt_abbreviation = models.CharField(max_length=255, blank=True, null=True)   # 团队简称

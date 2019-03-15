@@ -3553,7 +3553,6 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     serializer.is_valid(raise_exception=True)
                     self.perform_create(serializer)
                     return_data = serializer.data
-                    raise ValueError(return_data)
                     ecode = serializer.data['pt_code']
                     # 插入领域相关
                     crete_major(2, 2, ecode, major)
