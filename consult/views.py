@@ -153,7 +153,7 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
 
                             #领域专家不能回复自己创建的征询
                             consult_expert_info = ExpertBaseinfo.objects.filter(account_code=consult_info.consulter)
-                            if consult_expert_info:
+                            if consult_expert_info  and consult_expert_info[0].expert_code in user_code:
                                 user_code.remove(consult_expert_info[0].expert_code)
 
                             if len(user_code) >= 10:
@@ -180,7 +180,8 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                                                           sms_phone=expert_baseinfo.expert_mobile,
                                                           email=0,
                                                           email_state=0,
-                                                          email_account='')
+                                                          email_account='',
+                                                          type=2)
                                     message_list.append(message_obj)
                                     enable_expert_list.append(expert_baseinfo.expert_code)
 
@@ -211,6 +212,27 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                                 # 7 保存短信发送记录
                                 if int(sms_ret) == 1:
                                     Message.objects.bulk_create(message_list)
+
+                    #添加给征询发布者发送通知消息
+                    if check_state == 1:
+                        check_result = '通过'
+                    else:
+                        check_result = '未通过'
+                    Message.objects.create(
+                        message_title='征询审核结果通知',
+                        message_content='您的征询:' + consult_info.consult_title + '审核'+check_result+'，请登陆平台到个人中心查看',
+                        account_code=consult_info.consulter,
+                        state=0,
+                        send_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                        sender=request.user.account,
+                        sms=0,
+                        sms_state=0,
+                        sms_phone='',
+                        email=0,
+                        email_state=0,
+                        email_account='',
+                        type=2
+                    )
             except Exception as e:
                 fail_msg = "审核失败%s" % str(e)
                 return JsonResponse({"state" : 0, "msg" : fail_msg})
@@ -388,7 +410,8 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
                                                   sms_phone=user_mobile,
                                                   email=0,
                                                   email_state=0,
-                                                  email_account='')]
+                                                  email_account='',
+                                                  type=2)]
                             Message.objects.bulk_create(message_list)
             except Exception as e:
                 fail_msg = "审核失败%s" % str(e)

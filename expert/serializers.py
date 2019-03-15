@@ -1,9 +1,10 @@
 from .models import *
 from rest_framework import serializers
+from misc.serializers.serializers import PatclubModelSerializer
 
 
 # 领域专家基本信息表
-class ExpertBaseInfoSerializers(serializers.ModelSerializer):
+class ExpertBaseInfoSerializers(PatclubModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     city = serializers.CharField(read_only=True)
     major = serializers.ListField(read_only=True)
@@ -26,6 +27,7 @@ class ExpertBaseInfoSerializers(serializers.ModelSerializer):
             'expert_email',     # 邮箱
             'expert_city',  # 专家所属城市
             'city',
+            'major_code',
             'major',
             'expert_id_type',  # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
             'expert_id',    # 证件号码
@@ -57,7 +59,7 @@ class ExpertBaseInfoSerializers(serializers.ModelSerializer):
 
 
 # 领域专家审核申请表序列
-class ExpertApplySerializers(serializers.ModelSerializer):
+class ExpertApplySerializers(PatclubModelSerializer):
     apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     expert = ExpertBaseInfoSerializers(read_only=True)
     opinion = serializers.CharField(read_only=True)
@@ -79,7 +81,7 @@ class ExpertApplySerializers(serializers.ModelSerializer):
 
 
 # 技术经纪人基本信息表
-class BrokerBaseInfoSerializers(serializers.ModelSerializer):
+class BrokerBaseInfoSerializers(PatclubModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     city = serializers.CharField(read_only=True)
     major = serializers.ListField(read_only=True)
@@ -102,6 +104,7 @@ class BrokerBaseInfoSerializers(serializers.ModelSerializer):
             'broker_email',     # 邮箱
             'broker_city',  # 所属城市代码
             'city',         # 所属城市
+            'major_code',
             'major',
             'broker_id_type',  # 证件类型；1：身份证；2：护照；3：驾照；4：军官证； 0：其他
             'broker_id',    # 证件号码
@@ -134,7 +137,7 @@ class BrokerBaseInfoSerializers(serializers.ModelSerializer):
 
 
 # 技术经纪人审核申请表序列
-class BrokerApplySerializers(serializers.ModelSerializer):
+class BrokerApplySerializers(PatclubModelSerializer):
     apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     broker = BrokerBaseInfoSerializers(read_only=True)
     opinion = serializers.CharField(read_only=True)
@@ -156,7 +159,7 @@ class BrokerApplySerializers(serializers.ModelSerializer):
 
 
 # 采集员基本信息表序列
-class CollectorBaseInfoSerializers(serializers.ModelSerializer):
+class CollectorBaseInfoSerializers(PatclubModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     city = serializers.CharField(read_only=True)
     head = serializers.CharField(read_only=True)
@@ -199,7 +202,7 @@ class CollectorBaseInfoSerializers(serializers.ModelSerializer):
 
 
 # 采集员审核申请序列
-class CollectorApplySerializers(serializers.ModelSerializer):
+class CollectorApplySerializers(PatclubModelSerializer):
     apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     collector = CollectorBaseInfoSerializers(read_only=True)
     opinion = serializers.CharField(read_only=True)
@@ -221,7 +224,7 @@ class CollectorApplySerializers(serializers.ModelSerializer):
 
 
 # 成果/需求持有人（个人）基本信息表序列
-class ResultOwnerpSerializers(serializers.ModelSerializer):
+class ResultOwnerpSerializers(PatclubModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     city = serializers.CharField(read_only=True)
     major = serializers.ListField(read_only=True)
@@ -255,6 +258,7 @@ class ResultOwnerpSerializers(serializers.ModelSerializer):
             'insert_time',
             'owner_city',
             'city',
+            'major_code',
             'major',
             'university',
             'profession',
@@ -267,7 +271,7 @@ class ResultOwnerpSerializers(serializers.ModelSerializer):
 
 
 # 成果/需求审核申请序列
-class OwnerApplySerializers(serializers.ModelSerializer):
+class OwnerApplySerializers(PatclubModelSerializer):
     apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     owner = ResultOwnerpSerializers(read_only=True)
     opinion = serializers.CharField(read_only=True)
@@ -288,7 +292,7 @@ class OwnerApplySerializers(serializers.ModelSerializer):
 
 
 # 成果/需求持有人（企业）基本信息表序列
-class ResultOwnereSerializers(serializers.ModelSerializer):
+class ResultOwnereSerializers(PatclubModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     city = serializers.CharField(read_only=True)
     major = serializers.ListField(read_only=True)
@@ -323,6 +327,7 @@ class ResultOwnereSerializers(serializers.ModelSerializer):
             'owner_name_abbr',
             'owner_city',
             'city',
+            'major_code',
             'major',
             'owner_abstract_detail',
             'legal_person',
@@ -339,7 +344,7 @@ class ResultOwnereSerializers(serializers.ModelSerializer):
 
 
 # 成果/需求（企业）审核申请序列
-class OwnereApplySerializers(serializers.ModelSerializer):
+class OwnereApplySerializers(PatclubModelSerializer):
     apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     owner = ResultOwnereSerializers(read_only=True)
     opinion = serializers.CharField(read_only=True)
@@ -358,7 +363,7 @@ class OwnereApplySerializers(serializers.ModelSerializer):
 
 
 # 技术团队基本信息表
-class TeamBaseinfoSerializers(serializers.ModelSerializer):
+class TeamBaseinfoSerializers(PatclubModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     major = serializers.ListField(read_only=True)
     dept_code = serializers.CharField(read_only=True)
@@ -381,6 +386,9 @@ class TeamBaseinfoSerializers(serializers.ModelSerializer):
             'pt_type',     # 团队种类
             'pt_city',  # 团队所属城市
             'ecode',  #对于企业类型的项目团队，填写企业代码，其他类型团队，该字段无效
+            'comp_name',
+            'owner_license',
+            'major_code',
             'major',
             'pt_level',  # 业务能力的内部的评级。以星级表示，1-5 表示一星到五星，默认为一星
             'credit_value',    # 信用值取值范围0-100，默认0
@@ -407,7 +415,7 @@ class TeamBaseinfoSerializers(serializers.ModelSerializer):
 
 
 # 技术团队审核申请表序列
-class TeamApplySerializers(serializers.ModelSerializer):
+class TeamApplySerializers(PatclubModelSerializer):
     apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     team_baseinfo = TeamBaseinfoSerializers(read_only=True)
     major_names = serializers.ListField(required=False)

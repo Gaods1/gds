@@ -82,8 +82,9 @@ class RequirementsInfo(models.Model):
     sniff_time = models.DateTimeField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True,auto_now=True)
-    account_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    account_code = models.CharField(max_length=64, blank=True, null=True)
     r_abstract_detail = models.TextField(blank=True, null=True)
+
     @property
     def Attach(self):
         list = get_attachment('attachment',self.req_code)
@@ -165,6 +166,16 @@ class RequirementsInfo(models.Model):
         Enterprise = EnterpriseBaseinfo.objects.values_list('ename', flat=True).get(ecode=owner_code)
         return Enterprise
 
+    @property
+    def owner_code(self):
+        owner_code = ResultsOwnerInfo.objects.get(r_code=self.req_code).owner_code
+        return owner_code
+
+    @property
+    def consultEditor(self):
+        list_url = get_single('consultEditor', self.req_code)
+        return list_url
+
     class Meta:
         managed = False
         db_table = 'requirements_info'
@@ -195,7 +206,7 @@ class ResultsInfo(models.Model):
     sniff_time = models.DateTimeField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True,auto_now=True)
-    account_code = models.CharField(unique=True, max_length=64, blank=True, null=True)
+    account_code = models.CharField(max_length=64, blank=True, null=True)
     r_abstract_detail = models.TextField(blank=True, null=True)
     patent_number = models.CharField(max_length=64, blank=True, null=True)
 
@@ -245,6 +256,7 @@ class ResultsInfo(models.Model):
         mname = MajorInfo.objects.values_list('mname',flat=True).filter(mcode__in=mcode)
         return mname
 
+
     @property
     def username(self):
         username = AccountInfo.objects.values_list('user_name', flat=True).get(account_code=self.account_code,state=1)
@@ -275,11 +287,22 @@ class ResultsInfo(models.Model):
         Personal = PersonalInfo.objects.values_list('pname', flat=True).get(pcode=owner_code)
         return Personal
 
+
     @property
     def Enterprise(self):
         owner_code = ResultsOwnerInfo.objects.get(r_code=self.r_code).owner_code
         Enterprise = EnterpriseBaseinfo.objects.values_list('ename', flat=True).get(ecode=owner_code)
         return Enterprise
+
+    @property
+    def owner_code(self):
+        owner_code = ResultsOwnerInfo.objects.get(r_code=self.r_code).owner_code
+        return owner_code
+
+    @property
+    def consultEditor(self):
+        list_url = get_single('consultEditor', self.r_code)
+        return list_url
 
     class Meta:
         managed =False

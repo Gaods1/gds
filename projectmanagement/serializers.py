@@ -4,27 +4,13 @@ from achievement.serializers import RrApplyHistorySerializer
 from expert.serializers import BrokerBaseInfoSerializers,TeamBaseinfoSerializers,ExpertBaseInfoSerializers
 from achievement.serializers import RequirementsInfoSerializer,ResultsInfoSerializer
 from public_models.serializers import MajorInfoSerializers
+from misc.serializers.serializers import PatclubModelSerializer
 
-class ProjectCheckInfoSerializer(serializers.ModelSerializer):
-    ctime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
 
-    class Meta:
-        model = ProjectCheckInfo
-        fields = [
-            'p_serial',
-            'project_code',
-            'step_code',
-            'substep_code',
-            'substep_serial',
-            'cstate',
-            'cmsg',
-            'checker',
-            'ctime'
-        ]
 
 
 # 项目文件存储
-class ProjectSubstepFileInfoSerializer(serializers.ModelSerializer):
+class ProjectSubstepFileInfoSerializer(PatclubModelSerializer):
     submit_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     file_url = serializers.CharField(read_only=True)
 
@@ -50,7 +36,7 @@ class ProjectSubstepFileInfoSerializer(serializers.ModelSerializer):
         ]
 
 # 项目子步骤信息表
-class ProjectSubstepInfoSerializer(serializers.ModelSerializer):
+class ProjectSubstepInfoSerializer(PatclubModelSerializer):
     btime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     etime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     # 附件
@@ -72,8 +58,10 @@ class ProjectSubstepInfoSerializer(serializers.ModelSerializer):
 
 
 # 项目子步骤流水信息表
-class ProjectSubstepSerialInfoSerializer(serializers.ModelSerializer):
+class ProjectSubstepSerialInfoSerializer(PatclubModelSerializer):
     submit_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+
+    check_info = serializers.DictField(read_only=True)
 
     class Meta:
         model = ProjectSubstepSerialInfo
@@ -85,7 +73,10 @@ class ProjectSubstepSerialInfoSerializer(serializers.ModelSerializer):
                   'submit_time',
                   'substep_serial_type',
                   'substep_serial_state',
-                  'step_msg']
+                  'step_msg',
+                  'check_info'
+                  ]
+
 
 
 # 项目经纪人信息表
@@ -171,16 +162,16 @@ class ProjectInfoSerializer(serializers.ModelSerializer):
     project_start_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     last_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    from_code_info = RrApplyHistorySerializer(many=True)
+    # from_code_info = RrApplyHistorySerializer(many=True)
     substep_info = ProjectSubstepInfoSerializer(read_only=True)
-    substep_serial_info = ProjectSubstepSerialInfoSerializer(read_only=True)
-    check_info = ProjectCheckInfoSerializer(read_only=True)
+    substep_serial_info = ProjectSubstepSerialInfoSerializer(read_only=True,many=True)
+    # check_info = ProjectCheckInfoSerializer(read_only=True)
     broker_info = ProjectBrokerInfoSerializer(read_only=True)
     team_info = ProjectTeamInfoSerializer(read_only=True)
     expert_info = ProjectExpertInfoSerializer(read_only=True,many=True)
 
-    rr_result = serializers.ListField(required=False)
-    rr_requirement = serializers.ListField(required=False)
+    # rr_result = serializers.ListField(required=False)
+    # rr_requirement = serializers.ListField(required=False)
     rr = ProjectRrInfoSerializer(read_only=True, many=True)
 
     majors = serializers.ListField(required=False)
@@ -201,19 +192,40 @@ class ProjectInfoSerializer(serializers.ModelSerializer):
             'state',
             'creater',
             'insert_time',
-            'from_code_info',
+            # 'from_code_info',
             'substep_info',
             'substep_serial_info',
-            'check_info',
+            # 'check_info',
             'broker_info',
             'team_info',
             'expert_info',
-            'rr_requirement',
-            'rr_result',
             'rr',
             'majors',
         ]
 
+
+class ProjectCheckInfoSerializer(PatclubModelSerializer):
+    ctime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+
+    project_info = ProjectInfoSerializer(read_only=True)
+
+    substep_serial_info = ProjectSubstepSerialInfoSerializer(read_only=True)
+
+    class Meta:
+        model = ProjectCheckInfo
+        fields = [
+            'p_serial',
+            'project_code',
+            'step_code',
+            'substep_code',
+            'substep_serial',
+            'cstate',
+            'cmsg',
+            'checker',
+            'ctime',
+            'project_info',
+            'substep_serial_info',
+        ]
 
 # 项目步骤信息表
 class ProjectStepInfoSerializer(serializers.ModelSerializer):

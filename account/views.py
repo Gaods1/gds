@@ -122,13 +122,18 @@ class AccountViewSet(viewsets.ModelViewSet):
         data = request.data
         data = update_data(data, ['account', 'user_mobile', 'user_email', 'account_id'])
         if instance.account and instance.account != data.get("account"):
-            return Response({"detail": {"account": ["账号不允许修改"]}}, status=400)
+            return Response({"detail": "账号不允许修改"}, status=400)
         if not data['account'] and not data['user_mobile']:
-            return Response({"detail":{"user_mobile":["账号和手机号不能同时为空"]}}, status=400)
+            return Response({"detail":"账号和手机号不能同时为空"}, status=400)
         password = data.get("password")
         if password and password != instance.password:
             validate_password(password)
             data['password'] = genearteMD5(password)
+
+        # 判断是否修改自己的部门
+        if instance.account == request.user.account:
+            if 'dept_code' in data.keys() and data['dept_code'] != instance.dept_code:
+                return Response({"detail": "不允许修改自己的机构部门"}, status=400)
 
         partial = kwargs.pop('partial', False)
 
@@ -524,6 +529,33 @@ class DeptinfoViewSet(viewsets.ModelViewSet):
             # Ensure queryset is re-evaluated on each request.
             queryset = queryset.all()
         return queryset
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        if not data.get('region_code', None):
+            data['region_code'] = None
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        data = request.data
+        if not data.get('region_code', None):
+            data['region_code'] = None
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
 
 
 # 参数配置管理

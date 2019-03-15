@@ -1,11 +1,8 @@
-import os
-import shutil
 from django.http import HttpResponse
 from django.core.files.storage import FileSystemStorage
 from python_backend import settings
 from .serializers import *
-from rest_framework import viewsets
-from rest_framework import filters
+from rest_framework import viewsets, filters, status
 import django_filters
 from rest_framework.response import Response
 from django.db import transaction
@@ -14,16 +11,17 @@ from .utils import *
 import threading
 from public_models.utils import move_single, get_detcode_str
 from django.db.models.query import QuerySet
-from public_models.models import IdentityAuthorizationInfo
 from misc.filter.search import ViewSearch
 import logging
+from .models import *
+from rest_framework.serializers import ValidationError
 
 logger = logging.getLogger('django')
 
 
 # 领域专家管理
 class ExpertViewSet(viewsets.ModelViewSet):
-    queryset = ExpertBaseinfo.objects.all().order_by('state', '-serial')
+    queryset = ExpertBaseinfo.objects.filter(state__in=[1]).order_by('state', '-serial')
     serializer_class = ExpertBaseInfoSerializers
 
     filter_backends = (
@@ -54,8 +52,11 @@ class ExpertViewSet(viewsets.ModelViewSet):
         dept_codes_str = get_detcode_str(self.request.user.dept_code)
         if dept_codes_str:
             raw_queryset = ExpertBaseinfo.objects.raw(
-                "select e.serial  from expert_baseinfo as e left join account_info as ai on  e.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
-            queryset = ExpertBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
+                "select e.serial  from expert_baseinfo as e left join "
+                "account_info as ai on  e.account_code=ai.account_code "
+                "where ai.dept_code  in (" + dept_codes_str + ")")
+            queryset = ExpertBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset],
+                                                     state__in=[1]).order_by("state", '-serial')
         else:
             queryset = self.queryset
 
@@ -64,27 +65,277 @@ class ExpertViewSet(viewsets.ModelViewSet):
             queryset = queryset.all()
         return queryset
 
-    # 创建领域专家 2018/12/24  author:周
     def create(self, request, *args, **kwargs):
+        formal_head = None
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
         try:
             with transaction.atomic():
-                account_code = request.data.get('account_code')
-                # 1 创建expert_baseinfo领域专家基本信息
-                expert_baseinfo_data = request.data.get('expert_baseinfo')
-                expert_baseinfo_data['account_code'] = account_code
-                # expert_baseinfo = ExpertBaseinfo.objects.create(**expert_baseinfo_data)
-                serializer = self.get_serializer(data=expert_baseinfo_data)
-                serializer.is_valid(raise_exception=True)
-                self.perform_create(serializer)
-                # 2 创建identity_authorization_info信息
-                identity_authorizationinfo_data = request.data.get('identity_authorization_info')
-                identity_authorizationinfo_data['account_code'] = account_code
-                IdentityAuthorizationInfo.objects.create(**identity_authorizationinfo_data)
-        except Exception as e:
-            fail_msg = "创建失败%s" % str(e)
-            return JsonResponse({"state": 0, "msg": fail_msg})
+                # 正式路径（避免回滚后找不到变量）
+                data = request.data
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
+                id_type = data['expert_id_type']
+                pid = data['expert_id']
+                account_code = data['account_code']
 
-        return JsonResponse({"state": 1, "msg": "创建成功"})
+                major = data.pop('major_code', None)  # 相关领域（列表）
+                head = url_to_path(data.pop('head', None))  # 头像
+                idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
+                idback = url_to_path(data.pop('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
+                if not major:
+                    raise ValueError('所属领域是必填项')
+                if not head:
+                    raise ValueError('头像是必填项')
+                if not idfront:
+                    raise ValueError('证件照正面是必填项')
+                if not idback:
+                    raise ValueError('证件照背面是必填项')
+                if not idphoto:
+                    raise ValueError('手持身份证是必填项')
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 9,
+                    'iab_time': datetime.datetime.now(),
+                    'iae_time': None,
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
+
+                # 个人基本信息表
+                pinfo = {
+                    'pname': data.get('expert_name', None),
+                    'pid_type': id_type,
+                    'pid': pid,
+                    'pmobile': data.get('expert_mobile', None),
+                    'ptel': data.get('expert_tel', None),
+                    'pemail': data.get('expert_email', None),
+                    'peducation': data.get('education', None),
+                    'pabstract': data.get('expert_abstract', None),
+                    'state': 2,
+                    'creater': creater,
+                    'account_code': account_code
+                }
+
+                # 查询当前账号有没有伪删除身份
+                expert = ExpertBaseinfo.objects.filter(account_code=account_code, state__in=[2, 3])
+                if expert:
+                    # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
+                    check_identity2(account_code=account_code, identity=9, info=identity_info)
+
+                    # 验证证件号码
+                    check_card_id(id_type, pid)  # 验证有效性
+
+                    # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                    pcode = create_or_update_person(account_code, pinfo)
+                    data['pcode'] = pcode
+
+                    # 更新expert
+                    expert.update(**data)
+                    new_expert = ExpertBaseinfo.objects.filter(account_code=account_code)
+                    serializer = self.get_serializer(new_expert, many=True)
+                    return_data = serializer.data[0]
+                    ecode = new_expert[0].expert_code
+
+                    # 插入领域相关
+                    crete_major(2, 1, ecode, major)
+
+                    # 复制图片到正式目录
+                    formal_head = copy_img(head, 'Expert', 'headPhoto', ecode, creater)
+                    formal_idfront = copy_img(idfront, 'Expert', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'Expert', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'Expert', 'handIdentityPhoto', ecode, creater)
+                    # 如果未回滚则删除临时目录的图片
+                    for f in [head, idfront, idback, idphoto]:
+                        remove_img(f)
+
+                else:
+                    # 查询所绑定的账号是否有此身份（若有则报错，没有则创建）
+                    check_identity(account_code=account_code, identity=9, info=identity_info)
+
+                    # 验证证件号码
+                    check_card_id(id_type, pid)  # 验证有效性
+                    # check_id(account_code=account_code, id_type=id_type, id=id)  # 验证唯一性
+
+                    # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                    pcode = create_or_update_person(account_code, pinfo)
+                    data['pcode'] = pcode
+
+                    serializer = self.get_serializer(data=data)
+                    serializer.is_valid(raise_exception=True)
+                    self.perform_create(serializer)
+                    return_data = serializer.data
+                    ecode = serializer.data['expert_code']
+
+                    # 插入领域相关
+                    crete_major(2, 1, ecode, major)
+
+                    # 复制图片到正式目录
+                    formal_head = copy_img(head, 'Expert', 'headPhoto', ecode, creater)
+                    formal_idfront = copy_img(idfront, 'Expert', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'Expert', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'Expert', 'handIdentityPhoto', ecode, creater)
+                    # 如果未回滚则删除临时目录的图片
+                    for f in [head, idfront, idback, idphoto]:
+                        remove_img(f)
+        except ValidationError:
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            raise
+        except Exception as e:
+            # 如果已经回滚则删除正式目录的图片
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            return Response({"detail": "创建失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(return_data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        # 正式路径（避免回滚后找不到变量）
+        formal_head = None
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
+        try:
+            with transaction.atomic():
+                data = request.data
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
+                id_type = data['expert_id_type']
+                pid = data['expert_id']
+                account_code = data['account_code']
+                data['creater'] = creater
+
+                major = data.pop('major_code', None)  # 相关领域（列表）
+                head = url_to_path(data.get('head', None))  # 头像
+                idfront = url_to_path(data.get('idfront', None))  # 身份证正面
+                idback = url_to_path(data.get('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.get('idphoto', None))    # 手持身份证
+                instance = self.get_object()  # 原纪录
+
+                if account_code != instance.account_code:
+                    raise ValueError('不允许更改关联账号')
+                if not major:
+                    raise ValueError('所属领域是必填项')
+                if not data.pop('head', None):
+                    raise ValueError('头像是必填项')
+                if not data.pop('idfront', None):
+                    raise ValueError('证件照正面是必填项')
+                if not data.pop('idback', None):
+                    raise ValueError('证件照背面是必填项')
+                if not data.pop('idphoto', None):
+                    raise ValueError('手持身份证是必填项')
+
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 9,
+                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
+
+                # 个人基本信息表
+                pinfo = {
+                    'pname': data.get('expert_name', None),
+                    'pid_type': id_type,
+                    'pid': pid,
+                    'pmobile': data.get('expert_mobile', None),
+                    'ptel': data.get('expert_tel', None),
+                    'pemail': data.get('expert_email', None),
+                    'peducation': data.get('education', None),
+                    'pabstract': data.get('expert_abstract', None),
+                    'state': 2,
+                    'creater': creater,
+                    'account_code': account_code
+                }
+
+                # 验证证件号码
+                check_card_id(id_type, pid)  # 验证有效性
+
+                # 更新身份信息关联表
+                IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                         identity_code=9).update(**identity_info)
+
+                # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                pcode = create_or_update_person(account_code, pinfo)
+                data['pcode'] = pcode
+
+                partial = kwargs.pop('partial', False)
+                serializer = self.get_serializer(instance, data=data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+                ecode = serializer.data['expert_code']
+
+                # 插入领域相关
+                crete_major(2, 1, ecode, major)
+
+                # 复制图片到正式目录
+                formal_head = copy_img(head, 'Expert', 'headPhoto', ecode, creater)
+                formal_idfront = copy_img(idfront, 'Expert', 'identityFront', ecode, creater)
+                formal_idback = copy_img(idback, 'Expert', 'identityBack', ecode, creater)
+                formal_idphoto = copy_img(idphoto, 'Expert', 'handIdentityPhoto', ecode, creater)
+                # 如果未回滚则删除临时目录的图片
+                for f in [head, idfront, idback, idphoto]:
+                    remove_img(f)
+
+                if getattr(instance, '_prefetched_objects_cache', None):
+                    # If 'prefetch_related' has been applied to a queryset, we need to
+                    # forcibly invalidate the prefetch cache on the instance.
+                    instance._prefetched_objects_cache = {}
+        except ValidationError:
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            raise
+        except Exception as e:
+            # 如果已经回滚则删除正式目录的图片
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            return Response({"detail": "更新失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                data = request.data
+                pks = data.get('pks', [])
+                pks.append(kwargs['pk'])
+                expert = ExpertBaseinfo.objects.filter(serial__in=pks)
+                accounts = expert.values_list('account_code', flat=True)
+                expert_code = expert.values_list('expert_code', flat=True)
+                expert_apply_inserter = []
+                account = request.user.account
+                account_code = AccountInfo.objects.get(account=account).account_code
+                for ecode in expert_code:
+                    expert_apply_inserter.append(ExpertApplyHistory(
+                        expert_code=ecode,
+                        account_code=account_code,
+                        state=2, apply_time=datetime.datetime.now(),
+                        apply_type=3))
+                es = ExpertApplyHistory.objects.bulk_create(expert_apply_inserter)
+                check_history_inserter = []
+                for e in es:
+                    check_history_inserter.append(ExpertCheckHistory(
+                        apply_code=e.apply_code,
+                        opinion="管理系统关闭身份",
+                        result=2,
+                        check_time=datetime.datetime.now(),
+                        account=account,
+                    ))
+                ExpertCheckHistory.objects.bulk_create(check_history_inserter)
+                identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=9)
+                expert.update(state=3)
+                identity.update(state=0, iae_time=datetime.datetime.now())
+        except ValidationError:
+            raise
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # 领域专家申请视图
@@ -199,8 +450,7 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return Response({"detail": {
-                "detail": ["审核失败：%s" % str(e)]}}, status=400)
+            return Response({"detail": "审核失败：%s" % str(e)}, status=400)
 
         return Response(serializer.data)
 
@@ -208,7 +458,7 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
 # 技术经纪人管理
 class BrokerViewSet(viewsets.ModelViewSet):
 
-    queryset = BrokerBaseinfo.objects.all().order_by('state', '-serial')
+    queryset = BrokerBaseinfo.objects.filter(state__in=[1]).order_by('state', '-serial')
     serializer_class = BrokerBaseInfoSerializers
 
     filter_backends = (
@@ -238,11 +488,13 @@ class BrokerViewSet(viewsets.ModelViewSet):
         )
         dept_codes_str = get_detcode_str(self.request.user.dept_code)
         if dept_codes_str:
-            raw_queryset = BrokerBaseinfo.objects.raw("select b.serial  from broker_baseinfo as b left join account_info as ai on  b.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
-            queryset = BrokerBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
+            raw_queryset = BrokerBaseinfo.objects.raw(
+                "select b.serial  from broker_baseinfo as b left join account_info as ai "
+                "on  b.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
+            queryset = BrokerBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset],
+                                                     state__in=[1]).order_by("state")
         else:
             queryset = self.queryset
-
         if isinstance(queryset, QuerySet):
             # Ensure queryset is re-evaluated on each request.
             queryset = queryset.all()
@@ -250,25 +502,277 @@ class BrokerViewSet(viewsets.ModelViewSet):
 
     # 创建技术经纪人 2018/12/24 author:周
     def create(self, request, *args, **kwargs):
+        formal_head = None
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
         try:
             with transaction.atomic():
-                account_code = request.data.get('account_code')
-                # 1 创建broker_baseinfo技术经济人基本信息
-                broker_baseinfo_data = request.data.get('broker_baseinfo')
-                broker_baseinfo_data['account_code'] = account_code
-                # broker_baseinfo = BrokerBaseinfo.objects.create(**broker_baseinfo_data)
-                serializer = self.get_serializer(data=broker_baseinfo_data)
-                serializer.is_valid(raise_exception=True)
-                self.perform_create(serializer)
-                # 2 创建identity_authorization_info信息
-                identity_authorizationinfo_data = request.data.get('identity_authorization_info')
-                identity_authorizationinfo_data['account_code'] = account_code
-                IdentityAuthorizationInfo.objects.create(**identity_authorizationinfo_data)
-        except Exception as e:
-            fail_msg = "创建失败%s" % str(e)
-            return JsonResponse({"state": 0, "msg": fail_msg})
+                # 正式路径（避免回滚后找不到变量）
+                data = request.data
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
+                id_type = data['broker_id_type']
+                pid = data['broker_id']
+                account_code = data['account_code']
 
-        return JsonResponse({"state": 1, "msg": "创建成功"})
+                major = data.pop('major_code', None)  # 相关领域（列表）
+                head = url_to_path(data.pop('head', None))  # 头像
+                idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
+                idback = url_to_path(data.pop('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
+                if not major:
+                    raise ValueError('所属领域是必填项')
+                if not head:
+                    raise ValueError('头像是必填项')
+                if not idfront:
+                    raise ValueError('证件照正面是必填项')
+                if not idback:
+                    raise ValueError('证件照背面是必填项')
+                if not idphoto:
+                    raise ValueError('手持身份证是必填项')
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 2,
+                    'iab_time': datetime.datetime.now(),
+                    'iae_time': None,
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
+
+                # 个人基本信息表
+                pinfo = {
+                    'pname': data.get('broker_name', None),
+                    'pid_type': id_type,
+                    'pid': pid,
+                    'pmobile': data.get('broker_mobile', None),
+                    'ptel': data.get('broker_tel', None),
+                    'pemail': data.get('broker_email', None),
+                    'peducation': data.get('education', None),
+                    'pabstract': data.get('broker_abstract', None),
+                    'state': 2,
+                    'creater': creater,
+                    'account_code': account_code
+                }
+
+                # 查询当前账号有没有伪删除身份
+                obj = BrokerBaseinfo.objects.filter(account_code=account_code, state__in=[2, 3])
+                if obj:
+                    # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
+                    check_identity2(account_code=account_code, identity=2, info=identity_info)
+
+                    # 验证证件号码
+                    check_card_id(id_type, pid)  # 验证有效性
+
+                    # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                    pcode = create_or_update_person(account_code, pinfo)
+                    data['pcode'] = pcode
+
+                    # 更新基本信息表
+                    obj.update(**data)
+                    new_obj = BrokerBaseinfo.objects.filter(account_code=account_code)
+                    serializer = self.get_serializer(new_obj, many=True)
+                    return_data = serializer.data[0]
+                    ecode = new_obj[0].broker_code
+
+                    # 插入领域相关
+                    crete_major(2, 3, ecode, major)
+
+                    # 复制图片到正式目录
+                    formal_head = copy_img(head, 'Broker', 'headPhoto', ecode, creater)
+                    formal_idfront = copy_img(idfront, 'Broker', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'Broker', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'Broker', 'handIdentityPhoto', ecode, creater)
+                    # 如果未回滚则删除临时目录的图片
+                    for f in [head, idfront, idback, idphoto]:
+                        remove_img(f)
+
+                else:
+                    # 查询所绑定的账号是否有此身份（若有则报错，没有则创建）
+                    check_identity(account_code=account_code, identity=2, info=identity_info)
+
+                    # 验证证件号码
+                    check_card_id(id_type, pid)  # 验证有效性
+                    # check_id(account_code=account_code, id_type=id_type, id=id)  # 验证唯一性
+
+                    # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                    pcode = create_or_update_person(account_code, pinfo)
+                    data['pcode'] = pcode
+
+                    serializer = self.get_serializer(data=data)
+                    serializer.is_valid(raise_exception=True)
+                    self.perform_create(serializer)
+                    return_data = serializer.data
+                    ecode = serializer.data['broker_code']
+
+                    # 插入领域相关
+                    crete_major(2, 3, ecode, major)
+
+                    # 复制图片到正式目录
+                    formal_head = copy_img(head, 'Broker', 'headPhoto', ecode, creater)
+                    formal_idfront = copy_img(idfront, 'Broker', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'Broker', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'Broker', 'handIdentityPhoto', ecode, creater)
+                    # 如果未回滚则删除临时目录的图片
+                    for f in [head, idfront, idback, idphoto]:
+                        remove_img(f)
+        except ValidationError:
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            raise
+        except Exception as e:
+            # 如果已经回滚则删除正式目录的图片
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            return Response({"detail": "创建失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(return_data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        # 正式路径（避免回滚后找不到变量）
+        formal_head = None
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
+        try:
+            with transaction.atomic():
+                data = request.data
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
+                id_type = data['broker_id_type']
+                pid = data['broker_id']
+                account_code = data['account_code']
+                data['creater'] = creater
+
+                major = data.pop('major_code', None)  # 相关领域（列表）
+                head = url_to_path(data.get('head', None))  # 头像
+                idfront = url_to_path(data.get('idfront', None))  # 身份证正面
+                idback = url_to_path(data.get('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.get('idphoto', None))    # 手持身份证
+                instance = self.get_object()  # 原纪录
+
+                if account_code != instance.account_code:
+                    raise ValueError('不允许更改关联账号')
+                if not major:
+                    raise ValueError('所属领域是必填项')
+                if not data.pop('head', None):
+                    raise ValueError('头像是必填项')
+                if not data.pop('idfront', None):
+                    raise ValueError('证件照正面是必填项')
+                if not data.pop('idback', None):
+                    raise ValueError('证件照背面是必填项')
+                if not data.pop('idphoto', None):
+                    raise ValueError('手持身份证是必填项')
+
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 2,
+                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
+
+                # 个人基本信息表
+                pinfo = {
+                    'pname': data.get('broker_name', None),
+                    'pid_type': id_type,
+                    'pid': pid,
+                    'pmobile': data.get('broker_mobile', None),
+                    'ptel': data.get('broker_tel', None),
+                    'pemail': data.get('broker_email', None),
+                    'peducation': data.get('education', None),
+                    'pabstract': data.get('broker_abstract', None),
+                    'state': 2,
+                    'creater': creater,
+                    'account_code': account_code
+                }
+
+                # 验证证件号码
+                check_card_id(id_type, pid)  # 验证有效性
+
+                # 更新身份信息关联表
+                IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                         identity_code=2).update(**identity_info)
+
+                # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                pcode = create_or_update_person(account_code, pinfo)
+                data['pcode'] = pcode
+
+                partial = kwargs.pop('partial', False)
+                serializer = self.get_serializer(instance, data=data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+                ecode = serializer.data['broker_code']
+
+                # 插入领域相关
+                crete_major(2, 3, ecode, major)
+
+                # 复制图片到正式目录
+                formal_head = copy_img(head, 'Broker', 'headPhoto', ecode, creater)
+                formal_idfront = copy_img(idfront, 'Broker', 'identityFront', ecode, creater)
+                formal_idback = copy_img(idback, 'Broker', 'identityBack', ecode, creater)
+                formal_idphoto = copy_img(idphoto, 'Broker', 'handIdentityPhoto', ecode, creater)
+                # 如果未回滚则删除临时目录的图片
+                for f in [head, idfront, idback, idphoto]:
+                    remove_img(f)
+
+                if getattr(instance, '_prefetched_objects_cache', None):
+                    # If 'prefetch_related' has been applied to a queryset, we need to
+                    # forcibly invalidate the prefetch cache on the instance.
+                    instance._prefetched_objects_cache = {}
+        except ValidationError:
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            raise
+        except Exception as e:
+            # 如果已经回滚则删除正式目录的图片
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            return Response({"detail": "更新失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                data = request.data
+                pks = data.get('pks', [])
+                pks.append(kwargs['pk'])
+                expert = BrokerBaseinfo.objects.filter(serial__in=pks)
+                accounts = expert.values_list('account_code', flat=True)
+                expert_code = expert.values_list('broker_code', flat=True)
+                expert_apply_inserter = []
+                account = request.user.account
+                account_code = AccountInfo.objects.get(account=account).account_code
+                for ecode in expert_code:
+                    expert_apply_inserter.append(BrokerApplyHistory(
+                        broker_code=ecode,
+                        account_code=account_code,
+                        state=2,
+                        apply_time=datetime.datetime.now(),
+                        apply_type=3))
+                es = BrokerApplyHistory.objects.bulk_create(expert_apply_inserter)
+                check_history_inserter = []
+                for e in es:
+                    check_history_inserter.append(BrokerCheckHistory(
+                        apply_code=e.apply_code,
+                        opinion="管理系统关闭身份",
+                        result=2,
+                        check_time=datetime.datetime.now(),
+                        account=account,
+                    ))
+                BrokerCheckHistory.objects.bulk_create(check_history_inserter)
+                identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=2)
+                expert.update(state=3)
+                identity.update(state=0, iae_time=datetime.datetime.now())
+        except ValidationError:
+            raise
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # 技术经纪人申请视图
@@ -338,7 +842,9 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                         pcode = update_or_crete_person(baseinfo.pcode, pinfo)
 
                         # 更新角色基本信息表
-                        update_baseinfo(BrokerBaseinfo, {'broker_code': baseinfo.broker_code}, {'state': 1, 'pcode': pcode})
+                        update_baseinfo(BrokerBaseinfo,
+                                        {'broker_code': baseinfo.broker_code},
+                                        {'state': 1, 'pcode': pcode})
 
                         # 给账号绑定角色
                         # IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
@@ -347,7 +853,9 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                         #                                          creater=request.user.account)
                         # 申请类型新增或修改时 更新account_info表dept_code
                         if data.get('dept_code') and not baseinfo.dept_code:
-                            AccountInfo.objects.filter(account_code=instance.broker.account_code).update(dept_code=data.get('dept_code'))
+                            AccountInfo.objects.filter(
+                                account_code=instance.broker.account_code
+                            ).update(dept_code=data.get('dept_code'))
 
                         # 移动相关附件
                         move_single('headPhoto', baseinfo.broker_code)
@@ -358,10 +866,15 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                     # 更新账号绑定角色状态
                     if baseinfo.account_code:
                         IdentityAuthorizationInfo.objects.filter(account_code=baseinfo.account_code,
-                                                                 identity_code=IdentityInfo.objects.get(identity_name='broker').identity_code).update(state=apply_state, iab_time=datetime.datetime.now())
+                                                                 identity_code=IdentityInfo.objects.get(
+                                                                     identity_name='broker'
+                                                                 ).identity_code).update(
+                            state=apply_state, iab_time=datetime.datetime.now()
+                        )
 
                     # 发送信息
-                    send_msg(baseinfo.broker_mobile, '技术经纪人', apply_state, baseinfo.account_code, request.user.account)
+                    send_msg(baseinfo.broker_mobile, '技术经纪人',
+                             apply_state, baseinfo.account_code, request.user.account)
                 # 当申请状态为删除时
                 elif apply_type in [3]:
                     pass
@@ -377,15 +890,14 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return Response({"detail":{
-                "detail":["审核失败：%s" % str(e)]}}, status=400)
+            return Response({"detail": "审核失败：%s" % str(e)}, status=400)
 
         return Response(serializer.data)
 
 
 # 采集员管理
 class CollectorViewSet(viewsets.ModelViewSet):
-    queryset = CollectorBaseinfo.objects.all().order_by('state', '-serial')
+    queryset = CollectorBaseinfo.objects.filter(state__in=[1]).order_by('state', '-serial')
     serializer_class = CollectorBaseInfoSerializers
 
     filter_backends = (
@@ -413,7 +925,10 @@ class CollectorViewSet(viewsets.ModelViewSet):
                     where account_info.dept_code in ({dept_s})"
 
             raw_queryset = CollectorBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = CollectorBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state', '-serial')
+            consult_reply_set = CollectorBaseinfo.objects.filter(
+                serial__in=[i.serial for i in raw_queryset],
+                state__in=[1]
+            ).order_by('state', '-serial')
             return consult_reply_set
         else:
             queryset = self.queryset
@@ -422,279 +937,264 @@ class CollectorViewSet(viewsets.ModelViewSet):
                 queryset = queryset.all()
             return queryset
 
-
     # 创建采集员  author:范
     def create(self, request, *args, **kwargs):
-        # 建立事物机制
-        with transaction.atomic():
-            # 创建一个保存点
-            save_id = transaction.savepoint()
-            try:
+        formal_head = None
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
+        try:
+            with transaction.atomic():
+                # 正式路径（避免回滚后找不到变量）
                 data = request.data
-                account_code = request.data('account_code', None)
-                single_dict = request.data.pop('single', None)
-                identity_code = request.data.pop('identity_code', None)
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
+                id_type = data['collector_idtype']
+                pid = data['collector_id']
+                account_code = data['account_code']
 
-                if not account_code or not identity_code:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请完善相关信息')
+                head = url_to_path(data.pop('head', None))  # 头像
+                idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
+                idback = url_to_path(data.pop('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
+                if not head:
+                    raise ValueError('头像是必填项')
+                if not idfront:
+                    raise ValueError('证件照正面是必填项')
+                if not idback:
+                    raise ValueError('证件照背面是必填项')
+                if not idphoto:
+                    raise ValueError('手持身份证是必填项')
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 1,
+                    'iab_time': datetime.datetime.now(),
+                    'iae_time': None,
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
 
-                if not single_dict:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请先上传相关文件')
+                # 个人基本信息表
+                pinfo = {
+                    'pname': data.get('collector_name', None),
+                    'pid_type': id_type,
+                    'pid': pid,
+                    'pmobile': data.get('collector_mobile', None),
+                    'ptel': data.get('collector_tel', None),
+                    'pemail': data.get('collector_email', None),
+                    'peducation': data.get('education', None),
+                    'pabstract': data.get('collector_abstract', None),
+                    'state': 2,
+                    'creater': creater,
+                    'account_code': account_code
+                }
 
-                if len(single_dict) != 4:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('证件照需要上传4张')
+                # 查询当前账号有没有伪删除身份
+                obj = CollectorBaseinfo.objects.filter(account_code=account_code, state__in=[2, 3])
+                if obj:
+                    # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
+                    check_identity2(account_code=account_code, identity=1, info=identity_info)
 
-                # 1 创建采集员表
-                data['creater'] = request.user.account
-                serializer = self.get_serializer(data=data)
-                serializer.is_valid(raise_exception=True)
-                self.perform_create(serializer)
+                    # 验证证件号码
+                    check_card_id(id_type, pid)  # 验证有效性
 
-                serializer_ecode = serializer.data['collector_code']
+                    # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                    pcode = create_or_update_person(account_code, pinfo)
+                    data['pcode'] = pcode
 
-                # 2 创建identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
-                                                         state=2, creater=request.user.account)
+                    # 更新基本信息表
+                    obj.update(**data)
+                    new_obj = CollectorBaseinfo.objects.filter(account_code=account_code)
+                    serializer = self.get_serializer(new_obj, many=True)
+                    return_data = serializer.data[0]
+                    ecode = new_obj[0].collector_code
 
-                # 3 转移附件创建ecode表
-                absolute_path = ParamInfo.objects.get(param_code=1).param_value
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-                identityFront_tcode = AttachmentFileType.objects.get(tname='identityFront').tcode
-                identityBack_tcode = AttachmentFileType.objects.get(tname='identityBack').tcode
-                handIdentityPhoto_tcode = AttachmentFileType.objects.get(tname='handIdentityPhoto').tcode
-                headPhoto_tcode = AttachmentFileType.objects.get(tname='headPhoto').tcode
-                param_value = ParamInfo.objects.get(param_code=15).param_value
+                    # 复制图片到正式目录
+                    formal_head = copy_img(head, 'Collector', 'headPhoto', ecode, creater)
+                    formal_idfront = copy_img(idfront, 'Collector', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'Collector', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'Collector', 'handIdentityPhoto', ecode, creater)
+                    # 如果未回滚则删除临时目录的图片
+                    for f in [head, idfront, idback, idphoto]:
+                        remove_img(f)
 
-                url_x_f = '{}{}/{}/{}'.format(relative_path, param_value, identityFront_tcode, serializer_ecode)
-                url_x_b = '{}{}/{}/{}'.format(relative_path, param_value, identityBack_tcode, serializer_ecode)
-                url_x_p = '{}{}/{}/{}'.format(relative_path, param_value, handIdentityPhoto_tcode, serializer_ecode)
-                url_x_h = '{}{}/{}/{}'.format(relative_path, param_value, headPhoto_tcode, serializer_ecode)
+                else:
+                    # 查询所绑定的账号是否有此身份（若有则报错，没有则创建）
+                    check_identity(account_code=account_code, identity=1, info=identity_info)
 
-                if not os.path.exists(url_x_f):
-                    os.makedirs(url_x_f)
-                if not os.path.exists(url_x_b):
-                    os.makedirs(url_x_b)
-                if not os.path.exists(url_x_p):
-                    os.makedirs(url_x_p)
-                if not os.path.exists(url_x_h):
-                    os.makedirs(url_x_h)
+                    # 验证证件号码
+                    check_card_id(id_type, pid)  # 验证有效性
+                    # check_id(account_code=account_code, id_type=id_type, id=id)  # 验证唯一性
 
-                dict = {}
-                list1 = []
-                list2 = []
+                    # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                    pcode = create_or_update_person(account_code, pinfo)
+                    data['pcode'] = pcode
 
-                for key, value in single_dict.items():
-                    # 判断各个图片类型是否正确
-                    if key not in ['identityFront', 'identityBack', 'handIdentityPhoto', 'headPhoto']:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('某个图片所属类型不正确')
+                    serializer = self.get_serializer(data=data)
+                    serializer.is_valid(raise_exception=True)
+                    self.perform_create(serializer)
+                    return_data = serializer.data
+                    ecode = serializer.data['collector_code']
 
-                    url_l = value.split('/')
-                    url_file = url_l[-1]
+                    # 复制图片到正式目录
+                    formal_head = copy_img(head, 'Collector', 'headPhoto', ecode, creater)
+                    formal_idfront = copy_img(idfront, 'Collector', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'Collector', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'Collector', 'handIdentityPhoto', ecode, creater)
+                    # 如果未回滚则删除临时目录的图片
+                    for f in [head, idfront, idback, idphoto]:
+                        remove_img(f)
+        except ValidationError:
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            raise
+        except Exception as e:
+            # 如果已经回滚则删除正式目录的图片
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            return Response({"detail": "创建失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-                    # 判断该临时路径下的文件是否正确
-                    url_j = settings.MEDIA_ROOT + url_file
-                    if not os.path.exists(url_j):
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('该临时路径下不存在该文件,可能文件名称错误')
-
-                    # 通过key值拿取相应的tcode
-                    tcode = AttachmentFileType.objects.get(tname=key).tcode
-
-                    # 拼接正式路径
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
-                                                   url_file)
-
-                    # 拼接给前端的的地址
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
-
-                    # 拼接ecode表中的path
-                    path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
-                    list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file,
-                                                    path=path, operation_state=3, state=1))
-
-                    # 将临时目录转移到正式目录
-                    shutil.move(url_j, url_x)
-
-                # 创建atachmentinfo表
-                AttachmentFileinfo.objects.bulk_create(list1)
-
-                # 删除临时目录
-                shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
-
-                # 给前端抛正式目录
-                dict['url'] = list2
-
-                headers = self.get_success_headers(serializer.data)
-                # return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('创建失败%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return Response(dict)
-
+        return Response(return_data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
-        # 建立事物机制
-        with transaction.atomic():
-            # 创建一个保存点
-            save_id = transaction.savepoint()
-            try:
-                partial = kwargs.pop('partial', False)
-                instance = self.get_object()
-                serializer_ecode = instance.collector_code
-                account_code = instance.account_code
-
+        # 正式路径（避免回滚后找不到变量）
+        formal_head = None
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
+        try:
+            with transaction.atomic():
                 data = request.data
-                single_dict = request.data.pop('single', None)
-                mcode_list = request.data.pop('mcode', None)
-                identity_code = request.data.pop('identity_code', None)
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
+                id_type = data['collector_idtype']
+                pid = data['collector_id']
+                account_code = data['account_code']
+                data['creater'] = creater
 
-                if not mcode_list or not identity_code:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请完善相关信息')
+                head = url_to_path(data.get('head', None))  # 头像
+                idfront = url_to_path(data.get('idfront', None))  # 身份证正面
+                idback = url_to_path(data.get('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.get('idphoto', None))    # 手持身份证
+                instance = self.get_object()  # 原纪录
 
-                if not single_dict:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请先上传相关文件')
+                if account_code != instance.account_code:
+                    raise ValueError('不允许更改关联账号')
+                if not data.pop('head', None):
+                    raise ValueError('头像是必填项')
+                if not data.pop('idfront', None):
+                    raise ValueError('证件照正面是必填项')
+                if not data.pop('idback', None):
+                    raise ValueError('证件照背面是必填项')
+                if not data.pop('idphoto', None):
+                    raise ValueError('手持身份证是必填项')
 
-                if len(single_dict) != 4:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('证件照需要上传4张')
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 1,
+                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
 
-                # 1 更新identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
+                # 个人基本信息表
+                pinfo = {
+                    'pname': data.get('collector_name', None),
+                    'pid_type': id_type,
+                    'pid': pid,
+                    'pmobile': data.get('collector_mobile', None),
+                    'ptel': data.get('collector_tel', None),
+                    'pemail': data.get('collector_email', None),
+                    'peducation': data.get('education', None),
+                    'pabstract': data.get('collector_abstract', None),
+                    'state': 2,
+                    'creater': creater,
+                    'account_code': account_code
+                }
 
-                IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
-                                                         state=2, creater=request.user.account)
-                # 2 转移附件创建ecode表
-                absolute_path = ParamInfo.objects.get(param_code=1).param_value
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-                identityFront_tcode = AttachmentFileType.objects.get(tname='identityFront').tcode
-                identityBack_tcode = AttachmentFileType.objects.get(tname='identityBack').tcode
-                handIdentityPhoto_tcode = AttachmentFileType.objects.get(tname='handIdentityPhoto').tcode
-                headPhoto_tcode = AttachmentFileType.objects.get(tname='headPhoto').tcode
-                param_value = ParamInfo.objects.get(param_code=15).param_value
+                # 验证证件号码
+                check_card_id(id_type, pid)  # 验证有效性
 
-                url_x_f = '{}{}/{}/{}'.format(relative_path, param_value, identityFront_tcode, serializer_ecode)
-                url_x_b = '{}{}/{}/{}'.format(relative_path, param_value, identityBack_tcode, serializer_ecode)
-                url_x_p = '{}{}/{}/{}'.format(relative_path, param_value, handIdentityPhoto_tcode, serializer_ecode)
-                url_x_h = '{}{}/{}/{}'.format(relative_path, param_value, headPhoto_tcode, serializer_ecode)
+                # 更新身份信息关联表
+                IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                         identity_code=1).update(**identity_info)
 
-                if not os.path.exists(url_x_f):
-                    os.makedirs(url_x_f)
-                if not os.path.exists(url_x_b):
-                    os.makedirs(url_x_b)
-                if not os.path.exists(url_x_p):
-                    os.makedirs(url_x_p)
-                if not os.path.exists(url_x_h):
-                    os.makedirs(url_x_h)
+                # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                pcode = create_or_update_person(account_code, pinfo)
+                data['pcode'] = pcode
 
-                dict = {}
-                list1 = []
-                list2 = []
-
-                for key, value in single_dict.items():
-                    # 判断各个图片类型是否正确
-                    if key not in ['identityFront', 'identityBack', 'handIdentityPhoto', 'headPhoto']:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('某个图片所属类型不正确')
-
-                    url_l = value.split('/')
-                    url_file = url_l[-1]
-
-                    # 判断该临时路径下的文件是否正确
-                    url_j = settings.MEDIA_ROOT + url_file
-                    if not os.path.exists(url_j):
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('该临时路径下不存在该文件,可能文件名称错误')
-
-                    # 通过key值拿取相应的tcode
-                    tcode = AttachmentFileType.objects.get(tname=key).tcode
-
-                    # 拼接正式路径
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
-                                                   url_file)
-
-                    # 拼接给前端的的地址
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
-
-                    # 拼接ecode表中的path
-                    path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
-                    list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file,
-                                                    path=path, operation_state=3, state=1))
-
-                    # 将临时目录转移到正式目录
-                    shutil.move(url_j, url_x)
-
-                # 创建atachmentinfo表
-                AttachmentFileinfo.objects.bulk_create(list1)
-
-                # 删除临时目录
-                shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
-
-                # 给前端抛正式目录
-                dict['url'] = list2
-
-                serializer = self.get_serializer(instance, data=request.data, partial=partial)
+                partial = kwargs.pop('partial', False)
+                serializer = self.get_serializer(instance, data=data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
+                ecode = serializer.data['collector_code']
+
+                # 复制图片到正式目录
+                formal_head = copy_img(head, 'Collector', 'headPhoto', ecode, creater)
+                formal_idfront = copy_img(idfront, 'Collector', 'identityFront', ecode, creater)
+                formal_idback = copy_img(idback, 'Collector', 'identityBack', ecode, creater)
+                formal_idphoto = copy_img(idphoto, 'Collector', 'handIdentityPhoto', ecode, creater)
+                # 如果未回滚则删除临时目录的图片
+                for f in [head, idfront, idback, idphoto]:
+                    remove_img(f)
 
                 if getattr(instance, '_prefetched_objects_cache', None):
                     # If 'prefetch_related' has been applied to a queryset, we need to
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('创建失败%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return Response(dict)
+        except ValidationError:
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            raise
+        except Exception as e:
+            # 如果已经回滚则删除正式目录的图片
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            return Response({"detail": "更新失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
-        with transaction.atomic():
-            save_id = transaction.savepoint()
+        try:
+            with transaction.atomic():
+                data = request.data
+                pks = data.get('pks', [])
+                pks.append(kwargs['pk'])
+                expert = CollectorBaseinfo.objects.filter(serial__in=pks)
+                accounts = expert.values_list('account_code', flat=True)
+                expert_code = expert.values_list('collector_code', flat=True)
+                expert_apply_inserter = []
+                account = request.user.account
+                account_code = AccountInfo.objects.get(account=account).account_code
+                for ecode in expert_code:
+                    expert_apply_inserter.append(CollectorApplyHistory(
+                        collector_code=ecode,
+                        account_code=account_code,
+                        state=2,
+                        apply_time=datetime.datetime.now(),
+                        apply_type=3))
+                es = CollectorApplyHistory.objects.bulk_create(expert_apply_inserter)
+                check_history_inserter = []
+                for e in es:
+                    check_history_inserter.append(CollectorCheckHistory(
+                        apply_code=e.apply_code,
+                        opinion="管理系统关闭身份",
+                        result=2,
+                        check_time=datetime.datetime.now(),
+                        account=account,
+                    ))
+                CollectorCheckHistory.objects.bulk_create(check_history_inserter)
+                identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=1)
+                expert.update(state=3)
+                identity.update(state=0, iae_time=datetime.datetime.now())
+        except ValidationError:
+            raise
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-            try:
-                instance = self.get_object()
-                serializer_ecode = instance.collector_code
-                account_code = instance.account_code
-
-                # 1 删除所属领域表记录
-                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
-
-                # 2 删除identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
-
-                # 3 删除文件以及ecode表记录
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
-                if obj:
-                    try:
-                        for i in obj:
-                            url = '{}{}{}'.format(relative_path, i.path, i.file_name)
-                            # 创建对象
-                            a = FileSystemStorage()
-                            # 删除文件
-                            a.delete(url)
-                            # 删除表记录
-                            i.delete()
-                    except Exception as e:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('删除失败' % str(e))
-
-                self.perform_destroy(instance)
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('删除失败%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return HttpResponse('OK')
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # 采集员申请视图
@@ -764,7 +1264,8 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
                         pcode = update_or_crete_person(baseinfo.pcode, pinfo)
 
                         # 更新角色基本信息表
-                        update_baseinfo(CollectorBaseinfo, {'collector_code': baseinfo.collector_code}, {'state': 1, 'pcode': pcode})
+                        update_baseinfo(CollectorBaseinfo,
+                                        {'collector_code': baseinfo.collector_code}, {'state': 1, 'pcode': pcode})
 
                         # 给账号绑定角色
                         # IdentityAuthorizationInfo.objects.create(account_code=baseinfo.account_code,
@@ -773,7 +1274,9 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
                         #                                          creater=request.user.account)
                         # 申请类型新增或修改时 更新account_info表dept_code
                         if data.get('dept_code') and not baseinfo.dept_code:
-                            AccountInfo.objects.filter(account_code=instance.collector.account_code).update(dept_code=data.get('dept_code'))
+                            AccountInfo.objects.filter(
+                                account_code=instance.collector.account_code
+                            ).update(dept_code=data.get('dept_code'))
 
                         # 移动相关附件
                         move_single('headPhoto', baseinfo.collector_code)
@@ -784,7 +1287,11 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
                     # 更新账号绑定角色状态
                     if baseinfo.account_code:
                         IdentityAuthorizationInfo.objects.filter(account_code=baseinfo.account_code,
-                                                                 identity_code=IdentityInfo.objects.get(identity_name='collector').identity_code).update(state=apply_state, iab_time=datetime.datetime.now())
+                                                                 identity_code=IdentityInfo.objects.get(
+                                                                     identity_name='collector'
+                                                                 ).identity_code
+                                                                 ).update(
+                            state=apply_state, iab_time=datetime.datetime.now())
 
                     # 发送信息
                     send_msg(baseinfo.collector_mobile, '采集员', apply_state, baseinfo.account_code, request.user.account)
@@ -794,9 +1301,9 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
 
                 # 增加历史记录表信息
                 CollectorCheckHistory.objects.create(opinion=opinion,
-                                                  apply_code=instance.apply_code,
-                                                  result=data['state'],
-                                                  account=request.user.account)
+                                                     apply_code=instance.apply_code,
+                                                     result=data['state'],
+                                                     account=request.user.account)
 
                 if getattr(instance, '_prefetched_objects_cache', None):
                     # If 'prefetch_related' has been applied to a queryset, we need to
@@ -804,15 +1311,14 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
                     instance._prefetched_objects_cache = {}
         except Exception as e:
             logger.error(e)
-            return Response({"detail":{
-                "detail":["审核失败：%s" % str(e)]}}, status=400)
+            return Response({"detail": "审核失败：%s" % str(e)}, status=400)
 
         return Response(serializer.data)
 
 
 # 成果持有人管理视图
 class ResultsOwnerViewSet(viewsets.ModelViewSet):
-    queryset = ResultOwnerpBaseinfo.objects.filter(type=1).order_by('state', '-serial')
+    queryset = ResultOwnerpBaseinfo.objects.filter(type=1, state__in=[1]).order_by('state', '-serial')
     serializer_class = ResultOwnerpSerializers
 
     filter_backends = (
@@ -846,7 +1352,8 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                     and result_ownerp_baseinfo.type=1"
 
             raw_queryset = ResultOwnerpBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = ResultOwnerpBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state', '-serial')
+            consult_reply_set = ResultOwnerpBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset],
+                                                                    state__in=[1]).order_by('state', '-serial')
             return consult_reply_set
         else:
             queryset = self.queryset
@@ -857,291 +1364,282 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
 
     # 创建成果持有人  author:范
     def create(self, request, *args, **kwargs):
-        # 建立事物机制
-        with transaction.atomic():
-            # 创建一个保存点
-            save_id = transaction.savepoint()
-            try:
+        formal_head = None
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
+        try:
+            with transaction.atomic():
+                # 正式路径（避免回滚后找不到变量）
                 data = request.data
-                account_code = request.data('account_code', None)
-                single_dict = request.data.pop('single', None)
-                mcode_list = request.data.pop('mcode', None)
-                identity_code = request.data.pop('identity_code', None)
+                data['type'] = 1
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
+                id_type = data['owner_idtype']
+                pid = data['owner_id']
+                account_code = data['account_code']
 
-                if not mcode_list or not account_code or not identity_code:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请完善相关信息')
+                major = data.pop('major_code', None)  # 相关领域（列表）
+                head = url_to_path(data.pop('head', None))  # 头像
+                idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
+                idback = url_to_path(data.pop('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
+                if not major:
+                    raise ValueError('所属领域是必填项')
+                if not head:
+                    raise ValueError('头像是必填项')
+                if not idfront:
+                    raise ValueError('证件照正面是必填项')
+                if not idback:
+                    raise ValueError('证件照背面是必填项')
+                if not idphoto:
+                    raise ValueError('手持身份证是必填项')
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 4,
+                    'iab_time': datetime.datetime.now(),
+                    'iae_time': None,
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
 
-                if not single_dict:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请先上传相关文件')
+                # 个人基本信息表
+                pinfo = {
+                    'pname': data.get('owner_name', None),
+                    'pid_type': id_type,
+                    'pid': pid,
+                    'pmobile': data.get('owner_mobile', None),
+                    'ptel': data.get('owner_tel', None),
+                    'pemail': data.get('owner_email', None),
+                    'peducation': data.get('education', None),
+                    'pabstract': data.get('owner_abstract', None),
+                    'state': 2,
+                    'creater': creater,
+                    'account_code': account_code
+                }
 
-                if len(single_dict) != 4:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('证件照需要上传4张')
+                # 查询是否存在成果持有企业身份
+                if ResultOwnereBaseinfo.objects.filter(account_code=account_code, type=1, state__in=[1, 2]):
+                    raise ValueError('此账号已申请成果持有企业身份，不能成为持有个人')
+                # 查询当前账号有没有伪删除身份
+                obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, state=3, type=1)
+                if obj:
+                    # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
+                    check_identity2(account_code=account_code, identity=4, info=identity_info)
 
-                # 1 创建成果持有人表
-                data['creater'] = request.user.account
-                serializer = self.get_serializer(data=data)
-                serializer.is_valid(raise_exception=True)
-                self.perform_create(serializer)
+                    # 验证证件号码
+                    check_card_id(id_type, pid)  # 验证有效性
 
-                serializer_ecode = serializer.data['owner_code']
+                    # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                    pcode = create_or_update_person(account_code, pinfo)
+                    data['pcode'] = pcode
 
-                # 2 创建所属领域
-                major_list = []
-                for mcode in mcode_list:
-                    major_list.append(MajorUserinfo(mcode=mcode, user_type=8, user_code=serializer_ecode, mtype=2))
-                MajorUserinfo.objects.bulk_create(major_list)
+                    # 更新基本信息表
+                    obj.update(**data)
+                    new_obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, type=1)
+                    serializer = self.get_serializer(new_obj, many=True)
+                    return_data = serializer.data[0]
+                    ecode = new_obj[0].owner_code
 
-                # 3 创建identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
-                                                         state=2, creater=request.user.account)
+                    # 插入领域相关
+                    crete_major(2, 8, ecode, major)
 
-                # 4 转移附件创建ecode表
-                absolute_path = ParamInfo.objects.get(param_code=1).param_value
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-                identityFront_tcode = AttachmentFileType.objects.get(tname='identityFront').tcode
-                identityBack_tcode = AttachmentFileType.objects.get(tname='identityBack').tcode
-                handIdentityPhoto_tcode = AttachmentFileType.objects.get(tname='handIdentityPhoto').tcode
-                headPhoto_tcode = AttachmentFileType.objects.get(tname='headPhoto').tcode
-                param_value = ParamInfo.objects.get(param_code=8).param_value
+                    # 复制图片到正式目录
+                    formal_head = copy_img(head, 'ResultOwnerPer', 'headPhoto', ecode, creater)
+                    formal_idfront = copy_img(idfront, 'ResultOwnerPer', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'ResultOwnerPer', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'ResultOwnerPer', 'handIdentityPhoto', ecode, creater)
+                    # 如果未回滚则删除临时目录的图片
+                    for f in [head, idfront, idback, idphoto]:
+                        remove_img(f)
 
-                url_x_f = '{}{}/{}/{}'.format(relative_path, param_value, identityFront_tcode, serializer_ecode)
-                url_x_b = '{}{}/{}/{}'.format(relative_path, param_value, identityBack_tcode, serializer_ecode)
-                url_x_p = '{}{}/{}/{}'.format(relative_path, param_value, handIdentityPhoto_tcode, serializer_ecode)
-                url_x_h = '{}{}/{}/{}'.format(relative_path, param_value, headPhoto_tcode, serializer_ecode)
+                else:
+                    # 查询所绑定的账号是否有此身份（若有则报错，没有则创建）
+                    check_identity(account_code=account_code, identity=4, info=identity_info)
 
-                if not os.path.exists(url_x_f):
-                    os.makedirs(url_x_f)
-                if not os.path.exists(url_x_b):
-                    os.makedirs(url_x_b)
-                if not os.path.exists(url_x_p):
-                    os.makedirs(url_x_p)
-                if not os.path.exists(url_x_h):
-                    os.makedirs(url_x_h)
+                    # 验证证件号码
+                    check_card_id(id_type, pid)  # 验证有效性
+                    # check_id(account_code=account_code, id_type=id_type, id=id)  # 验证唯一性
 
-                dict = {}
-                list1 = []
-                list2 = []
+                    # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                    pcode = create_or_update_person(account_code, pinfo)
+                    data['pcode'] = pcode
 
-                for key, value in single_dict.items():
-                    # 判断各个图片类型是否正确
-                    if key not in ['identityFront', 'identityBack', 'handIdentityPhoto', 'headPhoto']:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('某个图片所属类型不正确')
+                    serializer = self.get_serializer(data=data)
+                    serializer.is_valid(raise_exception=True)
+                    self.perform_create(serializer)
+                    return_data = serializer.data
+                    ecode = serializer.data['owner_code']
 
-                    url_l = value.split('/')
-                    url_file = url_l[-1]
+                    # 插入领域相关
+                    crete_major(2, 8, ecode, major)
 
-                    # 判断该临时路径下的文件是否正确
-                    url_j = settings.MEDIA_ROOT + url_file
-                    if not os.path.exists(url_j):
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('该临时路径下不存在该文件,可能文件名称错误')
+                    # 复制图片到正式目录
+                    formal_head = copy_img(head, 'ResultOwnerPer', 'headPhoto', ecode, creater)
+                    formal_idfront = copy_img(idfront, 'ResultOwnerPer', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'ResultOwnerPer', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'ResultOwnerPer', 'handIdentityPhoto', ecode, creater)
+                    # 如果未回滚则删除临时目录的图片
+                    for f in [head, idfront, idback, idphoto]:
+                        remove_img(f)
+        except ValidationError:
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            raise
+        except Exception as e:
+            # 如果已经回滚则删除正式目录的图片
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            return Response({"detail": "创建失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-                    # 通过key值拿取相应的tcode
-                    tcode = AttachmentFileType.objects.get(tname=key).tcode
-
-                    # 拼接正式路径
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
-                                                   url_file)
-
-                    # 拼接给前端的的地址
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
-
-                    # 拼接ecode表中的path
-                    path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
-                    list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file,
-                                                    path=path, operation_state=3, state=1))
-
-                    # 将临时目录转移到正式目录
-                    shutil.move(url_j, url_x)
-
-                # 创建atachmentinfo表
-                AttachmentFileinfo.objects.bulk_create(list1)
-
-                # 删除临时目录
-                shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
-
-                # 给前端抛正式目录
-                dict['url'] = list2
-
-                headers = self.get_success_headers(serializer.data)
-                # return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('创建失败%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return Response(dict)
+        return Response(return_data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
-        # 建立事物机制
-        with transaction.atomic():
-            # 创建一个保存点
-            save_id = transaction.savepoint()
-            try:
-                partial = kwargs.pop('partial', False)
-                instance = self.get_object()
-                serializer_ecode = instance.owner_code
-                account_code = instance.account_code
-
+        # 正式路径（避免回滚后找不到变量）
+        formal_head = None
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
+        try:
+            with transaction.atomic():
                 data = request.data
-                single_dict = request.data.pop('single', None)
-                mcode_list = request.data.pop('mcode', None)
-                identity_code = request.data.pop('identity_code', None)
+                data['type'] = 1
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
+                id_type = data['owner_idtype']
+                pid = data['owner_id']
+                account_code = data['account_code']
+                data['creater'] = creater
 
-                if not mcode_list or not identity_code:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请完善相关信息')
+                major = data.pop('major_code', None)  # 相关领域（列表）
+                head = url_to_path(data.get('head', None))  # 头像
+                idfront = url_to_path(data.get('idfront', None))  # 身份证正面
+                idback = url_to_path(data.get('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.get('idphoto', None))    # 手持身份证
+                instance = self.get_object()  # 原纪录
 
-                if not single_dict:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请先上传相关文件')
+                if account_code != instance.account_code:
+                    raise ValueError('不允许更改关联账号')
+                if not major:
+                    raise ValueError('所属领域是必填项')
+                if not data.pop('head', None):
+                    raise ValueError('头像是必填项')
+                if not data.pop('idfront', None):
+                    raise ValueError('证件照正面是必填项')
+                if not data.pop('idback', None):
+                    raise ValueError('证件照背面是必填项')
+                if not data.pop('idphoto', None):
+                    raise ValueError('手持身份证是必填项')
 
-                if len(single_dict) != 4:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('证件照需要上传4张')
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 4,
+                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
 
-                # 1 更新所属领域
-                MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
+                # 个人基本信息表
+                pinfo = {
+                    'pname': data.get('owner_name', None),
+                    'pid_type': id_type,
+                    'pid': pid,
+                    'pmobile': data.get('owner_mobile', None),
+                    'ptel': data.get('owner_tel', None),
+                    'pemail': data.get('owner_email', None),
+                    'peducation': data.get('education', None),
+                    'pabstract': data.get('owner_abstract', None),
+                    'state': 2,
+                    'creater': creater,
+                    'account_code': account_code
+                }
 
-                major_list = []
-                for mcode in mcode_list:
-                    major_list.append(MajorUserinfo(mcode=mcode, user_type=8, user_code=serializer_ecode, mtype=2))
-                MajorUserinfo.objects.bulk_create(major_list)
+                # 验证证件号码
+                check_card_id(id_type, pid)  # 验证有效性
 
-                # 2 更新identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
+                # 更新身份信息关联表
+                IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                         identity_code=4).update(**identity_info)
 
-                IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
+                # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                pcode = create_or_update_person(account_code, pinfo)
+                data['pcode'] = pcode
 
-                                                         state=2, creater=request.user.account)
-                # 3 转移附件创建ecode表
-                absolute_path = ParamInfo.objects.get(param_code=1).param_value
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-                identityFront_tcode = AttachmentFileType.objects.get(tname='identityFront').tcode
-                identityBack_tcode = AttachmentFileType.objects.get(tname='identityBack').tcode
-                handIdentityPhoto_tcode = AttachmentFileType.objects.get(tname='handIdentityPhoto').tcode
-                headPhoto_tcode = AttachmentFileType.objects.get(tname='headPhoto').tcode
-                param_value = ParamInfo.objects.get(param_code=8).param_value
-
-                url_x_f = '{}{}/{}/{}'.format(relative_path, param_value, identityFront_tcode, serializer_ecode)
-                url_x_b = '{}{}/{}/{}'.format(relative_path, param_value, identityBack_tcode, serializer_ecode)
-                url_x_p = '{}{}/{}/{}'.format(relative_path, param_value, handIdentityPhoto_tcode, serializer_ecode)
-                url_x_h = '{}{}/{}/{}'.format(relative_path, param_value, headPhoto_tcode, serializer_ecode)
-
-                if not os.path.exists(url_x_f):
-                    os.makedirs(url_x_f)
-                if not os.path.exists(url_x_b):
-                    os.makedirs(url_x_b)
-                if not os.path.exists(url_x_p):
-                    os.makedirs(url_x_p)
-                if not os.path.exists(url_x_h):
-                    os.makedirs(url_x_h)
-
-                dict = {}
-                list1 = []
-                list2 = []
-
-                for key, value in single_dict.items():
-                    # 判断各个图片类型是否正确
-                    if key not in ['identityFront', 'identityBack', 'handIdentityPhoto', 'headPhoto']:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('某个图片所属类型不正确')
-
-                    url_l = value.split('/')
-                    url_file = url_l[-1]
-
-                    # 判断该临时路径下的文件是否正确
-                    url_j = settings.MEDIA_ROOT + url_file
-                    if not os.path.exists(url_j):
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('该临时路径下不存在该文件,可能文件名称错误')
-
-                    # 通过key值拿取相应的tcode
-                    tcode = AttachmentFileType.objects.get(tname=key).tcode
-
-                    # 拼接正式路径
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
-                                                   url_file)
-
-                    # 拼接给前端的的地址
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
-
-                    # 拼接ecode表中的path
-                    path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
-                    list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file,
-                                                    path=path, operation_state=3, state=1))
-
-                    # 将临时目录转移到正式目录
-                    shutil.move(url_j, url_x)
-
-                # 创建atachmentinfo表
-                AttachmentFileinfo.objects.bulk_create(list1)
-
-                # 删除临时目录
-                shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
-
-                # 给前端抛正式目录
-                dict['url'] = list2
-
-                serializer = self.get_serializer(instance, data=request.data, partial=partial)
+                partial = kwargs.pop('partial', False)
+                serializer = self.get_serializer(instance, data=data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
+                ecode = serializer.data['owner_code']
+
+                # 插入领域相关
+                crete_major(2, 8, ecode, major)
+
+                # 复制图片到正式目录
+                formal_head = copy_img(head, 'ResultOwnerPer', 'headPhoto', ecode, creater)
+                formal_idfront = copy_img(idfront, 'ResultOwnerPer', 'identityFront', ecode, creater)
+                formal_idback = copy_img(idback, 'ResultOwnerPer', 'identityBack', ecode, creater)
+                formal_idphoto = copy_img(idphoto, 'ResultOwnerPer', 'handIdentityPhoto', ecode, creater)
+                # 如果未回滚则删除临时目录的图片
+                for f in [head, idfront, idback, idphoto]:
+                    remove_img(f)
 
                 if getattr(instance, '_prefetched_objects_cache', None):
                     # If 'prefetch_related' has been applied to a queryset, we need to
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('创建失败%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return Response(dict)
+        except ValidationError:
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            raise
+        except Exception as e:
+            # 如果已经回滚则删除正式目录的图片
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            return Response({"detail": "更新失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
-        with transaction.atomic():
-            save_id = transaction.savepoint()
+        try:
+            with transaction.atomic():
+                data = request.data
+                pks = data.get('pks', [])
+                pks.append(kwargs['pk'])
+                expert = ResultOwnerpBaseinfo.objects.filter(serial__in=pks)
+                accounts = expert.values_list('account_code', flat=True)
+                expert_code = expert.values_list('owner_code', flat=True)
+                expert_apply_inserter = []
+                account = request.user.account
+                account_code = AccountInfo.objects.get(account=account).account_code
+                for ecode in expert_code:
+                    expert_apply_inserter.append(OwnerApplyHistory(
+                        owner_code=ecode,
+                        account_code=account_code,
+                        state=2,
+                        apply_time=datetime.datetime.now(),
+                        apply_type=3))
+                es = OwnerApplyHistory.objects.bulk_create(expert_apply_inserter)
+                check_history_inserter = []
+                for e in es:
+                    check_history_inserter.append(OwnerpCheckHistory(
+                        apply_code=e.apply_code,
+                        opinion="管理系统关闭身份",
+                        result=2,
+                        check_time=datetime.datetime.now(),
+                        account=account,
+                    ))
+                OwnerpCheckHistory.objects.bulk_create(check_history_inserter)
+                identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=4)
+                expert.update(state=3)
+                identity.update(state=0, iae_time=datetime.datetime.now())
+        except ValidationError:
+            raise
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-            try:
-                instance = self.get_object()
-                serializer_ecode = instance.owner_code
-                account_code = instance.account_code
-
-                # 1 删除所属领域表记录
-                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
-
-                # 2 删除identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
-
-                # 3 删除文件以及ecode表记录
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
-                if obj:
-                    try:
-                        for i in obj:
-                            url = '{}{}{}'.format(relative_path, i.path, i.file_name)
-                            # 创建对象
-                            a = FileSystemStorage()
-                            # 删除文件
-                            a.delete(url)
-                            # 删除表记录
-                            i.delete()
-                    except Exception as e:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('删除失败:%s' % str(e))
-
-                self.perform_destroy(instance)
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('删除失败:%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return HttpResponse('OK')
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # 成果持有人申请视图
@@ -1173,7 +1671,9 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
             "or override the `get_queryset()` method."
             % self.__class__.__name__
         )
-        queryset = self.queryset.filter(owner_code__in=ResultOwnerpBaseinfo.objects.values_list('owner_code').filter(type=1))
+        queryset = self.queryset.filter(owner_code__in=ResultOwnerpBaseinfo.objects.values_list(
+            'owner_code'
+        ).filter(type=1))
         if isinstance(queryset, QuerySet):
             queryset = queryset.all()
         return queryset
@@ -1222,7 +1722,8 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
                         pcode = update_or_crete_person(baseinfo.pcode, pinfo)
 
                         # 更新角色基本信息表
-                        update_baseinfo(ResultOwnerpBaseinfo, {'owner_code': baseinfo.owner_code}, {'state': 1, 'pcode': pcode})
+                        update_baseinfo(ResultOwnerpBaseinfo, {'owner_code': baseinfo.owner_code},
+                                        {'state': 1, 'pcode': pcode})
 
                         # 给账号绑定角色
                         # if baseinfo.account_code:
@@ -1262,15 +1763,14 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return Response({"detail":{
-                "detail":["审核失败：%s" % str(e)]}}, status=400)
+            return Response({"detail": "审核失败：%s" % str(e)}, status=400)
 
         return Response(serializer.data)
 
 
 # 成果持有人（企业）管理视图
 class ResultsOwnereViewSet(viewsets.ModelViewSet):
-    queryset = ResultOwnereBaseinfo.objects.filter(type=1).order_by('state', '-serial')
+    queryset = ResultOwnereBaseinfo.objects.filter(type=1, state__in=[1]).order_by('state', '-serial')
     serializer_class = ResultOwnereSerializers
 
     filter_backends = (
@@ -1304,7 +1804,8 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                     and result_ownere_baseinfo.type=2"
 
             raw_queryset = ResultOwnereBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = ResultOwnereBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state', '-serial')
+            consult_reply_set = ResultOwnereBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset],
+                                                                    state__in=[1]).order_by('state', '-serial')
             return consult_reply_set
         else:
             queryset = self.queryset
@@ -1313,296 +1814,389 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 queryset = queryset.all()
             return queryset
 
-
     # 创建成果持有人(企业)  author:范
     def create(self, request, *args, **kwargs):
-        # 建立事物机制
-        with transaction.atomic():
-            # 创建一个保存点
-            save_id = transaction.savepoint()
-            try:
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
+        formal_license = None
+        formal_logo = None
+        formal_promotional = None
+        editor_imgs_path = {}  # 富文本编辑器图片对照
+        formal_editor_imgs_path = {}
+        try:
+            with transaction.atomic():
+                # 正式路径（避免回滚后找不到变量）
                 data = request.data
-                account_code = request.data('account_code', None)
-                single_dict = request.data.pop('single', None)
-                mcode_list = request.data.pop('mcode', None)
-                identity_code = request.data.pop('identity_code', None)
+                data['type'] = 1
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
+                account_code = data['account_code']
 
-                if not mcode_list or not account_code or not identity_code:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请完善相关信息')
+                major = data.pop('major_code', None)  # 相关领域（列表）
+                idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
+                idback = url_to_path(data.pop('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
+                owner_license = url_to_path(data.pop('license', None))  # 营业执照
+                logo = url_to_path(data.pop('logo', None))  # logo
+                promotional = url_to_path(data.pop('promotional', None))  # 宣传照
+                owner_abstract_detail = data.get('owner_abstract_detail', '')  # 富文本
+                if owner_abstract_detail:
+                    img_pattern = re.compile(r'src=\"(.*?)\"')
+                    editor_imgs_list = img_pattern.findall(owner_abstract_detail)
+                    for e in editor_imgs_list:
+                        editor_imgs_path[e] = url_to_path(e)
 
-                if not single_dict:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请先上传相关文件')
+                if not major:
+                    raise ValueError('所属领域是必填项')
+                if not idfront:
+                    raise ValueError('证件照正面是必填项')
+                if not idback:
+                    raise ValueError('证件照背面是必填项')
+                if not idphoto:
+                    raise ValueError('手持身份证是必填项')
+                if not owner_license:
+                    raise ValueError('营业执照是必填项')
 
-                if len(single_dict) != 4:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('证件照需要上传4张')
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 5,
+                    'iab_time': datetime.datetime.now(),
+                    'iae_time': None,
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
 
-                # 1 创建成果持有人（企业）表
-                data['creater'] = request.user.account
-                serializer = self.get_serializer(data=data)
-                serializer.is_valid(raise_exception=True)
-                self.perform_create(serializer)
+                # 企业基本信息表
+                einfo = {
+                    'ename': data.get('owner_name', None),  # 企业名称
+                    'eabbr': data.get('owner_name_abbr', None),  # 简称
+                    'business_license': data.get('owner_license', None),  # 企业营业执照统一社会信用码
+                    'eabstract': data.get('owner_abstract', None),  # 简介
+                    'eabstract_detail': data.get('owner_abstract_detail', None),
+                    'homepage': data.get('homepage', None),  # 企业主页url
+                    'etel': data.get('owner_tel', None),  # 企业电话
+                    'manager': data.get('legal_person', None),  # 企业联系人
+                    'emobile': data.get('owner_mobile', None),  # 企业手机
+                    'eemail': data.get('owner_email', None),  # 企业邮箱
+                    'state': 2,
+                    'manager_id': data.get('owner_id', None),
+                    'manager_idtype': data.get('owner_idtype', None),
+                    'creater': creater,
+                    'account_code': account_code
+                }
+                # 验证是否存在成果持有人个人身份
+                if ResultOwnerpBaseinfo.objects.filter(account_code=account_code, type=1, state__in=[1, 2]):
+                    raise ValueError('此账号已申请成果持有个人身份，不能成为持有企业')
 
-                serializer_ecode = serializer.data['owner_code']
+                # 查询当前账号有没有伪删除身份
+                obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, state=3, type=1)
+                if obj:
+                    # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
+                    check_identity2(account_code=account_code, identity=5, info=identity_info)
 
-                # 2 创建所属领域
-                major_list = []
-                for mcode in mcode_list:
-                    major_list.append(MajorUserinfo(mcode=mcode, user_type=6, user_code=serializer_ecode, mtype=2))
-                MajorUserinfo.objects.bulk_create(major_list)
+                    # # 验证证件号码
+                    # check_card_id(id_type, pid)  # 验证有效性
 
-                # 3 创建identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
-                                                         state=2, creater=request.user.account)
+                    # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                    encode = create_or_update_enterprise(account_code, einfo)
+                    data['ecode'] = encode
 
-                # 4 转移附件创建ecode表
-                absolute_path = ParamInfo.objects.get(param_code=1).param_value
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-                identityFront_tcode = AttachmentFileType.objects.get(tname='identityFront').tcode
-                identityBack_tcode = AttachmentFileType.objects.get(tname='identityBack').tcode
-                handIdentityPhoto_tcode = AttachmentFileType.objects.get(tname='handIdentityPhoto').tcode
-                headPhoto_tcode = AttachmentFileType.objects.get(tname='headPhoto').tcode
-                param_value = ParamInfo.objects.get(param_code=9).param_value
+                    # 更新基本信息表
+                    obj.update(**data)
+                    new_obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, type=1)
+                    serializer = self.get_serializer(new_obj, many=True)
+                    return_data = serializer.data[0]
+                    ecode = new_obj[0].owner_code
 
-                url_x_f = '{}{}/{}/{}'.format(relative_path, param_value, identityFront_tcode, serializer_ecode)
-                url_x_b = '{}{}/{}/{}'.format(relative_path, param_value, identityBack_tcode, serializer_ecode)
-                url_x_p = '{}{}/{}/{}'.format(relative_path, param_value, handIdentityPhoto_tcode, serializer_ecode)
-                url_x_h = '{}{}/{}/{}'.format(relative_path, param_value, headPhoto_tcode, serializer_ecode)
+                    # 插入领域相关
+                    crete_major(2, 6, ecode, major)
 
-                if not os.path.exists(url_x_f):
-                    os.makedirs(url_x_f)
-                if not os.path.exists(url_x_b):
-                    os.makedirs(url_x_b)
-                if not os.path.exists(url_x_p):
-                    os.makedirs(url_x_p)
-                if not os.path.exists(url_x_h):
-                    os.makedirs(url_x_h)
+                    # 复制图片到正式目录
+                    formal_idfront = copy_img(idfront, 'ResultOwnerEnt', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'ResultOwnerEnt', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'ResultOwnerEnt', 'handIdentityPhoto', ecode, creater)
+                    formal_license = copy_img(owner_license, 'ResultOwnerEnt', "entLicense", ecode, creater)
+                    formal_logo = copy_img(logo, 'ResultOwnerEnt', "logoPhoto", ecode, creater)
+                    formal_promotional = copy_img(promotional, 'ResultOwnerEnt', "Propaganda", ecode, creater)
 
-                dict = {}
-                list1 = []
-                list2 = []
+                    for k, v in editor_imgs_path.items():
+                        formal_editor_imgs_path[k] = copy_img(v, 'ResultOwnerEnt', 'consultEditor', ecode, creater)
 
-                for key, value in single_dict.items():
-                    # 判断各个图片类型是否正确
-                    if key not in ['identityFront', 'identityBack', 'handIdentityPhoto', 'headPhoto']:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('某个图片所属类型不正确')
+                    for k, v in formal_editor_imgs_path.items():
+                        if v:
+                            new_v = v.replace(ParamInfo.objects.get(param_name='upload_dir').param_value,
+                                              ParamInfo.objects.get(param_name='attachment_dir').param_value)
+                            owner_abstract_detail = owner_abstract_detail.replace(k, new_v)
 
-                    url_l = value.split('/')
-                    url_file = url_l[-1]
+                    # 更新 富文本内容
+                    new_obj.update(owner_abstract_detail=owner_abstract_detail)
+                    EnterpriseBaseinfo.objects.filter(ecode=ecode).update(eabstract_detail=owner_abstract_detail)
+                    # 如果未回滚则删除临时目录的图片
+                    old_img_list = [idfront, idback, idphoto, owner_license, logo, promotional]
+                    old_img_list.extend(editor_imgs_path.values())
+                    for f in old_img_list:
+                        remove_img(f)
+                else:
+                    # 查询所绑定的账号是否有此身份（若有则报错，没有则创建）
+                    check_identity(account_code=account_code, identity=5, info=identity_info)
 
-                    # 判断该临时路径下的文件是否正确
-                    url_j = settings.MEDIA_ROOT + url_file
-                    if not os.path.exists(url_j):
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('该临时路径下不存在该文件,可能文件名称错误')
+                    # # 验证证件号码
+                    # check_card_id(id_type, pid)  # 验证有效性
+                    # check_id(account_code=account_code, id_type=id_type, id=id)  # 验证唯一性
 
-                    # 通过key值拿取相应的tcode
-                    tcode = AttachmentFileType.objects.get(tname=key).tcode
+                    # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                    encode = create_or_update_enterprise(account_code, einfo)
+                    data['ecode'] = encode
 
-                    # 拼接正式路径
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
-                                                   url_file)
+                    serializer = self.get_serializer(data=data)
+                    serializer.is_valid(raise_exception=True)
+                    self.perform_create(serializer)
+                    return_data = serializer.data
+                    ecode = serializer.data['owner_code']
 
-                    # 拼接给前端的的地址
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
+                    # 插入领域相关
+                    crete_major(2, 6, ecode, major)
 
-                    # 拼接ecode表中的path
-                    path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
-                    list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file,
-                                                    path=path, operation_state=3, state=1))
+                    # 复制图片到正式目录
+                    formal_idfront = copy_img(idfront, 'ResultOwnerEnt', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'ResultOwnerEnt', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'ResultOwnerEnt', 'handIdentityPhoto', ecode, creater)
+                    formal_license = copy_img(owner_license, 'ResultOwnerEnt', "entLicense", ecode, creater)
+                    formal_logo = copy_img(logo, 'ResultOwnerEnt', "logoPhoto", ecode, creater)
+                    formal_promotional = copy_img(promotional, 'ResultOwnerEnt', "Propaganda", ecode, creater)
 
-                    # 将临时目录转移到正式目录
-                    shutil.move(url_j, url_x)
+                    for k, v in editor_imgs_path.items():
+                        formal_editor_imgs_path[k] = copy_img(v, 'ResultOwnerEnt', 'consultEditor', ecode, creater)
 
-                # 创建atachmentinfo表
-                AttachmentFileinfo.objects.bulk_create(list1)
+                    for k, v in formal_editor_imgs_path.items():
+                        if v:
+                            new_v = v.replace(ParamInfo.objects.get(param_name='upload_dir').param_value,
+                                              ParamInfo.objects.get(param_name='attachment_dir').param_value)
+                            owner_abstract_detail = owner_abstract_detail.replace(k, new_v)
+                    ResultOwnereBaseinfo.objects.filter(owner_code=ecode).update(
+                        owner_abstract_detail=owner_abstract_detail)
+                    EnterpriseBaseinfo.objects.filter(ecode=ecode).update(eabstract_detail=owner_abstract_detail)
 
-                # 删除临时目录
-                shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
+                    # 如果未回滚则删除临时目录的图片
+                    old_img_list = [idfront, idback, idphoto, owner_license, logo, promotional]
+                    old_img_list.extend(editor_imgs_path.values())
+                    for f in old_img_list:
+                        remove_img(f)
+        except ValidationError:
+            old_formal_imglist = [formal_idfront,
+                                   formal_idback,
+                                   formal_idphoto,
+                                   formal_license,
+                                   formal_logo,
+                                   formal_promotional]
+            old_formal_imglist.extend(formal_editor_imgs_path.values())
+            for f in old_formal_imglist:
+                remove_img(f)
+            raise
+        except Exception as e:
+            # 如果已经回滚则删除正式目录的图片
+            old_formal_imglist = [formal_idfront,
+                                   formal_idback,
+                                   formal_idphoto,
+                                   formal_license,
+                                   formal_logo,
+                                   formal_promotional]
+            old_formal_imglist.extend(formal_editor_imgs_path.values())
+            for f in old_formal_imglist:
+                remove_img(f)
+            return Response({"detail": "创建失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-                # 给前端抛正式目录
-                dict['url'] = list2
-
-                headers = self.get_success_headers(serializer.data)
-                # return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('创建失败%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return Response(dict)
-
+        return Response(return_data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
-        # 建立事物机制
-        with transaction.atomic():
-            # 创建一个保存点
-            save_id = transaction.savepoint()
-            try:
-                partial = kwargs.pop('partial', False)
-                instance = self.get_object()
-                serializer_ecode = instance.owner_code
-                account_code = instance.account_code
-
+        # 正式路径（避免回滚后找不到变量）
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
+        formal_license = None
+        formal_logo = None
+        formal_promotional = None
+        editor_imgs_path = {}  # 富文本编辑器图片对照
+        formal_editor_imgs_path = {}
+        try:
+            with transaction.atomic():
                 data = request.data
-                single_dict = request.data.pop('single', None)
-                mcode_list = request.data.pop('mcode', None)
-                identity_code = request.data.pop('identity_code', None)
+                data['type'] = 1
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
+                account_code = data['account_code']
 
-                if not mcode_list or not identity_code:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请完善相关信息')
+                major = data.pop('major_code', None)  # 相关领域（列表）
+                idfront = url_to_path(data.get('idfront', None))  # 身份证正面
+                idback = url_to_path(data.get('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.get('idphoto', None))    # 手持身份证
+                owner_license = url_to_path(data.get('license', None))  # 营业执照
+                logo = url_to_path(data.pop('logo', None))  # logo
+                promotional = url_to_path(data.pop('promotional', None))  # 宣传照
+                owner_abstract_detail = data.get('owner_abstract_detail', '')  # 富文本
 
-                if not single_dict:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请先上传相关文件')
+                if owner_abstract_detail:
+                    img_pattern = re.compile(r'src=\"(.*?)\"')
+                    editor_imgs_list = img_pattern.findall(owner_abstract_detail)
+                    for e in editor_imgs_list:
+                        if url_to_path(e):
+                            editor_imgs_path[e] = url_to_path(e)
 
-                if len(single_dict) != 4:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('证件照需要上传4张')
+                instance = self.get_object()  # 原纪录
 
-                # 1 更新所属领域
-                MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
+                if account_code != instance.account_code:
+                    raise ValueError('不允许更改关联账号')
+                if not major:
+                    raise ValueError('所属领域是必填项')
+                if not data.pop('idfront', None):
+                    raise ValueError('证件照正面是必填项')
+                if not data.pop('idback', None):
+                    raise ValueError('证件照背面是必填项')
+                if not data.pop('idphoto', None):
+                    raise ValueError('手持身份证是必填项')
+                if not data.pop('license', None):
+                    raise ValueError('营业执照是必填项')
 
-                major_list = []
-                for mcode in mcode_list:
-                    major_list.append(MajorUserinfo(mcode=mcode, user_type=6, user_code=serializer_ecode, mtype=2))
-                MajorUserinfo.objects.bulk_create(major_list)
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 5,
+                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
 
-                # 2 更新identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
+                # 企业基本信息表
+                einfo = {
+                    'ename': data.get('owner_name', None),  # 企业名称
+                    'eabbr': data.get('owner_name_abbr', None),  # 简称
+                    'business_license': data.get('owner_license', None),  # 企业营业执照统一社会信用码
+                    'eabstract': data.get('owner_abstract', None),  # 简介
+                    'eabstract_detail': data.get('owner_abstract_detail', None),
+                    'homepage': data.get('homepage', None),  # 企业主页url
+                    'etel': data.get('owner_tel', None),  # 企业电话
+                    'manager': data.get('legal_person', None),  # 企业联系人
+                    'emobile': data.get('owner_mobile', None),  # 企业手机
+                    'eemail': data.get('owner_email', None),  # 企业邮箱
+                    'state': 2,
+                    'manager_id': data.get('owner_id', None),
+                    'manager_idtype': data.get('owner_idtype', None),
+                    'creater': creater,
+                    'account_code': account_code
+                }
 
-                IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
+                # # 验证证件号码
+                # check_card_id(id_type, pid)  # 验证有效性
 
-                                                         state=2, creater=request.user.account)
-                # 3 转移附件创建ecode表
-                absolute_path = ParamInfo.objects.get(param_code=1).param_value
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-                identityFront_tcode = AttachmentFileType.objects.get(tname='identityFront').tcode
-                identityBack_tcode = AttachmentFileType.objects.get(tname='identityBack').tcode
-                handIdentityPhoto_tcode = AttachmentFileType.objects.get(tname='handIdentityPhoto').tcode
-                headPhoto_tcode = AttachmentFileType.objects.get(tname='headPhoto').tcode
-                param_value = ParamInfo.objects.get(param_code=9).param_value
+                # 更新身份信息关联表
+                IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                         identity_code=5).update(**identity_info)
 
-                url_x_f = '{}{}/{}/{}'.format(relative_path, param_value, identityFront_tcode, serializer_ecode)
-                url_x_b = '{}{}/{}/{}'.format(relative_path, param_value, identityBack_tcode, serializer_ecode)
-                url_x_p = '{}{}/{}/{}'.format(relative_path, param_value, handIdentityPhoto_tcode, serializer_ecode)
-                url_x_h = '{}{}/{}/{}'.format(relative_path, param_value, headPhoto_tcode, serializer_ecode)
-
-                if not os.path.exists(url_x_f):
-                    os.makedirs(url_x_f)
-                if not os.path.exists(url_x_b):
-                    os.makedirs(url_x_b)
-                if not os.path.exists(url_x_p):
-                    os.makedirs(url_x_p)
-                if not os.path.exists(url_x_h):
-                    os.makedirs(url_x_h)
-
-                dict = {}
-                list1 = []
-                list2 = []
-
-                for key, value in single_dict.items():
-                    # 判断各个图片类型是否正确
-                    if key not in ['identityFront', 'identityBack', 'handIdentityPhoto', 'headPhoto']:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('某个图片所属类型不正确')
-
-                    url_l = value.split('/')
-                    url_file = url_l[-1]
-
-                    # 判断该临时路径下的文件是否正确
-                    url_j = settings.MEDIA_ROOT + url_file
-                    if not os.path.exists(url_j):
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('该临时路径下不存在该文件,可能文件名称错误')
-
-                    # 通过key值拿取相应的tcode
-                    tcode = AttachmentFileType.objects.get(tname=key).tcode
-
-                    # 拼接正式路径
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
-                                                   url_file)
-
-                    # 拼接给前端的的地址
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
-
-                    # 拼接ecode表中的path
-                    path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
-                    list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file,
-                                                    path=path, operation_state=3, state=1))
-
-                    # 将临时目录转移到正式目录
-                    shutil.move(url_j, url_x)
-
-                # 创建atachmentinfo表
-                AttachmentFileinfo.objects.bulk_create(list1)
-
-                # 删除临时目录
-                shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
-
-                # 给前端抛正式目录
-                dict['url'] = list2
-
-                serializer = self.get_serializer(instance, data=request.data, partial=partial)
+                # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                encode = create_or_update_enterprise(account_code, einfo)
+                data['ecode'] = encode
+                partial = kwargs.pop('partial', False)
+                serializer = self.get_serializer(instance, data=data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
+                ecode = serializer.data['owner_code']
+
+                # 插入领域相关
+                crete_major(2, 6, ecode, major)
+
+                # 复制图片到正式目录
+                formal_idfront = copy_img(idfront, 'ResultOwnerEnt', 'identityFront', ecode, creater)
+                formal_idback = copy_img(idback, 'ResultOwnerEnt', 'identityBack', ecode, creater)
+                formal_idphoto = copy_img(idphoto, 'ResultOwnerEnt', 'handIdentityPhoto', ecode, creater)
+                formal_license = copy_img(owner_license, 'ResultOwnerEnt', "entLicense", ecode, creater)
+                formal_logo = copy_img(logo, 'ResultOwnerEnt', "logoPhoto", ecode, creater)
+                formal_promotional = copy_img(promotional, 'ResultOwnerEnt', "Propaganda", ecode, creater)
+                for k, v in editor_imgs_path.items():
+                    formal_editor_imgs_path[k] = copy_img(v, 'ResultOwnerEnt', 'consultEditor', ecode, creater)
+
+                for k, v in formal_editor_imgs_path.items():
+                    if v:
+                        new_v = v.replace(ParamInfo.objects.get(param_name='upload_dir').param_value,
+                                          ParamInfo.objects.get(param_name='attachment_dir').param_value)
+                        owner_abstract_detail = owner_abstract_detail.replace(k, new_v)
+                ResultOwnereBaseinfo.objects.filter(owner_code=ecode).update(
+                    owner_abstract_detail=owner_abstract_detail)
+                EnterpriseBaseinfo.objects.filter(ecode=ecode).update(eabstract_detail=owner_abstract_detail)
+                # 如果未回滚则删除临时目录的图片
+                old_img_list = [idfront, idback, idphoto, owner_license, logo, promotional]
+                old_img_list.extend(editor_imgs_path.values())
+                for f in old_img_list:
+                    remove_img(f)
 
                 if getattr(instance, '_prefetched_objects_cache', None):
                     # If 'prefetch_related' has been applied to a queryset, we need to
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('创建失败%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return Response(dict)
+        except ValidationError:
+            old_formal_imglist = [formal_idfront,
+                                   formal_idback,
+                                   formal_idphoto,
+                                   formal_license,
+                                   formal_logo,
+                                   formal_promotional]
+            old_formal_imglist.extend(formal_editor_imgs_path.values())
+            for f in old_formal_imglist:
+                remove_img(f)
+            raise
+        except Exception as e:
+            # 如果已经回滚则删除正式目录的图片
+            old_formal_imglist = [formal_idfront,
+                                   formal_idback,
+                                   formal_idphoto,
+                                   formal_license,
+                                   formal_logo,
+                                   formal_promotional]
+            old_formal_imglist.extend(formal_editor_imgs_path.values())
+            for f in old_formal_imglist:
+                remove_img(f)
+            return Response({"detail": "更新失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+        return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
-        with transaction.atomic():
-            save_id = transaction.savepoint()
+        try:
+            with transaction.atomic():
+                data = request.data
+                pks = data.get('pks', [])
+                pks.append(kwargs['pk'])
+                expert = ResultOwnereBaseinfo.objects.filter(serial__in=pks)
+                accounts = expert.values_list('account_code', flat=True)
+                expert_code = expert.values_list('owner_code', flat=True)
+                expert_apply_inserter = []
+                account = request.user.account
+                for ecode in expert_code:
+                    expert_apply_inserter.append(OwnereApplyHistory(
+                        owner_code=ecode,
+                        state=2,
+                        apply_time=datetime.datetime.now(),
+                        apply_type=3))
+                es = OwnereApplyHistory.objects.bulk_create(expert_apply_inserter)
+                check_history_inserter = []
+                for e in es:
+                    check_history_inserter.append(OwnereCheckHistory(
+                        apply_code=e.apply_code,
+                        opinion="管理系统关闭身份",
+                        result=2,
+                        check_time=datetime.datetime.now(),
+                        account=account,
+                    ))
+                OwnereCheckHistory.objects.bulk_create(check_history_inserter)
+                identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=5)
+                expert.update(state=3)
+                identity.update(state=0, iae_time=datetime.datetime.now())
+        except ValidationError:
+            raise
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-            try:
-                instance = self.get_object()
-                serializer_ecode = instance.owner_code
-                account_code = instance.account_code
-
-                # 1 删除所属领域表记录
-                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
-
-                # 2 删除identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
-
-                # 3 删除文件以及ecode表记录
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
-                if obj:
-                    try:
-                        for i in obj:
-                            url = '{}{}{}'.format(relative_path, i.path, i.file_name)
-                            # 创建对象
-                            a = FileSystemStorage()
-                            # 删除文件
-                            a.delete(url)
-                            # 删除表记录
-                            i.delete()
-                    except Exception as e:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('删除失败' % str(e))
-
-                self.perform_destroy(instance)
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('删除失败%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return HttpResponse('OK')
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # 成果持有人（企业）申请视图
@@ -1735,14 +2329,13 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return Response({"detail":{
-                "detail":["审核失败：%s" % str(e)]}}, status=400)
+            return Response({"detail":"审核失败：%s" % str(e)}, status=400)
         return Response(serializer.data)
 
 
 # 需求持有人管理视图
 class RequirementOwnerViewSet(viewsets.ModelViewSet):
-    queryset = ResultOwnerpBaseinfo.objects.filter(type=2).order_by('state', '-serial')
+    queryset = ResultOwnerpBaseinfo.objects.filter(type=2, state__in=[1]).order_by('state', '-serial')
     serializer_class = ResultOwnerpSerializers
 
     filter_backends = (
@@ -1777,7 +2370,8 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                     and result_ownerp_baseinfo.type=2"
 
             raw_queryset = ResultOwnerpBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = ResultOwnerpBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state', '-serial')
+            consult_reply_set = ResultOwnerpBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset],
+                                                                    state__in=[1]).order_by('state', '-serial')
             return consult_reply_set
         else:
             queryset = self.queryset
@@ -1788,291 +2382,282 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
 
     # 创建需求持有人  author:范
     def create(self, request, *args, **kwargs):
-        # 建立事物机制
-        with transaction.atomic():
-            # 创建一个保存点
-            save_id = transaction.savepoint()
-            try:
+        formal_head = None
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
+        try:
+            with transaction.atomic():
+                # 正式路径（避免回滚后找不到变量）
                 data = request.data
-                account_code = request.data('account_code', None)
-                single_dict = request.data.pop('single', None)
-                mcode_list = request.data.pop('mcode', None)
-                identity_code = request.data.pop('identity_code', None)
+                data['type'] = 2
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
+                id_type = data['owner_idtype']
+                pid = data['owner_id']
+                account_code = data['account_code']
 
-                if not mcode_list or not account_code or not identity_code:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请完善相关信息')
+                major = data.pop('major_code', None)  # 相关领域（列表）
+                head = url_to_path(data.pop('head', None))  # 头像
+                idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
+                idback = url_to_path(data.pop('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
+                if not major:
+                    raise ValueError('所属领域是必填项')
+                if not head:
+                    raise ValueError('头像是必填项')
+                if not idfront:
+                    raise ValueError('证件照正面是必填项')
+                if not idback:
+                    raise ValueError('证件照背面是必填项')
+                if not idphoto:
+                    raise ValueError('手持身份证是必填项')
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 6,
+                    'iab_time': datetime.datetime.now(),
+                    'iae_time': None,
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
 
-                if not single_dict:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请先上传相关文件')
+                # 个人基本信息表
+                pinfo = {
+                    'pname': data.get('owner_name', None),
+                    'pid_type': id_type,
+                    'pid': pid,
+                    'pmobile': data.get('owner_mobile', None),
+                    'ptel': data.get('owner_tel', None),
+                    'pemail': data.get('owner_email', None),
+                    'peducation': data.get('education', None),
+                    'pabstract': data.get('owner_abstract', None),
+                    'state': 2,
+                    'creater': creater,
+                    'account_code': account_code
+                }
 
-                if len(single_dict) != 4:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('证件照需要上传4张')
+                # 查询是否存在成果持有企业身份
+                if ResultOwnereBaseinfo.objects.filter(account_code=account_code, type=2, state__in=[1, 2]):
+                    raise ValueError('此账号已申请需求持有企业身份，不能成为持有个人')
+                # 查询当前账号有没有伪删除身份
+                obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, state=3, type=2)
+                if obj:
+                    # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
+                    check_identity2(account_code=account_code, identity=6, info=identity_info)
 
-                # 1 创建需求持有人表
-                data['creater'] = request.user.account
-                serializer = self.get_serializer(data=data)
-                serializer.is_valid(raise_exception=True)
-                self.perform_create(serializer)
+                    # 验证证件号码
+                    check_card_id(id_type, pid)  # 验证有效性
 
-                serializer_ecode = serializer.data['owner_code']
+                    # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                    pcode = create_or_update_person(account_code, pinfo)
+                    data['pcode'] = pcode
 
-                # 2 创建所属领域
-                major_list = []
-                for mcode in mcode_list:
-                    major_list.append(MajorUserinfo(mcode=mcode, user_type=9, user_code=serializer_ecode, mtype=2))
-                MajorUserinfo.objects.bulk_create(major_list)
+                    # 更新基本信息表
+                    obj.update(**data)
+                    new_obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, type=1)
+                    serializer = self.get_serializer(new_obj, many=True)
+                    return_data = serializer.data[0]
+                    ecode = new_obj[0].owner_code
 
-                # 3 创建identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
-                                                         state=2, creater=request.user.account)
+                    # 插入领域相关
+                    crete_major(2, 9, ecode, major)
 
-                # 4 转移附件创建ecode表
-                absolute_path = ParamInfo.objects.get(param_code=1).param_value
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-                identityFront_tcode = AttachmentFileType.objects.get(tname='identityFront').tcode
-                identityBack_tcode = AttachmentFileType.objects.get(tname='identityBack').tcode
-                handIdentityPhoto_tcode = AttachmentFileType.objects.get(tname='handIdentityPhoto').tcode
-                headPhoto_tcode = AttachmentFileType.objects.get(tname='headPhoto').tcode
-                param_value = ParamInfo.objects.get(param_code=10).param_value
+                    # 复制图片到正式目录
+                    formal_head = copy_img(head, 'RequirementOwnerPer', 'headPhoto', ecode, creater)
+                    formal_idfront = copy_img(idfront, 'RequirementOwnerPer', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'RequirementOwnerPer', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'RequirementOwnerPer', 'handIdentityPhoto', ecode, creater)
+                    # 如果未回滚则删除临时目录的图片
+                    for f in [head, idfront, idback, idphoto]:
+                        remove_img(f)
 
-                url_x_f = '{}{}/{}/{}'.format(relative_path, param_value, identityFront_tcode, serializer_ecode)
-                url_x_b = '{}{}/{}/{}'.format(relative_path, param_value, identityBack_tcode, serializer_ecode)
-                url_x_p = '{}{}/{}/{}'.format(relative_path, param_value, handIdentityPhoto_tcode, serializer_ecode)
-                url_x_h = '{}{}/{}/{}'.format(relative_path, param_value, headPhoto_tcode, serializer_ecode)
+                else:
+                    # 查询所绑定的账号是否有此身份（若有则报错，没有则创建）
+                    check_identity(account_code=account_code, identity=6, info=identity_info)
 
-                if not os.path.exists(url_x_f):
-                    os.makedirs(url_x_f)
-                if not os.path.exists(url_x_b):
-                    os.makedirs(url_x_b)
-                if not os.path.exists(url_x_p):
-                    os.makedirs(url_x_p)
-                if not os.path.exists(url_x_h):
-                    os.makedirs(url_x_h)
+                    # 验证证件号码
+                    check_card_id(id_type, pid)  # 验证有效性
+                    # check_id(account_code=account_code, id_type=id_type, id=id)  # 验证唯一性
 
-                dict = {}
-                list1 = []
-                list2 = []
+                    # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                    pcode = create_or_update_person(account_code, pinfo)
+                    data['pcode'] = pcode
 
-                for key, value in single_dict.items():
-                    # 判断各个图片类型是否正确
-                    if key not in ['identityFront', 'identityBack', 'handIdentityPhoto', 'headPhoto']:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('某个图片所属类型不正确')
+                    serializer = self.get_serializer(data=data)
+                    serializer.is_valid(raise_exception=True)
+                    self.perform_create(serializer)
+                    return_data = serializer.data
+                    ecode = serializer.data['owner_code']
 
-                    url_l = value.split('/')
-                    url_file = url_l[-1]
+                    # 插入领域相关
+                    crete_major(2, 9, ecode, major)
 
-                    # 判断该临时路径下的文件是否正确
-                    url_j = settings.MEDIA_ROOT + url_file
-                    if not os.path.exists(url_j):
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('该临时路径下不存在该文件,可能文件名称错误')
+                    # 复制图片到正式目录
+                    formal_head = copy_img(head, 'RequirementOwnerPer', 'headPhoto', ecode, creater)
+                    formal_idfront = copy_img(idfront, 'RequirementOwnerPer', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'RequirementOwnerPer', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'RequirementOwnerPer', 'handIdentityPhoto', ecode, creater)
+                    # 如果未回滚则删除临时目录的图片
+                    for f in [head, idfront, idback, idphoto]:
+                        remove_img(f)
+        except ValidationError:
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            raise
+        except Exception as e:
+            # 如果已经回滚则删除正式目录的图片
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            return Response({"detail": "创建失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-                    # 通过key值拿取相应的tcode
-                    tcode = AttachmentFileType.objects.get(tname=key).tcode
-
-                    # 拼接正式路径
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
-                                                   url_file)
-
-                    # 拼接给前端的的地址
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
-
-                    # 拼接ecode表中的path
-                    path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
-                    list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file,
-                                                    path=path, operation_state=3, state=1))
-
-                    # 将临时目录转移到正式目录
-                    shutil.move(url_j, url_x)
-
-                # 创建atachmentinfo表
-                AttachmentFileinfo.objects.bulk_create(list1)
-
-                # 删除临时目录
-                shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
-
-                # 给前端抛正式目录
-                dict['url'] = list2
-
-                headers = self.get_success_headers(serializer.data)
-                # return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('创建失败%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return Response(dict)
+        return Response(return_data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
-        # 建立事物机制
-        with transaction.atomic():
-            # 创建一个保存点
-            save_id = transaction.savepoint()
-            try:
-                partial = kwargs.pop('partial', False)
-                instance = self.get_object()
-                serializer_ecode = instance.owner_code
-                account_code = instance.account_code
-
+        # 正式路径（避免回滚后找不到变量）
+        formal_head = None
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
+        try:
+            with transaction.atomic():
                 data = request.data
-                single_dict = request.data.pop('single', None)
-                mcode_list = request.data.pop('mcode', None)
-                identity_code = request.data.pop('identity_code', None)
+                data['type'] = 2
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
+                id_type = data['owner_idtype']
+                pid = data['owner_id']
+                account_code = data['account_code']
+                data['creater'] = creater
 
-                if not mcode_list or not identity_code:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请完善相关信息')
+                major = data.pop('major_code', None)  # 相关领域（列表）
+                head = url_to_path(data.get('head', None))  # 头像
+                idfront = url_to_path(data.get('idfront', None))  # 身份证正面
+                idback = url_to_path(data.get('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.get('idphoto', None))    # 手持身份证
+                instance = self.get_object()  # 原纪录
 
-                if not single_dict:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请先上传相关文件')
+                if account_code != instance.account_code:
+                    raise ValueError('不允许更改关联账号')
+                if not major:
+                    raise ValueError('所属领域是必填项')
+                if not data.pop('head', None):
+                    raise ValueError('头像是必填项')
+                if not data.pop('idfront', None):
+                    raise ValueError('证件照正面是必填项')
+                if not data.pop('idback', None):
+                    raise ValueError('证件照背面是必填项')
+                if not data.pop('idphoto', None):
+                    raise ValueError('手持身份证是必填项')
 
-                if len(single_dict) != 4:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('证件照需要上传4张')
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 6,
+                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
 
-                # 1 更新所属领域
-                MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
+                # 个人基本信息表
+                pinfo = {
+                    'pname': data.get('owner_name', None),
+                    'pid_type': id_type,
+                    'pid': pid,
+                    'pmobile': data.get('owner_mobile', None),
+                    'ptel': data.get('owner_tel', None),
+                    'pemail': data.get('owner_email', None),
+                    'peducation': data.get('education', None),
+                    'pabstract': data.get('owner_abstract', None),
+                    'state': 2,
+                    'creater': creater,
+                    'account_code': account_code
+                }
 
-                major_list = []
-                for mcode in mcode_list:
-                    major_list.append(MajorUserinfo(mcode=mcode, user_type=9, user_code=serializer_ecode, mtype=2))
-                MajorUserinfo.objects.bulk_create(major_list)
+                # 验证证件号码
+                check_card_id(id_type, pid)  # 验证有效性
 
-                # 2 更新identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
+                # 更新身份信息关联表
+                IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                         identity_code=6).update(**identity_info)
 
-                IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
+                # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                pcode = create_or_update_person(account_code, pinfo)
+                data['pcode'] = pcode
 
-                                                         state=2, creater=request.user.account)
-                # 3 转移附件创建ecode表
-                absolute_path = ParamInfo.objects.get(param_code=1).param_value
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-                identityFront_tcode = AttachmentFileType.objects.get(tname='identityFront').tcode
-                identityBack_tcode = AttachmentFileType.objects.get(tname='identityBack').tcode
-                handIdentityPhoto_tcode = AttachmentFileType.objects.get(tname='handIdentityPhoto').tcode
-                headPhoto_tcode = AttachmentFileType.objects.get(tname='headPhoto').tcode
-                param_value = ParamInfo.objects.get(param_code=10).param_value
-
-                url_x_f = '{}{}/{}/{}'.format(relative_path, param_value, identityFront_tcode, serializer_ecode)
-                url_x_b = '{}{}/{}/{}'.format(relative_path, param_value, identityBack_tcode, serializer_ecode)
-                url_x_p = '{}{}/{}/{}'.format(relative_path, param_value, handIdentityPhoto_tcode, serializer_ecode)
-                url_x_h = '{}{}/{}/{}'.format(relative_path, param_value, headPhoto_tcode, serializer_ecode)
-
-                if not os.path.exists(url_x_f):
-                    os.makedirs(url_x_f)
-                if not os.path.exists(url_x_b):
-                    os.makedirs(url_x_b)
-                if not os.path.exists(url_x_p):
-                    os.makedirs(url_x_p)
-                if not os.path.exists(url_x_h):
-                    os.makedirs(url_x_h)
-
-                dict = {}
-                list1 = []
-                list2 = []
-
-                for key, value in single_dict.items():
-                    # 判断各个图片类型是否正确
-                    if key not in ['identityFront', 'identityBack', 'handIdentityPhoto', 'headPhoto']:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('某个图片所属类型不正确')
-
-                    url_l = value.split('/')
-                    url_file = url_l[-1]
-
-                    # 判断该临时路径下的文件是否正确
-                    url_j = settings.MEDIA_ROOT + url_file
-                    if not os.path.exists(url_j):
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('该临时路径下不存在该文件,可能文件名称错误')
-
-                    # 通过key值拿取相应的tcode
-                    tcode = AttachmentFileType.objects.get(tname=key).tcode
-
-                    # 拼接正式路径
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
-                                                   url_file)
-
-                    # 拼接给前端的的地址
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
-
-                    # 拼接ecode表中的path
-                    path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
-                    list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file,
-                                                    path=path, operation_state=3, state=1))
-
-                    # 将临时目录转移到正式目录
-                    shutil.move(url_j, url_x)
-
-                # 创建atachmentinfo表
-                AttachmentFileinfo.objects.bulk_create(list1)
-
-                # 删除临时目录
-                shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
-
-                # 给前端抛正式目录
-                dict['url'] = list2
-
-                serializer = self.get_serializer(instance, data=request.data, partial=partial)
+                partial = kwargs.pop('partial', False)
+                serializer = self.get_serializer(instance, data=data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
+                ecode = serializer.data['owner_code']
+
+                # 插入领域相关
+                crete_major(2, 9, ecode, major)
+
+                # 复制图片到正式目录
+                formal_head = copy_img(head, 'RequirementOwnerPer', 'headPhoto', ecode, creater)
+                formal_idfront = copy_img(idfront, 'RequirementOwnerPer', 'identityFront', ecode, creater)
+                formal_idback = copy_img(idback, 'RequirementOwnerPer', 'identityBack', ecode, creater)
+                formal_idphoto = copy_img(idphoto, 'RequirementOwnerPer', 'handIdentityPhoto', ecode, creater)
+                # 如果未回滚则删除临时目录的图片
+                for f in [head, idfront, idback, idphoto]:
+                    remove_img(f)
 
                 if getattr(instance, '_prefetched_objects_cache', None):
                     # If 'prefetch_related' has been applied to a queryset, we need to
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('创建失败%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return Response(dict)
+        except ValidationError:
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            raise
+        except Exception as e:
+            # 如果已经回滚则删除正式目录的图片
+            for f in [formal_head, formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            return Response({"detail": "更新失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
-        with transaction.atomic():
-            save_id = transaction.savepoint()
+        try:
+            with transaction.atomic():
+                data = request.data
+                pks = data.get('pks', [])
+                pks.append(kwargs['pk'])
+                expert = ResultOwnerpBaseinfo.objects.filter(serial__in=pks)
+                accounts = expert.values_list('account_code', flat=True)
+                expert_code = expert.values_list('owner_code', flat=True)
+                expert_apply_inserter = []
+                account = request.user.account
+                account_code = AccountInfo.objects.get(account=account).account_code
+                for ecode in expert_code:
+                    expert_apply_inserter.append(OwnerApplyHistory(
+                        owner_code=ecode,
+                        account_code=account_code,
+                        state=2,
+                        apply_time=datetime.datetime.now(),
+                        apply_type=3))
+                es = OwnerApplyHistory.objects.bulk_create(expert_apply_inserter)
+                check_history_inserter = []
+                for e in es:
+                    check_history_inserter.append(OwnerpCheckHistory(
+                        apply_code=e.apply_code,
+                        opinion="管理系统关闭身份",
+                        result=2,
+                        check_time=datetime.datetime.now(),
+                        account=account,
+                    ))
+                OwnerpCheckHistory.objects.bulk_create(check_history_inserter)
+                identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=6)
+                expert.update(state=3)
+                identity.update(state=0, iae_time=datetime.datetime.now())
+        except ValidationError:
+            raise
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-            try:
-                instance = self.get_object()
-                serializer_ecode = instance.owner_code
-                account_code = instance.account_code
-
-                # 1 删除所属领域表记录
-                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
-
-                # 2 删除identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
-
-                # 3 删除文件以及ecode表记录
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
-                if obj:
-                    try:
-                        for i in obj:
-                            url = '{}{}{}'.format(relative_path, i.path, i.file_name)
-                            # 创建对象
-                            a = FileSystemStorage()
-                            # 删除文件
-                            a.delete(url)
-                            # 删除表记录
-                            i.delete()
-                    except Exception as e:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('删除失败' % str(e))
-
-                self.perform_destroy(instance)
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('删除失败%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return HttpResponse('OK')
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # 需求持有人申请视图
@@ -2196,14 +2781,13 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return Response({"detail":{
-                "detail":["审核失败：%s" % str(e)]}}, status=400)
+            return Response({"detail": "审核失败：%s" % str(e)}, status=400)
         return Response(serializer.data)
 
 
 # 需求持有人(企业)管理视图
 class RequirementOwnereViewSet(viewsets.ModelViewSet):
-    queryset = ResultOwnereBaseinfo.objects.filter(type=2).order_by('state', '-serial')
+    queryset = ResultOwnereBaseinfo.objects.filter(type=2, state__in=[1]).order_by('state', '-serial')
     serializer_class = ResultOwnereSerializers
 
     filter_backends = (
@@ -2237,7 +2821,8 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                     and result_ownere_baseinfo.type=2"
 
             raw_queryset = ResultOwnereBaseinfo.objects.raw(SQL.format(dept_s=dept_code_str))
-            consult_reply_set = ResultOwnereBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('state', '-serial')
+            consult_reply_set = ResultOwnereBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset],
+                                                                    state__in=[1]).order_by('state', '-serial')
             return consult_reply_set
         else:
             queryset = self.queryset
@@ -2248,290 +2833,389 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
 
     # 创建需求持有人(企业）  author:范
     def create(self, request, *args, **kwargs):
-        # 建立事物机制
-        with transaction.atomic():
-            # 创建一个保存点
-            save_id = transaction.savepoint()
-            try:
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
+        formal_license = None
+        formal_logo = None
+        formal_promotional = None
+        editor_imgs_path = {}  # 富文本编辑器图片对照
+        formal_editor_imgs_path = {}
+        try:
+            with transaction.atomic():
+                # 正式路径（避免回滚后找不到变量）
                 data = request.data
-                account_code = request.data('account_code',None)
-                single_dict = request.data.pop('single', None)
-                mcode_list = request.data.pop('mcode', None)
-                identity_code = request.data.pop('identity_code', None)
+                data['type'] = 2
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
+                account_code = data['account_code']
 
-                if not mcode_list or not account_code or not identity_code:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请完善相关信息')
+                major = data.pop('major_code', None)  # 相关领域（列表）
+                idfront = url_to_path(data.get('idfront', None))  # 身份证正面
+                idback = url_to_path(data.get('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.get('idphoto', None))    # 手持身份证
+                owner_license = url_to_path(data.get('license', None))  # 营业执照
+                logo = url_to_path(data.pop('logo', None))  # logo
+                promotional = url_to_path(data.pop('promotional', None))  # 宣传照
+                owner_abstract_detail = data.get('owner_abstract_detail', '')  # 富文本
+                if owner_abstract_detail:
+                    img_pattern = re.compile(r'src=\"(.*?)\"')
+                    editor_imgs_list = img_pattern.findall(owner_abstract_detail)
+                    for e in editor_imgs_list:
+                        editor_imgs_path[e] = url_to_path(e)
 
-                if not single_dict:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请先上传相关文件')
+                if not major:
+                    raise ValueError('所属领域是必填项')
+                if not data.pop('idfront', None):
+                    raise ValueError('证件照正面是必填项')
+                if not data.pop('idback', None):
+                    raise ValueError('证件照背面是必填项')
+                if not data.pop('idphoto', None):
+                    raise ValueError('手持身份证是必填项')
+                if not data.pop('license', None):
+                    raise ValueError('营业执照是必填项')
 
-                if len(single_dict) != 4:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('证件照需要上传4张')
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 7,
+                    'iab_time': datetime.datetime.now(),
+                    'iae_time': None,
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
 
-                # 1 创建需求持有人(企业)表
-                data['creater'] = request.user.account
-                serializer = self.get_serializer(data=data)
-                serializer.is_valid(raise_exception=True)
-                self.perform_create(serializer)
+                # 企业基本信息表
+                einfo = {
+                    'ename': data.get('owner_name', None),  # 企业名称
+                    'eabbr': data.get('owner_name_abbr', None),  # 简称
+                    'business_license': data.get('owner_license', None),  # 企业营业执照统一社会信用码
+                    'eabstract': data.get('owner_abstract', None),  # 简介
+                    'eabstract_detail': data.get('owner_abstract_detail', None),
+                    'homepage': data.get('homepage', None),  # 企业主页url
+                    'etel': data.get('owner_tel', None),  # 企业电话
+                    'manager': data.get('legal_person', None),  # 企业联系人
+                    'emobile': data.get('owner_mobile', None),  # 企业手机
+                    'eemail': data.get('owner_email', None),  # 企业邮箱
+                    'state': 2,
+                    'manager_id': data.get('owner_id', None),
+                    'manager_idtype': data.get('owner_idtype', None),
+                    'creater': creater,
+                    'account_code': account_code
+                }
+                # 验证是否存在成果持有人个人身份
+                if ResultOwnerpBaseinfo.objects.filter(account_code=account_code, type=2, state__in=[1, 2]):
+                    raise ValueError('此账号已申请需求持有个人身份，不能成为持有企业')
 
-                serializer_ecode = serializer.data['owner_code']
+                # 查询当前账号有没有伪删除身份
+                obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, state=3, type=2)
+                if obj:
+                    # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
+                    check_identity2(account_code=account_code, identity=7, info=identity_info)
 
-                # 2 创建所属领域
-                major_list = []
-                for mcode in mcode_list:
-                    major_list.append(MajorUserinfo(mcode=mcode, user_type=7, user_code=serializer_ecode, mtype=2))
-                MajorUserinfo.objects.bulk_create(major_list)
+                    # # 验证证件号码
+                    # check_card_id(id_type, pid)  # 验证有效性
 
-                # 3 创建identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.create(account_code=account_code,identity_code=identity_code,state=2,creater=request.user.account)
+                    # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                    encode = create_or_update_enterprise(account_code, einfo)
+                    data['ecode'] = encode
 
-                # 4 转移附件创建ecode表
-                absolute_path = ParamInfo.objects.get(param_code=1).param_value
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-                identityFront_tcode = AttachmentFileType.objects.get(tname='identityFront').tcode
-                identityBack_tcode = AttachmentFileType.objects.get(tname='identityBack').tcode
-                handIdentityPhoto_tcode = AttachmentFileType.objects.get(tname='handIdentityPhoto').tcode
-                headPhoto_tcode = AttachmentFileType.objects.get(tname='headPhoto').tcode
-                param_value = ParamInfo.objects.get(param_code=11).param_value
+                    # 更新基本信息表
+                    obj.update(**data)
+                    new_obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, type=1)
+                    serializer = self.get_serializer(new_obj, many=True)
+                    return_data = serializer.data[0]
+                    ecode = new_obj[0].owner_code
 
-                url_x_f = '{}{}/{}/{}'.format(relative_path, param_value, identityFront_tcode, serializer_ecode)
-                url_x_b = '{}{}/{}/{}'.format(relative_path, param_value, identityBack_tcode, serializer_ecode)
-                url_x_p = '{}{}/{}/{}'.format(relative_path, param_value, handIdentityPhoto_tcode, serializer_ecode)
-                url_x_h = '{}{}/{}/{}'.format(relative_path, param_value, headPhoto_tcode, serializer_ecode)
+                    # 插入领域相关
+                    crete_major(2, 7, ecode, major)
 
-                if not os.path.exists(url_x_f):
-                    os.makedirs(url_x_f)
-                if not os.path.exists(url_x_b):
-                    os.makedirs(url_x_b)
-                if not os.path.exists(url_x_p):
-                    os.makedirs(url_x_p)
-                if not os.path.exists(url_x_h):
-                    os.makedirs(url_x_h)
+                    # 复制图片到正式目录
+                    formal_idfront = copy_img(idfront, 'RequirementOwnerEnt', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'RequirementOwnerEnt', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'RequirementOwnerEnt', 'handIdentityPhoto', ecode, creater)
+                    formal_license = copy_img(owner_license, 'RequirementOwnerEnt', "entLicense", ecode, creater)
+                    formal_logo = copy_img(logo, 'RequirementOwnerEnt', "logoPhoto", ecode, creater)
+                    formal_promotional = copy_img(promotional, 'RequirementOwnerEnt', "Propaganda", ecode, creater)
 
-                dict = {}
-                list1 = []
-                list2 = []
+                    for k, v in editor_imgs_path.items():
+                        formal_editor_imgs_path[k] = copy_img(v, 'RequirementOwnerEnt', 'consultEditor', ecode, creater)
 
-                for key,value in single_dict.items():
-                    # 判断各个图片类型是否正确
-                    if key not in ['identityFront','identityBack','handIdentityPhoto','headPhoto']:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('某个图片所属类型不正确')
+                    for k, v in formal_editor_imgs_path.items():
+                        if v:
+                            new_v = v.replace(ParamInfo.objects.get(param_name='upload_dir').param_value,
+                                              ParamInfo.objects.get(param_name='attachment_dir').param_value)
+                            owner_abstract_detail = owner_abstract_detail.replace(k, new_v)
 
-                    url_l = value.split('/')
-                    url_file = url_l[-1]
+                    # 更新 富文本内容
+                    new_obj.update(owner_abstract_detail=owner_abstract_detail)
+                    EnterpriseBaseinfo.objects.filter(ecode=ecode).update(eabstract_detail=owner_abstract_detail)
+                    # 如果未回滚则删除临时目录的图片
+                    old_img_list = [idfront, idback, idphoto, owner_license, logo, promotional]
+                    old_img_list.extend(editor_imgs_path.values())
+                    for f in old_img_list:
+                        remove_img(f)
+                else:
+                    # 查询所绑定的账号是否有此身份（若有则报错，没有则创建）
+                    check_identity(account_code=account_code, identity=7, info=identity_info)
 
-                    # 判断该临时路径下的文件是否正确
-                    url_j = settings.MEDIA_ROOT + url_file
-                    if not os.path.exists(url_j):
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('该临时路径下不存在该文件,可能文件名称错误')
+                    # # 验证证件号码
+                    # check_card_id(id_type, pid)  # 验证有效性
+                    # check_id(account_code=account_code, id_type=id_type, id=id)  # 验证唯一性
 
-                    # 通过key值拿取相应的tcode
-                    tcode = AttachmentFileType.objects.get(tname=key).tcode
+                    # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                    encode = create_or_update_enterprise(account_code, einfo)
+                    data['ecode'] = encode
 
-                    # 拼接正式路径
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
-                                                   url_file)
+                    serializer = self.get_serializer(data=data)
+                    serializer.is_valid(raise_exception=True)
+                    self.perform_create(serializer)
+                    return_data = serializer.data
+                    ecode = serializer.data['owner_code']
 
-                    # 拼接给前端的的地址
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
+                    # 插入领域相关
+                    crete_major(2, 7, ecode, major)
 
-                    # 拼接ecode表中的path
-                    path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
-                    list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file,
-                                                    path=path, operation_state=3, state=1))
+                    # 复制图片到正式目录
+                    formal_idfront = copy_img(idfront, 'RequirementOwnerEnt', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'RequirementOwnerEnt', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'RequirementOwnerEnt', 'handIdentityPhoto', ecode, creater)
+                    formal_license = copy_img(owner_license, 'RequirementOwnerEnt', "entLicense", ecode, creater)
+                    formal_logo = copy_img(logo, 'RequirementOwnerEnt', "logoPhoto", ecode, creater)
+                    formal_promotional = copy_img(promotional, 'RequirementOwnerEnt', "Propaganda", ecode, creater)
 
-                    # 将临时目录转移到正式目录
-                    shutil.move(url_j, url_x)
+                    for k, v in editor_imgs_path.items():
+                        formal_editor_imgs_path[k] = copy_img(v, 'RequirementOwnerEnt', 'consultEditor', ecode, creater)
 
-                # 创建atachmentinfo表
-                AttachmentFileinfo.objects.bulk_create(list1)
+                    for k, v in formal_editor_imgs_path.items():
+                        if v:
+                            new_v = v.replace(ParamInfo.objects.get(param_name='upload_dir').param_value,
+                                              ParamInfo.objects.get(param_name='attachment_dir').param_value)
+                            owner_abstract_detail = owner_abstract_detail.replace(k, new_v)
+                    ResultOwnereBaseinfo.objects.filter(owner_code=ecode).update(
+                        owner_abstract_detail=owner_abstract_detail)
+                    EnterpriseBaseinfo.objects.filter(ecode=ecode).update(eabstract_detail=owner_abstract_detail)
 
-                # 删除临时目录
-                shutil.rmtree(settings.MEDIA_ROOT,ignore_errors=True)
+                    # 如果未回滚则删除临时目录的图片
+                    old_img_list = [idfront, idback, idphoto, owner_license, logo, promotional]
+                    old_img_list.extend(editor_imgs_path.values())
+                    for f in old_img_list:
+                        remove_img(f)
+        except ValidationError:
+            old_formal_imglist = [formal_idfront,
+                                   formal_idback,
+                                   formal_idphoto,
+                                   formal_license,
+                                   formal_logo,
+                                   formal_promotional]
+            old_formal_imglist.extend(formal_editor_imgs_path.values())
+            for f in old_formal_imglist:
+                remove_img(f)
+            raise
+        except Exception as e:
+            # 如果已经回滚则删除正式目录的图片
+            old_formal_imglist = [formal_idfront,
+                                   formal_idback,
+                                   formal_idphoto,
+                                   formal_license,
+                                   formal_logo,
+                                   formal_promotional]
+            old_formal_imglist.extend(formal_editor_imgs_path.values())
+            for f in old_formal_imglist:
+                remove_img(f)
+            return Response({"detail": "创建失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-                # 给前端抛正式目录
-                dict['url'] = list2
-
-                headers = self.get_success_headers(serializer.data)
-                # return Response(serializer.data,status=status.HTTP_201_CREATED,headers=headers)
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('创建失败%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return Response(dict)
+        return Response(return_data, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
-        # 建立事物机制
-        with transaction.atomic():
-            # 创建一个保存点
-            save_id = transaction.savepoint()
-            try:
-                partial = kwargs.pop('partial', False)
-                instance = self.get_object()
-                serializer_ecode = instance.owner_code
-                account_code = instance.account_code
-
+        # 正式路径（避免回滚后找不到变量）
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
+        formal_license = None
+        formal_logo = None
+        formal_promotional = None
+        editor_imgs_path = {}  # 富文本编辑器图片对照
+        formal_editor_imgs_path = {}
+        try:
+            with transaction.atomic():
                 data = request.data
-                single_dict = request.data.pop('single', None)
-                mcode_list = request.data.pop('mcode', None)
-                identity_code = request.data.pop('identity_code', None)
+                data['type'] = 2
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
+                account_code = data['account_code']
 
-                if not mcode_list or not identity_code:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请完善相关信息')
+                major = data.pop('major_code', None)  # 相关领域（列表）
+                idfront = url_to_path(data.get('idfront', None))  # 身份证正面
+                idback = url_to_path(data.get('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.get('idphoto', None))    # 手持身份证
+                owner_license = url_to_path(data.get('license', None))  # 营业执照
+                logo = url_to_path(data.pop('logo', None))  # logo
+                promotional = url_to_path(data.pop('promotional', None))  # 宣传照
+                owner_abstract_detail = data.get('owner_abstract_detail', '')  # 富文本
 
-                if not single_dict:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('请先上传相关文件')
+                if owner_abstract_detail:
+                    img_pattern = re.compile(r'src=\"(.*?)\"')
+                    editor_imgs_list = img_pattern.findall(owner_abstract_detail)
+                    for e in editor_imgs_list:
+                        if url_to_path(e):
+                            editor_imgs_path[e] = url_to_path(e)
 
-                if len(single_dict) != 4:
-                    transaction.savepoint_rollback(save_id)
-                    return HttpResponse('证件照需要上传4张')
+                instance = self.get_object()  # 原纪录
 
-                # 1 更新所属领域
-                MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
+                if account_code != instance.account_code:
+                    raise ValueError('不允许更改关联账号')
+                if not major:
+                    raise ValueError('所属领域是必填项')
+                if not data.pop('idfront', None):
+                    raise ValueError('证件照正面是必填项')
+                if not data.pop('idback', None):
+                    raise ValueError('证件照背面是必填项')
+                if not data.pop('idphoto', None):
+                    raise ValueError('手持身份证是必填项')
+                if not data.pop('license', None):
+                    raise ValueError('营业执照是必填项')
 
-                major_list = []
-                for mcode in mcode_list:
-                    major_list.append(MajorUserinfo(mcode=mcode, user_type=7, user_code=serializer_ecode, mtype=2))
-                MajorUserinfo.objects.bulk_create(major_list)
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 7,
+                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
 
-                # 2 更新identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
+                # 企业基本信息表
+                einfo = {
+                    'ename': data.get('owner_name', None),  # 企业名称
+                    'eabbr': data.get('owner_name_abbr', None),  # 简称
+                    'business_license': data.get('owner_license', None),  # 企业营业执照统一社会信用码
+                    'eabstract': data.get('owner_abstract', None),  # 简介
+                    'eabstract_detail': data.get('owner_abstract_detail', None),
+                    'homepage': data.get('homepage', None),  # 企业主页url
+                    'etel': data.get('owner_tel', None),  # 企业电话
+                    'manager': data.get('legal_person', None),  # 企业联系人
+                    'emobile': data.get('owner_mobile', None),  # 企业手机
+                    'eemail': data.get('owner_email', None),  # 企业邮箱
+                    'state': 2,
+                    'manager_id': data.get('owner_id', None),
+                    'manager_idtype': data.get('owner_idtype', None),
+                    'creater': creater,
+                    'account_code': account_code
+                }
 
-                IdentityAuthorizationInfo.objects.create(account_code=account_code, identity_code=identity_code,
+                # # 验证证件号码
+                # check_card_id(id_type, pid)  # 验证有效性
 
-                                                             state=2, creater=request.user.account)
-                # 3 转移附件创建ecode表
-                absolute_path = ParamInfo.objects.get(param_code=1).param_value
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                relative_path_front = ParamInfo.objects.get(param_code=4).param_value
-                identityFront_tcode = AttachmentFileType.objects.get(tname='identityFront').tcode
-                identityBack_tcode = AttachmentFileType.objects.get(tname='identityBack').tcode
-                handIdentityPhoto_tcode = AttachmentFileType.objects.get(tname='handIdentityPhoto').tcode
-                headPhoto_tcode = AttachmentFileType.objects.get(tname='headPhoto').tcode
-                param_value = ParamInfo.objects.get(param_code=11).param_value
+                # 更新身份信息关联表
+                IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                         identity_code=7).update(**identity_info)
 
-                url_x_f = '{}{}/{}/{}'.format(relative_path, param_value, identityFront_tcode, serializer_ecode)
-                url_x_b = '{}{}/{}/{}'.format(relative_path, param_value, identityBack_tcode, serializer_ecode)
-                url_x_p = '{}{}/{}/{}'.format(relative_path, param_value, handIdentityPhoto_tcode, serializer_ecode)
-                url_x_h = '{}{}/{}/{}'.format(relative_path, param_value, headPhoto_tcode, serializer_ecode)
+                # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                encode = create_or_update_enterprise(account_code, einfo)
+                data['ecode'] = encode
 
-                if not os.path.exists(url_x_f):
-                    os.makedirs(url_x_f)
-                if not os.path.exists(url_x_b):
-                    os.makedirs(url_x_b)
-                if not os.path.exists(url_x_p):
-                    os.makedirs(url_x_p)
-                if not os.path.exists(url_x_h):
-                    os.makedirs(url_x_h)
-
-                dict = {}
-                list1 = []
-                list2 = []
-
-                for key, value in single_dict.items():
-                    # 判断各个图片类型是否正确
-                    if key not in ['identityFront', 'identityBack', 'handIdentityPhoto', 'headPhoto']:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('某个图片所属类型不正确')
-
-                    url_l = value.split('/')
-                    url_file = url_l[-1]
-
-                    # 判断该临时路径下的文件是否正确
-                    url_j = settings.MEDIA_ROOT + url_file
-                    if not os.path.exists(url_j):
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('该临时路径下不存在该文件,可能文件名称错误')
-
-                    # 通过key值拿取相应的tcode
-                    tcode = AttachmentFileType.objects.get(tname=key).tcode
-
-                    # 拼接正式路径
-                    url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
-                                                   url_file)
-
-                    # 拼接给前端的的地址
-                    url_x_f = url_x.replace(relative_path, relative_path_front)
-                    list2.append(url_x_f)
-
-                    # 拼接ecode表中的path
-                    path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
-                    list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file,
-                                                    path=path, operation_state=3, state=1))
-
-                    # 将临时目录转移到正式目录
-                    shutil.move(url_j, url_x)
-
-                # 创建atachmentinfo表
-                AttachmentFileinfo.objects.bulk_create(list1)
-
-                # 删除临时目录
-                shutil.rmtree(settings.MEDIA_ROOT, ignore_errors=True)
-
-                # 给前端抛正式目录
-                dict['url'] = list2
-
-                serializer = self.get_serializer(instance, data=request.data, partial=partial)
+                partial = kwargs.pop('partial', False)
+                serializer = self.get_serializer(instance, data=data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
+                ecode = serializer.data['owner_code']
+
+                # 插入领域相关
+                crete_major(2, 7, ecode, major)
+
+                # 复制图片到正式目录
+                formal_idfront = copy_img(idfront, 'RequirementOwnerEnt', 'identityFront', ecode, creater)
+                formal_idback = copy_img(idback, 'RequirementOwnerEnt', 'identityBack', ecode, creater)
+                formal_idphoto = copy_img(idphoto, 'RequirementOwnerEnt', 'handIdentityPhoto', ecode, creater)
+                formal_license = copy_img(owner_license, 'RequirementOwnerEnt', "entLicense", ecode, creater)
+                formal_logo = copy_img(logo, 'RequirementOwnerEnt', "logoPhoto", ecode, creater)
+                formal_promotional = copy_img(promotional, 'RequirementOwnerEnt', "Propaganda", ecode, creater)
+
+                for k, v in editor_imgs_path.items():
+                    formal_editor_imgs_path[k] = copy_img(v, 'RequirementOwnerEnt', 'consultEditor', ecode, creater)
+
+                for k, v in formal_editor_imgs_path.items():
+                    if v:
+                        new_v = v.replace(ParamInfo.objects.get(param_name='upload_dir').param_value,
+                                          ParamInfo.objects.get(param_name='attachment_dir').param_value)
+                        owner_abstract_detail = owner_abstract_detail.replace(k, new_v)
+                ResultOwnereBaseinfo.objects.filter(owner_code=ecode).update(
+                    owner_abstract_detail=owner_abstract_detail)
+                EnterpriseBaseinfo.objects.filter(ecode=ecode).update(eabstract_detail=owner_abstract_detail)
+                # 如果未回滚则删除临时目录的图片
+                old_img_list = [idfront, idback, idphoto, owner_license, logo, promotional]
+                old_img_list.extend(editor_imgs_path.values())
+                for f in old_img_list:
+                    remove_img(f)
 
                 if getattr(instance, '_prefetched_objects_cache', None):
                     # If 'prefetch_related' has been applied to a queryset, we need to
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('创建失败%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return Response(dict)
+        except ValidationError:
+            old_formal_imglist = [formal_idfront,
+                                   formal_idback,
+                                   formal_idphoto,
+                                   formal_license,
+                                   formal_logo,
+                                   formal_promotional]
+            old_formal_imglist.extend(formal_editor_imgs_path.values())
+            for f in old_formal_imglist:
+                remove_img(f)
+            raise
+        except Exception as e:
+            # 如果已经回滚则删除正式目录的图片
+            old_formal_imglist = [formal_idfront,
+                                   formal_idback,
+                                   formal_idphoto,
+                                   formal_license,
+                                   formal_logo,
+                                   formal_promotional]
+            old_formal_imglist.extend(formal_editor_imgs_path.values())
+            for f in old_formal_imglist:
+                remove_img(f)
+            return Response({"detail": "更新失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
-        with transaction.atomic():
-            save_id = transaction.savepoint()
+        try:
+            with transaction.atomic():
+                data = request.data
+                pks = data.get('pks', [])
+                pks.append(kwargs['pk'])
+                expert = ResultOwnereBaseinfo.objects.filter(serial__in=pks)
+                accounts = expert.values_list('account_code', flat=True)
+                expert_code = expert.values_list('owner_code', flat=True)
+                expert_apply_inserter = []
+                account = request.user.account
+                for ecode in expert_code:
+                    expert_apply_inserter.append(OwnereApplyHistory(
+                        owner_code=ecode,
+                        state=2,
+                        apply_time=datetime.datetime.now(),
+                        apply_type=3))
+                es = OwnereApplyHistory.objects.bulk_create(expert_apply_inserter)
+                check_history_inserter = []
+                for e in es:
+                    check_history_inserter.append(OwnereCheckHistory(
+                        apply_code=e.apply_code,
+                        opinion="管理系统关闭身份",
+                        result=2,
+                        check_time=datetime.datetime.now(),
+                        account=account,
+                    ))
+                OwnereCheckHistory.objects.bulk_create(check_history_inserter)
+                identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=7)
+                expert.update(state=3)
+                identity.update(state=0, iae_time=datetime.datetime.now())
+        except ValidationError:
+            raise
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-            try:
-                instance = self.get_object()
-                serializer_ecode = instance.owner_code
-                account_code = instance.account_code
-
-                # 1 删除所属领域表记录
-                MajorUserinfo.objects.filer(mcuser_code=serializer_ecode).delete()
-
-                # 2 删除identity_authorization_info信息
-                IdentityAuthorizationInfo.objects.filter(account_code=account_code).delete()
-
-                # 3 删除文件以及ecode表记录
-                relative_path = ParamInfo.objects.get(param_code=2).param_value
-                obj = AttachmentFileinfo.objects.filter(ecode=serializer_ecode)
-                if obj:
-                    try:
-                        for i in obj:
-                            url = '{}{}{}'.format(relative_path, i.path, i.file_name)
-                            # 创建对象
-                            a = FileSystemStorage()
-                            # 删除文件
-                            a.delete(url)
-                            # 删除表记录
-                            i.delete()
-                    except Exception as e:
-                        transaction.savepoint_rollback(save_id)
-                        return HttpResponse('删除失败%s' % str(e))
-
-                self.perform_destroy(instance)
-            except Exception as e:
-                transaction.savepoint_rollback(save_id)
-                return HttpResponse('删除失败%s' % str(e))
-            transaction.savepoint_commit(save_id)
-            return HttpResponse('OK')
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # 需求持有企业申请视图
@@ -2670,14 +3354,13 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                     # forcibly invalidate the prefetch cache on the instance.
                     instance._prefetched_objects_cache = {}
         except Exception as e:
-            return Response({"detail":{
-                "detail":["审核失败：%s" % str(e)]}}, status=400)
+            return Response({"detail": "审核失败：%s" % str(e)}, status=400)
         return Response(serializer.data)
 
 
 # 技术团队视图
 class TeamBaseinfoViewSet(viewsets.ModelViewSet):
-    queryset = ProjectTeamBaseinfo.objects.all().order_by('state', '-serial')
+    queryset = ProjectTeamBaseinfo.objects.filter(state__in=[1]).order_by('state', '-serial')
     serializer_class = TeamBaseinfoSerializers
 
     filter_backends = (
@@ -2707,8 +3390,11 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
         )
         dept_codes_str = get_detcode_str(self.request.user.dept_code)
         if dept_codes_str:
-            raw_queryset = ProjectTeamBaseinfo.objects.raw("select p.serial  from project_team_baseinfo as p left join account_info as ai on  p.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
-            queryset = ProjectTeamBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
+            raw_queryset = ProjectTeamBaseinfo.objects.raw(
+                "select p.serial  from project_team_baseinfo as p left join account_info as ai "
+                "on  p.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
+            queryset = ProjectTeamBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset],
+                                                          state__in=[1]).order_by("state", '-serial')
         else:
             queryset = self.queryset
 
@@ -2719,25 +3405,399 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
 
     # 创建技术团队 2018/12/24  author:周
     def create(self, request, *args, **kwargs):
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
+        formal_logo = None
+        formal_promotional = None
+        editor_imgs_path = {}  # 富文本编辑器图片对照
+        formal_editor_imgs_path = {}
         try:
             with transaction.atomic():
-                account_code = request.data.get('account_code')
-                # 1 创建project_team_baseinfo技术团队基本信息
-                team_baseinfo_data = request.data.get('team_baseinfo')
-                team_baseinfo_data['account_code'] = account_code
-                # team_baseinfo = ProjectTeamBaseinfo.objects.create(**team_baseinfo_data)
-                serializer = self.get_serializer(data=team_baseinfo_data)
-                serializer.is_valid(raise_exception=True)
-                self.perform_create(serializer)
-                # 2 创建identity_authorization_info信息
-                identity_authorizationinfo_data = request.data.get('identity_authorization_info')
-                identity_authorizationinfo_data['account_code'] = account_code
-                IdentityAuthorizationInfo.objects.create(**identity_authorizationinfo_data)
-        except Exception as e:
-            fail_msg = "创建失败%s" % str(e)
-            return JsonResponse({"state": 0, "msg": fail_msg})
+                # 正式路径（避免回滚后找不到变量）
+                data = request.data
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
+                id_type = data['pt_people_type']
+                pid = data['pt_people_id']
+                account_code = data['account_code']
+                pt_type = data['pt_type']  # 团队种类
+                comp_name = data.get('comp_name', None) # 企业名称
+                owner_license = data.get('owner_license', None)  # 企业信用代码
 
-        return JsonResponse({"state": 1, "msg": "创建成功"})
+                major = data.pop('major_code', None)  # 相关领域（列表）
+                idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
+                idback = url_to_path(data.pop('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
+                logo = url_to_path(data.pop('logo', None))  # logo
+                promotional = url_to_path(data.pop('promotional', None))  # 宣传照
+                owner_abstract_detail = data.get('pt_describe', '')  # 富文本
+                if owner_abstract_detail:
+                    img_pattern = re.compile(r'src=\"(.*?)\"')
+                    editor_imgs_list = img_pattern.findall(owner_abstract_detail)
+                    for e in editor_imgs_list:
+                        editor_imgs_path[e] = url_to_path(e)
+                if not major:
+                    raise ValueError('所属领域是必填项')
+                if not idfront:
+                    raise ValueError('证件照正面是必填项')
+                if not idback:
+                    raise ValueError('证件照背面是必填项')
+                if not idphoto:
+                    raise ValueError('手持身份证是必填项')
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 3,
+                    'iab_time': datetime.datetime.now(),
+                    'iae_time': None,
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
+                if int(pt_type) != 0:
+                    # 个人基本信息表
+                    pinfo = {
+                        'pname': data.get('pt_people_name', None),
+                        'pid_type': id_type,
+                        'pid': pid,
+                        'pmobile': data.get('pt_people_tel', None),
+                        'state': 2,
+                        'creater': creater,
+                        'account_code': account_code
+                    }
+                else:
+                    if not comp_name:
+                        raise ValueError('企业名称是必填项')
+                    if not owner_license:
+                        raise ValueError('企业信用代码是必填项')
+                    einfo = {
+                        'ename': comp_name,  # 企业名称
+                        'eabbr': data.get('owner_name_abbr', None),  # 简称
+                        'business_license': owner_license,  # 企业营业执照统一社会信用码
+                        'eabstract': data.get('pt_abbreviation', None),  # 简介
+                        'eabstract_detail': data.get('pt_describe', None),
+                        'homepage': data.get('pt_homepage', None),  # 企业主页url
+                        'etel': data.get('owner_tel', None),  # 企业电话
+                        'manager': data.get('pt_people_name', None),  # 企业联系人
+                        'emobile': data.get('pt_people_tel', None),  # 企业手机
+                        'eemail': data.get('owner_email', None),  # 企业邮箱
+                        'state': 2,
+                        'manager_id': data.get('pt_people_id', None),
+                        'manager_idtype': data.get('pt_people_type', None),
+                        'creater': creater,
+                        'account_code': account_code
+                    }
+                # 查询当前账号有没有伪删除身份
+                obj = ProjectTeamBaseinfo.objects.filter(account_code=account_code, state=3)
+                if obj:
+                    # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
+                    check_identity2(account_code=account_code, identity=3, info=identity_info)
+
+                    # 验证证件号码
+                    if int(pt_type) != 0:
+                        check_card_id(id_type, pid)  # 验证有效性
+
+                        # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                        pcode = create_or_update_person(account_code, pinfo)
+                    else:
+                        encode = create_or_update_enterprise(account_code, einfo)
+                        data['ecode'] = encode
+
+                    # 更新基本信息表
+                    obj.update(**data)
+                    new_obj = ProjectTeamBaseinfo.objects.filter(account_code=account_code)
+                    serializer = self.get_serializer(new_obj, many=True)
+                    return_data = serializer.data[0]
+                    ecode = new_obj[0].pt_code
+
+                    # 插入领域相关
+                    crete_major(2, 2, ecode, major)
+
+                    # 复制图片到正式目录
+                    formal_idfront = copy_img(idfront, 'Prteam', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'Prteam', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'Prteam', 'handIdentityPhoto', ecode, creater)
+
+                    for k, v in editor_imgs_path.items():
+                        formal_editor_imgs_path[k] = copy_img(v, 'Prteam', 'consultEditor', ecode, creater)
+
+                    for k, v in formal_editor_imgs_path.items():
+                        if v:
+                            new_v = v.replace(ParamInfo.objects.get(param_name='upload_dir').param_value,
+                                              ParamInfo.objects.get(param_name='attachment_dir').param_value)
+                            owner_abstract_detail = owner_abstract_detail.replace(k, new_v)
+
+                    # 更新 富文本内容
+                    new_obj.update(pt_describe=owner_abstract_detail)
+                    if int(pt_type) == 0:
+                        EnterpriseBaseinfo.objects.filter(ecode=ecode).update(eabstract_detail=owner_abstract_detail)
+                    # 如果未回滚则删除临时目录的图片
+                    old_img_list = [idfront, idback, idphoto, logo, promotional]
+                    old_img_list.extend(editor_imgs_path.values())
+                    for f in old_img_list:
+                        remove_img(f)
+                else:
+                    # 查询所绑定的账号是否有此身份（若有则报错，没有则创建）
+                    check_identity(account_code=account_code, identity=3, info=identity_info)
+
+                    # 验证证件号码
+                    if int(pt_type) != 0:
+                        check_card_id(id_type, pid)  # 验证有效性
+
+                        # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                        pcode = create_or_update_person(account_code, pinfo)
+                    else:
+                        encode = create_or_update_enterprise(account_code, einfo)
+                        data['ecode'] = encode
+                    serializer = self.get_serializer(data=data)
+                    serializer.is_valid(raise_exception=True)
+                    self.perform_create(serializer)
+                    return_data = serializer.data
+                    ecode = serializer.data['pt_code']
+                    # 插入领域相关
+                    crete_major(2, 2, ecode, major)
+
+                    # 复制图片到正式目录
+                    formal_idfront = copy_img(idfront, 'Prteam', 'identityFront', ecode, creater)
+                    formal_idback = copy_img(idback, 'Prteam', 'identityBack', ecode, creater)
+                    formal_idphoto = copy_img(idphoto, 'Prteam', 'handIdentityPhoto', ecode, creater)
+                    for k, v in editor_imgs_path.items():
+                        formal_editor_imgs_path[k] = copy_img(v, 'Prteam', 'consultEditor', ecode, creater)
+
+                    for k, v in formal_editor_imgs_path.items():
+                        if v:
+                            new_v = v.replace(ParamInfo.objects.get(param_name='upload_dir').param_value,
+                                              ParamInfo.objects.get(param_name='attachment_dir').param_value)
+                            owner_abstract_detail = owner_abstract_detail.replace(k, new_v)
+                    ProjectTeamBaseinfo.objects.filter(pt_code=ecode).update(pt_describe=owner_abstract_detail)
+                    if int(pt_type) == 0:
+                        EnterpriseBaseinfo.objects.filter(ecode=ecode).update(eabstract_detail=owner_abstract_detail)
+                    # 如果未回滚则删除临时目录的图片
+                    old_img_list = [idfront, idback, idphoto, logo, promotional]
+                    old_img_list.extend(editor_imgs_path.values())
+                    for f in old_img_list:
+                        remove_img(f)
+        except ValidationError:
+            old_formal_imglist = [formal_idfront,
+                                   formal_idback,
+                                   formal_idphoto,
+                                   formal_logo,
+                                   formal_promotional]
+            old_formal_imglist.extend(formal_editor_imgs_path.values())
+            for f in old_formal_imglist:
+                remove_img(f)
+            raise
+        except Exception as e:
+            # 如果已经回滚则删除正式目录的图片
+            old_formal_imglist = [formal_idfront,
+                                   formal_idback,
+                                   formal_idphoto,
+                                   formal_logo,
+                                   formal_promotional]
+            old_formal_imglist.extend(formal_editor_imgs_path.values())
+            for f in old_formal_imglist:
+                remove_img(f)
+            return Response({"detail": "创建失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(return_data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        # 正式路径（避免回滚后找不到变量）
+        formal_idfront = None
+        formal_idback = None
+        formal_idphoto = None
+        formal_logo = None
+        formal_promotional = None
+        editor_imgs_path = {}  # 富文本编辑器图片对照
+        formal_editor_imgs_path = {}
+        try:
+            with transaction.atomic():
+                data = request.data
+                # 获取相关数据
+                creater = AccountInfo.objects.get(account=request.user.account).account_code
+                id_type = data['pt_people_type']
+                pid = data['pt_people_id']
+                account_code = data['account_code']
+                pt_type = data['pt_type']  # 团队种类
+                comp_name = data.get('comp_name', None) # 企业名称
+                owner_license = data.get('owner_license', None)  # 企业信用代码
+
+                major = data.pop('major_code', None)  # 相关领域（列表）
+                idfront = url_to_path(data.get('idfront', None))  # 身份证正面
+                idback = url_to_path(data.get('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.get('idphoto', None))    # 手持身份证
+                logo = url_to_path(data.pop('logo', None))  # logo
+                promotional = url_to_path(data.pop('promotional', None))  # 宣传照
+                owner_abstract_detail = data.get('pt_describe', '')  # 富文本
+                instance = self.get_object()  # 原纪录
+
+                if owner_abstract_detail:
+                    img_pattern = re.compile(r'src=\"(.*?)\"')
+                    editor_imgs_list = img_pattern.findall(owner_abstract_detail)
+                    for e in editor_imgs_list:
+                        if url_to_path(e):
+                            editor_imgs_path[e] = url_to_path(e)
+
+                if account_code != instance.account_code:
+                    raise ValueError('不允许更改关联账号')
+                if not major:
+                    raise ValueError('所属领域是必填项')
+                if not data.pop('idfront', None):
+                    raise ValueError('证件照正面是必填项')
+                if not data.pop('idback', None):
+                    raise ValueError('证件照背面是必填项')
+                if not data.pop('idphoto', None):
+                    raise ValueError('手持身份证是必填项')
+
+                # 身份信息关联表基本信息
+                identity_info = {
+                    'account_code': account_code,
+                    'identity_code': 3,
+                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
+                    'state': 2 if data['state'] == 1 else 0,
+                    'creater': creater
+                }
+
+                # 个人基本信息表
+                if int(pt_type) != 0:
+                    # 个人基本信息表
+                    pinfo = {
+                        'pname': data.get('pt_people_name', None),
+                        'pid_type': id_type,
+                        'pid': pid,
+                        'pmobile': data.get('pt_people_tel', None),
+                        'state': 2,
+                        'creater': creater,
+                        'account_code': account_code
+                    }
+                else:
+                    if not comp_name:
+                        raise ValueError('企业名称是必填项')
+                    if not owner_license:
+                        raise ValueError('企业信用代码是必填项')
+                    einfo = {
+                        'ename': comp_name,  # 企业名称
+                        'eabbr': data.get('owner_name_abbr', None),  # 简称
+                        'business_license': owner_license,  # 企业营业执照统一社会信用码
+                        'eabstract': data.get('pt_abbreviation', None),  # 简介
+                        'eabstract_detail': data.get('pt_describe', None),
+                        'homepage': data.get('pt_homepage', None),  # 企业主页url
+                        'etel': data.get('owner_tel', None),  # 企业电话
+                        'manager': data.get('pt_people_name', None),  # 企业联系人
+                        'emobile': data.get('pt_people_tel', None),  # 企业手机
+                        'eemail': data.get('owner_email', None),  # 企业邮箱
+                        'state': 2,
+                        'manager_id': data.get('pt_people_id', None),
+                        'manager_idtype': data.get('pt_people_type', None),
+                        'creater': creater,
+                        'account_code': account_code
+                    }
+
+                # 验证证件号码
+                if int(pt_type) != 0:
+                    check_card_id(id_type, pid)  # 验证有效性
+                    # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
+                    pcode = create_or_update_person(account_code, pinfo)
+                else:
+                    encode = create_or_update_enterprise(account_code, einfo)
+                    data['ecode'] = encode
+
+                # 更新身份信息关联表
+                IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                         identity_code=3).update(**identity_info)
+
+                partial = kwargs.pop('partial', False)
+                serializer = self.get_serializer(instance, data=data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+                ecode = serializer.data['pt_code']
+
+                # 插入领域相关
+                crete_major(2, 2, ecode, major)
+
+                # 复制图片到正式目录
+                formal_idfront = copy_img(idfront, 'Prteam', 'identityFront', ecode, creater)
+                formal_idback = copy_img(idback, 'Prteam', 'identityBack', ecode, creater)
+                formal_idphoto = copy_img(idphoto, 'Prteam', 'handIdentityPhoto', ecode, creater)
+
+                for k, v in editor_imgs_path.items():
+                    formal_editor_imgs_path[k] = copy_img(v, 'Prteam', 'consultEditor', ecode, creater)
+
+                for k, v in formal_editor_imgs_path.items():
+                    if v:
+                        new_v = v.replace(ParamInfo.objects.get(param_name='upload_dir').param_value,
+                                          ParamInfo.objects.get(param_name='attachment_dir').param_value)
+                        owner_abstract_detail = owner_abstract_detail.replace(k, new_v)
+                ProjectTeamBaseinfo.objects.filter(pt_code=ecode).update(
+                    pt_describe=owner_abstract_detail)
+                if int(pt_type) == 0:
+                    EnterpriseBaseinfo.objects.filter(ecode=ecode).update(eabstract_detail=owner_abstract_detail)
+
+                old_img_list = [idfront, idback, idphoto, logo, promotional]
+                old_img_list.extend(editor_imgs_path.values())
+                for f in old_img_list:
+                    remove_img(f)
+
+                if getattr(instance, '_prefetched_objects_cache', None):
+                    # If 'prefetch_related' has been applied to a queryset, we need to
+                    # forcibly invalidate the prefetch cache on the instance.
+                    instance._prefetched_objects_cache = {}
+        except ValidationError:
+            for f in [formal_idfront, formal_idback, formal_idphoto]:
+                remove_img(f)
+            raise
+        except Exception as e:
+            # 如果已经回滚则删除正式目录的图片
+            old_formal_imglist = [formal_idfront,
+                                   formal_idback,
+                                   formal_idphoto,
+                                   formal_logo,
+                                   formal_promotional]
+            old_formal_imglist.extend(formal_editor_imgs_path.values())
+            for f in old_formal_imglist:
+                remove_img(f)
+            return Response({"detail": "更新失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                data = request.data
+                pks = data.get('pks', [])
+                pks.append(kwargs['pk'])
+                expert = ProjectTeamBaseinfo.objects.filter(serial__in=pks)
+                accounts = expert.values_list('account_code', flat=True)
+                expert_code = expert.values_list('pt_code', flat=True)
+                expert_apply_inserter = []
+                account = request.user.account
+                account_code = AccountInfo.objects.get(account=account).account_code
+                for ecode in expert_code:
+                    expert_apply_inserter.append(TeamApplyHistory(
+                        team_code=ecode,
+                        account_code=account_code,
+                        state=2, apply_time=datetime.datetime.now(),
+                        apply_type=3))
+                es = TeamApplyHistory.objects.bulk_create(expert_apply_inserter)
+                check_history_inserter = []
+                for e in es:
+                    check_history_inserter.append(TeamCheckHistory(
+                        apply_code=e.apply_code,
+                        opinion="管理系统关闭身份",
+                        result=2,
+                        check_time=datetime.datetime.now(),
+                        account=account,
+                    ))
+                TeamCheckHistory.objects.bulk_create(check_history_inserter)
+                identity = IdentityAuthorizationInfo.objects.filter(account_code__in=accounts, identity_code=3)
+                expert.update(state=3)
+                identity.update(state=0, iae_time=datetime.datetime.now())
+        except ValidationError:
+            raise
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # 技术团队申请视图
@@ -2761,7 +3821,7 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
 
     major_model = MajorInfo
     major_intermediate_model = MajorUserinfo
-    major_associated_field = ('pt_code', 'user_code')
+    major_associated_field = ('team_code', 'user_code')
     major_intermediate_associated_field = ('mcode', "mcode")
 
     account_model = AccountInfo
@@ -2878,8 +3938,7 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                                             'email_account':''}
                     Message.objects.create(**message_data)
         except Exception as e:
-            return Response({"detail":{
-                "detail":["审核失败：%s" % str(e)]}}, status=400)
+            return Response({"detail":"审核失败：%s" % str(e)}, status=400)
 
         # 移动附件逻辑改为  数据库事务执行成功再移动附件
         if check_state == 2:

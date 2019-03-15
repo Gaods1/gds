@@ -2,6 +2,7 @@ from django.db import models
 from misc.misc import gen_uuid32
 import time
 from account.utils import *
+from misc.validate import *
 
 
 # *******************************django 用户模型相关表， 勿动，如对程序无影响，后续可能删除****************************
@@ -193,7 +194,8 @@ class AttachmentFileinfo(models.Model):
     insert_time = models.DateTimeField(auto_now_add=True)
     operation_state = models.IntegerField(blank=True, null=True)
     path = models.CharField(max_length=64, blank=True, null=True)
-
+    file_caption = models.CharField(max_length=64, blank=True, null=True)
+    publish = models.IntegerField(blank=True, null=True)
     class Meta:
         managed = False
         db_table = 'attachment_fileinfo'
@@ -216,6 +218,7 @@ class Message(models.Model):
     email = models.IntegerField(blank=True, null=True)
     email_state = models.IntegerField(blank=True, null=True)
     email_account = models.CharField(max_length=255, blank=True, null=True)
+    type = models.IntegerField(default=1)
 
     class Meta:
         managed = False
@@ -273,7 +276,7 @@ class PersonalInfo(models.Model):
     pmobile = models.CharField(max_length=16, blank=True, null=True, validators=[validate_mobile])
     ptel = models.CharField(max_length=16, blank=True, null=True, validators=[validate_tel])
     pemail = models.CharField(max_length=64, blank=True, null=True, validators=[validate_email])
-    peducation = models.CharField(max_length=8, default="本科")   # 学历信息；本:研:博:大专:中专：mba：emba：其他
+    peducation = models.CharField(max_length=8, default=None)   # 学历信息；本:研:博:大专:中专：mba：emba：其他
     pabstract = models.TextField(blank=True, null=True)
     state = models.IntegerField(default=2)          # '状态；1：提交等待审核；2：审核通过；3：审核未通过；4：暂停；5：伪删除'
     creater = models.CharField(max_length=32, blank=True, null=True)
@@ -345,14 +348,31 @@ class ParamInfo(models.Model):
 # 身份授权信息表(前端) 2018/12/24 添加 author:周
 class IdentityAuthorizationInfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    account_code = models.CharField(unique=True, max_length=32, default=gen_uuid32)
-    identity_code = models.IntegerField(default=0)
-    iab_time = models.DateTimeField(blank=True, null=True,default=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    account_code = models.CharField(max_length=64)
+    identity_code = models.CharField(max_length=64)
+    iab_time = models.DateTimeField(blank=True, null=True)
     iae_time = models.DateTimeField(blank=True, null=True)
-    state = models.IntegerField(default=2)
-    creater = models.CharField(max_length=64, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True,default=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+    state = models.IntegerField(default=1)
+    creater = models.CharField(max_length=32, blank=True, null=True)
+    insert_time = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         managed = True
         db_table = 'identity_authorization_info'
+        unique_together = (('account_code', 'identity_code'),)
+
+
+# 前端角色表 *
+class IdentityInfo(models.Model):
+    serial = models.AutoField(primary_key=True)
+    identity_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
+    identity_name = models.CharField(unique=True, max_length=64)
+    identity_memo = models.CharField(max_length=255, blank=True, null=True)
+    state = models.IntegerField(default=1)
+    creater = models.CharField(max_length=32, blank=True, null=True)
+    insert_time = models.DateTimeField(auto_now_add=True)
+    update_time = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = True
+        db_table = 'identity_info'

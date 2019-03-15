@@ -42,6 +42,19 @@ class MajorInfoViewSet(viewsets.ModelViewSet):
     filter_fields = ("state", "mlevel", "mcode", "pmcode", "mtype")
     search_fields = ("mname", "mabbr")
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
+             page = None
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.get_paginated_response(serializer.data)
+
     def create(self, request, *args, **kwargs):
         request.data['creater'] = request.user.account
         mname = request.data.get('mname')
