@@ -3553,12 +3553,12 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     serializer.is_valid(raise_exception=True)
                     self.perform_create(serializer)
                     return_data = serializer.data
+                    raise ValueError(return_data)
                     ecode = serializer.data['pt_code']
                     # 插入领域相关
                     crete_major(2, 2, ecode, major)
 
                     # 复制图片到正式目录
-                    raise ValueError(ecode)
                     formal_idfront = copy_img(idfront, 'Prteam', 'identityFront', ecode, creater)
                     formal_idback = copy_img(idback, 'Prteam', 'identityBack', ecode, creater)
                     formal_idphoto = copy_img(idphoto, 'Prteam', 'handIdentityPhoto', ecode, creater)
