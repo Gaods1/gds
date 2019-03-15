@@ -3710,7 +3710,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                 serializer = self.get_serializer(instance, data=data, partial=partial)
                 serializer.is_valid(raise_exception=True)
                 self.perform_update(serializer)
-                ecode = serializer.data['broker_code']
+                ecode = serializer.data['pt_code']
 
                 # 插入领域相关
                 crete_major(2, 2, ecode, major)
