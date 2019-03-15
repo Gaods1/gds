@@ -3440,11 +3440,11 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
 
                 if not major:
                     raise ValueError('所属领域是必填项')
-                if not data.pop('idfront', None):
+                if not idfront:
                     raise ValueError('证件照正面是必填项')
-                if not data.pop('idback', None):
+                if not idback:
                     raise ValueError('证件照背面是必填项')
-                if not data.pop('idphoto', None):
+                if not idphoto:
                     raise ValueError('手持身份证是必填项')
                 # 身份信息关联表基本信息
                 identity_info = {
