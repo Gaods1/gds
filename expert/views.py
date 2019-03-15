@@ -3446,7 +3446,6 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                 if not idphoto:
                     raise ValueError('手持身份证是必填项')
                 # 身份信息关联表基本信息
-                raise ValueError('测试数据1')
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 3,
@@ -3455,7 +3454,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     'state': 2 if data['state'] == 1 else 0,
                     'creater': creater
                 }
-
+                raise ValueError('测试数据1')
                 if int(pt_type) != 0:
                     # 个人基本信息表
                     pinfo = {
