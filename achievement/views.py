@@ -1332,15 +1332,14 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                         # 拼接ecode表中的path
                         path = '{}/{}/{}/'.format(param_value,tcode,serializer_ecode)
-                        # 32位随机字符串内容
-                        file_caption = url_file[33:]
+                        # 6位随机字符串内容
+                        file_caption = url_file[7:]
                         list1.append(AttachmentFileinfo(tcode=tcode,ecode=serializer_ecode,file_name=url_file,path=path,operation_state=3,state=1,file_caption=file_caption,publish=1,file_format=1))
 
                 if attachment_list:
                     for attachment in attachment_list:
                         url_l = attachment.split('/')
                         url_file = url_l[-1]
-                        #url_32 = url_l[-2]
 
                         url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
 
@@ -1361,8 +1360,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
 
                         path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                        # 32位随机字符串内容
-                        file_caption = url_file[33:]
+                        # 6位随机字符串内容
+                        file_caption = url_file[7:]
                         list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,operation_state=3, state=1,file_caption=file_caption,publish=1,file_format=0))
 
                         # 同路经下有pdf文件
@@ -1603,8 +1602,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     # 拼接ecode表中的path
                     path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
 
-                    # 32位随机字符串内容
-                    file_caption = url_file[33:]
+                    # 6位随机字符串内容
+                    file_caption = url_file[7:]
                     list1.append(
                         AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
                                            operation_state=3, state=1,file_caption=file_caption,publish=1,file_format=1))
@@ -1645,8 +1644,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                         path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
 
-                        # 32位随机字符串内容
-                        file_caption = url_file[33:]
+                        # 6位随机字符串内容
+                        file_caption = url_file[7:]
                         list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
                                                         file_name=url_file, path=path, operation_state=3,
                                                         state=1,file_caption=file_caption,publish=1,file_format=0))
@@ -1923,7 +1922,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                         # 拼接ecode表中的path
                         path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
-                        file_caption=url_file[33:]
+                        # 6位随机字符串内容
+                        file_caption = url_file[7:]
                         list1.append(AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
                                                         operation_state=3, state=1,file_caption=file_caption,publish=1,file_format=1))
 
@@ -1949,7 +1949,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         list2.append(url_x_f)
 
                         path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                        file_caption=url_file[33:]
+                        # 6位随机字符串内容
+                        file_caption = url_file[7:]
                         list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file,
                                                         path=path, operation_state=3, state=1,file_caption=file_caption,publish=1,file_format=0))
 
@@ -2188,7 +2189,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                     # 拼接ecode表中的path
                     path = '{}/{}/{}/'.format(param_value, tcode, serializer_ecode)
-                    file_caption=url_file[33:]
+                    # 6位随机字符串内容
+                    file_caption = url_file[7:]
                     list1.append(
                         AttachmentFileinfo(tcode=tcode, ecode=serializer_ecode, file_name=url_file, path=path,
                                            operation_state=3, state=1,file_caption=file_caption,publish=1,file_format=1))
@@ -2225,7 +2227,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         list2.append(url_x_f)
 
                         path = '{}/{}/{}/'.format(param_value, tcode_attachment, serializer_ecode)
-                        file_caption = url_file[33:]
+                        # 6位随机字符串内容
+                        file_caption = url_file[7:]
                         list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
                                                         file_name=url_file, path=path, operation_state=3,
                                                         state=1,file_caption=file_caption,publish=1,file_format=0))
