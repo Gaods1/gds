@@ -3432,6 +3432,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                 logo = url_to_path(data.pop('logo', None))  # logo
                 promotional = url_to_path(data.pop('promotional', None))  # 宣传照
                 owner_abstract_detail = data.get('pt_describe', '')  # 富文本
+                raise ValueError('测试断电')
                 if owner_abstract_detail:
                     img_pattern = re.compile(r'src=\"(.*?)\"')
                     editor_imgs_list = img_pattern.findall(owner_abstract_detail)
@@ -3493,7 +3494,6 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                 # 查询当前账号有没有伪删除身份
                 obj = ProjectTeamBaseinfo.objects.filter(account_code=account_code, state=3)
                 if obj:
-                    raise ValueError('测试断电')
                     # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
                     check_identity2(account_code=account_code, identity=3, info=identity_info)
 
