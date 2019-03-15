@@ -3549,13 +3549,12 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     else:
                         encode = create_or_update_enterprise(account_code, einfo)
                         data['ecode'] = encode
-                    raise ValueError('测试数据2')
                     serializer = self.get_serializer(data=data)
                     serializer.is_valid(raise_exception=True)
                     self.perform_create(serializer)
                     return_data = serializer.data
                     ecode = serializer.data['pt_code']
-
+                    raise ValueError('测试数据2')
                     # 插入领域相关
                     crete_major(2, 2, ecode, major)
 
