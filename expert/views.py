@@ -1688,6 +1688,10 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
+                if IdentityAuthorizationInfo.objects.filter(account_code=instance.account_code,
+                                                            identity_code=5,
+                                                            state=2):
+                    raise ValueError('此账号已存在成果持有企业身份，不能申请为成果持有个人')
                 # 获取基本信息
                 baseinfo = instance.owner
                 # 获取审核意见
@@ -2242,6 +2246,11 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
                 if instance.state != 1:
                     raise ValueError('该信息已被审核')
 
+                if IdentityAuthorizationInfo.objects.filter(account_code=instance.account_code,
+                                                            identity_code=4,
+                                                            state=2):
+                    raise ValueError('此账号已存在成果持有个人身份，不能申请为成果持有企业')
+
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
@@ -2702,6 +2711,11 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
 
                 if instance.state != 1:
                     raise ValueError('该信息已被审核')
+
+                if IdentityAuthorizationInfo.objects.filter(account_code=instance.account_code,
+                                                            identity_code=7,
+                                                            state=2):
+                    raise ValueError('此账号已存在需求持有企业身份，不能申请为需求持有个人')
 
                 data = request.data
                 partial = kwargs.pop('partial', False)
@@ -3261,6 +3275,12 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                 instance = self.get_object()
                 if instance.state != 1:
                     raise ValueError('该信息已被审核')
+
+                if IdentityAuthorizationInfo.objects.filter(account_code=instance.account_code,
+                                                            identity_code=6,
+                                                            state=2):
+                    raise ValueError('此账号已存在需求持有个人身份，不能申请为需求持有企业')
+
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
