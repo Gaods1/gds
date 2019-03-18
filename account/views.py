@@ -10,6 +10,9 @@ from django.db.models.query import QuerySet
 from public_models.utils import get_dept_codes,get_detcode_str
 from .utils import *
 from misc.filter.search import ViewSearch
+from django.db import transaction
+from expert.models import *
+from projectmanagement.models import *
 # Create your views here.
 
 
@@ -148,6 +151,22 @@ class AccountViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
+    def destroy(self, request, *args, **kwargs):
+        try:
+            with transaction.atomic():
+                instance = self.get_object()
+                if instance.user_mobile:
+                    brokers = BrokerBaseinfo.objects.values_list(
+                        'broker_code', flat=True).filter(account_code=instance.account)
+                    if brokers and ProjectBrokerInfo.objects.filter(broker_code__in=brokers):
+                        raise ValueError('当前账号有技术经纪人身份且有项目正在进行中，请先为项目更换技术经纪人')
+                if instance.account:
+                    AccountRoleInfo.objects.filter(account=instance.account).delete()
+                self.perform_destroy(instance)
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=400)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 # 角色管理
 class RoleInfoViewSet(viewsets.ModelViewSet):
@@ -261,9 +280,13 @@ class RoleInfoViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
-        RoleFuncInfo.objects.filter(role_code=instance.role_code).delete()
-        self.perform_destroy(instance)
+        try:
+            instance = self.get_object()
+            if RoleFuncInfo.objects.filter(role_code=instance.role_code):
+                raise ValueError('当前角色具有功能点,请先解除功能点')
+            self.perform_destroy(instance)
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=400)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -556,6 +579,24 @@ class DeptinfoViewSet(viewsets.ModelViewSet):
             instance._prefetched_objects_cache = {}
 
         return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            if instance.dept_level == 1:
+                raise ValueError('一级部门不允许删除')
+            elif instance.dept_level == 2:
+                depts = list(Deptinfo.objects.values_list('dept_code', flat=True).filter(
+                    pdept_code=instance.dept_code))
+                depts.append(instance.dept_code)
+            elif instance.dept_level == 3:
+                depts = [instance.dept_code]
+            if AccountInfo.objects.filter(dept_code__in=depts):
+                raise ValueError('当前部门下存在账号，请先移除')
+            self.perform_destroy(instance)
+        except Exception as e:
+            return Response({"detail": "删除失败：%s" % str(e)}, status=400)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 # 参数配置管理
