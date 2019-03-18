@@ -78,6 +78,7 @@ class PersonViewSet(viewsets.ModelViewSet):
         form_data = request.data
         form_data['state'] = form_data['state'] if form_data['state'] else 2
         form_data['creater'] = request.user.account
+        form_data['account_code'] = request.data.get('account_code',None)
         serializer = self.get_serializer(data=form_data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
@@ -101,6 +102,7 @@ class PersonViewSet(viewsets.ModelViewSet):
         form_data['pid_type'] = form_data['pid_type'] if form_data['pid_type'] else None
         form_data['peducation'] = form_data['peducation'] if form_data['peducation'] else None
         form_data['state'] = form_data['state'] if form_data['state'] else 2
+        form_data['account_code'] = form_data['account_code'] if form_data['account_code'] !='' else None
         serializer = self.get_serializer(instance, data=form_data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
@@ -234,6 +236,8 @@ class EnterpriseViewSet(viewsets.ModelViewSet):
                             form_eabstract_detail = form_eabstract_detail.replace(temp_img_str,online_attachment_dir)
                 #########  富文本图片处理 ############
                 form_data['eabstract_detail'] = form_eabstract_detail
+                form_data['account_code'] = request.data.get('account_code',None)
+                form_data['business_license'] = request.data.get('business_license',None)
 
                 serializer = self.get_serializer(data=form_data)
                 serializer.is_valid(raise_exception=True)
@@ -266,49 +270,6 @@ class EnterpriseViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
-        # #########  富文本图片上传############
-        # update_eabstract_detail = serializer.data['eabstract_detail']
-        # if update_eabstract_detail:
-        #     attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
-        #     # img_pattern = re.compile(r'' + attachment_temp_dir + '(.*?)\.[jpg|jpeg|png|bmp|gif]')
-        #     img_pattern = re.compile(r'src=\"(.*?)\"')
-        #     temp_imgs_list = img_pattern.findall(update_eabstract_detail)
-        #     # 匹配不为空(有图片上传) 1移动到正式目录 2批量替换成线上显示图片的网址 3更新eabstract_detail
-        #     if temp_imgs_list:
-        #         upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value  # 富文本编辑器图片上传的临时保存目录
-        #         upload_dir = ParamInfo.objects.get(param_name='upload_dir').param_value  # 富文本编辑器图片上传的正式保存目录
-        #         attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
-        #         year = time.strftime('%Y', time.localtime(time.time()))
-        #         month = time.strftime('%m', time.localtime(time.time()))
-        #         day = time.strftime('%d', time.localtime(time.time()))
-        #         date_dir = f'{year}{month}{day}'
-        #         # 1 将图片从临时目录移动到正式目录
-        #         for temp_img_str in temp_imgs_list:
-        #             img_list = temp_img_str.split('.')
-        #             img_ext = img_list.pop()
-        #             new_img = gen_uuid32()+'.'+img_ext
-        #             img_temp_path = temp_img_str.replace(attachment_temp_dir, upload_temp_dir)
-        #             online_path = upload_dir.rstrip('/') + '/enterprise/' + date_dir + '/' + serializer.data['ecode'] + '/'
-        #             img_online_path = f'{online_path}/{new_img}'
-        #             # 创建目录
-        #             if not os.path.exists(online_path):
-        #                 os.makedirs(online_path)
-        #             # 移动图片到新目录
-        #             if os.path.exists(img_temp_path):
-        #                 shutil.move(img_temp_path, img_online_path)
-        #             else:
-        #                 continue
-        #                 # return Response("富文本图片上传出错", status=400)
-        #             # 新的线上显示地址
-        #             online_attachment_dir = attachment_dir.rstrip('/') + '/enterprise/' + date_dir + '/' + serializer.data['ecode'] + '/' + new_img
-        #             # 2 图片移动成功后将临时网址改为正式网址
-        #             update_eabstract_detail = update_eabstract_detail.replace(temp_img_str, online_attachment_dir)
-        #
-        #         # 3 更新eabstract_detail
-        #         EnterpriseBaseinfo.objects.filter(serial=serializer.data['serial']).update(eabstract_detail=update_eabstract_detail)
-        #     #########  富文本图片上传############
-
-
 
 
     def update(self, request, *args, **kwargs):
@@ -328,6 +289,8 @@ class EnterpriseViewSet(viewsets.ModelViewSet):
                         return Response({"detail": "创建失败：%s" % str(e)}, status=400)
                 #########  富文本图片上传############
                 form_dict = request.data
+                form_dict['account_code'] =  form_dict['account_code'] if form_dict['account_code'] !='' else None
+                form_dict['business_license'] = form_dict['business_license'] if form_dict['business_license'] !=''  else None
                 eabstract_detail = instance.eabstract_detail  #更新前详情
                 form_eabstract_detail = request.data.get('eabstract_detail')#表单提交的详情
                 # img_pattern = re.compile(r'' + attachment_temp_dir + '(.*?)\.[jpg|jpeg|png|bmp|gif]')

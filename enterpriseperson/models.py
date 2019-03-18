@@ -21,7 +21,7 @@ class  PersonalInfo(models.Model):
     state = models.IntegerField(verbose_name='状态',default=2)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
-    account_code = models.CharField(verbose_name='关联帐号',unique=True,max_length=64)
+    account_code = models.CharField(verbose_name='关联帐号',blank=True,null=True,max_length=64)
 
 
     @property
@@ -40,7 +40,7 @@ class EnterpriseBaseinfo(models.Model):
     ecode = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     ename = models.CharField(verbose_name='企业名称',max_length=64)
     eabbr = models.CharField(verbose_name='企业简称',max_length=32,blank=True,null=True)
-    business_license = models.CharField(verbose_name='营业执照',unique=True,blank=True,max_length=64,validators=[validate_license],null=True)
+    business_license = models.CharField(verbose_name='营业执照',blank=True,max_length=64,validators=[validate_license],null=True)
     eabstract = models.TextField(verbose_name='企业简介',max_length=500,blank=True,null=True)
     homepage = models.URLField(verbose_name='企业官网',max_length=128,blank=True,null=True)
     etel = models.CharField(verbose_name='企业电话',max_length=16, blank=True,null=True, validators=[validate_tel])
@@ -57,7 +57,7 @@ class EnterpriseBaseinfo(models.Model):
     eabstract_detail = models.TextField(verbose_name='企业详细',max_length=65535,blank=True,null=True)
     creater = models.CharField(verbose_name='创建者',max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(verbose_name='创建时间',auto_now_add=True)
-    account_code = models.CharField(verbose_name='关联帐号',unique=True, max_length=64)
+    account_code = models.CharField(verbose_name='关联帐号',blank=True,null=True, max_length=64)
 
     @property
     def user_name(self):
