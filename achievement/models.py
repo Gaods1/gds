@@ -386,6 +386,3 @@ class ResultsEaInfo(models.Model):
     class Meta:
         managed = False
         db_table = 'results_ea_info'
-
-
-

@@ -709,6 +709,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": '更新需求持有人表失败%s' % str(e)}, status=400)
 
+
                     # 如果是采集员
                 if Requirements.obtain_type == 1:
                     try:
@@ -1219,39 +1220,58 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 #如果是采集员身份
                 if obtain_type==1:
+                    Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code,identity_code=1)
+                    if not Identity_account_code:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '该角色不是采集员身份'}, status=400)
                     # 个人或者团队
                     if owner_type in [1, 3]:
                         if not identityFront or not identityBack or not handIdentityPhoto or not agreement:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请上传相关证件照'}, status=400)
                         pcode = request.data.pop('pcode', None)
+                        if not pcode:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请完善个人基本信息'}, status=400)
                     else:
                         if not identityFront or not identityBack or not handIdentityPhoto or not agreement or not entLicense:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请上传相关证件照'}, status=400)
                         ecode = request.data.pop('ecode', None)
+                        if not ecode:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请完善企业基本信息'}, status=400)
                 else:
                     if owner_type in [1, 3]:
                         request.data['obtain_type']=2
                         pcode = request.data.pop('pcode', None)
-                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
+                        if not pcode:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请完善个人基本信息'}, status=400)
+                        account_code_p = ParamInfo.objects.get(pcode=pcode).account_code
+                        if account_code_p != account_code:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '该角色与个人基本信息不匹配'}, status=400)
+                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code,identity_code=4)
                         if not Identity_account_code:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
                     else:
                         request.data['obtain_type']=3
                         ecode = request.data.pop('ecode', None)
-                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
+                        if not ecode:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请完善企业基本信息'}, status=400)
+                        account_code_e = EnterpriseBaseinfo.objects.get(ecode=ecode).account_code
+                        if account_code_e != account_code:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '该角色与企业基本信息不匹配'}, status=400)
+                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code,identity_code=5)
                         if not Identity_account_code:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是成果持有人(企业)身份'}, status=400)
 
                 pcode_or_ecode = pcode if pcode else ecode
-                if not pcode_or_ecode:
-                    transaction.savepoint_rollback(save_id)
-                    return Response({'detail': '请选择个人基本信息或企业基本信息'}, status=400)
-
-
 
                 #1 创建resultsinfo表
                 data['obtain_source'] = pcode_or_ecode
@@ -1460,6 +1480,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 use_type = request.data.get('use_type', None)
                 patent_number = request.data.get('patent_number', None)
                 r_abstract = request.data.get('r_abstract',None)
+                owner_code = request.data.pop('owner_code',None)
 
 
                 # 附件
@@ -1477,7 +1498,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                              'coverImg':Cover,'handIdentityPhoto':PerHandId,
                              'agreement':AgencyImg,'entLicense':EntLicense}
 
-                if not mname_list or not cooperation_name or not owner_type or not key_info_list or not account_code or not obtain_type or not r_name or not expiry_dateb or not expiry_datee or not r_form_type or not use_type or not r_abstract:
+                if not mname_list or not cooperation_name or not owner_type or not key_info_list or not account_code or not obtain_type or not r_name or not expiry_dateb or not expiry_datee or not r_form_type or not use_type or not r_abstract or not owner_code:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '请完善相关信息'}, status=400)
                 # 形式类型判断论文编号
@@ -1494,41 +1515,68 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 pcode = None
                 ecode = None
-
                 # 如果是采集员身份
                 if obtain_type == 1:
+                    Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code,identity_code=1)
+                    if not Identity_account_code:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '该角色不是采集员身份'}, status=400)
                     # 个人或者团队
                     if owner_type in [1, 3]:
                         if not AgencyImg or not PerIdFront or not PerIdBack or not PerHandId:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请上传相关证件照'}, status=400)
                         pcode = request.data.pop('pcode', None)
+                        if not pcode:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请完善个人基本信息'}, status=400)
+                        p_or_e_name = ParamInfo.objects.get(pcode=owner_code).pname
 
                     else:
                         if not AgencyImg or not PerIdFront or not PerIdBack or not PerHandId or not EntLicense:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请上传相关证件照'}, status=400)
                         ecode = request.data.pop('ecode', None)
+                        if not ecode:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请完善企业基本信息'}, status=400)
+                        p_or_e_name = EnterpriseBaseinfo.objects.get(ecode=owner_code).ename
+
                 else:
                     if owner_type in [1, 3]:
                         request.data['obtain_type']=2
                         pcode = request.data.pop('pcode', None)
-                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
+                        if not pcode:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请完善个人基本信息'}, status=400)
+                        p_or_e_name = ParamInfo.objects.get(pcode=owner_code).pname
+                        account_code_p = ParamInfo.objects.get(pcode=pcode).account_code
+                        if account_code_p != account_code:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '该角色与个人基本信息不匹配'}, status=400)
+                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code,identity_code=4)
                         if not Identity_account_code:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是成果持有人(个人)身份'}, status=400)
                     else:
                         request.data['obtain_type']=3
                         ecode = request.data.pop('ecode', None)
-                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
+                        if not ecode:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请完善企业基本信息'}, status=400)
+                        p_or_e_name = EnterpriseBaseinfo.objects.get(ecode=owner_code).ename
+                        account_code_e = EnterpriseBaseinfo.objects.get(ecode=ecode).account_code
+                        if account_code_e != account_code:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '该角色与企业基本信息不匹配'}, status=400)
+                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code,identity_code=5)
                         if not Identity_account_code:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是成果持有人(企业)身份'}, status=400)
 
                 pcode_or_ecode = pcode if pcode else ecode
-                if not pcode_or_ecode:
-                    transaction.savepoint_rollback(save_id)
-                    return Response({'detail': '请选择个人基本信息或企业基本信息'}, status=400)
+                if pcode_or_ecode == p_or_e_name:
+                    pcode_or_ecode=owner_code
 
                 #1 更新resultsinfo表
                 data['obtain_source'] = pcode_or_ecode
@@ -1823,36 +1871,59 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 # 如果是采集员身份
                 if obtain_type == 1:
+                    Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                                                     identity_code=1)
+                    if not Identity_account_code:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '该角色不是采集员身份'}, status=400)
                     # 个人或者团队
                     if owner_type in [1, 3]:
                         if not identityFront or not identityBack or not handIdentityPhoto or not agreement:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请上传相关证件照'}, status=400)
                         pcode = request.data.pop('pcode', None)
+                        if not pcode:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请完善个人基本信息'}, status=400)
                     else:
                         if not identityFront or not identityBack or not handIdentityPhoto or not agreement or not entLicense:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请上传相关证件照'}, status=400)
                         ecode = request.data.pop('ecode', None)
+                        if not ecode:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请完善企业基本信息'}, status=400)
+
                 else:
                     if owner_type in [1, 3]:
                         request.data['obtain_type']=2
                         pcode = request.data.pop('pcode', None)
-                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
+                        if not pcode:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请完善个人基本信息'}, status=400)
+                        account_code_p = ParamInfo.objects.get(pcode=pcode).account_code
+                        if account_code_p != account_code:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '该角色与个人基本信息不匹配'}, status=400)
+                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code,identity_code=6)
                         if not Identity_account_code:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是需求持有人(个人)身份'}, status=400)
                     else:
                         request.data['obtain_type']=3
                         ecode = request.data.pop('ecode', None)
-                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
+                        if not ecode:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请完善企业基本信息'}, status=400)
+                        account_code_e = EnterpriseBaseinfo.objects.get(ecode=ecode).account_code
+                        if account_code_e != account_code:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '该角色与企业基本信息不匹配'}, status=400)
+                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code,identity_code=7)
                         if not Identity_account_code:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是需求持有人(企业)身份'}, status=400)
                 pcode_or_ecode = pcode if pcode else ecode
-                if not pcode_or_ecode:
-                    transaction.savepoint_rollback(save_id)
-                    return Response({'detail': '请选择个人基本信息或企业基本信息'}, status=400)
 
                 # 1 创建resultsinfo表
                 data['obtain_source'] = pcode_or_ecode
@@ -2060,8 +2131,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 req_form_type = request.data.get('req_form_type', None)
                 use_type = request.data.get('use_type', None)
                 r_abstract = request.data.get('r_abstract', None)
+                owner_code = request.data.pop('owner_code',None)
 
-                if not mname_list or not cooperation_name or not owner_type or not key_info_list or not account_code or not obtain_type or not req_name or not expiry_dateb or not expiry_datee or not req_form_type or not use_type or not r_abstract:
+
+                if not mname_list or not cooperation_name or not owner_type or not key_info_list or not account_code or not obtain_type or not req_name or not expiry_dateb or not expiry_datee or not req_form_type or not use_type or not r_abstract or not owner_code:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '请完善相关信息'}, status=400)
 
@@ -2089,38 +2162,67 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 # 如果是采集员身份
                 if obtain_type == 1:
+                    Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                                                     identity_code=1)
+                    if not Identity_account_code:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '该角色不是采集员身份'}, status=400)
                     # 个人或者团队
                     if owner_type in [1, 3]:
                         if not AgencyImg or not PerIdFront or not PerIdBack or not PerHandId:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请上传相关证件照'}, status=400)
                         pcode = request.data.pop('pcode', None)
+                        if not pcode:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请完善个人基本信息'}, status=400)
+                        p_or_e_name = ParamInfo.objects.get(pcode=owner_code).pname
 
                     else:
                         if not AgencyImg or not PerIdFront or not PerIdBack or not PerHandId or not EntLicense:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请上传相关证件照'}, status=400)
                         ecode = request.data.pop('ecode', None)
+                        if not ecode:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请完善企业基本信息'}, status=400)
+                        p_or_e_name = EnterpriseBaseinfo.objects.get(ecode=owner_code).ename
+
                 else:
                     if owner_type in [1, 3]:
                         request.data['obtain_type'] = 2
                         pcode = request.data.pop('pcode', None)
-                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
+                        if not pcode:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请完善个人基本信息'}, status=400)
+                        p_or_e_name = ParamInfo.objects.get(pcode=owner_code).pname
+                        account_code_p = ParamInfo.objects.get(pcode=pcode).account_code
+                        if account_code_p != account_code:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '该角色与个人基本信息不匹配'}, status=400)
+                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code,identity_code=6)
                         if not Identity_account_code:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是需求持有人(个人)身份'}, status=400)
                     else:
                         request.data['obtain_type'] = 3
                         ecode = request.data.pop('ecode', None)
-                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code)
+                        if not ecode:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '请完善企业基本信息'}, status=400)
+                        p_or_e_name = EnterpriseBaseinfo.objects.get(ecode=owner_code).ename
+                        account_code_e = EnterpriseBaseinfo.objects.get(ecode=ecode).account_code
+                        if account_code_e != account_code:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '该角色与企业基本信息不匹配'}, status=400)
+                        Identity_account_code = IdentityAuthorizationInfo.objects.filter(account_code=account_code,identity_code=7)
                         if not Identity_account_code:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是需求持有人(企业)身份'}, status=400)
 
                 pcode_or_ecode = pcode if pcode else ecode
-                if not pcode_or_ecode:
-                    transaction.savepoint_rollback(save_id)
-                    return Response({'detail': '请选择个人基本信息或企业基本信息'}, status=400)
+                if pcode_or_ecode == p_or_e_name:
+                    pcode_or_ecode=owner_code
 
                 # 1 更新resultsinfo表
                 data['obtain_source'] = pcode_or_ecode
