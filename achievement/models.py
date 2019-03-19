@@ -20,11 +20,11 @@ from public_models.utils import get_attachment,get_single
 # 成果/需求审核申请表 *
 class RrApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
-    a_code = models.CharField(max_length=64, blank=True, null=True)
+    a_code = models.CharField(max_length=64, blank=True, null=True,default=gen_uuid32())
     rr_code = models.CharField(max_length=64, blank=True, null=True)
     account_code = models.CharField(max_length=64, blank=True, null=True)
     state = models.IntegerField(blank=True, null=True)
-    apply_time = models.DateTimeField(blank=True, null=True,auto_now=True)
+    apply_time = models.DateTimeField(blank=True, null=True,auto_now_add=True)
     apply_type = models.IntegerField(blank=True, null=True)
     type = models.IntegerField(blank=True, null=True)
 
@@ -364,7 +364,7 @@ class ResultCheckHistory(models.Model):
     apply_code = models.CharField(max_length=64, blank=True, null=True)
     opinion = models.TextField(blank=True, null=True)
     result = models.IntegerField(blank=True, null=True)
-    check_time = models.DateTimeField(blank=True, null=True)
+    check_time = models.DateTimeField(blank=True, null=True,auto_now_add=True)
     account = models.CharField(max_length=64, blank=True, null=True)
 
     class Meta:
@@ -386,3 +386,15 @@ class ResultsEaInfo(models.Model):
     class Meta:
         managed = False
         db_table = 'results_ea_info'
+class requirement_broker_info(models.Model):
+    serial = models.AutoField(primary_key=True)
+    trace_code = models.CharField(max_length=64, blank=True, null=True)
+    rcode = models.CharField(max_length=64, blank=True, null=True)
+    bcode = models.CharField(max_length=64, blank=True, null=True)
+    state = models.IntegerField(blank=True, null=True)
+    creater = models.CharField(max_length=64, blank=True, null=True)
+    insert_time = models.DateTimeField(blank=True, null=True,auto_now_add=True)
+    class Meta:
+        managed = False
+        db_table = 'requirement_broker_info'
+        unique_together = (('rcode', 'bcode'),)
