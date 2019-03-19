@@ -3729,7 +3729,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     crete_major(2, 2, ecode, major)
 
                     # 插入记录表
-                    apply = TeamApplyHistory.objects.create(owner_code=ecode,
+                    apply = TeamApplyHistory.objects.create(team_code=ecode,
                                                               account_code=account_code,
                                                               state=2,
                                                               apply_time=datetime.datetime.now(),
@@ -3788,7 +3788,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     crete_major(2, 2, ecode, major)
 
                     # 插入记录表
-                    apply = TeamApplyHistory.objects.create(owner_code=ecode,
+                    apply = TeamApplyHistory.objects.create(team_code=ecode,
                                                               account_code=account_code,
                                                               state=2,
                                                               apply_time=datetime.datetime.now(),
