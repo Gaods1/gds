@@ -2023,7 +2023,6 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
 
                     # 插入记录表
                     apply = OwnereApplyHistory.objects.create(owner_code=ecode,
-                                                              account_code=account_code,
                                                               state=2,
                                                               apply_time=datetime.datetime.now(),
                                                               apply_type=1)
@@ -2082,7 +2081,6 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
 
                     # 插入记录表
                     apply = OwnereApplyHistory.objects.create(owner_code=ecode,
-                                                              account_code=account_code,
                                                               state=2,
                                                               apply_time=datetime.datetime.now(),
                                                               apply_type=1)
