@@ -195,10 +195,20 @@ class ProjectSubstepInfo(models.Model):
                                                     project_code=self.project_code,
                                                     step_code=self.step_code,
                                                     substep_code=self.substep_code)
-
         if fjs == None:
             fjs = []
         return fjs
+
+    # # 项目审核信息
+    # @property
+    # def check_info(self):
+    #     q = ProjectCheckInfo.objects.filter(project_code=self.project_code, step_code=self.step_code,
+    #                                         substep_code=self.substep_code).values('project_code', 'cstate','cmsg').order_by('-p_serial')
+    #     if q != None and len(q) > 0:
+    #         check_info = q[0]
+    #     else:
+    #         check_info = {}
+    #     return check_info
 
     class Meta:
         managed = False

@@ -386,6 +386,8 @@ class TeamBaseinfoSerializers(PatclubModelSerializer):
             'pt_type',     # 团队种类
             'pt_city',  # 团队所属城市
             'ecode',  #对于企业类型的项目团队，填写企业代码，其他类型团队，该字段无效
+            'comp_name',
+            'owner_license',
             'major_code',
             'major',
             'pt_level',  # 业务能力的内部的评级。以星级表示，1-5 表示一星到五星，默认为一星
