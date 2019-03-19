@@ -583,6 +583,7 @@ class DeptinfoViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
+            depts = []
             if instance.dept_level == 1:
                 raise ValueError('一级部门不允许删除')
             elif instance.dept_level == 2:
@@ -592,8 +593,8 @@ class DeptinfoViewSet(viewsets.ModelViewSet):
             elif instance.dept_level == 3:
                 depts = [instance.dept_code]
             if AccountInfo.objects.filter(dept_code__in=depts):
-                raise ValueError('当前部门下存在账号，请先移除')
-            self.perform_destroy(instance)
+                raise ValueError('当前部门或者下属部门下存在账号，请先移除')
+            self.perform_destroy(Deptinfo.objects.filter(dept_code__in=depts))
         except Exception as e:
             return Response({"detail": "删除失败：%s" % str(e)}, status=400)
         return Response(status=status.HTTP_204_NO_CONTENT)
