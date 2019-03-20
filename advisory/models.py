@@ -1,5 +1,6 @@
 from django.db import models
 from misc.validate import *
+from account.models import *
 
 # Create your models here.
 
@@ -16,6 +17,10 @@ class MessageInformation(models.Model):
     state = models.IntegerField()
     insert_time = models.DateTimeField(auto_now_add=True)
     account_code = models.CharField(max_length=64)
+
+    @property
+    def account(self):
+        return AccountInfo.objects.get(account_code=self.account_code).account
 
     class Meta:
         managed = True
