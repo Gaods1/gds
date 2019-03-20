@@ -65,7 +65,7 @@ main_menu = {
         'subs': []
     },
     '咨询管理': {
-        'icon': "el-icon-lx-tickets",
+        'icon': "el-icon-tickets",
         'index': "advisory",
         'title': "咨询管理",
         'subs': []
