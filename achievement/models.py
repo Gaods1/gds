@@ -20,7 +20,7 @@ from public_models.utils import get_attachment,get_single
 # 成果/需求审核申请表 *
 class RrApplyHistory(models.Model):
     serial = models.AutoField(primary_key=True)
-    a_code = models.CharField(max_length=64, blank=True, null=True)
+    a_code = models.CharField(max_length=64, blank=True, null=True,default=gen_uuid32)
     rr_code = models.CharField(max_length=64, blank=True, null=True)
     account_code = models.CharField(max_length=64, blank=True, null=True)
     state = models.IntegerField(blank=True, null=True)
@@ -389,7 +389,7 @@ class ResultsEaInfo(models.Model):
 # 需求技术经济人跟踪表
 class Requirement_Broker_Info(models.Model):
     serial = models.AutoField(primary_key=True)
-    trace_code = models.CharField(max_length=64, blank=True, null=True,default=gen_uuid32())
+    trace_code = models.CharField(max_length=64, blank=True, null=True,default=gen_uuid32)
     rcode = models.CharField(max_length=64, blank=True, null=True)
     bcode = models.CharField(max_length=64, blank=True, null=True)
     state = models.IntegerField(blank=True, null=True)
