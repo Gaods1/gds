@@ -94,7 +94,7 @@ class ExpertBaseinfo(models.Model):
     expert_level = models.IntegerField(default=1, null=True)
     credit_value = models.IntegerField(default=0, null=True)
     expert_integral = models.IntegerField(blank=True, null=True)
-    state = models.IntegerField(default=2)  # 1 正常， 2 暂停 3 伪删除
+    state = models.IntegerField(default=1)  # 1 正常， 2 暂停 3 伪删除
     creater = models.CharField(max_length=32, blank=True, null=True)
     account_code = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
@@ -437,7 +437,7 @@ class ResultOwnerpBaseinfo(models.Model):
     owner_caption = models.CharField(max_length=32, blank=True, null=True)
     owner_addr = models.CharField(max_length=255, blank=True, null=True)
     owner_zipcode = models.CharField(max_length=8, blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True)                     # 持有人信息状态1：正常；2：暂停；3：伪删除
+    state = models.IntegerField(default=1)                     # 持有人信息状态1：正常；2：暂停；3：伪删除
     account_code = models.CharField(max_length=64, blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
@@ -563,7 +563,7 @@ class ResultOwnereBaseinfo(models.Model):
     owner_abstract = models.TextField(verbose_name='企业简述')              # 企业简述
     homepage = models.URLField(max_length=128, blank=True, null=True)
     creditvalue = models.IntegerField(default=0)                            # 企业信用值。
-    state = models.IntegerField(blank=True, null=True)                      # '持有人信息状态1：正常；2：暂停；3：伪删除'
+    state = models.IntegerField(default=1)                      # '持有人信息状态1：正常；2：暂停；3：伪删除'
     account_code = models.CharField(max_length=64, blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
