@@ -77,17 +77,12 @@ def content_type(a,b,c,d,e):
 def get_content_type(path,path_front,file):
 
     url = '{}{}{}'.format(path, file.path, file.file_name)
-    if not os.path.exists(url):
-        return None
     # 如果是office文件，则同路径下有pdf文件
     if url.endswith('xls') or url.endswith('xlsx') or url.endswith('doc') or url.endswith('docx'):
         url_pdf_list = url.split('.')
         url_office_type = url_pdf_list.pop()
         url_pdf_list.append('pdf')
         url_pdf = '.'.join(url_pdf_list)
-
-        if not os.path.exists(url_pdf):
-            return None
 
         url_pdf = url_pdf.replace(path, path_front)
         url = url.replace(path, path_front)
