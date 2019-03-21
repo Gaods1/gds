@@ -647,6 +647,23 @@ class RequirementViewSet(viewsets.ModelViewSet):
             with transaction.atomic():
                 # 创建一个保存点
                 save_id = transaction.savepoint()
+                # 创建技术经济人跟踪表
+                try:
+                    bcode = data.pop('bcode',None)
+                    if not bcode:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": '请选择技术经纪人'}, status=400)
+                    Requirement_Broker = Requirement_Broker_Info.objects.create(
+                        rcode=instance.req_code,
+                        bcode=bcode,
+                        state=1,
+                        creater=request.user.account,
+                    )
+                except Exception as e:
+                    logger.error(e)
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": '需求审核技术经纪人表创建失败%s' % str(e)}, status=400)
+
                 # 创建历史记录表
                 try:
                     history = ResultCheckHistory.objects.create(
