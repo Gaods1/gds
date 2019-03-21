@@ -43,7 +43,7 @@ class MessageInformationViewSet(viewsets.ModelViewSet):
 # 联系人管理
 class ContacctInformationViewSet(viewsets.ModelViewSet):
     queryset = ContacctInformation.objects.all().order_by('-serial')
-    serializer_class = MessageInformationSerializer
+    serializer_class = ContacctInformationSerializer
     filter_backends = (
         ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
