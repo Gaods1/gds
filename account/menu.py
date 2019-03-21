@@ -63,6 +63,12 @@ main_menu = {
         'index': "newspolicy",
         'title': "新闻政策法规管理",
         'subs': []
+    },
+    '咨询管理': {
+        'icon': "el-icon-tickets",
+        'index': "advisory",
+        'title': "咨询管理",
+        'subs': []
     }
 }
 
@@ -250,5 +256,13 @@ sub_menu = {
     '政策法规管理':{
         'title':"政策法规管理",
         'index':"policy"
+    },
+    '留言管理': {
+        'title': "留言管理",
+        'index': "message_board"
+    },
+    '联系人管理': {
+        'title': "联系人管理",
+        'index': "contact"
     },
 }

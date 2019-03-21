@@ -28,8 +28,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
-
-
 # 用户系统
 AUTH_USER_MODEL = 'account.AccountInfo'
 
@@ -89,19 +87,20 @@ INSTALLED_APPS = [
     'rest_framework_jwt',
     'django_filters',
     'rest_framework_swagger',
-    'gunicorn', # 中间件
-    'corsheaders',# 跨域(以后删除)
-    'projectmanagement',#项目管理
-    'consult',#征询管理
+    'gunicorn',    # 中间件
+    'corsheaders',   # 跨域(以后删除)
+    'projectmanagement',  # 项目管理
+    'consult',  # 征询管理
     'index',
-    'enterpriseperson',#企业和个人管理
+    'enterpriseperson',  # 企业和个人管理
+    'advisory'  # 咨询管理
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
 
-    'corsheaders.middleware.CorsMiddleware',# 跨域(以后删除)
+    'corsheaders.middleware.CorsMiddleware',  # 跨域(以后删除)
 
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -116,7 +115,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ORIGIN_WHITELIST = (
     '*'
 )
-#跨域(以后删除)
+# 跨域(以后删除)
 CORS_ALLOW_METHODS = (
     'DELETE',
     'GET',
@@ -126,7 +125,7 @@ CORS_ALLOW_METHODS = (
     'PUT',
     'VIEW',
 )
-#跨域(以后删除)
+# 跨域(以后删除)
 CORS_ALLOW_HEADERS = (
     'XMLHttpRequest',
     'X_FILENAME',
@@ -191,7 +190,6 @@ else:
         'PASSWORD': 'l0092687dd'
     }
 
-
     redis_setting = {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": "redis://:l0092687dd@127.0.0.1:6379/1",
@@ -210,9 +208,7 @@ CACHES = {
     "default": redis_setting
 }
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
-#SESSION_CACHE_ALIAS = "session"
-
-
+# SESSION_CACHE_ALIAS = "session"
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators
@@ -234,9 +230,9 @@ AUTH_PASSWORD_VALIDATORS = [
 
 # 上传附件用的测试数据,部署到线上后在修改
 DEFAULT_FILE_STORAGE = 'backends.ImageStorage'
-#MEDIA_ROOT = '/alidata1/patclub/temp/uploads/'#部署后将此地址改为正式的临时目录
-#BASE_URL= 'http://patclub.for8.cn:8764/'#此地址根据图片服务器的真实地址而定
-#media_root_front = 'http://patclub.for8.cn:8764/temp/uploads/'#此地址为抛给前端的地址
+# MEDIA_ROOT = '/alidata1/patclub/temp/uploads/'#部署后将此地址改为正式的临时目录
+# BASE_URL= 'http://patclub.for8.cn:8764/'#此地址根据图片服务器的真实地址而定
+# media_root_front = 'http://patclub.for8.cn:8764/temp/uploads/'#此地址为抛给前端的地址
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
 
@@ -288,7 +284,7 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = False #改为False 解决插入数据库时间小于当前8个小时的问题
+USE_TZ = False  # 改为False 解决插入数据库时间小于当前8个小时的问题
 
 
 # Static files (CSS, JavaScript, Images)

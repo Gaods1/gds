@@ -45,4 +45,5 @@ urlpatterns = [
     path('index',include('index.urls')),
     path('ep/',include('enterpriseperson.urls')),
     path('newspolicy/',include('news.urls')),
+    path('advisory/', include('advisory.urls'))
 ]
