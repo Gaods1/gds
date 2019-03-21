@@ -40,7 +40,7 @@ class MessageInformationViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-# 留言管理
+# 联系人管理
 class ContacctInformationViewSet(viewsets.ModelViewSet):
     queryset = ContacctInformation.objects.all().order_by('-serial')
     serializer_class = MessageInformationSerializer
