@@ -259,7 +259,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 9,
-                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
+                    'iae_time': None,
                     'state': 2,
                     'creater': creater
                 }
@@ -721,7 +721,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 2,
-                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
+                    'iae_time': None,
                     'state': 2,
                     'creater': creater
                 }
@@ -1172,7 +1172,7 @@ class CollectorViewSet(viewsets.ModelViewSet):
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 1,
-                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
+                    'iae_time': None,
                     'state': 2,
                     'creater': creater
                 }
@@ -1640,7 +1640,7 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 4,
-                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
+                    'iae_time': None,
                     'state': 2,
                     'creater': creater
                 }
@@ -2195,7 +2195,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 5,
-                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
+                    'iae_time': None,
                     'state': 2,
                     'creater': creater
                 }
@@ -2717,7 +2717,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 6,
-                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
+                    'iae_time': None,
                     'state': 2,
                     'creater': creater
                 }
@@ -3285,7 +3285,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 7,
-                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
+                    'iae_time': None,
                     'state': 2,
                     'creater': creater
                 }
@@ -3893,7 +3893,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 3,
-                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
+                    'iae_time': None,
                     'state': 2,
                     'creater': creater
                 }
