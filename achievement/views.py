@@ -654,7 +654,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         transaction.savepoint_rollback(save_id)
                         return Response({"detail": '请选择技术经纪人'}, status=400)
                     Requirement_Broker = Requirement_Broker_Info.objects.create(
-                        rcode=instance.req_code,
+                        rcode=instance.rr_code,
                         bcode=bcode,
                         state=1,
                         creater=request.user.account,
