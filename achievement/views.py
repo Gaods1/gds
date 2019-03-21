@@ -649,7 +649,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 save_id = transaction.savepoint()
                 # 创建技术经济人跟踪表
                 try:
-                    bcode = data.pop('bcode',None)
+                    bcode = data.pop('broker_code',None)
                     if not bcode:
                         transaction.savepoint_rollback(save_id)
                         return Response({"detail": '请选择技术经纪人'}, status=400)
