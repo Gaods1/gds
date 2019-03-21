@@ -24,7 +24,7 @@ class RrApplyHistory(models.Model):
     rr_code = models.CharField(max_length=64, blank=True, null=True)
     account_code = models.CharField(max_length=64, blank=True, null=True)
     state = models.IntegerField(blank=True, null=True)
-    apply_time = models.DateTimeField(blank=True, null=True,auto_now=True)
+    apply_time = models.DateTimeField(blank=True, null=True,auto_now_add=True)
     apply_type = models.IntegerField(blank=True, null=True)
     type = models.IntegerField(blank=True, null=True)
 
