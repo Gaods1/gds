@@ -260,8 +260,7 @@ class ProjectSubstepDetailInfoSerializer(serializers.ModelSerializer):
 
 # 立项匹配申请
 class MatchCheckInfoSerializer(serializers.ModelSerializer):
-    rm_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
-    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    check_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
 
     class Meta:
         model = MatchCheckInfo
@@ -279,6 +278,7 @@ class MatchCheckInfoSerializer(serializers.ModelSerializer):
 
 # 立项匹配技术经济人信息
 class ReqMatchBrokerInfoSerializer(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
     class Meta:
         model = ReqMatchBrokerInfo
         fields = [
@@ -293,6 +293,7 @@ class ReqMatchBrokerInfoSerializer(serializers.ModelSerializer):
 
 # 立项匹配需求、成果来源信息
 class ReqMatchRrInfoSerializer(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
     class Meta:
         model = ReqMatchRrInfo
         fields = [
@@ -307,6 +308,8 @@ class ReqMatchRrInfoSerializer(serializers.ModelSerializer):
 
 # 立项匹配信息
 class ReqMatchInfoSerializer(serializers.ModelSerializer):
+    rm_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
     class Meta:
         model = ReqMatchInfo
         fields = [

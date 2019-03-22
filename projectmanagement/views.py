@@ -855,6 +855,9 @@ def upCheckinfo(self, request):
 
 
 class ProjectCommonCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,viewsets.GenericViewSet):
+    '''
+    项目立项审核 项目上传合同审核 项目标书审核 项目固化审核 项目终止审核
+    '''
     queryset = ProjectCheckInfo.objects.filter(cstate=0).order_by('p_serial')
     serializer_class = ProjectCheckInfoSerializer
 
@@ -1031,3 +1034,17 @@ class ProjectTeamInfoViewSet(viewsets.ModelViewSet):
     ordering_fields = ("team_code", "insert_time")
     filter_fields = ("project_code", "team_code", "insert_time")
     search_fields = ("team_code", "insert_time")
+
+
+class ProjectMatchCheckInfoViewSet(viewsets.ModelViewSet):
+    '''立项匹配信息审核'''
+    queryset = MatchCheckInfo.objects.all()
+    serializer_class = MatchCheckInfoSerializer
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("rm_code", "check_time")
+    filter_fields = ("rm_code", "check_time")
+    search_fields = ("rm_code", "check_time")
