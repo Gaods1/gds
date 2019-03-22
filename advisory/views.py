@@ -12,7 +12,7 @@ from rest_framework import status, permissions
 
 # 留言管理
 class MessageInformationViewSet(viewsets.ModelViewSet):
-    queryset = MessageInformation.objects.all().order_by('-serial')
+    queryset = MessageInformation.objects.all().order_by('state', 'serial')
     serializer_class = MessageInformationSerializer
     filter_backends = (
         ViewSearch,
