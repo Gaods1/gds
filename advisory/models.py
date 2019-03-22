@@ -1,6 +1,7 @@
 from django.db import models
 from misc.validate import *
 from account.models import *
+from .utils import *
 
 # Create your models here.
 
@@ -21,6 +22,12 @@ class MessageInformation(models.Model):
     @property
     def account(self):
         return AccountInfo.objects.get(account_code=self.account_code).account
+
+    @property
+    def url(self):
+        serial = type_model[self.type](self.code)
+        url = '/{}?serial={}'.format(type_index[self.type], serial)
+        return url
 
     class Meta:
         managed = True
