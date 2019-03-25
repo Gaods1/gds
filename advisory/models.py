@@ -29,6 +29,13 @@ class MessageInformation(models.Model):
         url = '/{}?serial={}'.format(type_index[self.type], serial)
         return url
 
+    @property
+    def color(self):
+        if (datetime.datetime.now() - self.insert_time).days >= 3:
+            return 1
+        else:
+            return 0
+
     class Meta:
         managed = True
         db_table = 'message_information'
