@@ -498,6 +498,12 @@ class ReqMatchInfo(models.Model):
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True)
 
+    def check_info(self):
+        rmi = ReqMatchInfo.objects.filter(rm_code=self.rm_code).order_by("-serial")
+        if rmi != None and len(rmi)>0:
+            return rmi[0]
+        return {}
+
     class Meta:
         managed = False
         db_table = 'req_match_info'

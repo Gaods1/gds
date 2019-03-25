@@ -310,6 +310,9 @@ class ReqMatchRrInfoSerializer(serializers.ModelSerializer):
 class ReqMatchInfoSerializer(serializers.ModelSerializer):
     rm_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+
+    check_info = MatchCheckInfoSerializer(read_only=True)
+
     class Meta:
         model = ReqMatchInfo
         fields = [
@@ -325,4 +328,5 @@ class ReqMatchInfoSerializer(serializers.ModelSerializer):
             'rm_state',
             'creater',
             'insert_time',
+            'check_info'
         ]
