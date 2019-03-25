@@ -22,13 +22,16 @@ router.register(r'project_solid_cer', ProjectCommonCheckInfoViewSet)
 # 项目终止审核
 router.register(r'project_end_cer', ProjectCommonCheckInfoViewSet)
 
+# 立项匹配审核
+router.register(r'project_match_cer', ProjectMatchCheckInfoViewSet)
+
 
 # 签约合同审核
-router.register(r'project_signcontract_cer', ProjectCheckInfoViewSet)
+# router.register(r'project_signcontract_cer', ProjectCheckInfoViewSet)
 # 中标签约审核
-router.register(r'project_bidsign_cer', ProjectCheckInfoViewSet)
+# router.register(r'project_bidsign_cer', ProjectCheckInfoViewSet)
 # 项目结案审核
-router.register(r'project_finish_cer', ProjectCheckInfoViewSet)
+# router.register(r'project_finish_cer', ProjectCheckInfoViewSet)
 
 
 # 项目 需求、成果关系
