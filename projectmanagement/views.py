@@ -20,7 +20,7 @@ from account.models import Deptinfo, AccountInfo
 from expert.models import BrokerBaseinfo
 
 from django.db.models.query import QuerySet
-from public_models.utils import get_dept_codes,get_detcode_str
+from public_models.utils import get_dept_codes, get_detcode_str
 from public_models.models import Message, MajorUserinfo
 
 from .utils import *
@@ -143,7 +143,6 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
                     major_userinfo_data['mcode'] = major
                     MajorUserinfo.objects.create(**major_userinfo_data)
 
-
                 # 项目主步骤表
                 project_step_info_data = {}
                 project_step_info_data['project_code'] = project_code
@@ -151,7 +150,6 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
                 project_step_info_data['btime'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 project_step_info_data['step_state'] = 0
                 ProjectStepInfo.objects.create(**project_step_info_data)
-
 
                 # 项目子步骤表
                 project_substep_info_data = {}
@@ -165,9 +163,9 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
                 # 计算流水号
                 sql = "select * from project_substep_detail_info order by p_serial desc limit 1"
                 raw_queryset = ProjectCheckInfo.objects.raw(sql)
-                projectsubstepdetailinfo = ProjectSubstepDetailInfo.objects.filter(p_serial__in=[i.p_serial for i in raw_queryset])[0]
+                projectsubstepdetailinfo = \
+                ProjectSubstepDetailInfo.objects.filter(p_serial__in=[i.p_serial for i in raw_queryset])[0]
                 substep_serial = projectsubstepdetailinfo.substep_serial + 1
-
 
                 # 项目审核流水表
                 project_substep_serial_info_data = {}
@@ -204,7 +202,6 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
                 ProjectCheckInfo.objects.create(**project_check_info_data)
 
                 # return JsonResponse({'state':0,'msg':'ok'})
-
 
                 transaction.savepoint_commit(save_id)
 
@@ -306,7 +303,7 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
         pbi.save()
 
         # 项目成果
-        pri = ProjectRrInfo.objects.get(project_code=project_code,rr_type=1,rr_main=1)
+        pri = ProjectRrInfo.objects.get(project_code=project_code, rr_type=1, rr_main=1)
         pri.rr_code = data.get('results', None)
         pri.save()
 
@@ -329,7 +326,7 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
             ProjectExpertInfo.objects.create(**project_expert_info_data)
 
         # 领域
-        mui = MajorUserinfo.objects.filter(user_code=project_code,mtype=2,user_type=11)
+        mui = MajorUserinfo.objects.filter(user_code=project_code, mtype=2, user_type=11)
         for mu in mui:
             mu.delete()
         majors = data.get('project_major', [])
@@ -360,7 +357,8 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-class ProjectCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,viewsets.GenericViewSet):
+
+class ProjectCheckInfoViewSet(mixins.UpdateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
     """
     项目4步审核 参考 key_project_substep_detail_info 表
 
@@ -422,10 +420,10 @@ class ProjectCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,view
             serializer = self.get_serializer(queryset, many=True)
             return self.get_paginated_response(serializer.data)
 
-        return getCheckInfo(self,request, step_code, substep_code)
+        return getCheckInfo(self, request, step_code, substep_code)
 
     def update(self, request, *args, **kwargs):
-        return upCheckinfo(self,request)
+        return upCheckinfo(self, request)
 
 
 def getProjectByDept(self, request):
@@ -443,7 +441,6 @@ def getProjectByDept(self, request):
     dept_codes = get_dept_codes(dept_code)
     # writeLog('yzw_py.log', 'getProjectByDept', sys._getframe().f_code.co_filename, str(sys._getframe().f_lineno))
 
-
     # 此处可以继续优化，但是数据关系不完整，暂时不做优化
     # TODO...
     # 当前部门所有账号
@@ -454,7 +451,6 @@ def getProjectByDept(self, request):
     else:
         account_codes = [account.account_code for account in
                          AccountInfo.objects.only('dept_code').filter(dept_code__in=dept_codes, state=1)]
-
 
     # 当前部门账号相关的技术经济人代码
     brokers = [broker.broker_code for broker in BrokerBaseinfo.objects.filter(account_code__in=account_codes, state=1)]
@@ -468,7 +464,8 @@ def getProjectByDept(self, request):
         project_state = int(project_state)
         if project_sub_state != None and project_sub_state != '':
             project_sub_state = int(project_sub_state)
-            q = self.get_queryset().filter(project_code__in=project_codes, project_state=project_state,project_sub_state=project_sub_state)
+            q = self.get_queryset().filter(project_code__in=project_codes, project_state=project_state,
+                                           project_sub_state=project_sub_state)
         else:
             q = self.get_queryset().filter(project_code__in=project_codes, project_state=project_state)
     else:
@@ -487,14 +484,15 @@ def getProjectByDept(self, request):
 
     return queryset
 
-def getCheckInfo(self,request, step_code, substep_code):
+
+def getCheckInfo(self, request, step_code, substep_code):
     # 获取我所在的机构下的项目
     queryset = getProjectByDept(self, request)
 
     step_code = int(step_code)
     substep_code = int(substep_code)
 
-    #***** 4 2 状态的项目单独查询永远也不会走到这个函数
+    # ***** 4 2 状态的项目单独查询永远也不会走到这个函数
 
     if queryset != None and len(queryset) > 0:
         # 判断是否终止项目
@@ -523,7 +521,8 @@ def getCheckInfo(self,request, step_code, substep_code):
             and a.cstate=0
             """
         raw_queryset = ProjectCheckInfo.objects.raw(sql)
-        projectcheckinfos = ProjectCheckInfo.objects.filter(p_serial__in=[i.p_serial for i in raw_queryset]).order_by("-p_serial")
+        projectcheckinfos = ProjectCheckInfo.objects.filter(p_serial__in=[i.p_serial for i in raw_queryset]).order_by(
+            "-p_serial")
 
         project_codes = [check.project_code for check in projectcheckinfos]
 
@@ -537,7 +536,6 @@ def getCheckInfo(self,request, step_code, substep_code):
         else:
             queryset = []
 
-
     page = self.paginate_queryset(queryset)
     if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
         page = None
@@ -548,9 +546,10 @@ def getCheckInfo(self,request, step_code, substep_code):
     serializer = self.get_serializer(queryset, many=True)
     return self.get_paginated_response(serializer.data)
 
+
 def upCheckinfo(self, request):
     data = request.data
-    cstate = data['cstate'] # 1:审核通过 -1:审核不通过
+    cstate = data['cstate']  # 1:审核通过 -1:审核不通过
     if cstate != 1 and cstate != -1:
         return JsonResponse({'state': 0, 'msg': '请确认审核是否通过'})
 
@@ -562,7 +561,8 @@ def upCheckinfo(self, request):
     cmsg = data['cmsg']
     # 终止项目时使用  主要是获取需要审核的状态
     try:
-        t_pssi = ProjectSubstepSerialInfo.objects.get(project_code=project_code,step_code=step_code,substep_code=substep_code,substep_serial=substep_serial)
+        t_pssi = ProjectSubstepSerialInfo.objects.get(project_code=project_code, step_code=step_code,
+                                                      substep_code=substep_code, substep_serial=substep_serial)
     except Exception as e:
         fail_msg = "审核失败%s" % str(e)
         return JsonResponse({"state": 0, "msg": fail_msg})
@@ -585,7 +585,6 @@ def upCheckinfo(self, request):
         else:
             substep_serial_state = -12
 
-
     # 建立事物机制
     with transaction.atomic():
         # 创建一个保存点
@@ -594,26 +593,27 @@ def upCheckinfo(self, request):
         try:
             # 项目审核信息表
             projectcheckinfo = ProjectCheckInfo.objects.get(project_code=project_code,
-                                                            substep_serial=substep_serial,cstate=0)
+                                                            substep_serial=substep_serial, cstate=0)
             projectcheckinfo.cstate = cstate
             projectcheckinfo.ctime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             projectcheckinfo.checker = request.user.account
             projectcheckinfo.cmsg = cmsg
             projectcheckinfo.save()
 
-
             # 项目子步骤流水信息表
             pssi = ProjectSubstepSerialInfo.objects.get(project_code=project_code,
                                                         step_code=step_code, substep_code=substep_code,
-                                                        substep_serial=substep_serial, substep_serial_type=substep_serial_type)
+                                                        substep_serial=substep_serial,
+                                                        substep_serial_type=substep_serial_type)
             pssi.substep_serial_state = substep_serial_state
             pssi.step_msg = cmsg
             pssi.save()
 
             # 项目子步骤流水详情信息表
             psdi = ProjectSubstepDetailInfo.objects.get(project_code=project_code,
-                                                           step_code=step_code,substep_code=substep_code,
-                                                           substep_serial=substep_serial,substep_serial_type=substep_serial_type)
+                                                        step_code=step_code, substep_code=substep_code,
+                                                        substep_serial=substep_serial,
+                                                        substep_serial_type=substep_serial_type)
             psdi.substep_serial_state = substep_serial_state
             psdi.step_msg = cmsg
             psdi.save()
@@ -622,8 +622,7 @@ def upCheckinfo(self, request):
             if old_substep_state != -11:  # 普通步骤
                 if cstate == 1:
                     # 审核通过时处理上传的附件
-                    move_project_file(project_code,step_code,substep_code,substep_serial)
-
+                    move_project_file(project_code, step_code, substep_code, substep_serial)
 
             # 项目子步骤信息表
             psi = ProjectSubstepInfo.objects.get(project_code=project_code, step_code=step_code,
@@ -641,7 +640,6 @@ def upCheckinfo(self, request):
                 psi.etime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             psi.step_msg = cmsg
             psi.save()
-
 
             # 项目步骤信息表
             if step_code == 1 and substep_code == 1 and substep_serial_type == 1:
@@ -696,7 +694,6 @@ def upCheckinfo(self, request):
                 psi.step_msg = cmsg
                 psi.save()
 
-
             # 修改项目主表状态
             # 和 子步骤状态一致 固话清单内容审核之后，不更新project_info和project_substep_info
             # 1.先只修改立项时间
@@ -730,7 +727,6 @@ def upCheckinfo(self, request):
                         pi.last_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                     pi.save()
 
-
             # 只有普通步骤才发送短信
             if old_substep_state != -11:  # 普通步骤
                 # 组合生成短信消息发送列表
@@ -755,31 +751,31 @@ def upCheckinfo(self, request):
                             message_title = '项目立项审核通知'
                             type = '项目立项'
                             if cstate == 1:
-                                message_content = message_content_pass.format(type,project.project_name)
+                                message_content = message_content_pass.format(type, project.project_name)
                             else:
                                 message_content = message_content_unpass.format(type, project.project_name)
                         elif step_code == 2 and substep_code == 1 and substep_serial_type == 1:
                             message_title = '项目上传草本合同审核通知'
                             type = '项目上传草本合同'
                             if cstate == 1:
-                                message_content = message_content_pass.format(type,project.project_name)
+                                message_content = message_content_pass.format(type, project.project_name)
                             else:
                                 message_content = message_content_unpass.format(type, project.project_name)
                         elif step_code == 3 and substep_code == 1 and substep_serial_type == 1:
                             message_title = '项目上传标书审核通知'
                             type = '项目上传标书'
                             if cstate == 1:
-                                message_content = message_content_pass.format(type,project.project_name)
+                                message_content = message_content_pass.format(type, project.project_name)
                             else:
                                 message_content = message_content_unpass.format(type, project.project_name)
                         elif step_code == 4 and substep_code == 2 and substep_serial_type == 1:
                             message_title = '项目产品固话审核通知'
                             type = '项目产品固话'
                             if cstate == 1:
-                                message_content = message_content_pass.format(type,project.project_name)
+                                message_content = message_content_pass.format(type, project.project_name)
                             else:
                                 message_content = message_content_unpass.format(type, project.project_name)
-                        elif step_code == 0 and substep_code == 0: # 项目终止
+                        elif step_code == 0 and substep_code == 0:  # 项目终止
                             message_title = '项目终止审核通知'
                             type = '项目终止'
                             if cstate == 1:
@@ -809,7 +805,8 @@ def upCheckinfo(self, request):
                             checkstate = 0
 
                         # 发短信给技术经济人
-                        sms_url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/' + str(checkstate) + '/' + phone
+                        sms_url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/' + str(
+                            checkstate) + '/' + phone
                         sms_data = {
                             'type': type,
                             'name': project.project_name,
@@ -853,8 +850,10 @@ def upCheckinfo(self, request):
     return JsonResponse({"state": 1, "msg": "审核成功"})
 
 
-
-class ProjectCommonCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixin,viewsets.GenericViewSet):
+class ProjectCommonCheckInfoViewSet(mixins.UpdateModelMixin, mixins.ListModelMixin, viewsets.GenericViewSet):
+    '''
+    项目立项审核 项目上传合同审核 项目标书审核 项目固化审核 项目终止审核
+    '''
     queryset = ProjectCheckInfo.objects.filter(cstate=0).order_by('p_serial')
     serializer_class = ProjectCheckInfoSerializer
 
@@ -866,7 +865,6 @@ class ProjectCommonCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixi
     ordering_fields = ("project_code", "step_code")
     filter_fields = ("project_code", "step_code", "substep_code")
     search_fields = ("project_code", "step_code", "substep_code")
-
 
     def list(self, request, *args, **kwargs):
         step_code = request.GET.get('step_code')
@@ -880,11 +878,10 @@ class ProjectCommonCheckInfoViewSet(mixins.UpdateModelMixin,mixins.ListModelMixi
         return getCommonCheckInfo(self, request, step_code, substep_code)
 
     def update(self, request, *args, **kwargs):
-        return upCheckinfo(self,request)
+        return upCheckinfo(self, request)
 
 
-
-def getCommonCheckInfo(self,request, step_code, substep_code):
+def getCommonCheckInfo(self, request, step_code, substep_code):
     step_code = int(step_code)
     substep_code = int(substep_code)
 
@@ -976,7 +973,6 @@ class ProjectStepInfoViewSet(viewsets.ModelViewSet):
     search_fields = ("project_code", "step_code")
 
 
-
 class ProjectRrInfoViewSet(viewsets.ModelViewSet):
     '''项目需求/成果信息'''
     queryset = ProjectRrInfo.objects.all()
@@ -1031,3 +1027,65 @@ class ProjectTeamInfoViewSet(viewsets.ModelViewSet):
     ordering_fields = ("team_code", "insert_time")
     filter_fields = ("project_code", "team_code", "insert_time")
     search_fields = ("team_code", "insert_time")
+
+
+class ProjectMatchCheckInfoViewSet(viewsets.ModelViewSet):
+    '''立项匹配信息审核'''
+    queryset = ReqMatchInfo.objects.filter(~Q(rm_state=0)).order_by("-rm_serial")
+    serializer_class = ReqMatchInfoSerializer
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("rm_code", "rm_title")
+    filter_fields = ("rm_code", "rm_title")
+    search_fields = ("rm_code", "rm_title")
+
+    def update(self, request, *args, **kwargs):
+        return upCheckMatchinfo(self, request)
+
+
+def upCheckMatchinfo(self, request):
+    data = request.data
+
+    cstate = data['cstate']  # 1:审核通过 -1:审核不通过
+    if cstate != 1 and cstate != -1:
+        return JsonResponse({'state': 0, 'msg': '请确认审核是否通过'})
+
+    rm_code = data['rm_code']
+    cmsg = data['cmsg']
+
+    rm_state = 4
+    check_state = 2
+    if cstate == 1:
+        rm_state = 2
+        check_state = 1
+
+    # 建立事物机制
+    with transaction.atomic():
+        # 创建一个保存点
+        save_id = transaction.savepoint()
+        # 创建历史记录表
+        try:
+            # 项目审核信息表
+            rmi = ReqMatchInfo.objects.get(rm_code=rm_code, rm_state=1)
+            rmi.rm_state = rm_state
+            rmi.save()
+
+            mcis = MatchCheckInfo.objects.filter(rm_code=rm_code).order_by("-serial")
+            if mcis != None and len(mcis) > 0:
+                mci = mcis[0]
+                mci.check_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                mci.check_state = check_state
+                mci.check_memo = cmsg
+                mci.checker = request.user.account
+                mci.save()
+
+            transaction.savepoint_commit(save_id)
+        except Exception as e:
+            transaction.savepoint_rollback(save_id)
+            fail_msg = "审核失败%s" % str(e)
+            return JsonResponse({"state": 0, "msg": fail_msg})
+
+    return JsonResponse({"state": 1, "msg": "审核成功"})
