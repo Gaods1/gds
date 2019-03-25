@@ -43,6 +43,10 @@ class ContacctInformation(models.Model):
     district_id = models.IntegerField()
     name = models.CharField(max_length=64)
 
+    @property
+    def city(self):
+        return SystemDistrict.objects.get(district_id=self.district_id).district_name
+
     class Meta:
         managed = True
         db_table = 'contact_information'

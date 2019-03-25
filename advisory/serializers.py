@@ -34,5 +34,6 @@ class ContacctInformationSerializer(PatclubModelSerializer):
                   'tel',
                   'email',
                   'district_id',
+                  'city',
                   'name'
         ]
