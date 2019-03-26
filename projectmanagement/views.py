@@ -13,6 +13,7 @@ import time
 import requests
 import re
 import sys
+import random
 
 from .serializers import *
 from django.db import connection, transaction
@@ -164,7 +165,7 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
                 sql = "select * from project_substep_detail_info order by p_serial desc limit 1"
                 raw_queryset = ProjectCheckInfo.objects.raw(sql)
                 projectsubstepdetailinfo = \
-                ProjectSubstepDetailInfo.objects.filter(p_serial__in=[i.p_serial for i in raw_queryset])[0]
+                    ProjectSubstepDetailInfo.objects.filter(p_serial__in=[i.p_serial for i in raw_queryset])[0]
                 substep_serial = projectsubstepdetailinfo.substep_serial + 1
 
                 # 项目审核流水表
@@ -235,6 +236,7 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
         # # dept_code = 'olcCzXtqapyOJzTwhM1y3338PK4l5aJZ'
         #
         # # 只要返回空列表我就认为你的部门是一级部门
+        # dept_code = request.user.dept_code
         # dept_codes = get_dept_codes(dept_code);
         #
         #
@@ -1082,6 +1084,23 @@ def upCheckMatchinfo(self, request):
                 mci.checker = request.user.account
                 mci.save()
 
+            # 如果没有技术经济人就随机指定一个技术经济人
+            rmbis = ReqMatchBrokerInfo.objects.filter(rm_code=rm_code)
+            if rmbis == None or len(rmbis) <= 0:
+                brokers = get_current_brokers(self, request)
+                if brokers != None and len(brokers) > 0:
+                    brokercount = len(brokers)
+                    # 随机分派
+                    broker = brokers[random.randint(0, brokercount - 1)]
+
+                    req_match_broker_data = {}
+                    req_match_broker_data['rm_code'] = rm_code
+                    req_match_broker_data['broker'] = broker
+                    req_match_broker_data['leader_tag'] = 1
+                    req_match_broker_data['creater'] = request.user.account_code
+                    req_match_broker_data['insert_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                    ReqMatchBrokerInfo.objects.create(**req_match_broker_data)
+
             transaction.savepoint_commit(save_id)
         except Exception as e:
             transaction.savepoint_rollback(save_id)
@@ -1089,3 +1108,23 @@ def upCheckMatchinfo(self, request):
             return JsonResponse({"state": 0, "msg": fail_msg})
 
     return JsonResponse({"state": 1, "msg": "审核成功"})
+
+
+def get_current_brokers(self, request):
+    dept_code = request.user.dept_code
+    dept_codes = get_dept_codes(dept_code);
+    # 当前部门所有账号
+
+    AccountInfo.objects.only('dept_code')
+
+    if dept_codes == None or len(dept_codes) == 0:
+        account_codes = [account.account_code for account in
+                         AccountInfo.objects.all()]
+    else:
+        account_codes = [account.account_code for account in
+                         AccountInfo.objects.filter(dept_code__in=dept_codes)]
+    # 当前部门账号相关的技术经济人
+    brokers = [broker.broker_code for broker in
+               BrokerBaseinfo.objects.filter(account_code__in=account_codes)]
+
+    return brokers
