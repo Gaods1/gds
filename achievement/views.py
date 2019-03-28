@@ -1221,7 +1221,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     return Response({'detail':'请完善相关信息'},status=400)
                 # 形式类型判断论文编号
                 if r_form_type != 3:
-                    if not r_form_type:
+                    if not patent_number:
                         transaction.savepoint_rollback(save_id)
                         return Response({'detail': '请填写专利/论文编号'}, status=400)
 
