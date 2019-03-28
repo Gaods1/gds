@@ -33,7 +33,7 @@ class NewsGroupInfoViewSet(viewsets.ModelViewSet):
 
     ordering_fields = ("state")
     filter_fields = ("state","group_code")
-    search_fields = ("group_name")
+    search_fields = ["group_name"]
 
 
     def create(self, request, *args, **kwargs):
@@ -43,7 +43,7 @@ class NewsGroupInfoViewSet(viewsets.ModelViewSet):
                 form_data = request.data
                 group_code = gen_uuid32()
                 form_data['group_code'] = group_code
-                form_logo = form_data['logo']['logoPhoto'] if form_data['logo'] else ''
+                form_logo = form_data['logo'] if form_data['logo'] else ''
                 #栏目logo是否上传
                 if form_logo:
                     attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
@@ -124,16 +124,26 @@ class NewsGroupInfoViewSet(viewsets.ModelViewSet):
                 instance = self.get_object()
                 form_data = request.data
                 group_code = instance.group_code
-                if type(form_data['logo']).__name__ == 'dict' and 'logoPhoto' in form_data['logo']:
-                    form_logo = form_data['logo']['logoPhoto']
-                else:
+                attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
+                attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
+                upload_temp_pattern = re.compile(r''+attachment_temp_dir+'')
+                upload_pattern = re.compile(r''+attachment_dir+'')
+                upload_logo = upload_pattern.findall(form_data['logo'])
+                upload_temp_logo = upload_temp_pattern.findall(form_data['logo'])
+                form_logo = ''
+                if upload_logo:  #未更新已上传logo
                     form_logo = ''
+                    logoList = form_data['logo'].split('/')
+                    logo_file = logoList.pop()
+                    form_data['logo'] = logo_file #数据库只保存logo图片文件名及其后缀
+
+                if upload_temp_logo: #logo图片更新
+                    form_logo = form_data['logo']
+
                 # 栏目logo是否上传
                 if form_logo:
-                    attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
                     upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value  # 富文本编辑器图片上传的临时保存目录
                     upload_dir = ParamInfo.objects.get(param_name='upload_dir').param_value  # 富文本编辑器图片上传的正式保存目录
-                    attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
                     logo_temp_path = form_logo.replace(attachment_temp_dir, upload_temp_dir)
                     if not os.path.exists(logo_temp_path):
                         transaction.savepoint_rollback(save_id)
@@ -246,7 +256,7 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                 news_code = gen_uuid32()
                 form_data['news_code'] = news_code
                 # form_face_pic = form_data['face_pic']['guidePhoto'] if form_data['face_pic'] else ''
-                form_face_pic = form_data['face_pic_url']['guidePhoto'] if form_data['face_pic_url'] else ''
+                form_face_pic = form_data['face_pic'] if form_data['face_pic'] else ''
                 ########## 新闻导引图 ########
                 face_pic_dict = {}
                 if form_face_pic:
@@ -332,7 +342,8 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                     form_name = '{}{}'.format('attach',i)
                     formAttach_list = form_data[form_name]
                     if formAttach_list:
-                        form_attach = formAttach_list[0]
+                        # form_attach = formAttach_list[0]
+                        form_attach = formAttach_list[0]['response']['attachment'][0]
                         form_attach_list.append(form_attach)
                         form_attach_dict[form_attach] = form_name
 
@@ -457,9 +468,22 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                 # form_data['source'] = form_data['source'] if int(form_data['source']) else None
                 # form_data['check_state'] = form_data['check_state'] if int(form_data['check_state']) else None
                 form_data['top_time'] = form_data['top_time'] if form_data['top_time'] else None
-                # form_face_pic = form_data['face_pic']['guidePhoto'] if type(form_data['face_pic']).__name__ =='dict' else ''
-                form_face_pic = form_data['face_pic_url']['guidePhoto'] if type(form_data['face_pic_url']).__name__ == 'dict' else ''
-                # form_face_pic = form_data['face_pic'] if re.search(params_dict[3],form_data['face_pic']) else None
+                form_face_pic = form_data['face_pic'] if form_data['face_pic'] else ''
+                attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
+                attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
+                upload_temp_pattern = re.compile(r'' + attachment_temp_dir + '')
+                upload_pattern = re.compile(r'' + attachment_dir + '')
+                upload_facepic = upload_pattern.findall(form_data['face_pic'])
+                upload_temp_facepic = upload_temp_pattern.findall(form_data['face_pic'])
+                form_face_pic = ''
+                if upload_facepic:  # 未更新已上传face_pic
+                    facepicList = form_data['face_pic'].split('/')
+                    facepic_file = facepicList.pop()
+                    form_data['face_pic'] = facepic_file  # 数据库只保存face_pic图片文件名及其后缀
+
+                if upload_temp_facepic:  # face_pic图片更新
+                    form_face_pic = form_data['face_pic']
+
                 ########## 新闻导引图 ########
                 face_pic_dict = {}
                 face_pic_del = ''
@@ -588,11 +612,15 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                 attach_del = []
                 for i in range(1, 6):
                     form_name = '{}{}'.format('attach', i)
-                    formAttach_list = form_data[form_name] if form_name in form_data else ''
-                    if formAttach_list and type(formAttach_list[0]).__name__ == 'str':
-                        form_attach = formAttach_list[0]
-                        form_attach_list.append(form_attach)
-                        form_attach_dict[form_attach] = form_name
+                    formAttach_list = form_data[form_name] if form_data[form_name] else ''
+                    if formAttach_list:
+                        # form_attach = formAttach_list[0]
+                        if 'response' in formAttach_list[0]:
+                            form_attach = formAttach_list[0]['response']['attachment'][0]
+                            upload_tempAttach = upload_temp_pattern.findall(form_attach) #只处理更新的附件未更新的不作处理
+                            if upload_tempAttach:  # 附件更新
+                                form_attach_list.append(form_attach)
+                                form_attach_dict[form_attach] = form_name
 
                 if form_attach_list:
                     # params_dict = get_attach_params()
@@ -764,7 +792,7 @@ class PolicyGroupInfoViewSet(viewsets.ModelViewSet):
 
     ordering_fields = ("state")
     filter_fields = ("state","group_code")
-    search_fields = ("group_name")
+    search_fields = ("group_name",)
 
 
     def create(self, request, *args, **kwargs):
@@ -774,7 +802,7 @@ class PolicyGroupInfoViewSet(viewsets.ModelViewSet):
                 form_data = request.data
                 group_code = gen_uuid32()
                 form_data['group_code'] = group_code
-                form_logo = form_data['logo']['logoPhoto'] if form_data['logo'] else ''
+                form_logo = form_data['logo'] if form_data['logo'] else ''
                 #栏目logo是否上传
                 if form_logo:
                     attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
@@ -856,16 +884,25 @@ class PolicyGroupInfoViewSet(viewsets.ModelViewSet):
                 instance = self.get_object()
                 form_data = request.data
                 group_code = instance.group_code
-                if type(form_data['logo']).__name__ == 'dict' and 'logoPhoto' in form_data['logo']:
-                    form_logo = form_data['logo']['logoPhoto']
-                else:
+                attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
+                attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
+                upload_temp_pattern = re.compile(r'' + attachment_temp_dir + '')
+                upload_pattern = re.compile(r'' + attachment_dir + '')
+                upload_logo = upload_pattern.findall(form_data['logo'])
+                upload_temp_logo = upload_temp_pattern.findall(form_data['logo'])
+                form_logo = ''
+                if upload_logo:  # 未更新已上传logo
                     form_logo = ''
+                    logoList = form_data['logo'].split('/')
+                    logo_file = logoList.pop()
+                    form_data['logo'] = logo_file  # 数据库只保存logo图片文件名及其后缀
+
+                if upload_temp_logo:  # logo图片更新
+                    form_logo = form_data['logo']
                 # 栏目logo是否上传
                 if form_logo:
-                    attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
                     upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value  # 富文本编辑器图片上传的临时保存目录
                     upload_dir = ParamInfo.objects.get(param_name='upload_dir').param_value  # 富文本编辑器图片上传的正式保存目录
-                    attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
                     logo_temp_path = form_logo.replace(attachment_temp_dir, upload_temp_dir)
                     if not os.path.exists(logo_temp_path):
                         transaction.savepoint_rollback(save_id)
@@ -976,7 +1013,7 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                 form_data = request.data
                 policy_code = gen_uuid32()
                 form_data['policy_code'] = policy_code
-                form_face_pic = form_data['face_pic_url']['guidePhoto'] if form_data['face_pic_url'] else ''
+                form_face_pic = form_data['face_pic'] if form_data['face_pic'] else ''
                 # form_face_pic = form_data['face_pic']['guidePhoto'] if form_data['face_pic'] else ''
                 ########## 政策法规导引图 ########
                 face_pic_dict = {}
@@ -1063,7 +1100,8 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                     form_name = '{}{}'.format('attach',i)
                     formAttach_list = form_data[form_name]
                     if formAttach_list:
-                        form_attach = formAttach_list[0]
+                        # form_attach = formAttach_list[0]
+                        form_attach = formAttach_list[0]['response']['attachment'][0]
                         form_attach_list.append(form_attach)
                         form_attach_dict[form_attach] = form_name
 
@@ -1188,8 +1226,22 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                 form_data['top_time'] = form_data['top_time'] if form_data['top_time'] else None
                 # form_data['top_tag'] = form_data['top_tag'] if form_data['top_tag'] else None
                 # form_face_pic = form_data['face_pic']['guidePhoto'] if type(form_data['face_pic']).__name__ =='dict' else ''
-                form_face_pic = form_data['face_pic_url']['guidePhoto'] if type(form_data['face_pic_url']).__name__ == 'dict' else ''
-                # form_face_pic = form_data['face_pic'] if re.search(params_dict[3],form_data['face_pic']) else None
+                form_face_pic = form_data['face_pic'] if form_data['face_pic'] else ''
+                attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
+                attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
+                upload_temp_pattern = re.compile(r'' + attachment_temp_dir + '')
+                upload_pattern = re.compile(r'' + attachment_dir + '')
+                upload_facepic = upload_pattern.findall(form_data['face_pic'])
+                upload_temp_facepic = upload_temp_pattern.findall(form_data['face_pic'])
+                form_face_pic = ''
+                if upload_facepic:  # 未更新已上传face_pic
+                    facepicList = form_data['face_pic'].split('/')
+                    facepic_file = facepicList.pop()
+                    form_data['face_pic'] = facepic_file  # 数据库只保存face_pic图片文件名及其后缀
+
+                if upload_temp_facepic:  # face_pic图片更新
+                    form_face_pic = form_data['face_pic']
+
                 ########## 政策法规导引图 ########
                 face_pic_dict = {}
                 face_pic_del = ''
@@ -1318,11 +1370,15 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                 attach_del = []
                 for i in range(1, 6):
                     form_name = '{}{}'.format('attach', i)
-                    formAttach_list = form_data[form_name] if form_name in form_data else ''
-                    if formAttach_list  and type(formAttach_list[0]).__name__ == 'str':
-                        form_attach = formAttach_list[0]
-                        form_attach_list.append(form_attach)
-                        form_attach_dict[form_attach] = form_name
+                    formAttach_list = form_data[form_name] if form_data[form_name] else ''
+                    if formAttach_list:
+                        # form_attach = formAttach_list[0]
+                        if 'response' in formAttach_list[0]:
+                            form_attach = formAttach_list[0]['response']['attachment'][0]
+                            upload_tempAttach = upload_temp_pattern.findall(form_attach)  # 只处理更新的附件未更新的不作处理
+                            if upload_tempAttach:  # 附件更新
+                                form_attach_list.append(form_attach)
+                                form_attach_dict[form_attach] = form_name
 
                 if form_attach_list:
                     # params_dict = get_attach_params()
