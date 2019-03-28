@@ -81,7 +81,10 @@ class PersonViewSet(viewsets.ModelViewSet):
         form_data['account_code'] = request.data.get('account_code',None)
         serializer = self.get_serializer(data=form_data)
         serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
+        try:
+            self.perform_create(serializer)
+        except Exception as e:
+            return Response({"detail": "创建失败：关联帐号信息或已存在,%s" % str(e)}, status=400)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -241,7 +244,10 @@ class EnterpriseViewSet(viewsets.ModelViewSet):
 
                 serializer = self.get_serializer(data=form_data)
                 serializer.is_valid(raise_exception=True)
-                self.perform_create(serializer)
+                try:
+                    self.perform_create(serializer)
+                except Exception as e:
+                    return Response({"detail": "创建失败：关联帐号信息或已存在,%s" % str(e)}, status=400)
             except Exception as e:
                 transaction.savepoint_rollback(save_id)
                 return Response({"detail": "创建失败：%s" % str(e)})
@@ -352,7 +358,10 @@ class EnterpriseViewSet(viewsets.ModelViewSet):
                 # serializer = self.get_serializer(instance, data=request.data, partial=partial)
                 serializer = self.get_serializer(instance, data=form_dict, partial=partial)
                 serializer.is_valid(raise_exception=True)
-                self.perform_update(serializer)
+                try:
+                    self.perform_update(serializer)
+                except Exception as e:
+                    return Response({"detail": "创建失败：%s" % str(e)}, status=400)
             except Exception as e:
                 transaction.savepoint_rollback(save_id)
                 return Response({"detail": "更新失败：%s" % str(e)})
