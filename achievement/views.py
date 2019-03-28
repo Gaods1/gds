@@ -1670,12 +1670,15 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         os.makedirs(url_x_c)
                     if not value:
                         continue
+                    if relative_path_front in value:
+                        continue
+
                     url_l = value.split('/')
                     url_file = url_l[-1]
 
-                    element_a = AttachmentFileinfo.objects.filter(tcode=tcode,ecode=serializer_ecode,file_name=url_file)
-                    if len(element_a)!=0:
-                        continue
+                    #element_a = AttachmentFileinfo.objects.filter(tcode=tcode,ecode=serializer_ecode,file_name=url_file)
+                    #if len(element_a)!=0:
+                        #continue
                     url_j_jpg = absolute_path+'temporary/' + account_code_office + '/' + url_file
                     if not os.path.exists(url_j_jpg):
                         transaction.savepoint_rollback(save_id)
@@ -1712,14 +1715,17 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         if not os.path.exists(url_x_a):
                             os.makedirs(url_x_a)
 
+                        if relative_path_front in attachment:
+                            continue
+
                         url_l = attachment.split('/')
                         url_file = url_l[-1]
 
                         url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
 
-                        element_a = AttachmentFileinfo.objects.filter(tcode=tcode_attachment,ecode=serializer_ecode,file_name=url_file)
-                        if len(element_a)!=0:
-                            continue
+                        #element_a = AttachmentFileinfo.objects.filter(tcode=tcode_attachment,ecode=serializer_ecode,file_name=url_file)
+                        #if len(element_a)!=0:
+                            #continue
 
                         url_j = absolute_path + 'temporary/' + account_code_office + '/'  + url_file
                         if not os.path.exists(url_j):
