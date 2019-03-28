@@ -1221,7 +1221,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     return Response({'detail':'请完善相关信息'},status=400)
                 # 形式类型判断论文编号
                 if r_form_type != 3:
-                    if not r_form_type:
+                    if not patent_number:
                         transaction.savepoint_rollback(save_id)
                         return Response({'detail': '请填写专利/论文编号'}, status=400)
 
@@ -1670,21 +1670,26 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         os.makedirs(url_x_c)
                     if not value:
                         continue
+                    if relative_path_front in value:
+                        continue
+
                     url_l = value.split('/')
                     url_file = url_l[-1]
 
-                    element_a = AttachmentFileinfo.objects.filter(tcode=tcode,ecode=serializer_ecode,file_name=url_file)
-                    if len(element_a)!=0:
-                        continue
+                    #element_a = AttachmentFileinfo.objects.filter(tcode=tcode,ecode=serializer_ecode,file_name=url_file)
+                    #if len(element_a)!=0:
+                        #continue
                     url_j_jpg = absolute_path+'temporary/' + account_code_office + '/' + url_file
                     if not os.path.exists(url_j_jpg):
-                        transaction.savepoint_rollback(save_id)
-                        return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
+                        #transaction.savepoint_rollback(save_id)
+                        #return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
+                        continue
 
                     url_x_jpg = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode, url_file)
                     if os.path.exists(url_x_jpg):
-                        transaction.savepoint_rollback(save_id)
-                        return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
+                        #transaction.savepoint_rollback(save_id)
+                        #return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
+                        continue
 
                     #收集临时路径和正式路径
                     dict_items[url_j_jpg]=url_x_jpg
@@ -1712,26 +1717,31 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         if not os.path.exists(url_x_a):
                             os.makedirs(url_x_a)
 
+                        if relative_path_front in attachment:
+                            continue
+
                         url_l = attachment.split('/')
                         url_file = url_l[-1]
 
                         url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
 
-                        element_a = AttachmentFileinfo.objects.filter(tcode=tcode_attachment,ecode=serializer_ecode,file_name=url_file)
-                        if len(element_a)!=0:
-                            continue
+                        #element_a = AttachmentFileinfo.objects.filter(tcode=tcode_attachment,ecode=serializer_ecode,file_name=url_file)
+                        #if len(element_a)!=0:
+                            #continue
 
                         url_j = absolute_path + 'temporary/' + account_code_office + '/'  + url_file
                         if not os.path.exists(url_j):
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
+                            #transaction.savepoint_rollback(save_id)
+                            #return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
+                            continue
 
                         url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment,
                                                        serializer_ecode, url_file)
 
                         if os.path.exists(url_x):
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
+                            #transaction.savepoint_rollback(save_id)
+                            #return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
+                            continue
 
                         url_x_f = url_x.replace(relative_path, relative_path_front)
                         list2.append(url_x_f)
@@ -1751,12 +1761,14 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
 
                             if not os.path.exists(url_j_pdf):
-                                transaction.savepoint_rollback(save_id)
-                                return Response({'detail': '该临时路径下不存在该pdf文件,可能系统没有生成pdf文件'}, status=400)
+                                #transaction.savepoint_rollback(save_id)
+                                #return Response({'detail': '该临时路径下不存在该pdf文件,可能系统没有生成pdf文件'}, status=400)
+                                continue
 
                             if os.path.exists(url_x_pdf):
-                                transaction.savepoint_rollback(save_id)
-                                return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
+                                #transaction.savepoint_rollback(save_id)
+                                #return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
+                                continue
 
                             # 将doc临时目录转移到正式目录
                             dict_items[url_j]=url_x
@@ -2329,23 +2341,27 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         os.makedirs(url_x_c)
                     if not value:
                         continue
+                    if relative_path_front in value:
+                        continue
                     url_l = value.split('/')
                     url_file = url_l[-1]
-                    element_a = AttachmentFileinfo.objects.filter(tcode=tcode, ecode=serializer_ecode,
-                                                                  file_name=url_file)
-                    if len(element_a) != 0:
-                        continue
+                    #element_a = AttachmentFileinfo.objects.filter(tcode=tcode, ecode=serializer_ecode,
+                                                                  #file_name=url_file)
+                    #if len(element_a) != 0:
+
 
                     url_j_jpg = absolute_path + 'temporary/' + account_code_office + '/' + url_file
                     if not os.path.exists(url_j_jpg):
-                        transaction.savepoint_rollback(save_id)
-                        return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
+                        #transaction.savepoint_rollback(save_id)
+                        #return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
+                        continue
 
                     url_x_jpg = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode,
                                                        url_file)
                     if os.path.exists(url_x_jpg):
-                        transaction.savepoint_rollback(save_id)
-                        return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
+                        #transaction.savepoint_rollback(save_id)
+                        #return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
+                        continue
 
                     # 收集临时路径和正式路径
                     dict_items[url_j_jpg] = url_x_jpg
@@ -2368,28 +2384,31 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                         if not os.path.exists(url_x_a):
                             os.makedirs(url_x_a)
+
+                        if relative_path_front in attachment:
+                            continue
                         url_l = attachment.split('/')
                         url_file = url_l[-1]
 
-                        element_a = AttachmentFileinfo.objects.filter(tcode=tcode_attachment, ecode=serializer_ecode,
-                                                                      file_name=url_file)
-                        if len(element_a) != 0:
-                            continue
+                        #element_a = AttachmentFileinfo.objects.filter(tcode=tcode_attachment, ecode=serializer_ecode,
+                                                                      #file_name=url_file)
+                        #if len(element_a) != 0:
+                            #continue
 
                         url_file_pdf = os.path.splitext(url_file)[0] + '.pdf'
 
                         url_j = absolute_path + 'temporary/' + account_code_office + '/' + url_file
                         if not os.path.exists(url_j):
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
-
+                            #transaction.savepoint_rollback(save_id)
+                            #return Response({'detail': '该临时路径下不存在该文件,可能文件名错误'}, status=400)
+                            continue
                         url_x = '{}{}/{}/{}/{}'.format(relative_path, param_value, tcode_attachment,
                                                        serializer_ecode, url_file)
 
                         if os.path.exists(url_x):
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
-
+                            #transaction.savepoint_rollback(save_id)
+                            #return Response({'detail': '该正式路径下存在该文件,请先删除'}, status=400)
+                            continue
                         url_x_f = url_x.replace(relative_path, relative_path_front)
                         list2.append(url_x_f)
 
@@ -2408,13 +2427,13 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                             url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
 
                             if not os.path.exists(url_j_pdf):
-                                transaction.savepoint_rollback(save_id)
-                                return Response({'detail': '该临时路径下不存在该pdf文件,可能系统没有生成pdf文件'}, status=400)
-
+                                #transaction.savepoint_rollback(save_id)
+                                #return Response({'detail': '该临时路径下不存在该pdf文件,可能系统没有生成pdf文件'}, status=400)
+                                continue
                             if os.path.exists(url_x_pdf):
-                                transaction.savepoint_rollback(save_id)
-                                return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
-
+                                #transaction.savepoint_rollback(save_id)
+                                #return Response({'detail': '该正式路径下存在该pdf文件,请先删除'}, status=400)
+                                continue
                             # 将doc临时目录转移到正式目录
                             dict_items[url_j]=url_x
                             dict_items[url_j_pdf] = url_x_pdf
