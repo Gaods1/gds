@@ -29,6 +29,13 @@ class MessageInformation(models.Model):
         url = '/{}?serial={}'.format(type_index[self.type], serial)
         return url
 
+    @property
+    def color(self):
+        if (datetime.datetime.now() - self.insert_time).days >= 3:
+            return 1
+        else:
+            return 0
+
     class Meta:
         managed = True
         db_table = 'message_information'
@@ -37,8 +44,8 @@ class MessageInformation(models.Model):
 #  联系我们
 class ContacctInformation(models.Model):
     serial = models.AutoField(primary_key=True)
-    phone = models.CharField(max_length=32, validators=[validate_tel])
-    tel = models.CharField(max_length=32, blank=True, null=True, validators=[validate_mobile])
+    phone = models.CharField(max_length=32, validators=[validate_mobile])
+    tel = models.CharField(max_length=32, blank=True, null=True, validators=[validate_tel])
     email = models.CharField(max_length=32, blank=True, null=True, validators=[validate_email])
     district_id = models.IntegerField()
     name = models.CharField(max_length=64)

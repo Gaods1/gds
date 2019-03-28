@@ -18,6 +18,7 @@ class MessageInformationSerializer(PatclubModelSerializer):
                   'phone',
                   'email',
                   'state',
+                  'color',
                   'insert_time',
                   'account_code',
                   'account'
