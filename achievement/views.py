@@ -18,6 +18,7 @@ from .serializers import *
 from .models import *
 from .utils import massege
 from django.db.models import Q
+from django.db import connection
 
 import logging
 logger = logging.getLogger('django')
@@ -648,21 +649,29 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 # 创建一个保存点
                 save_id = transaction.savepoint()
                 # 创建技术经济人跟踪表
+                bcode = data.pop('broker_code', None)
+                if not bcode:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": '请选择技术经纪人'}, status=400)
+
                 try:
-                    bcode = data.pop('broker_code',None)
-                    if not bcode:
-                        transaction.savepoint_rollback(save_id)
-                        return Response({"detail": '请选择技术经纪人'}, status=400)
-                    Requirement_Broker = Requirement_Broker_Info.objects.create(
-                        rcode=instance.rr_code,
-                        bcode=bcode,
-                        state=1,
-                        creater=request.user.account,
-                    )
+                    ss = Requirement_Broker_Info.objects.filter(rcode=instance.rr_code)
+                    if not ss:
+                        Requirement_Broker = Requirement_Broker_Info.objects.create(
+                            rcode=instance.rr_code,
+                            bcode=bcode,
+                            state=1,
+                            creater=request.user.account,
+                        )
+                    else:
+                        Requirement_Broker_Info.objects.filter(rcode=instance.rr_code).update(bcode=bcode)
+                        #ss[0].bcode=bcode
+                        #ss[0].save()
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": '需求审核技术经纪人表创建失败%s' % str(e)}, status=400)
+
 
                 # 创建历史记录表
                 try:
