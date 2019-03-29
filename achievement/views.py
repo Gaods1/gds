@@ -71,7 +71,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         dept_code_str = get_detcode_str(dept_code)
         if dept_code_str:
             #SQL = "select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.dept_code in ("+dept_code_str+") and rr_apply_history.type=1"
-            SQL = "select rr_apply_history.* \
+            SQL = "select rr_apply_history.serial \
             		from rr_apply_history \
             		inner join account_info \
             		on account_info.account_code=rr_apply_history.account_code \
@@ -618,7 +618,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
         dept_code_str = get_detcode_str(dept_code)
         if dept_code_str:
             #SQL = "select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.dept_code in ("+dept_code_str+") and rr_apply_history.type=1"
-            SQL = "select rr_apply_history.* \
+            SQL = "select rr_apply_history.serial \
             		from rr_apply_history \
             		inner join account_info \
             		on account_info.account_code=rr_apply_history.account_code \
@@ -1153,7 +1153,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
         dept_code = self.request.user.dept_code
         dept_code_str = get_detcode_str(dept_code)
         if dept_code_str:
-            SQL = "select results_info.* \
+            SQL = "select results_info.serial \
             		from results_info \
             		inner join account_info \
             		on account_info.account_code=results_info.account_code \
@@ -1839,12 +1839,13 @@ class ManagementrViewSet(viewsets.ModelViewSet):
         dept_code = self.request.user.dept_code
         dept_code_str = get_detcode_str(dept_code)
         if dept_code_str:
-            SQL = "select requirements_info.* \
-            		from requirements_info \
-            		inner join account_info \
-            		on account_info.account_code=requirements_info.account_code \
-            		where account_info.dept_code in ({dept_s}) \
-            		and requirements_info.show_state in (1,2)"
+            SQL = "select r.serial \
+            		from requirements_info as r \
+            		inner join account_info as a \
+            		on a.account_code=r.account_code \
+            		where a.dept_code in ({dept_s}) \
+            		and r.show_state in (1,2)"
+            s = SQL.format(dept_s=dept_code_str)
 
             raw_queryset = RequirementsInfo.objects.raw(SQL.format(dept_s=dept_code_str))
             consult_reply_set = RequirementsInfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('-show_state')
