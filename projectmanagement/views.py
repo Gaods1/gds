@@ -1058,7 +1058,7 @@ def upCheckMatchinfo(self, request):
     rm_code = data['rm_code']
     cmsg = data['cmsg']
 
-    rm_state = 4
+    rm_state = 3
     check_state = 2
     if cstate == 1:
         rm_state = 2
@@ -1075,14 +1075,18 @@ def upCheckMatchinfo(self, request):
             rmi.rm_state = rm_state
             rmi.save()
 
-            mcis = MatchCheckInfo.objects.filter(rm_code=rm_code).order_by("-serial")
-            if mcis != None and len(mcis) > 0:
-                mci = mcis[0]
-                mci.check_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-                mci.check_state = check_state
-                mci.check_memo = cmsg
-                mci.checker = request.user.account
-                mci.save()
+            # mcis = MatchCheckInfo.objects.filter(rm_code=rm_code).order_by("-serial")
+            # if mcis != None and len(mcis) > 0:
+            #     mci = mcis[0]
+            match_check_info_data = {}
+            match_check_info_data["rm_code"] = rm_code
+            match_check_info_data["match_pmemo"] = rmi.rm_abstract
+            match_check_info_data["match_pmody"] = rmi.rm_body
+            match_check_info_data["check_time"] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            match_check_info_data["check_state"] = check_state
+            match_check_info_data["check_memo"] = cmsg
+            match_check_info_data["checker"] = request.user.account
+            MatchCheckInfo.objects.create(**match_check_info_data)
 
             # 如果没有技术经济人就随机指定一个技术经济人
             rmbis = ReqMatchBrokerInfo.objects.filter(rm_code=rm_code)

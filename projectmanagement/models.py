@@ -444,10 +444,10 @@ class MatchCheckInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     rm_code = models.CharField(max_length=32, blank=True, null=True)
     match_pmemo = models.TextField(blank=True, null=True)
-    match_pmody = models.BinaryField(blank=True, null=True)
+    match_pmody = models.TextField(blank=True, null=True)
     check_time = models.DateTimeField(blank=True, null=True)
     check_state = models.IntegerField(blank=True, null=True)
-    check_memo = models.BinaryField(blank=True, null=True)
+    check_memo = models.TextField(blank=True, null=True)
     checker = models.CharField(max_length=64, blank=True, null=True)
 
     class Meta:
@@ -491,7 +491,7 @@ class ReqMatchInfo(models.Model):
     rm_object_type = models.IntegerField(blank=True, null=True)
     account_code = models.CharField(max_length=64, blank=True, null=True)
     rm_abstract = models.TextField(blank=True, null=True)
-    rm_body = models.BinaryField(blank=True, null=True)
+    rm_body = models.TextField(blank=True, null=True)
     rm_type = models.IntegerField(blank=True, null=True)
     rm_time = models.DateTimeField(blank=True, null=True)
     rm_state = models.IntegerField(blank=True, null=True)
@@ -499,7 +499,7 @@ class ReqMatchInfo(models.Model):
     insert_time = models.DateTimeField(blank=True, null=True)
 
     def check_info(self):
-        rmi = ReqMatchInfo.objects.filter(rm_code=self.rm_code).order_by("-serial")
+        rmi = MatchCheckInfo.objects.filter(rm_code=self.rm_code).order_by("-serial")
         if rmi != None and len(rmi)>0:
             return rmi[0]
         return {}
