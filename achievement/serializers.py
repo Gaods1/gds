@@ -128,6 +128,7 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
                   'insert_time',
                   'account_code',
                   'r_abstract_detail',
+                  'patent_number',
                   'mcode',
                   'mname',
                   'Attach',

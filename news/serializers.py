@@ -30,6 +30,11 @@ class NewsinfoSerializers(PatclubModelSerializer):
     attach3 = serializers.ListField(read_only=True)
     attach4 = serializers.ListField(read_only=True)
     attach5 = serializers.ListField(read_only=True)
+    release_date = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True)
+    up_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True)
+    down_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True)
+    check_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True)
+    top_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True)
 
     class Meta:
         model = NewsInfo
@@ -95,6 +100,8 @@ class PolicyInfoSerializers(PatclubModelSerializer):
     attach3 = serializers.ListField(read_only=True)
     attach4 = serializers.ListField(read_only=True)
     attach5 = serializers.ListField(read_only=True)
+    release_date = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True)
+    top_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True)
 
     class Meta:
         model = PolicyInfo

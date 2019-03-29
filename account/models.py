@@ -9,18 +9,17 @@ import copy
 from misc.validate import validate_mobile, validate_account, validate_email, validate_id
 
 
-
 # 机构部门表
 class Deptinfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    dept_code = models.CharField(unique=True, max_length=32,default=gen_uuid32)
+    dept_code = models.CharField(unique=True, max_length=32, default=gen_uuid32)
     dept_name = models.CharField(verbose_name='机构部门名称', unique=True, max_length=64,)
     pdept_code = models.CharField(max_length=32, default="0")
     dept_level = models.IntegerField(default=1)
     dept_memo = models.CharField(max_length=255, blank=True, null=True)
     region_code = models.IntegerField(blank=True, null=True)
     manager = models.CharField(verbose_name='管理人姓名', max_length=64,)
-    manager_mobile = models.CharField(verbose_name='管理人手机号', max_length=16,validators=[validate_mobile])
+    manager_mobile = models.CharField(verbose_name='管理人手机号', max_length=16, validators=[validate_mobile])
     addr = models.CharField(max_length=128, blank=True, null=True)
     state = models.IntegerField(default=1)
     insert_time = models.DateTimeField(auto_now_add=True)
@@ -65,7 +64,7 @@ class AccountInfoManager(BaseUserManager):
     def create_superuser(self, password, **extra_fields):
         extra_fields.setdefault('creater', extra_fields.get('account', None))
         user = self._create_user(password, **extra_fields)
-        role = RoleInfo.objects.create(role_name='系统管理员', role_memo = '系统管理员拥有最大权限', creater=user.account)
+        role = RoleInfo.objects.create(role_name='系统管理员', role_memo='系统管理员拥有最大权限', creater=user.account)
         user_role = AccountRoleInfo.objects.create(account=user.account, role_code=role.role_code, creater=user.account)
         return user
 
@@ -186,7 +185,7 @@ class RoleInfo(models.Model):
 
     @property
     def func(self):
-        func_code =[i.func_code for i in RoleFuncInfo.objects.filter(role_code=self.role_code, state=1)]
+        func_code = [i.func_code for i in RoleFuncInfo.objects.filter(role_code=self.role_code, state=1)]
         func = FunctionInfo.objects.filter(func_code__in=func_code, state=1)
         return func
 

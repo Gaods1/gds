@@ -3,20 +3,17 @@ from achievement.models import RrApplyHistory
 from expert.models import BrokerBaseinfo, ExpertBaseinfo, ProjectTeamBaseinfo
 from consult.models import ResultsInfo
 from achievement.models import RequirementsInfo
-from public_models.models import MajorUserinfo,MajorInfo
+from public_models.models import MajorUserinfo, MajorInfo
 from django.db.models import Q
-
 
 
 # Create your models here.
 
 
-
-
 # 项目基本信息表 *
 class ProjectInfo(models.Model):
     pserial = models.AutoField(primary_key=True)
-    project_code = models.CharField(verbose_name='项目代码',unique=True, max_length=64, blank=True, null=True)
+    project_code = models.CharField(verbose_name='项目代码', unique=True, max_length=64, blank=True, null=True)
     project_name = models.CharField(max_length=255, blank=True, null=True)
     project_start_time = models.DateTimeField(blank=True, null=True)
     project_from = models.IntegerField(blank=True, null=True)
@@ -39,8 +36,9 @@ class ProjectInfo(models.Model):
     # 项目当前子步骤
     @property
     def substep_info(self):
-        q = ProjectSubstepInfo.objects.filter(Q(project_code=self.project_code),Q(step_code = self.project_state),Q(substep_code=self.project_sub_state)).order_by('-p_serial')
-        if q != None and len(q)>0:
+        q = ProjectSubstepInfo.objects.filter(Q(project_code=self.project_code), Q(step_code=self.project_state),
+                                              Q(substep_code=self.project_sub_state)).order_by('-p_serial')
+        if q != None and len(q) > 0:
             substep_info = q[0]
         else:
             substep_info = {}
@@ -49,7 +47,10 @@ class ProjectInfo(models.Model):
     # 项目当前子步骤流水
     @property
     def substep_serial_info(self):
-        substep_serial_info = ProjectSubstepSerialInfo.objects.filter(project_code=self.project_code,step_code=self.project_state,substep_code=self.project_sub_state).order_by('-p_serial')
+        substep_serial_info = ProjectSubstepSerialInfo.objects.filter(project_code=self.project_code,
+                                                                      step_code=self.project_state,
+                                                                      substep_code=self.project_sub_state).order_by(
+            '-p_serial')
         # if q != None and len(q)>0:
         #     substep_serial_info = q[0]
         # else:
@@ -70,7 +71,7 @@ class ProjectInfo(models.Model):
     @property
     def broker_info(self):
         q = ProjectBrokerInfo.objects.filter(project_code=self.project_code)
-        if q != None and len(q)>0:
+        if q != None and len(q) > 0:
             broker_info = q[0]
         else:
             broker_info = {}
@@ -98,8 +99,8 @@ class ProjectInfo(models.Model):
 
     @property
     def majors(self):
-        mus = MajorUserinfo.objects.filter(mtype=2,user_type=11,user_code=self.project_code).values('mcode')
-        majors = MajorInfo.objects.filter(mtype=2,mcode__in=mus).values('mcode','mname','pmcode')
+        mus = MajorUserinfo.objects.filter(mtype=2, user_type=11, user_code=self.project_code).values('mcode')
+        majors = MajorInfo.objects.filter(mtype=2, mcode__in=mus).values('mcode', 'mname', 'pmcode')
         return majors
 
     class Meta:
@@ -118,7 +119,6 @@ class ProjectCheckInfo(models.Model):
     checker = models.CharField(max_length=32, blank=True, null=True)
     ctime = models.DateTimeField(blank=True, null=True)
 
-
     @property
     def project_info(self):
         return ProjectInfo.objects.get(project_code=self.project_code)
@@ -127,7 +127,8 @@ class ProjectCheckInfo(models.Model):
     @property
     def substep_serial_info(self):
         q = ProjectSubstepSerialInfo.objects.filter(project_code=self.project_code, step_code=self.step_code,
-                                                    substep_code=self.substep_code,substep_serial=self.substep_serial).order_by('-p_serial')
+                                                    substep_code=self.substep_code,
+                                                    substep_serial=self.substep_serial).order_by('-p_serial')
         if q != None and len(q) > 0:
             substep_serial_info = q[0]
         else:
@@ -138,7 +139,8 @@ class ProjectCheckInfo(models.Model):
         managed = False
         db_table = 'project_check_info'
 
-#项目步骤信息表
+
+# 项目步骤信息表
 class ProjectStepInfo(models.Model):
     p_serial = models.AutoField(primary_key=True)
     project_code = models.CharField(max_length=64, blank=True, null=True)
@@ -146,12 +148,13 @@ class ProjectStepInfo(models.Model):
     btime = models.DateTimeField(blank=True, null=True)
     etime = models.DateTimeField(blank=True, null=True)
     step_state = models.IntegerField(blank=True, null=True)
-    step_msg = models.CharField(max_length=255,blank=True, null=True)
+    step_msg = models.CharField(max_length=255, blank=True, null=True)
 
     # 项目子步骤
     @property
     def substep_info(self):
-        q = ProjectSubstepInfo.objects.filter(project_code=self.project_code, step_code=self.step_code).order_by('substep_code')
+        q = ProjectSubstepInfo.objects.filter(project_code=self.project_code, step_code=self.step_code).order_by(
+            'substep_code')
         return q
 
     class Meta:
@@ -160,7 +163,7 @@ class ProjectStepInfo(models.Model):
         unique_together = ('project_code', 'step_code')
 
 
-#项目子步骤信息表
+# 项目子步骤信息表
 class ProjectSubstepInfo(models.Model):
     p_serial = models.AutoField(primary_key=True)
     project_code = models.CharField(max_length=64, blank=True, null=True)
@@ -169,7 +172,7 @@ class ProjectSubstepInfo(models.Model):
     btime = models.DateTimeField(blank=True, null=True)
     etime = models.DateTimeField(blank=True, null=True)
     substep_state = models.IntegerField(blank=True, null=True)
-    step_msg = models.CharField(max_length=255,blank=True, null=True)
+    step_msg = models.CharField(max_length=255, blank=True, null=True)
 
     # 子步骤附件 子步骤可能有很多流水(子步骤有多个操作类型) 每条流水有多个附件
     @property
@@ -188,24 +191,35 @@ class ProjectSubstepInfo(models.Model):
             ) as AA
             group by AA.project_code,AA.step_code,AA.substep_code,AA.substep_serial_type
         """
-        sql = sql.format(project_code=self.project_code,step_code=self.step_code,substep_code=self.substep_code)
-        raw_queryset =  ProjectSubstepSerialInfo.objects.raw(sql)
+        sql = sql.format(project_code=self.project_code, step_code=self.step_code, substep_code=self.substep_code)
+        raw_queryset = ProjectSubstepSerialInfo.objects.raw(sql)
 
         fjs = ProjectSubstepFileInfo.objects.filter(substep_serial__in=[i.substep_serial for i in raw_queryset],
                                                     project_code=self.project_code,
                                                     step_code=self.step_code,
                                                     substep_code=self.substep_code)
-
         if fjs == None:
             fjs = []
         return fjs
+
+    # # 项目审核信息
+    # @property
+    # def check_info(self):
+    #     q = ProjectCheckInfo.objects.filter(project_code=self.project_code, step_code=self.step_code,
+    #                                         substep_code=self.substep_code).values('project_code', 'cstate','cmsg').order_by('-p_serial')
+    #     if q != None and len(q) > 0:
+    #         check_info = q[0]
+    #     else:
+    #         check_info = {}
+    #     return check_info
 
     class Meta:
         managed = False
         db_table = 'project_substep_info'
         unique_together = ('project_code', 'step_code', 'substep_code')
 
-#项目子步骤流水信息表
+
+# 项目子步骤流水信息表
 class ProjectSubstepSerialInfo(models.Model):
     p_serial = models.AutoField(primary_key=True)
     project_code = models.CharField(max_length=64, blank=True, null=True)
@@ -215,13 +229,15 @@ class ProjectSubstepSerialInfo(models.Model):
     submit_time = models.DateTimeField(blank=True, null=True)
     substep_serial_type = models.IntegerField(blank=True, null=True)
     substep_serial_state = models.IntegerField(blank=True, null=True)
-    step_msg = models.CharField(max_length=255,blank=True, null=True)
+    step_msg = models.CharField(max_length=255, blank=True, null=True)
 
-    #项目审核信息
+    # 项目审核信息
     @property
     def check_info(self):
-        q = ProjectCheckInfo.objects.filter(project_code=self.project_code,step_code=self.step_code,substep_code=self.substep_code,substep_serial=self.substep_serial).values('project_code','cstate','cmsg').order_by('-p_serial')
-        if q != None and len(q)>0:
+        q = ProjectCheckInfo.objects.filter(project_code=self.project_code, step_code=self.step_code,
+                                            substep_code=self.substep_code, substep_serial=self.substep_serial).values(
+            'project_code', 'cstate', 'cmsg').order_by('-p_serial')
+        if q != None and len(q) > 0:
             check_info = q[0]
         else:
             check_info = {}
@@ -230,10 +246,10 @@ class ProjectSubstepSerialInfo(models.Model):
     class Meta:
         managed = False
         db_table = 'project_substep_serial_info'
-        unique_together = ('project_code','step_code','substep_code')
+        unique_together = ('project_code', 'step_code', 'substep_code')
 
 
-#项目子步骤流水详情信息表
+# 项目子步骤流水详情信息表
 class ProjectSubstepDetailInfo(models.Model):
     p_serial = models.AutoField(primary_key=True)
     project_code = models.CharField(max_length=64, blank=True, null=True)
@@ -246,12 +262,12 @@ class ProjectSubstepDetailInfo(models.Model):
     substep_serial_state = models.IntegerField(blank=True, null=True)
     # 不定长字段暂时没有加
     # ...
-    step_msg = models.CharField(max_length=255,blank=True, null=True)
+    step_msg = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         managed = False
         db_table = 'project_substep_detail_info'
-        unique_together = ('project_code','step_code','substep_code','substep_serial')
+        unique_together = ('project_code', 'step_code', 'substep_code', 'substep_serial')
 
 
 class ProjectSubstepFileInfo(models.Model):
@@ -282,6 +298,7 @@ class ProjectSubstepFileInfo(models.Model):
     class Meta:
         managed = False
         db_table = 'project_substep_file_info'
+
 
 # 有交叉引用问题，暂时只能放在这里了
 def getFileUrl(p_serial):
@@ -323,8 +340,8 @@ class ProjectRrInfo(models.Model):
     @property
     def results_info(self):
         if self.rr_type == 1:
-            results = ResultsInfo.objects.filter(r_code=self.rr_code).values('r_code','r_name')
-            if results != None and len(results)>0:
+            results = ResultsInfo.objects.filter(r_code=self.rr_code).values('r_code', 'r_name')
+            if results != None and len(results) > 0:
                 result = results[0]
                 return result
             else:
@@ -337,8 +354,8 @@ class ProjectRrInfo(models.Model):
         if self.rr_type == 1:
             return None
         elif self.rr_type == 2:
-            requirements = RequirementsInfo.objects.filter(req_code=self.rr_code).values('req_code','req_name')
-            if requirements != None and len(requirements)>0:
+            requirements = RequirementsInfo.objects.filter(req_code=self.rr_code).values('req_code', 'req_name')
+            if requirements != None and len(requirements) > 0:
                 requirement = requirements[0]
                 return requirement
             else:
@@ -348,7 +365,6 @@ class ProjectRrInfo(models.Model):
         managed = False
         db_table = 'project_rr_info'
         unique_together = (('project_code', 'rr_type', 'rr_code'),)
-
 
 
 # 项目经纪人信息表（项目与经纪人关联表） *
@@ -364,8 +380,9 @@ class ProjectBrokerInfo(models.Model):
 
     @property
     def broker(self):
-        broker = BrokerBaseinfo.objects.filter(broker_code=self.broker_code).values('broker_code','broker_mobile','broker_name')
-        if broker != None and len(broker)>0:
+        broker = BrokerBaseinfo.objects.filter(broker_code=self.broker_code).values('broker_code', 'broker_mobile',
+                                                                                    'broker_name')
+        if broker != None and len(broker) > 0:
             return broker[0]
         else:
             return None
@@ -388,8 +405,9 @@ class ProjectExpertInfo(models.Model):
 
     @property
     def expert(self):
-        expert = ExpertBaseinfo.objects.filter(expert_code=self.expert_code).values('serial','expert_code','expert_mobile','expert_name')
-        if expert != None and len(expert)>0:
+        expert = ExpertBaseinfo.objects.filter(expert_code=self.expert_code).values('serial', 'expert_code',
+                                                                                    'expert_mobile', 'expert_name')
+        if expert != None and len(expert) > 0:
             return expert[0]
         else:
             return None
@@ -398,7 +416,6 @@ class ProjectExpertInfo(models.Model):
         managed = False
         db_table = 'project_expert_info'
         unique_together = (('project_code', 'expert_code'),)
-
 
 
 # 项目与团队信息表（项目与技术团队关联表）*
@@ -420,3 +437,73 @@ class ProjectTeamInfo(models.Model):
         managed = False
         db_table = 'project_team_info'
         unique_together = (('project_code', 'team_code'),)
+
+
+# 立项匹配申请
+class MatchCheckInfo(models.Model):
+    serial = models.AutoField(primary_key=True)
+    rm_code = models.CharField(max_length=32, blank=True, null=True)
+    match_pmemo = models.TextField(blank=True, null=True)
+    match_pmody = models.BinaryField(blank=True, null=True)
+    check_time = models.DateTimeField(blank=True, null=True)
+    check_state = models.IntegerField(blank=True, null=True)
+    check_memo = models.BinaryField(blank=True, null=True)
+    checker = models.CharField(max_length=64, blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'match_check_info'
+
+
+# 立项匹配技术经济人信息
+class ReqMatchBrokerInfo(models.Model):
+    serial = models.AutoField(primary_key=True)
+    rm_code = models.CharField(max_length=32, blank=True, null=True)
+    broker = models.CharField(max_length=64, blank=True, null=True)
+    leader_tag = models.IntegerField(blank=True, null=True)
+    creater = models.CharField(max_length=32, blank=True, null=True)
+    insert_time = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'req_match_broker_info'
+
+
+# 立项匹配需求、成果来源信息
+class ReqMatchRrInfo(models.Model):
+    serial = models.AutoField(primary_key=True)
+    rm_code = models.CharField(max_length=32, blank=True, null=True)
+    r_type = models.IntegerField(blank=True, null=True)
+    object_code = models.CharField(max_length=64, blank=True, null=True)
+    creater = models.CharField(max_length=32, blank=True, null=True)
+    insert_time = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        managed = False
+        db_table = 'req_match_rrinfo'
+
+
+# 立项匹配信息
+class ReqMatchInfo(models.Model):
+    rm_serial = models.AutoField(primary_key=True)
+    rm_code = models.CharField(max_length=32, blank=True, null=True)
+    rm_title = models.CharField(max_length=64, blank=True, null=True)
+    rm_object_type = models.IntegerField(blank=True, null=True)
+    account_code = models.CharField(max_length=64, blank=True, null=True)
+    rm_abstract = models.TextField(blank=True, null=True)
+    rm_body = models.BinaryField(blank=True, null=True)
+    rm_type = models.IntegerField(blank=True, null=True)
+    rm_time = models.DateTimeField(blank=True, null=True)
+    rm_state = models.IntegerField(blank=True, null=True)
+    creater = models.CharField(max_length=32, blank=True, null=True)
+    insert_time = models.DateTimeField(blank=True, null=True)
+
+    def check_info(self):
+        rmi = ReqMatchInfo.objects.filter(rm_code=self.rm_code).order_by("-serial")
+        if rmi != None and len(rmi)>0:
+            return rmi[0]
+        return {}
+
+    class Meta:
+        managed = False
+        db_table = 'req_match_info'

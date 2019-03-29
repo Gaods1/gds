@@ -101,7 +101,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
                     'identity_code': 9,
                     'iab_time': datetime.datetime.now(),
                     'iae_time': None,
-                    'state': 2 if data['state'] == 1 else 0,
+                    'state': 2,
                     'creater': creater
                 }
 
@@ -143,6 +143,19 @@ class ExpertViewSet(viewsets.ModelViewSet):
                     # 插入领域相关
                     crete_major(2, 1, ecode, major)
 
+                    # 插入记录表
+                    apply = ExpertApplyHistory.objects.create(expert_code=ecode,
+                                                              account_code=account_code,
+                                                              state=2,
+                                                              apply_time=datetime.datetime.now(),
+                                                              apply_type=1)
+
+                    ExpertCheckHistory.objects.create(apply_code=apply.apply_code,
+                                                      opinion='后台创建身份',
+                                                      result=2,
+                                                      check_time=datetime.datetime.now(),
+                                                      account=creater)
+
                     # 复制图片到正式目录
                     formal_head = copy_img(head, 'Expert', 'headPhoto', ecode, creater)
                     formal_idfront = copy_img(idfront, 'Expert', 'identityFront', ecode, creater)
@@ -172,6 +185,19 @@ class ExpertViewSet(viewsets.ModelViewSet):
 
                     # 插入领域相关
                     crete_major(2, 1, ecode, major)
+
+                    # 插入记录表
+                    apply = ExpertApplyHistory.objects.create(expert_code=ecode,
+                                                              account_code=account_code,
+                                                              state=2,
+                                                              apply_time=datetime.datetime.now(),
+                                                              apply_type=1)
+
+                    ExpertCheckHistory.objects.create(apply_code=apply.apply_code,
+                                                      opinion='后台创建身份',
+                                                      result=2,
+                                                      check_time=datetime.datetime.now(),
+                                                      account=creater)
 
                     # 复制图片到正式目录
                     formal_head = copy_img(head, 'Expert', 'headPhoto', ecode, creater)
@@ -233,8 +259,8 @@ class ExpertViewSet(viewsets.ModelViewSet):
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 9,
-                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
-                    'state': 2 if data['state'] == 1 else 0,
+                    'iae_time': None,
+                    'state': 2,
                     'creater': creater
                 }
 
@@ -499,6 +525,18 @@ class BrokerViewSet(viewsets.ModelViewSet):
             # Ensure queryset is re-evaluated on each request.
             queryset = queryset.all()
         return queryset
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
+             page = None
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.get_paginated_response(serializer.data)
 
     # 创建技术经纪人 2018/12/24 author:周
     def create(self, request, *args, **kwargs):
@@ -537,7 +575,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
                     'identity_code': 2,
                     'iab_time': datetime.datetime.now(),
                     'iae_time': None,
-                    'state': 2 if data['state'] == 1 else 0,
+                    'state': 2,
                     'creater': creater
                 }
 
@@ -579,6 +617,19 @@ class BrokerViewSet(viewsets.ModelViewSet):
                     # 插入领域相关
                     crete_major(2, 3, ecode, major)
 
+                    # 插入记录表
+                    apply = BrokerApplyHistory.objects.create(broker_code=ecode,
+                                                              account_code=account_code,
+                                                              state=2,
+                                                              apply_time=datetime.datetime.now(),
+                                                              apply_type=1)
+
+                    BrokerCheckHistory.objects.create(apply_code=apply.apply_code,
+                                                      opinion='后台创建身份',
+                                                      result=2,
+                                                      check_time=datetime.datetime.now(),
+                                                      account=creater)
+
                     # 复制图片到正式目录
                     formal_head = copy_img(head, 'Broker', 'headPhoto', ecode, creater)
                     formal_idfront = copy_img(idfront, 'Broker', 'identityFront', ecode, creater)
@@ -608,6 +659,19 @@ class BrokerViewSet(viewsets.ModelViewSet):
 
                     # 插入领域相关
                     crete_major(2, 3, ecode, major)
+
+                    # 插入记录表
+                    apply = BrokerApplyHistory.objects.create(broker_code=ecode,
+                                                              account_code=account_code,
+                                                              state=2,
+                                                              apply_time=datetime.datetime.now(),
+                                                              apply_type=1)
+
+                    BrokerCheckHistory.objects.create(apply_code=apply.apply_code,
+                                                      opinion='后台创建身份',
+                                                      result=2,
+                                                      check_time=datetime.datetime.now(),
+                                                      account=creater)
 
                     # 复制图片到正式目录
                     formal_head = copy_img(head, 'Broker', 'headPhoto', ecode, creater)
@@ -669,8 +733,8 @@ class BrokerViewSet(viewsets.ModelViewSet):
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 2,
-                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
-                    'state': 2 if data['state'] == 1 else 0,
+                    'iae_time': None,
+                    'state': 2,
                     'creater': creater
                 }
 
@@ -971,7 +1035,7 @@ class CollectorViewSet(viewsets.ModelViewSet):
                     'identity_code': 1,
                     'iab_time': datetime.datetime.now(),
                     'iae_time': None,
-                    'state': 2 if data['state'] == 1 else 0,
+                    'state': 2,
                     'creater': creater
                 }
 
@@ -1010,6 +1074,19 @@ class CollectorViewSet(viewsets.ModelViewSet):
                     return_data = serializer.data[0]
                     ecode = new_obj[0].collector_code
 
+                    # 插入记录表
+                    apply = CollectorApplyHistory.objects.create(collector_code=ecode,
+                                                              account_code=account_code,
+                                                              state=2,
+                                                              apply_time=datetime.datetime.now(),
+                                                              apply_type=1)
+
+                    CollectorCheckHistory.objects.create(apply_code=apply.apply_code,
+                                                      opinion='后台创建身份',
+                                                      result=2,
+                                                      check_time=datetime.datetime.now(),
+                                                      account=creater)
+
                     # 复制图片到正式目录
                     formal_head = copy_img(head, 'Collector', 'headPhoto', ecode, creater)
                     formal_idfront = copy_img(idfront, 'Collector', 'identityFront', ecode, creater)
@@ -1036,6 +1113,19 @@ class CollectorViewSet(viewsets.ModelViewSet):
                     self.perform_create(serializer)
                     return_data = serializer.data
                     ecode = serializer.data['collector_code']
+
+                    # 插入记录表
+                    apply = CollectorApplyHistory.objects.create(collector_code=ecode,
+                                                              account_code=account_code,
+                                                              state=2,
+                                                              apply_time=datetime.datetime.now(),
+                                                              apply_type=1)
+
+                    CollectorCheckHistory.objects.create(apply_code=apply.apply_code,
+                                                      opinion='后台创建身份',
+                                                      result=2,
+                                                      check_time=datetime.datetime.now(),
+                                                      account=creater)
 
                     # 复制图片到正式目录
                     formal_head = copy_img(head, 'Collector', 'headPhoto', ecode, creater)
@@ -1094,8 +1184,8 @@ class CollectorViewSet(viewsets.ModelViewSet):
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 1,
-                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
-                    'state': 2 if data['state'] == 1 else 0,
+                    'iae_time': None,
+                    'state': 2,
                     'creater': creater
                 }
 
@@ -1400,7 +1490,7 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                     'identity_code': 4,
                     'iab_time': datetime.datetime.now(),
                     'iae_time': None,
-                    'state': 2 if data['state'] == 1 else 0,
+                    'state': 2,
                     'creater': creater
                 }
 
@@ -1445,6 +1535,19 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                     # 插入领域相关
                     crete_major(2, 8, ecode, major)
 
+                    # 插入记录表
+                    apply = OwnerApplyHistory.objects.create(owner_code=ecode,
+                                                              account_code=account_code,
+                                                              state=2,
+                                                              apply_time=datetime.datetime.now(),
+                                                              apply_type=1)
+
+                    OwnerpCheckHistory.objects.create(apply_code=apply.apply_code,
+                                                      opinion='后台创建身份',
+                                                      result=2,
+                                                      check_time=datetime.datetime.now(),
+                                                      account=creater)
+
                     # 复制图片到正式目录
                     formal_head = copy_img(head, 'ResultOwnerPer', 'headPhoto', ecode, creater)
                     formal_idfront = copy_img(idfront, 'ResultOwnerPer', 'identityFront', ecode, creater)
@@ -1474,6 +1577,19 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
 
                     # 插入领域相关
                     crete_major(2, 8, ecode, major)
+
+                    # 插入记录表
+                    apply = OwnerApplyHistory.objects.create(owner_code=ecode,
+                                                              account_code=account_code,
+                                                              state=2,
+                                                              apply_time=datetime.datetime.now(),
+                                                              apply_type=1)
+
+                    OwnerpCheckHistory.objects.create(apply_code=apply.apply_code,
+                                                      opinion='后台创建身份',
+                                                      result=2,
+                                                      check_time=datetime.datetime.now(),
+                                                      account=creater)
 
                     # 复制图片到正式目录
                     formal_head = copy_img(head, 'ResultOwnerPer', 'headPhoto', ecode, creater)
@@ -1536,8 +1652,8 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 4,
-                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
-                    'state': 2 if data['state'] == 1 else 0,
+                    'iae_time': None,
+                    'state': 2,
                     'creater': creater
                 }
 
@@ -1688,6 +1804,10 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
+                if IdentityAuthorizationInfo.objects.filter(account_code=instance.account_code,
+                                                            identity_code=5,
+                                                            state=2):
+                    raise ValueError('此账号已存在成果持有企业身份，不能申请为成果持有个人')
                 # 获取基本信息
                 baseinfo = instance.owner
                 # 获取审核意见
@@ -1864,7 +1984,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                     'identity_code': 5,
                     'iab_time': datetime.datetime.now(),
                     'iae_time': None,
-                    'state': 2 if data['state'] == 1 else 0,
+                    'state': 2,
                     'creater': creater
                 }
 
@@ -1913,6 +2033,18 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                     # 插入领域相关
                     crete_major(2, 6, ecode, major)
 
+                    # 插入记录表
+                    apply = OwnereApplyHistory.objects.create(owner_code=ecode,
+                                                              state=2,
+                                                              apply_time=datetime.datetime.now(),
+                                                              apply_type=1)
+
+                    OwnereCheckHistory.objects.create(apply_code=apply.apply_code,
+                                                      opinion='后台创建身份',
+                                                      result=2,
+                                                      check_time=datetime.datetime.now(),
+                                                      account=creater)
+
                     # 复制图片到正式目录
                     formal_idfront = copy_img(idfront, 'ResultOwnerEnt', 'identityFront', ecode, creater)
                     formal_idback = copy_img(idback, 'ResultOwnerEnt', 'identityBack', ecode, creater)
@@ -1958,6 +2090,18 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
 
                     # 插入领域相关
                     crete_major(2, 6, ecode, major)
+
+                    # 插入记录表
+                    apply = OwnereApplyHistory.objects.create(owner_code=ecode,
+                                                              state=2,
+                                                              apply_time=datetime.datetime.now(),
+                                                              apply_type=1)
+
+                    OwnereCheckHistory.objects.create(apply_code=apply.apply_code,
+                                                      opinion='后台创建身份',
+                                                      result=2,
+                                                      check_time=datetime.datetime.now(),
+                                                      account=creater)
 
                     # 复制图片到正式目录
                     formal_idfront = copy_img(idfront, 'ResultOwnerEnt', 'identityFront', ecode, creater)
@@ -2063,8 +2207,8 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 5,
-                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
-                    'state': 2 if data['state'] == 1 else 0,
+                    'iae_time': None,
+                    'state': 2,
                     'creater': creater
                 }
 
@@ -2242,6 +2386,11 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
                 if instance.state != 1:
                     raise ValueError('该信息已被审核')
 
+                if IdentityAuthorizationInfo.objects.filter(account_code=instance.account_code,
+                                                            identity_code=4,
+                                                            state=2):
+                    raise ValueError('此账号已存在成果持有个人身份，不能申请为成果持有企业')
+
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
@@ -2418,7 +2567,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                     'identity_code': 6,
                     'iab_time': datetime.datetime.now(),
                     'iae_time': None,
-                    'state': 2 if data['state'] == 1 else 0,
+                    'state': 2,
                     'creater': creater
                 }
 
@@ -2463,6 +2612,19 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                     # 插入领域相关
                     crete_major(2, 9, ecode, major)
 
+                    # 插入记录表
+                    apply = OwnerApplyHistory.objects.create(owner_code=ecode,
+                                                              account_code=account_code,
+                                                              state=2,
+                                                              apply_time=datetime.datetime.now(),
+                                                              apply_type=1)
+
+                    OwnerpCheckHistory.objects.create(apply_code=apply.apply_code,
+                                                      opinion='后台创建身份',
+                                                      result=2,
+                                                      check_time=datetime.datetime.now(),
+                                                      account=creater)
+
                     # 复制图片到正式目录
                     formal_head = copy_img(head, 'RequirementOwnerPer', 'headPhoto', ecode, creater)
                     formal_idfront = copy_img(idfront, 'RequirementOwnerPer', 'identityFront', ecode, creater)
@@ -2492,6 +2654,19 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
 
                     # 插入领域相关
                     crete_major(2, 9, ecode, major)
+
+                    # 插入记录表
+                    apply = OwnerApplyHistory.objects.create(owner_code=ecode,
+                                                              account_code=account_code,
+                                                              state=2,
+                                                              apply_time=datetime.datetime.now(),
+                                                              apply_type=1)
+
+                    OwnerpCheckHistory.objects.create(apply_code=apply.apply_code,
+                                                      opinion='后台创建身份',
+                                                      result=2,
+                                                      check_time=datetime.datetime.now(),
+                                                      account=creater)
 
                     # 复制图片到正式目录
                     formal_head = copy_img(head, 'RequirementOwnerPer', 'headPhoto', ecode, creater)
@@ -2554,8 +2729,8 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 6,
-                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
-                    'state': 2 if data['state'] == 1 else 0,
+                    'iae_time': None,
+                    'state': 2,
                     'creater': creater
                 }
 
@@ -2702,6 +2877,11 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
 
                 if instance.state != 1:
                     raise ValueError('该信息已被审核')
+
+                if IdentityAuthorizationInfo.objects.filter(account_code=instance.account_code,
+                                                            identity_code=7,
+                                                            state=2):
+                    raise ValueError('此账号已存在需求持有企业身份，不能申请为需求持有个人')
 
                 data = request.data
                 partial = kwargs.pop('partial', False)
@@ -2881,7 +3061,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                     'identity_code': 7,
                     'iab_time': datetime.datetime.now(),
                     'iae_time': None,
-                    'state': 2 if data['state'] == 1 else 0,
+                    'state': 2,
                     'creater': creater
                 }
 
@@ -2930,6 +3110,31 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                     # 插入领域相关
                     crete_major(2, 7, ecode, major)
 
+                    # 插入记录表
+                    apply = OwnereApplyHistory.objects.create(owner_code=ecode,
+                                                              state=2,
+                                                              apply_time=datetime.datetime.now(),
+                                                              apply_type=1)
+
+                    OwnereCheckHistory.objects.create(apply_code=apply.apply_code,
+                                                      opinion='后台创建身份',
+                                                      result=2,
+                                                      check_time=datetime.datetime.now(),
+                                                      account=creater)
+
+                    # 插入记录表
+                    apply = OwnereApplyHistory.objects.create(owner_code=ecode,
+                                                              account_code=account_code,
+                                                              state=2,
+                                                              apply_time=datetime.datetime.now(),
+                                                              apply_type=1)
+
+                    OwnereCheckHistory.objects.create(apply_code=apply.apply_code,
+                                                      opinion='后台创建身份',
+                                                      result=2,
+                                                      check_time=datetime.datetime.now(),
+                                                      account=creater)
+
                     # 复制图片到正式目录
                     formal_idfront = copy_img(idfront, 'RequirementOwnerEnt', 'identityFront', ecode, creater)
                     formal_idback = copy_img(idback, 'RequirementOwnerEnt', 'identityBack', ecode, creater)
@@ -2975,6 +3180,18 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
 
                     # 插入领域相关
                     crete_major(2, 7, ecode, major)
+
+                    # 插入记录表
+                    apply = OwnereApplyHistory.objects.create(owner_code=ecode,
+                                                              state=2,
+                                                              apply_time=datetime.datetime.now(),
+                                                              apply_type=1)
+
+                    OwnereCheckHistory.objects.create(apply_code=apply.apply_code,
+                                                      opinion='后台创建身份',
+                                                      result=2,
+                                                      check_time=datetime.datetime.now(),
+                                                      account=creater)
 
                     # 复制图片到正式目录
                     formal_idfront = copy_img(idfront, 'RequirementOwnerEnt', 'identityFront', ecode, creater)
@@ -3080,8 +3297,8 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 7,
-                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
-                    'state': 2 if data['state'] == 1 else 0,
+                    'iae_time': None,
+                    'state': 2,
                     'creater': creater
                 }
 
@@ -3261,6 +3478,12 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                 instance = self.get_object()
                 if instance.state != 1:
                     raise ValueError('该信息已被审核')
+
+                if IdentityAuthorizationInfo.objects.filter(account_code=instance.account_code,
+                                                            identity_code=6,
+                                                            state=2):
+                    raise ValueError('此账号已存在需求持有个人身份，不能申请为需求持有企业')
+
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
@@ -3451,7 +3674,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     'identity_code': 3,
                     'iab_time': datetime.datetime.now(),
                     'iae_time': None,
-                    'state': 2 if data['state'] == 1 else 0,
+                    'state': 2,
                     'creater': creater
                 }
                 if int(pt_type) != 0:
@@ -3513,10 +3736,25 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     # 插入领域相关
                     crete_major(2, 2, ecode, major)
 
+                    # 插入记录表
+                    apply = TeamApplyHistory.objects.create(team_code=ecode,
+                                                              account_code=account_code,
+                                                              state=2,
+                                                              apply_time=datetime.datetime.now(),
+                                                              apply_type=1)
+
+                    TeamCheckHistory.objects.create(apply_code=apply.apply_code,
+                                                      opinion='后台创建身份',
+                                                      result=2,
+                                                      check_time=datetime.datetime.now(),
+                                                      account=creater)
+
                     # 复制图片到正式目录
                     formal_idfront = copy_img(idfront, 'Prteam', 'identityFront', ecode, creater)
                     formal_idback = copy_img(idback, 'Prteam', 'identityBack', ecode, creater)
                     formal_idphoto = copy_img(idphoto, 'Prteam', 'handIdentityPhoto', ecode, creater)
+                    formal_logo = copy_img(logo, 'Prteam', 'logoPhoto', ecode, creater)
+                    formal_promotional = copy_img(promotional, 'Prteam', 'Propaganda', ecode, creater)
 
                     for k, v in editor_imgs_path.items():
                         formal_editor_imgs_path[k] = copy_img(v, 'Prteam', 'consultEditor', ecode, creater)
@@ -3557,10 +3795,25 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     # 插入领域相关
                     crete_major(2, 2, ecode, major)
 
+                    # 插入记录表
+                    apply = TeamApplyHistory.objects.create(team_code=ecode,
+                                                              account_code=account_code,
+                                                              state=2,
+                                                              apply_time=datetime.datetime.now(),
+                                                              apply_type=1)
+
+                    TeamCheckHistory.objects.create(apply_code=apply.apply_code,
+                                                      opinion='后台创建身份',
+                                                      result=2,
+                                                      check_time=datetime.datetime.now(),
+                                                      account=creater)
+
                     # 复制图片到正式目录
                     formal_idfront = copy_img(idfront, 'Prteam', 'identityFront', ecode, creater)
                     formal_idback = copy_img(idback, 'Prteam', 'identityBack', ecode, creater)
                     formal_idphoto = copy_img(idphoto, 'Prteam', 'handIdentityPhoto', ecode, creater)
+                    formal_logo = copy_img(logo, 'Prteam', 'logoPhoto', ecode, creater)
+                    formal_promotional = copy_img(promotional, 'Prteam', 'Propaganda', ecode, creater)
                     for k, v in editor_imgs_path.items():
                         formal_editor_imgs_path[k] = copy_img(v, 'Prteam', 'consultEditor', ecode, creater)
 
@@ -3630,7 +3883,6 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                 promotional = url_to_path(data.pop('promotional', None))  # 宣传照
                 owner_abstract_detail = data.get('pt_describe', '')  # 富文本
                 instance = self.get_object()  # 原纪录
-
                 if owner_abstract_detail:
                     img_pattern = re.compile(r'src=\"(.*?)\"')
                     editor_imgs_list = img_pattern.findall(owner_abstract_detail)
@@ -3653,8 +3905,8 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                 identity_info = {
                     'account_code': account_code,
                     'identity_code': 3,
-                    'iae_time': None if data['state'] == 1 else datetime.datetime.now(),
-                    'state': 2 if data['state'] == 1 else 0,
+                    'iae_time': None,
+                    'state': 2,
                     'creater': creater
                 }
 
@@ -3719,6 +3971,8 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                 formal_idfront = copy_img(idfront, 'Prteam', 'identityFront', ecode, creater)
                 formal_idback = copy_img(idback, 'Prteam', 'identityBack', ecode, creater)
                 formal_idphoto = copy_img(idphoto, 'Prteam', 'handIdentityPhoto', ecode, creater)
+                formal_logo = copy_img(logo, 'Prteam', 'logoPhoto', ecode, creater)
+                formal_promotional= copy_img(promotional, 'Prteam', 'Propaganda', ecode, creater)
 
                 for k, v in editor_imgs_path.items():
                     formal_editor_imgs_path[k] = copy_img(v, 'Prteam', 'consultEditor', ecode, creater)

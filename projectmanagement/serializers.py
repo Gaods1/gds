@@ -1,12 +1,10 @@
 from projectmanagement.models import *
 from rest_framework import serializers
 from achievement.serializers import RrApplyHistorySerializer
-from expert.serializers import BrokerBaseInfoSerializers,TeamBaseinfoSerializers,ExpertBaseInfoSerializers
-from achievement.serializers import RequirementsInfoSerializer,ResultsInfoSerializer
+from expert.serializers import BrokerBaseInfoSerializers, TeamBaseinfoSerializers, ExpertBaseInfoSerializers
+from achievement.serializers import RequirementsInfoSerializer, ResultsInfoSerializer
 from public_models.serializers import MajorInfoSerializers
 from misc.serializers.serializers import PatclubModelSerializer
-
-
 
 
 # 项目文件存储
@@ -35,12 +33,15 @@ class ProjectSubstepFileInfoSerializer(PatclubModelSerializer):
             'file_url',
         ]
 
+
 # 项目子步骤信息表
 class ProjectSubstepInfoSerializer(PatclubModelSerializer):
     btime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     etime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     # 附件
     substep_file_info = ProjectSubstepFileInfoSerializer(many=True, read_only=True)
+
+    # check_info = serializers.DictField(read_only=True)
 
     class Meta:
         model = ProjectSubstepInfo
@@ -53,7 +54,8 @@ class ProjectSubstepInfoSerializer(PatclubModelSerializer):
             'etime',
             'substep_state',
             'step_msg',
-            'substep_file_info'
+            'substep_file_info',
+            # 'check_info'
         ]
 
 
@@ -78,7 +80,6 @@ class ProjectSubstepSerialInfoSerializer(PatclubModelSerializer):
                   ]
 
 
-
 # 项目经纪人信息表
 class ProjectBrokerInfoSerializer(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
@@ -98,6 +99,7 @@ class ProjectBrokerInfoSerializer(serializers.ModelSerializer):
             'broker'
         ]
 
+
 # 项目团队信息表
 class ProjectTeamInfoSerializer(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
@@ -115,6 +117,7 @@ class ProjectTeamInfoSerializer(serializers.ModelSerializer):
             'insert_time',
             'team_baseinfo',
         ]
+
 
 # 项目需求/成果信息表
 class ProjectRrInfoSerializer(serializers.ModelSerializer):
@@ -139,6 +142,7 @@ class ProjectRrInfoSerializer(serializers.ModelSerializer):
             'requirements_info',
         ]
 
+
 # 目领域专家信息表
 class ProjectExpertInfoSerializer(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
@@ -157,6 +161,7 @@ class ProjectExpertInfoSerializer(serializers.ModelSerializer):
             'expert',
         ]
 
+
 # 项目表序列化
 class ProjectInfoSerializer(serializers.ModelSerializer):
     project_start_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
@@ -164,11 +169,11 @@ class ProjectInfoSerializer(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     # from_code_info = RrApplyHistorySerializer(many=True)
     substep_info = ProjectSubstepInfoSerializer(read_only=True)
-    substep_serial_info = ProjectSubstepSerialInfoSerializer(read_only=True,many=True)
+    substep_serial_info = ProjectSubstepSerialInfoSerializer(read_only=True, many=True)
     # check_info = ProjectCheckInfoSerializer(read_only=True)
     broker_info = ProjectBrokerInfoSerializer(read_only=True)
     team_info = ProjectTeamInfoSerializer(read_only=True)
-    expert_info = ProjectExpertInfoSerializer(read_only=True,many=True)
+    expert_info = ProjectExpertInfoSerializer(read_only=True, many=True)
 
     # rr_result = serializers.ListField(required=False)
     # rr_requirement = serializers.ListField(required=False)
@@ -227,9 +232,11 @@ class ProjectCheckInfoSerializer(PatclubModelSerializer):
             'substep_serial_info',
         ]
 
+
 # 项目步骤信息表
 class ProjectStepInfoSerializer(serializers.ModelSerializer):
-    substep_info = ProjectSubstepInfoSerializer(many=True,read_only=True)
+    substep_info = ProjectSubstepInfoSerializer(many=True, read_only=True)
+
     class Meta:
         model = ProjectStepInfo
         fields = [
@@ -251,16 +258,75 @@ class ProjectSubstepDetailInfoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+# 立项匹配申请
+class MatchCheckInfoSerializer(serializers.ModelSerializer):
+    check_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+
+    class Meta:
+        model = MatchCheckInfo
+        fields = [
+            'serial',
+            'rm_code',
+            'match_pmemo',
+            'match_pmody',
+            'check_time',
+            'check_state',
+            'check_memo',
+            'checker',
+        ]
 
 
+# 立项匹配技术经济人信息
+class ReqMatchBrokerInfoSerializer(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    class Meta:
+        model = ReqMatchBrokerInfo
+        fields = [
+            'serial',
+            'rm_code',
+            'broker',
+            'leader_tag',
+            'creater',
+            'insert_time',
+        ]
 
 
+# 立项匹配需求、成果来源信息
+class ReqMatchRrInfoSerializer(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    class Meta:
+        model = ReqMatchRrInfo
+        fields = [
+            'serial',
+            'rm_code',
+            'r_type',
+            'object_code',
+            'creater',
+            'insert_time',
+        ]
 
 
+# 立项匹配信息
+class ReqMatchInfoSerializer(serializers.ModelSerializer):
+    rm_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
 
+    check_info = MatchCheckInfoSerializer(read_only=True)
 
-
-
-
-
-
+    class Meta:
+        model = ReqMatchInfo
+        fields = [
+            'rm_serial',
+            'rm_code',
+            'rm_title',
+            'rm_object_type',
+            'account_code',
+            'rm_abstract',
+            'rm_body',
+            'rm_type',
+            'rm_time',
+            'rm_state',
+            'creater',
+            'insert_time',
+            'check_info'
+        ]
