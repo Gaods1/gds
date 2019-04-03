@@ -152,7 +152,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     ExpertCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -195,7 +195,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     ExpertCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -626,7 +626,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     BrokerCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -669,7 +669,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     BrokerCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -1084,7 +1084,7 @@ class CollectorViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     CollectorCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -1124,7 +1124,7 @@ class CollectorViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     CollectorCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -1546,7 +1546,7 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     OwnerpCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -1589,7 +1589,7 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     OwnerpCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -2044,7 +2044,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     OwnereCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -2102,7 +2102,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     OwnereCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -2626,7 +2626,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     OwnerpCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -2669,7 +2669,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     OwnerpCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -3124,20 +3124,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     OwnereCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
-                                                      result=2,
-                                                      check_time=datetime.datetime.now(),
-                                                      account=creater)
-
-                    # 插入记录表
-                    apply = OwnereApplyHistory.objects.create(owner_code=ecode,
-                                                              account_code=account_code,
-                                                              state=2,
-                                                              apply_time=datetime.datetime.now(),
-                                                              apply_type=1)
-
-                    OwnereCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -3195,7 +3182,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     OwnereCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -3752,7 +3739,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     TeamCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -3811,7 +3798,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     TeamCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
