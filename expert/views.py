@@ -76,6 +76,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
                 data = request.data
                 # 获取相关数据
                 creater = AccountInfo.objects.get(account=request.user.account).account_code
+                data['creater'] = creater
                 id_type = data['expert_id_type']
                 pid = data['expert_id']
                 account_code = data['account_code']
@@ -233,7 +234,6 @@ class ExpertViewSet(viewsets.ModelViewSet):
                 id_type = data['expert_id_type']
                 pid = data['expert_id']
                 account_code = data['account_code']
-                data['creater'] = creater
 
                 major = data.pop('major_code', None)  # 相关领域（列表）
                 head = url_to_path(data.get('head', None))  # 头像
@@ -550,6 +550,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
                 data = request.data
                 # 获取相关数据
                 creater = AccountInfo.objects.get(account=request.user.account).account_code
+                data['creater'] = creater
                 id_type = data['broker_id_type']
                 pid = data['broker_id']
                 account_code = data['account_code']
@@ -707,7 +708,6 @@ class BrokerViewSet(viewsets.ModelViewSet):
                 id_type = data['broker_id_type']
                 pid = data['broker_id']
                 account_code = data['account_code']
-                data['creater'] = creater
 
                 major = data.pop('major_code', None)  # 相关领域（列表）
                 head = url_to_path(data.get('head', None))  # 头像
@@ -1013,6 +1013,7 @@ class CollectorViewSet(viewsets.ModelViewSet):
                 data = request.data
                 # 获取相关数据
                 creater = AccountInfo.objects.get(account=request.user.account).account_code
+                data['creater'] = creater
                 id_type = data['collector_idtype']
                 pid = data['collector_id']
                 account_code = data['account_code']
@@ -1161,7 +1162,6 @@ class CollectorViewSet(viewsets.ModelViewSet):
                 id_type = data['collector_idtype']
                 pid = data['collector_id']
                 account_code = data['account_code']
-                data['creater'] = creater
 
                 head = url_to_path(data.get('head', None))  # 头像
                 idfront = url_to_path(data.get('idfront', None))  # 身份证正面
@@ -1465,6 +1465,7 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                 data['type'] = 1
                 # 获取相关数据
                 creater = AccountInfo.objects.get(account=request.user.account).account_code
+                data['creater'] = creater
                 id_type = data['owner_idtype']
                 pid = data['owner_id']
                 account_code = data['account_code']
@@ -1626,7 +1627,6 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                 id_type = data['owner_idtype']
                 pid = data['owner_id']
                 account_code = data['account_code']
-                data['creater'] = creater
 
                 major = data.pop('major_code', None)  # 相关领域（列表）
                 head = url_to_path(data.get('head', None))  # 头像
@@ -1951,6 +1951,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 data['type'] = 1
                 # 获取相关数据
                 creater = AccountInfo.objects.get(account=request.user.account).account_code
+                data['creater'] = creater
                 account_code = data['account_code']
 
                 major = data.pop('major_code', None)  # 相关领域（列表）
@@ -2542,6 +2543,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                 data['type'] = 2
                 # 获取相关数据
                 creater = AccountInfo.objects.get(account=request.user.account).account_code
+                data['creater'] = creater
                 id_type = data['owner_idtype']
                 pid = data['owner_id']
                 account_code = data['account_code']
@@ -2703,7 +2705,6 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                 id_type = data['owner_idtype']
                 pid = data['owner_id']
                 account_code = data['account_code']
-                data['creater'] = creater
 
                 major = data.pop('major_code', None)  # 相关领域（列表）
                 head = url_to_path(data.get('head', None))  # 头像
@@ -3028,6 +3029,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                 data['type'] = 2
                 # 获取相关数据
                 creater = AccountInfo.objects.get(account=request.user.account).account_code
+                data['creater'] = creater
                 account_code = data['account_code']
 
                 major = data.pop('major_code', None)  # 相关领域（列表）
@@ -3641,6 +3643,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                 data = request.data
                 # 获取相关数据
                 creater = AccountInfo.objects.get(account=request.user.account).account_code
+                data['creater'] = creater
                 id_type = data['pt_people_type']
                 pid = data['pt_people_id']
                 account_code = data['account_code']
