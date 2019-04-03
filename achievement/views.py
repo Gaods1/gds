@@ -1146,7 +1146,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
 
 class ManagementpViewSet(viewsets.ModelViewSet):
-    queryset = ResultsInfo.objects.filter(show_state__in=[1, 2]).order_by('-insert_time')
+    queryset = ResultsInfo.objects.filter(show_state__in=[1, 2]).order_by('show_state','-insert_time')
     serializer_class = ResultsInfoSerializer
     filter_backends = (
         filters.SearchFilter,
@@ -1336,7 +1336,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 # 创建申请表
                 element_rr=RrApplyHistory.objects.create(rr_code=serializer_ecode,account_code=request.user.account_code,state=2,apply_type=1,type=1)
                 # 创建历史记录表
-                ResultCheckHistory.objects.create(apply_code=element_rr.a_code,opinion='后台审核通过',result=1,account=request.user.user_name)
+                ResultCheckHistory.objects.create(apply_code=element_rr.a_code,opinion='后台审核通过',result=2,account=request.user.user_name)
 
 
                 #6 转移附件创建ecode表
@@ -1832,7 +1832,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
             return Response({'message':'ok'})
 
 class ManagementrViewSet(viewsets.ModelViewSet):
-    queryset = RequirementsInfo.objects.filter(show_state__in=[1, 2]).order_by('-insert_time')
+    queryset = RequirementsInfo.objects.filter(show_state__in=[1, 2]).order_by('show_state','-insert_time')
     serializer_class = RequirementsInfoSerializer
     filter_backends = (
         filters.SearchFilter,
@@ -2014,7 +2014,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 element_rr = RrApplyHistory.objects.create(rr_code=serializer_ecode, account_code=request.user.account_code,
                                                            state=2, apply_type=1, type=2)
                 # 创建历史记录表
-                ResultCheckHistory.objects.create(apply_code=element_rr.a_code, opinion='后台审核通过', result=1,
+                ResultCheckHistory.objects.create(apply_code=element_rr.a_code, opinion='后台审核通过', result=2,
                                                   account=request.user.user_name)
 
                 # 6 转移附件创建ecode表
