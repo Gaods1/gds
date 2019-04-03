@@ -18,6 +18,7 @@ from .serializers import *
 from .models import *
 from .utils import massege
 from django.db.models import Q
+from django.db import connection
 
 import logging
 logger = logging.getLogger('django')
@@ -71,7 +72,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         dept_code_str = get_detcode_str(dept_code)
         if dept_code_str:
             #SQL = "select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.dept_code in ("+dept_code_str+") and rr_apply_history.type=1"
-            SQL = "select rr_apply_history.* \
+            SQL = "select rr_apply_history.serial \
             		from rr_apply_history \
             		inner join account_info \
             		on account_info.account_code=rr_apply_history.account_code \
@@ -618,7 +619,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
         dept_code_str = get_detcode_str(dept_code)
         if dept_code_str:
             #SQL = "select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.dept_code in ("+dept_code_str+") and rr_apply_history.type=1"
-            SQL = "select rr_apply_history.* \
+            SQL = "select rr_apply_history.serial \
             		from rr_apply_history \
             		inner join account_info \
             		on account_info.account_code=rr_apply_history.account_code \
@@ -648,21 +649,29 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 # 创建一个保存点
                 save_id = transaction.savepoint()
                 # 创建技术经济人跟踪表
+                bcode = data.pop('broker_code', None)
+                if not bcode:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": '请选择技术经纪人'}, status=400)
+
                 try:
-                    bcode = data.pop('broker_code',None)
-                    if not bcode:
-                        transaction.savepoint_rollback(save_id)
-                        return Response({"detail": '请选择技术经纪人'}, status=400)
-                    Requirement_Broker = Requirement_Broker_Info.objects.create(
-                        rcode=instance.rr_code,
-                        bcode=bcode,
-                        state=1,
-                        creater=request.user.account,
-                    )
+                    ss = Requirement_Broker_Info.objects.filter(rcode=instance.rr_code)
+                    if not ss:
+                        Requirement_Broker = Requirement_Broker_Info.objects.create(
+                            rcode=instance.rr_code,
+                            bcode=bcode,
+                            state=1,
+                            creater=request.user.account,
+                        )
+                    else:
+                        Requirement_Broker_Info.objects.filter(rcode=instance.rr_code).update(bcode=bcode)
+                        #ss[0].bcode=bcode
+                        #ss[0].save()
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": '需求审核技术经纪人表创建失败%s' % str(e)}, status=400)
+
 
                 # 创建历史记录表
                 try:
@@ -1153,7 +1162,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
         dept_code = self.request.user.dept_code
         dept_code_str = get_detcode_str(dept_code)
         if dept_code_str:
-            SQL = "select results_info.* \
+            SQL = "select results_info.serial \
             		from results_info \
             		inner join account_info \
             		on account_info.account_code=results_info.account_code \
@@ -1839,12 +1848,13 @@ class ManagementrViewSet(viewsets.ModelViewSet):
         dept_code = self.request.user.dept_code
         dept_code_str = get_detcode_str(dept_code)
         if dept_code_str:
-            SQL = "select requirements_info.* \
-            		from requirements_info \
-            		inner join account_info \
-            		on account_info.account_code=requirements_info.account_code \
-            		where account_info.dept_code in ({dept_s}) \
-            		and requirements_info.show_state in (1,2)"
+            SQL = "select r.serial \
+            		from requirements_info as r \
+            		inner join account_info as a \
+            		on a.account_code=r.account_code \
+            		where a.dept_code in ({dept_s}) \
+            		and r.show_state in (1,2)"
+            s = SQL.format(dept_s=dept_code_str)
 
             raw_queryset = RequirementsInfo.objects.raw(SQL.format(dept_s=dept_code_str))
             consult_reply_set = RequirementsInfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('-show_state')

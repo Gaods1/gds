@@ -6,6 +6,8 @@ from achievement.models import RequirementsInfo
 from public_models.models import MajorUserinfo, MajorInfo
 from django.db.models import Q
 
+import logging
+logger = logging.getLogger('django')
 
 # Create your models here.
 
@@ -444,10 +446,10 @@ class MatchCheckInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     rm_code = models.CharField(max_length=32, blank=True, null=True)
     match_pmemo = models.TextField(blank=True, null=True)
-    match_pmody = models.BinaryField(blank=True, null=True)
+    match_pmody = models.TextField(blank=True, null=True)
     check_time = models.DateTimeField(blank=True, null=True)
     check_state = models.IntegerField(blank=True, null=True)
-    check_memo = models.BinaryField(blank=True, null=True)
+    check_memo = models.TextField(blank=True, null=True)
     checker = models.CharField(max_length=64, blank=True, null=True)
 
     class Meta:
@@ -491,18 +493,31 @@ class ReqMatchInfo(models.Model):
     rm_object_type = models.IntegerField(blank=True, null=True)
     account_code = models.CharField(max_length=64, blank=True, null=True)
     rm_abstract = models.TextField(blank=True, null=True)
-    rm_body = models.BinaryField(blank=True, null=True)
+    rm_body = models.TextField(blank=True, null=True)
     rm_type = models.IntegerField(blank=True, null=True)
     rm_time = models.DateTimeField(blank=True, null=True)
     rm_state = models.IntegerField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True)
 
+    # 审核信息
     def check_info(self):
-        rmi = ReqMatchInfo.objects.filter(rm_code=self.rm_code).order_by("-serial")
+        rmi = MatchCheckInfo.objects.filter(rm_code=self.rm_code).order_by("-serial")
         if rmi != None and len(rmi)>0:
             return rmi[0]
         return {}
+
+    # 技术经济人信息
+    def broker_info(self):
+        rmbis = ReqMatchBrokerInfo.objects.filter(rm_code=self.rm_code)
+        items = []
+        if rmbis != None and len(rmbis)>0:
+            for rmbi in rmbis:
+                logger.info(rmbi.broker)
+                bbis = BrokerBaseinfo.objects.values("broker_code","broker_name","broker_mobile").filter(broker_code=rmbi.broker)
+                if bbis != None and len(bbis)>0:
+                    items.append(bbis[0])
+        return items
 
     class Meta:
         managed = False
