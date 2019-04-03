@@ -133,7 +133,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
                     # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
                     pcode = create_or_update_person(account_code, pinfo)
                     data['pcode'] = pcode
-
+                    data['state'] = 1
                     # 更新expert
                     expert.update(**data)
                     new_expert = ExpertBaseinfo.objects.filter(account_code=account_code)
@@ -607,7 +607,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
                     # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
                     pcode = create_or_update_person(account_code, pinfo)
                     data['pcode'] = pcode
-
+                    data['state'] = 1
                     # 更新基本信息表
                     obj.update(**data)
                     new_obj = BrokerBaseinfo.objects.filter(account_code=account_code)
@@ -1067,6 +1067,7 @@ class CollectorViewSet(viewsets.ModelViewSet):
                     # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
                     pcode = create_or_update_person(account_code, pinfo)
                     data['pcode'] = pcode
+                    data['state'] = 1
 
                     # 更新基本信息表
                     obj.update(**data)
@@ -1525,6 +1526,7 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                     # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
                     pcode = create_or_update_person(account_code, pinfo)
                     data['pcode'] = pcode
+                    data['state'] = 1
 
                     # 更新基本信息表
                     obj.update(**data)
@@ -2023,6 +2025,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                     # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
                     encode = create_or_update_enterprise(account_code, einfo)
                     data['ecode'] = encode
+                    data['state'] = 1
 
                     # 更新基本信息表
                     obj.update(**data)
@@ -2603,6 +2606,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                     # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
                     pcode = create_or_update_person(account_code, pinfo)
                     data['pcode'] = pcode
+                    data['state'] = 1
 
                     # 更新基本信息表
                     obj.update(**data)
@@ -3101,6 +3105,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                     # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
                     encode = create_or_update_enterprise(account_code, einfo)
                     data['ecode'] = encode
+                    data['state'] = 1
 
                     # 更新基本信息表
                     obj.update(**data)
@@ -3728,7 +3733,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     else:
                         encode = create_or_update_enterprise(account_code, einfo)
                         data['ecode'] = encode
-
+                    data['state'] = 1
                     # 更新基本信息表
                     obj.update(**data)
                     new_obj = ProjectTeamBaseinfo.objects.filter(account_code=account_code)
