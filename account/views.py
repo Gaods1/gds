@@ -217,7 +217,7 @@ class RoleInfoViewSet(viewsets.ModelViewSet):
         )
         dept_codes_str = get_detcode_str(self.request.user.dept_code)
         if dept_codes_str:
-            raw_queryset = RoleInfo.objects.raw("select r.serial  from role_info as r left join account_info as ai on  r.creater=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
+            raw_queryset = RoleInfo.objects.raw("select r.serial  from role_info as r left join account_info as ai on  r.creater=ai.account where ai.dept_code  in (" + dept_codes_str + ") ")
             queryset = RoleInfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
         else:
             queryset = self.queryset
@@ -336,7 +336,9 @@ class AccountDisableFuncinfoViewSet(viewsets.ModelViewSet):
         )
         dept_codes_str = get_detcode_str(self.request.user.dept_code)
         if dept_codes_str:
-            raw_queryset = AccountDisableFuncinfo.objects.raw("select d.serial  from account_disable_funcinfo as d left join account_info as ai on  d.creater=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
+            raw_queryset = AccountDisableFuncinfo.objects.raw("select d.serial  from account_disable_funcinfo as d left join account_info as ai on  d.creater=ai.account where ai.dept_code  in (" + dept_codes_str + ") ")
+            for i in raw_queryset:
+                print(i)
             queryset = AccountDisableFuncinfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
         else:
             queryset = self.queryset
@@ -408,7 +410,7 @@ class AccountRoleViewSet(viewsets.ModelViewSet):
         )
         dept_codes_str = get_detcode_str(self.request.user.dept_code)
         if dept_codes_str:
-            raw_queryset = AccountRoleInfo.objects.raw("select ari.serial  from account_role_info as ari left join account_info as ai on  ari.creater=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
+            raw_queryset = AccountRoleInfo.objects.raw("select ari.serial  from account_role_info as ari left join account_info as ai on  ari.creater=ai.account where ai.dept_code  in (" + dept_codes_str + ") ")
             queryset = AccountRoleInfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("state")
         else:
             queryset = self.queryset
@@ -643,7 +645,7 @@ class ParamInfoViewSet(viewsets.ModelViewSet):
         )
         dept_codes_str = get_detcode_str(self.request.user.dept_code)
         if dept_codes_str:
-            raw_queryset = ParamInfo.objects.raw("select p.serial  from param_info as p left join account_info as ai on  p.creater=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
+            raw_queryset = ParamInfo.objects.raw("select p.serial  from param_info as p left join account_info as ai on  p.creater=ai.account where ai.dept_code  in (" + dept_codes_str + ") ")
             queryset = ParamInfo.objects.filter(serial__in=[i.serial for i in raw_queryset])
         else:
             queryset = self.queryset
