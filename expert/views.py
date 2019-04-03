@@ -518,7 +518,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
                 "select b.serial  from broker_baseinfo as b left join account_info as ai "
                 "on  b.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
             queryset = BrokerBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset],
-                                                     state__in=[1]).order_by("state")
+                                                     state__in=[1]).order_by("state").order_by('state', '-serial')
         else:
             queryset = self.queryset
         if isinstance(queryset, QuerySet):
