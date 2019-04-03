@@ -22,7 +22,9 @@ router.register(r'project_solid_cer', ProjectCommonCheckInfoViewSet)
 # 项目终止审核
 router.register(r'project_end_cer', ProjectCommonCheckInfoViewSet)
 
-# 立项匹配审核
+# 项目匹配信息
+router.register(r'project_match_info', ProjectMatchInfoViewSet)
+# 项目匹配审核
 router.register(r'project_match_cer', ProjectMatchCheckInfoViewSet)
 
 

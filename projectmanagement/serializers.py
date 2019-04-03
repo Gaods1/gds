@@ -312,6 +312,7 @@ class ReqMatchInfoSerializer(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
 
     check_info = MatchCheckInfoSerializer(read_only=True)
+    broker_info = serializers.ListField(read_only=True)
 
     class Meta:
         model = ReqMatchInfo
@@ -328,5 +329,6 @@ class ReqMatchInfoSerializer(serializers.ModelSerializer):
             'rm_state',
             'creater',
             'insert_time',
-            'check_info'
+            'check_info',
+            'broker_info',
         ]

@@ -181,6 +181,10 @@ sub_menu = {
         'title': "项目终止审核",
         'index': "project_end_cer"
     },
+    '项目匹配信息': {
+        'title': "项目匹配信息",
+        'index': "project_match_info"
+    },
     '项目匹配审核': {
         'title': "项目匹配审核",
         'index': "project_match_cer"

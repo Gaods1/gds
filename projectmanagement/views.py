@@ -1031,8 +1031,8 @@ class ProjectTeamInfoViewSet(viewsets.ModelViewSet):
     search_fields = ("team_code", "insert_time")
 
 
-class ProjectMatchCheckInfoViewSet(viewsets.ModelViewSet):
-    '''立项匹配信息审核'''
+class ProjectMatchInfoViewSet(viewsets.ModelViewSet):
+    '''项目匹配信息'''
     queryset = ReqMatchInfo.objects.filter(~Q(rm_state=0)).order_by("-rm_serial")
     serializer_class = ReqMatchInfoSerializer
     filter_backends = (
@@ -1041,7 +1041,43 @@ class ProjectMatchCheckInfoViewSet(viewsets.ModelViewSet):
         filters.OrderingFilter,
     )
     ordering_fields = ("rm_code", "rm_title")
-    filter_fields = ("rm_code", "rm_title")
+    filter_fields = ("rm_code", "rm_title", "rm_state")
+    search_fields = ("rm_code", "rm_title")
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        data = request.data
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        ReqMatchInfo.objects.filter(rm_code=instance.rm_code).delete()
+        self.perform_destroy(instance)
+        # pro = ReqMatchInfo.objects.get(rm_code=instance.rm_code)
+        # pro.rm_state = -99
+        # pro.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ProjectMatchCheckInfoViewSet(viewsets.ModelViewSet):
+    '''项目匹配审核'''
+    queryset = ReqMatchInfo.objects.filter(~Q(rm_state=0)).order_by("-rm_serial")
+    serializer_class = ReqMatchInfoSerializer
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("rm_code", "rm_title")
+    filter_fields = ("rm_code", "rm_title", "rm_state")
     search_fields = ("rm_code", "rm_title")
 
     def update(self, request, *args, **kwargs):
