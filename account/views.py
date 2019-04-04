@@ -532,7 +532,7 @@ class DeptinfoViewSet(viewsets.ModelViewSet):
     )
     ordering_fields = ("dept_name", "insert_time")
     filter_fields = ("state", "dept_level", "region_code","dept_code","pdept_code")
-    search_fields = ("dept_name", "manager", "dept.dept_name", "dept_code")
+    search_fields = ("dept_name", "manager", "dept.dept_name")
 
     dept_model = Deptinfo
     dept_associated_field = ("pdept_code", "dept_code")
