@@ -1614,6 +1614,9 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是成果持有人(企业)身份'}, status=400)
 
+
+
+
                 pcode_or_ecode = pcode if pcode else ecode
 
                 #1 更新resultsinfo表
@@ -1669,6 +1672,20 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
                 relative_path_front = ParamInfo.objects.get(param_code=4).param_value
                 param_value = ParamInfo.objects.get(param_code=6).param_value
+
+                # 删除编辑之间上传的证件照
+                if obtain_type!=1:
+                    ele_list = AttachmentFileinfo.objects.filter(ecode=serializer_ecode,tcode__in=['0102', '0103', '0104', '0107', '0114'])
+                    if ele_list:
+                        for ele in ele_list:
+                            path = ele.path
+                            name = ele.file_name
+                            # 删除正式路径下的图片
+                            url_b = relative_path + path + name
+                            if os.path.exists(url_b):
+                                os.remove(url_b)
+                            # 删除表记录
+                            ele.delete()
 
                 # 图片
                 for key,value in single_dict.items():
