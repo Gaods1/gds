@@ -2251,9 +2251,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         if not pcode:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请完善个人基本信息'}, status=400)
-                        p_or_e_name = PersonalInfo.objects.get(pcode=owner_code).pname
-                        if pcode == p_or_e_name:
-                            pcode = owner_code
+                        p_or_e_list = EnterpriseBaseinfo.objects.filter(ecode=owner_code)
+                        if p_or_e_list:
+                            if ecode == p_or_e_list[0].ename:
+                                ecode = owner_code
 
                     else:
                         if not AgencyImg or not PerIdFront or not PerIdBack or not PerHandId or not EntLicense:
@@ -2263,9 +2264,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         if not ecode:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请完善企业基本信息'}, status=400)
-                        p_or_e_name = EnterpriseBaseinfo.objects.get(ecode=owner_code).ename
-                        if ecode == p_or_e_name:
-                            ecode = owner_code
+                        p_or_e_list = EnterpriseBaseinfo.objects.filter(ecode=owner_code)
+                        if p_or_e_list:
+                            if ecode == p_or_e_list[0].ename:
+                                ecode = owner_code
 
                 else:
                     if owner_type in [1, 3]:
@@ -2274,9 +2276,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         if not pcode:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请完善个人基本信息'}, status=400)
-                        p_or_e_name = PersonalInfo.objects.get(pcode=owner_code).pname
-                        if pcode == p_or_e_name:
-                            pcode = owner_code
+                        p_or_e_list = EnterpriseBaseinfo.objects.filter(ecode=owner_code)
+                        if p_or_e_list:
+                            if ecode == p_or_e_list[0].ename:
+                                ecode = owner_code
                         account_code_p = PersonalInfo.objects.get(pcode=pcode).account_code
                         if account_code_p != account_code:
                             transaction.savepoint_rollback(save_id)
@@ -2291,9 +2294,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         if not ecode:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请完善企业基本信息'}, status=400)
-                        p_or_e_name = EnterpriseBaseinfo.objects.get(ecode=owner_code).ename
-                        if ecode == p_or_e_name:
-                            ecode = owner_code
+                        p_or_e_list = EnterpriseBaseinfo.objects.filter(ecode=owner_code)
+                        if p_or_e_list:
+                            if ecode == p_or_e_list[0].ename:
+                                ecode = owner_code
                         account_code_e = EnterpriseBaseinfo.objects.get(ecode=ecode).account_code
                         if account_code_e != account_code:
                             transaction.savepoint_rollback(save_id)
