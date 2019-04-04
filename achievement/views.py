@@ -1673,7 +1673,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 relative_path_front = ParamInfo.objects.get(param_code=4).param_value
                 param_value = ParamInfo.objects.get(param_code=6).param_value
 
-                # 删除编辑之间上传的证件照
+                # 删除编辑之前采集员上传的必填项证件照
                 if obtain_type!=1:
                     ele_list = AttachmentFileinfo.objects.filter(ecode=serializer_ecode,tcode__in=['0102', '0103', '0104', '0107', '0114'])
                     if ele_list:
@@ -2358,6 +2358,20 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 relative_path_front = ParamInfo.objects.get(param_code=4).param_value
                 param_value = ParamInfo.objects.get(param_code=7).param_value
 
+                # 删除编辑之前采集员上传的必填项证件照
+                if obtain_type != 1:
+                    ele_list = AttachmentFileinfo.objects.filter(ecode=serializer_ecode,
+                                                                 tcode__in=['0102', '0103', '0104', '0107', '0114'])
+                    if ele_list:
+                        for ele in ele_list:
+                            path = ele.path
+                            name = ele.file_name
+                            # 删除正式路径下的图片
+                            url_b = relative_path + path + name
+                            if os.path.exists(url_b):
+                                os.remove(url_b)
+                            # 删除表记录
+                            ele.delete()
 
                 # 图片
                 for key, value in single_dict.items():
