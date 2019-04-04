@@ -6,6 +6,8 @@ from achievement.models import RequirementsInfo
 from public_models.models import MajorUserinfo, MajorInfo
 from django.db.models import Q
 
+import logging
+logger = logging.getLogger('django')
 
 # Create your models here.
 
@@ -498,11 +500,24 @@ class ReqMatchInfo(models.Model):
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True)
 
+    # 审核信息
     def check_info(self):
         rmi = MatchCheckInfo.objects.filter(rm_code=self.rm_code).order_by("-serial")
         if rmi != None and len(rmi)>0:
             return rmi[0]
         return {}
+
+    # 技术经济人信息
+    def broker_info(self):
+        rmbis = ReqMatchBrokerInfo.objects.filter(rm_code=self.rm_code)
+        items = []
+        if rmbis != None and len(rmbis)>0:
+            for rmbi in rmbis:
+                logger.info(rmbi.broker)
+                bbis = BrokerBaseinfo.objects.values("broker_code","broker_name","broker_mobile").filter(broker_code=rmbi.broker)
+                if bbis != None and len(bbis)>0:
+                    items.append(bbis[0])
+        return items
 
     class Meta:
         managed = False

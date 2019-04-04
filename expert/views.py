@@ -76,6 +76,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
                 data = request.data
                 # 获取相关数据
                 creater = AccountInfo.objects.get(account=request.user.account).account_code
+                data['creater'] = creater
                 id_type = data['expert_id_type']
                 pid = data['expert_id']
                 account_code = data['account_code']
@@ -132,7 +133,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
                     # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
                     pcode = create_or_update_person(account_code, pinfo)
                     data['pcode'] = pcode
-
+                    data['state'] = 1
                     # 更新expert
                     expert.update(**data)
                     new_expert = ExpertBaseinfo.objects.filter(account_code=account_code)
@@ -151,7 +152,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     ExpertCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -194,7 +195,7 @@ class ExpertViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     ExpertCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -233,7 +234,6 @@ class ExpertViewSet(viewsets.ModelViewSet):
                 id_type = data['expert_id_type']
                 pid = data['expert_id']
                 account_code = data['account_code']
-                data['creater'] = creater
 
                 major = data.pop('major_code', None)  # 相关领域（列表）
                 head = url_to_path(data.get('head', None))  # 头像
@@ -518,7 +518,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
                 "select b.serial  from broker_baseinfo as b left join account_info as ai "
                 "on  b.account_code=ai.account_code where ai.dept_code  in (" + dept_codes_str + ") ")
             queryset = BrokerBaseinfo.objects.filter(serial__in=[i.serial for i in raw_queryset],
-                                                     state__in=[1]).order_by("state")
+                                                     state__in=[1]).order_by("state").order_by('state', '-serial')
         else:
             queryset = self.queryset
         if isinstance(queryset, QuerySet):
@@ -550,6 +550,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
                 data = request.data
                 # 获取相关数据
                 creater = AccountInfo.objects.get(account=request.user.account).account_code
+                data['creater'] = creater
                 id_type = data['broker_id_type']
                 pid = data['broker_id']
                 account_code = data['account_code']
@@ -606,7 +607,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
                     # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
                     pcode = create_or_update_person(account_code, pinfo)
                     data['pcode'] = pcode
-
+                    data['state'] = 1
                     # 更新基本信息表
                     obj.update(**data)
                     new_obj = BrokerBaseinfo.objects.filter(account_code=account_code)
@@ -625,7 +626,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     BrokerCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -668,7 +669,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     BrokerCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -707,7 +708,6 @@ class BrokerViewSet(viewsets.ModelViewSet):
                 id_type = data['broker_id_type']
                 pid = data['broker_id']
                 account_code = data['account_code']
-                data['creater'] = creater
 
                 major = data.pop('major_code', None)  # 相关领域（列表）
                 head = url_to_path(data.get('head', None))  # 头像
@@ -1013,6 +1013,7 @@ class CollectorViewSet(viewsets.ModelViewSet):
                 data = request.data
                 # 获取相关数据
                 creater = AccountInfo.objects.get(account=request.user.account).account_code
+                data['creater'] = creater
                 id_type = data['collector_idtype']
                 pid = data['collector_id']
                 account_code = data['account_code']
@@ -1066,6 +1067,7 @@ class CollectorViewSet(viewsets.ModelViewSet):
                     # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
                     pcode = create_or_update_person(account_code, pinfo)
                     data['pcode'] = pcode
+                    data['state'] = 1
 
                     # 更新基本信息表
                     obj.update(**data)
@@ -1082,7 +1084,7 @@ class CollectorViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     CollectorCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -1122,7 +1124,7 @@ class CollectorViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     CollectorCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -1161,7 +1163,6 @@ class CollectorViewSet(viewsets.ModelViewSet):
                 id_type = data['collector_idtype']
                 pid = data['collector_id']
                 account_code = data['account_code']
-                data['creater'] = creater
 
                 head = url_to_path(data.get('head', None))  # 头像
                 idfront = url_to_path(data.get('idfront', None))  # 身份证正面
@@ -1465,6 +1466,7 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                 data['type'] = 1
                 # 获取相关数据
                 creater = AccountInfo.objects.get(account=request.user.account).account_code
+                data['creater'] = creater
                 id_type = data['owner_idtype']
                 pid = data['owner_id']
                 account_code = data['account_code']
@@ -1524,6 +1526,7 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                     # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
                     pcode = create_or_update_person(account_code, pinfo)
                     data['pcode'] = pcode
+                    data['state'] = 1
 
                     # 更新基本信息表
                     obj.update(**data)
@@ -1543,7 +1546,7 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     OwnerpCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -1586,7 +1589,7 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     OwnerpCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -1626,7 +1629,6 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                 id_type = data['owner_idtype']
                 pid = data['owner_id']
                 account_code = data['account_code']
-                data['creater'] = creater
 
                 major = data.pop('major_code', None)  # 相关领域（列表）
                 head = url_to_path(data.get('head', None))  # 头像
@@ -1951,6 +1953,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                 data['type'] = 1
                 # 获取相关数据
                 creater = AccountInfo.objects.get(account=request.user.account).account_code
+                data['creater'] = creater
                 account_code = data['account_code']
 
                 major = data.pop('major_code', None)  # 相关领域（列表）
@@ -2022,6 +2025,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                     # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
                     encode = create_or_update_enterprise(account_code, einfo)
                     data['ecode'] = encode
+                    data['state'] = 1
 
                     # 更新基本信息表
                     obj.update(**data)
@@ -2040,7 +2044,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     OwnereCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -2098,7 +2102,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     OwnereCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -2542,6 +2546,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                 data['type'] = 2
                 # 获取相关数据
                 creater = AccountInfo.objects.get(account=request.user.account).account_code
+                data['creater'] = creater
                 id_type = data['owner_idtype']
                 pid = data['owner_id']
                 account_code = data['account_code']
@@ -2601,6 +2606,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                     # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
                     pcode = create_or_update_person(account_code, pinfo)
                     data['pcode'] = pcode
+                    data['state'] = 1
 
                     # 更新基本信息表
                     obj.update(**data)
@@ -2620,7 +2626,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     OwnerpCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -2663,7 +2669,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     OwnerpCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -2703,7 +2709,6 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                 id_type = data['owner_idtype']
                 pid = data['owner_id']
                 account_code = data['account_code']
-                data['creater'] = creater
 
                 major = data.pop('major_code', None)  # 相关领域（列表）
                 head = url_to_path(data.get('head', None))  # 头像
@@ -3028,6 +3033,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                 data['type'] = 2
                 # 获取相关数据
                 creater = AccountInfo.objects.get(account=request.user.account).account_code
+                data['creater'] = creater
                 account_code = data['account_code']
 
                 major = data.pop('major_code', None)  # 相关领域（列表）
@@ -3099,6 +3105,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                     # 根据 account 创建或者更新 个人基本信息表（person_info）获取pcdoe
                     encode = create_or_update_enterprise(account_code, einfo)
                     data['ecode'] = encode
+                    data['state'] = 1
 
                     # 更新基本信息表
                     obj.update(**data)
@@ -3117,20 +3124,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     OwnereCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
-                                                      result=2,
-                                                      check_time=datetime.datetime.now(),
-                                                      account=creater)
-
-                    # 插入记录表
-                    apply = OwnereApplyHistory.objects.create(owner_code=ecode,
-                                                              account_code=account_code,
-                                                              state=2,
-                                                              apply_time=datetime.datetime.now(),
-                                                              apply_type=1)
-
-                    OwnereCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -3188,7 +3182,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     OwnereCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -3641,6 +3635,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                 data = request.data
                 # 获取相关数据
                 creater = AccountInfo.objects.get(account=request.user.account).account_code
+                data['creater'] = creater
                 id_type = data['pt_people_type']
                 pid = data['pt_people_id']
                 account_code = data['account_code']
@@ -3725,7 +3720,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     else:
                         encode = create_or_update_enterprise(account_code, einfo)
                         data['ecode'] = encode
-
+                    data['state'] = 1
                     # 更新基本信息表
                     obj.update(**data)
                     new_obj = ProjectTeamBaseinfo.objects.filter(account_code=account_code)
@@ -3744,7 +3739,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     TeamCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)
@@ -3803,7 +3798,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                                                               apply_type=1)
 
                     TeamCheckHistory.objects.create(apply_code=apply.apply_code,
-                                                      opinion='后台创建身份',
+                                                      opinion='管理系统创建身份',
                                                       result=2,
                                                       check_time=datetime.datetime.now(),
                                                       account=creater)

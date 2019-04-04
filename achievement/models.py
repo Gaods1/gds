@@ -364,7 +364,7 @@ class ResultCheckHistory(models.Model):
     apply_code = models.CharField(max_length=64, blank=True, null=True)
     opinion = models.TextField(blank=True, null=True)
     result = models.IntegerField(blank=True, null=True)
-    check_time = models.DateTimeField(blank=True, null=True)
+    check_time = models.DateTimeField(blank=True, null=True,auto_now_add=True)
     account = models.CharField(max_length=64, blank=True, null=True)
 
     class Meta:
