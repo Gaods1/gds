@@ -16,7 +16,7 @@ def get_project_code(code):
 
 
 def get_expert_code(code):
-    return ExpertBaseinfo.objects.get(expert_detail=code).serial
+    return ExpertBaseinfo.objects.get(expert_code=code).serial
 
 
 def get_broker_code(code):
