@@ -13,6 +13,7 @@ class MessageInformationSerializer(PatclubModelSerializer):
                   'title',
                   'type',
                   'code',
+                  'name',
                   'url',
                   'content',
                   'phone',
