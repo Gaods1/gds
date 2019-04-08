@@ -26,8 +26,14 @@ class MessageInformation(models.Model):
     @property
     def url(self):
         serial = type_model[self.type](self.code)
-        url = '/{}?serial={}'.format(type_index[self.type], serial)
+        url = None
+        if serial:
+            url = '/{}?serial={}'.format(type_index[self.type], serial)
         return url
+
+    @property
+    def name(self):
+        return type_name[self.type](self.code)
 
     @property
     def color(self):
