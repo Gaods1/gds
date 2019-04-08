@@ -234,7 +234,7 @@ class NewsGroupInfoViewSet(viewsets.ModelViewSet):
 
 #新闻管理
 class NewsInfoViewSet(viewsets.ModelViewSet):
-    queryset = NewsInfo.objects.all().order_by('state', '-serial')
+    queryset = NewsInfo.objects.all().order_by('-state', '-serial')
     serializer_class = NewsinfoSerializers
 
     filter_backends = (
@@ -253,6 +253,34 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
             save_id = transaction.savepoint()
             try:
                 form_data = request.data
+                """
+                时间逻辑验证:
+                上架时间大于等于当前时间
+                下架时间大于上架时间
+                置顶则置顶时间大于等于当前时间
+                审核时间应大于等于当前时间
+                """
+                current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                top_tag = form_data['top_tag']
+                up_time = form_data['up_time']
+                down_time = form_data['down_time']
+                top_time = form_data['top_time'] if form_data['top_time'] else ''
+                check_time = form_data['check_time']
+                if up_time < current_time:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '上架时间大于等于当前时间'}, 400)
+                if down_time < current_time or down_time <= up_time:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '下架时间应大于当前时间且下架时间大于上架时间'}, 400)
+                if top_tag and top_time is None:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '置顶时间必选'}, 400)
+                if top_tag and top_time < current_time:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '置顶则置顶时间大于等于当前时间'}, 400)
+                if check_time < current_time:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '审核时间应大于等于当前时间'}, 400)
                 news_code = gen_uuid32()
                 form_data['news_code'] = news_code
                 # form_face_pic = form_data['face_pic']['guidePhoto'] if form_data['face_pic'] else ''
@@ -464,6 +492,34 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                 params_dict = get_attach_params()
                 instance = self.get_object()
                 form_data = request.data
+                """
+                时间逻辑验证:
+                上架时间大于等于当前时间
+                下架时间大于上架时间
+                置顶则置顶时间大于等于当前时间
+                审核时间应大于等于当前时间
+                """
+                current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                top_tag = form_data['top_tag']
+                up_time = form_data['up_time']
+                down_time = form_data['down_time']
+                top_time = form_data['top_time']
+                check_time = form_data['check_time']
+                if up_time < current_time:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '上架时间大于等于当前时间'}, 400)
+                if down_time < current_time or down_time <= up_time:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '下架时间应大于当前时间且下架时间大于上架时间'}, 400)
+                if top_tag and top_time is None:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '置顶时间必选'}, 400)
+                if top_tag and top_time < current_time:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '置顶则置顶时间大于等于当前时间'}, 400)
+                if check_time < current_time:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '审核时间应大于等于当前时间'}, 400)
                 # form_data['top_tag'] = form_data['top_tag'] if int(form_data['top_tag']) else None
                 # form_data['source'] = form_data['source'] if int(form_data['source']) else None
                 # form_data['check_state'] = form_data['check_state'] if int(form_data['check_state']) else None
@@ -473,8 +529,8 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                 attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
                 upload_temp_pattern = re.compile(r'' + attachment_temp_dir + '')
                 upload_pattern = re.compile(r'' + attachment_dir + '')
-                upload_facepic = upload_pattern.findall(form_data['face_pic'])
-                upload_temp_facepic = upload_temp_pattern.findall(form_data['face_pic'])
+                upload_facepic = upload_pattern.findall(form_face_pic)
+                upload_temp_facepic = upload_temp_pattern.findall(form_face_pic)
                 form_face_pic = ''
                 if upload_facepic:  # 未更新已上传face_pic
                     facepicList = form_data['face_pic'].split('/')
@@ -992,7 +1048,7 @@ class PolicyGroupInfoViewSet(viewsets.ModelViewSet):
 
 #政策法规管理
 class PolicyInfoViewSet(viewsets.ModelViewSet):
-    queryset = PolicyInfo.objects.all().order_by('state', '-serial')
+    queryset = PolicyInfo.objects.all().order_by('-state', '-serial')
     serializer_class = PolicyInfoSerializers
 
     filter_backends = (
