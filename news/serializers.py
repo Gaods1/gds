@@ -21,6 +21,7 @@ class NewsGroupInfoSerializers(PatclubModelSerializer):
 # 新闻信息管理序列器
 class NewsinfoSerializers(PatclubModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    release_date = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     face_pic_path = serializers.CharField(read_only=True)
     face_pic_url = serializers.CharField(read_only=True)
     group_name = serializers.CharField(read_only=True)
@@ -30,11 +31,10 @@ class NewsinfoSerializers(PatclubModelSerializer):
     attach3 = serializers.ListField(read_only=True)
     attach4 = serializers.ListField(read_only=True)
     attach5 = serializers.ListField(read_only=True)
-    release_date = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True)
     up_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True)
     down_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True)
     check_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True)
-    top_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True)
+    top_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False,allow_null=True)
 
     class Meta:
         model = NewsInfo
@@ -91,6 +91,7 @@ class PolicyGroupInfoSerializers(PatclubModelSerializer):
 # 政策法规信息管理序列器
 class PolicyInfoSerializers(PatclubModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    release_date = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     face_pic_path = serializers.CharField(read_only=True)
     face_pic_url = serializers.CharField(read_only=True)
     group_name = serializers.CharField(read_only=True)
@@ -100,7 +101,6 @@ class PolicyInfoSerializers(PatclubModelSerializer):
     attach3 = serializers.ListField(read_only=True)
     attach4 = serializers.ListField(read_only=True)
     attach5 = serializers.ListField(read_only=True)
-    release_date = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True)
     top_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True)
 
     class Meta:
