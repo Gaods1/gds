@@ -18,6 +18,7 @@ from .serializers import *
 from .models import *
 from .utils import massege
 from django.db.models import Q
+from django.db import connection
 
 import logging
 logger = logging.getLogger('django')
@@ -71,7 +72,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
         dept_code_str = get_detcode_str(dept_code)
         if dept_code_str:
             #SQL = "select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.dept_code in ("+dept_code_str+") and rr_apply_history.type=1"
-            SQL = "select rr_apply_history.* \
+            SQL = "select rr_apply_history.serial \
             		from rr_apply_history \
             		inner join account_info \
             		on account_info.account_code=rr_apply_history.account_code \
@@ -618,7 +619,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
         dept_code_str = get_detcode_str(dept_code)
         if dept_code_str:
             #SQL = "select rr_apply_history.* from rr_apply_history inner join account_info on account_info.account_code=rr_apply_history.account_code where account_info.dept_code in ("+dept_code_str+") and rr_apply_history.type=1"
-            SQL = "select rr_apply_history.* \
+            SQL = "select rr_apply_history.serial \
             		from rr_apply_history \
             		inner join account_info \
             		on account_info.account_code=rr_apply_history.account_code \
@@ -648,21 +649,29 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 # 创建一个保存点
                 save_id = transaction.savepoint()
                 # 创建技术经济人跟踪表
+                bcode = data.pop('broker_code', None)
+                if not bcode:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": '请选择技术经纪人'}, status=400)
+
                 try:
-                    bcode = data.pop('broker_code',None)
-                    if not bcode:
-                        transaction.savepoint_rollback(save_id)
-                        return Response({"detail": '请选择技术经纪人'}, status=400)
-                    Requirement_Broker = Requirement_Broker_Info.objects.create(
-                        rcode=instance.rr_code,
-                        bcode=bcode,
-                        state=1,
-                        creater=request.user.account,
-                    )
+                    ss = Requirement_Broker_Info.objects.filter(rcode=instance.rr_code)
+                    if not ss:
+                        Requirement_Broker = Requirement_Broker_Info.objects.create(
+                            rcode=instance.rr_code,
+                            bcode=bcode,
+                            state=1,
+                            creater=request.user.account,
+                        )
+                    else:
+                        Requirement_Broker_Info.objects.filter(rcode=instance.rr_code).update(bcode=bcode)
+                        #ss[0].bcode=bcode
+                        #ss[0].save()
                 except Exception as e:
                     logger.error(e)
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": '需求审核技术经纪人表创建失败%s' % str(e)}, status=400)
+
 
                 # 创建历史记录表
                 try:
@@ -1137,7 +1146,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
 
 
 class ManagementpViewSet(viewsets.ModelViewSet):
-    queryset = ResultsInfo.objects.filter(show_state__in=[1, 2]).order_by('-insert_time')
+    queryset = ResultsInfo.objects.filter(show_state__in=[1, 2]).order_by('show_state','-insert_time')
     serializer_class = ResultsInfoSerializer
     filter_backends = (
         filters.SearchFilter,
@@ -1153,7 +1162,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
         dept_code = self.request.user.dept_code
         dept_code_str = get_detcode_str(dept_code)
         if dept_code_str:
-            SQL = "select results_info.* \
+            SQL = "select results_info.serial \
             		from results_info \
             		inner join account_info \
             		on account_info.account_code=results_info.account_code \
@@ -1327,7 +1336,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 # 创建申请表
                 element_rr=RrApplyHistory.objects.create(rr_code=serializer_ecode,account_code=request.user.account_code,state=2,apply_type=1,type=1)
                 # 创建历史记录表
-                ResultCheckHistory.objects.create(apply_code=element_rr.a_code,opinion='后台审核通过',result=1,account=request.user.user_name)
+                ResultCheckHistory.objects.create(apply_code=element_rr.a_code,opinion='后台审核通过',result=2,account=request.user.user_name)
 
 
                 #6 转移附件创建ecode表
@@ -1553,9 +1562,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         if not pcode:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请完善个人基本信息'}, status=400)
-                        p_or_e_name = PersonalInfo.objects.get(pcode=owner_code).pname
-                        if pcode == p_or_e_name:
-                            pcode = owner_code
+                        p_or_e_list = PersonalInfo.objects.filter(pcode=owner_code)
+                        if p_or_e_list:
+                            if pcode == p_or_e_list[0].pname:
+                                pcode = owner_code
 
                     else:
                         if not AgencyImg or not PerIdFront or not PerIdBack or not PerHandId or not EntLicense:
@@ -1565,9 +1575,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         if not ecode:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请完善企业基本信息'}, status=400)
-                        p_or_e_name = EnterpriseBaseinfo.objects.get(ecode=owner_code).ename
-                        if ecode == p_or_e_name:
-                            ecode = owner_code
+                        p_or_e_list = EnterpriseBaseinfo.objects.filter(ecode=owner_code)
+                        if p_or_e_list:
+                            if ecode == p_or_e_list[0].ename:
+                                ecode = owner_code
 
                 else:
                     if owner_type in [1, 3]:
@@ -1576,9 +1587,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         if not pcode:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请完善个人基本信息'}, status=400)
-                        p_or_e_name = PersonalInfo.objects.get(pcode=owner_code).pname
-                        if pcode == p_or_e_name:
-                            pcode = owner_code
+                        p_or_e_list = PersonalInfo.objects.filter(pcode=owner_code)
+                        if p_or_e_list:
+                            if pcode == p_or_e_list[0].pname:
+                                pcode = owner_code
                         account_code_p = PersonalInfo.objects.get(pcode=pcode).account_code
                         if account_code_p != account_code:
                             transaction.savepoint_rollback(save_id)
@@ -1593,9 +1605,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         if not ecode:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请完善企业基本信息'}, status=400)
-                        p_or_e_name = EnterpriseBaseinfo.objects.get(ecode=owner_code).ename
-                        if ecode == p_or_e_name:
-                            ecode = owner_code
+                        p_or_e_list = EnterpriseBaseinfo.objects.filter(ecode=owner_code)
+                        if p_or_e_list:
+                            if ecode == p_or_e_list[0].ename:
+                                ecode = owner_code
                         account_code_e = EnterpriseBaseinfo.objects.get(ecode=ecode).account_code
                         if account_code_e != account_code:
                             transaction.savepoint_rollback(save_id)
@@ -1604,6 +1617,9 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         if not Identity_account_code:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该角色不是成果持有人(企业)身份'}, status=400)
+
+
+
 
                 pcode_or_ecode = pcode if pcode else ecode
 
@@ -1660,6 +1676,20 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 relative_path = ParamInfo.objects.get(param_code=2).param_value
                 relative_path_front = ParamInfo.objects.get(param_code=4).param_value
                 param_value = ParamInfo.objects.get(param_code=6).param_value
+
+                # 删除编辑之前采集员上传的必填项证件照
+                if obtain_type!=1:
+                    ele_list = AttachmentFileinfo.objects.filter(ecode=serializer_ecode,tcode__in=['0102', '0103', '0104', '0107', '0114'])
+                    if ele_list:
+                        for ele in ele_list:
+                            path = ele.path
+                            name = ele.file_name
+                            # 删除正式路径下的图片
+                            url_b = relative_path + path + name
+                            if os.path.exists(url_b):
+                                os.remove(url_b)
+                            # 删除表记录
+                            ele.delete()
 
                 # 图片
                 for key,value in single_dict.items():
@@ -1823,7 +1853,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
             return Response({'message':'ok'})
 
 class ManagementrViewSet(viewsets.ModelViewSet):
-    queryset = RequirementsInfo.objects.filter(show_state__in=[1, 2]).order_by('-insert_time')
+    queryset = RequirementsInfo.objects.filter(show_state__in=[1, 2]).order_by('show_state','-insert_time')
     serializer_class = RequirementsInfoSerializer
     filter_backends = (
         filters.SearchFilter,
@@ -1839,12 +1869,13 @@ class ManagementrViewSet(viewsets.ModelViewSet):
         dept_code = self.request.user.dept_code
         dept_code_str = get_detcode_str(dept_code)
         if dept_code_str:
-            SQL = "select requirements_info.* \
-            		from requirements_info \
-            		inner join account_info \
-            		on account_info.account_code=requirements_info.account_code \
-            		where account_info.dept_code in ({dept_s}) \
-            		and requirements_info.show_state in (1,2)"
+            SQL = "select r.serial \
+            		from requirements_info as r \
+            		inner join account_info as a \
+            		on a.account_code=r.account_code \
+            		where a.dept_code in ({dept_s}) \
+            		and r.show_state in (1,2)"
+            s = SQL.format(dept_s=dept_code_str)
 
             raw_queryset = RequirementsInfo.objects.raw(SQL.format(dept_s=dept_code_str))
             consult_reply_set = RequirementsInfo.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by('-show_state')
@@ -2004,7 +2035,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 element_rr = RrApplyHistory.objects.create(rr_code=serializer_ecode, account_code=request.user.account_code,
                                                            state=2, apply_type=1, type=2)
                 # 创建历史记录表
-                ResultCheckHistory.objects.create(apply_code=element_rr.a_code, opinion='后台审核通过', result=1,
+                ResultCheckHistory.objects.create(apply_code=element_rr.a_code, opinion='后台审核通过', result=2,
                                                   account=request.user.user_name)
 
                 # 6 转移附件创建ecode表
@@ -2224,9 +2255,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         if not pcode:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请完善个人基本信息'}, status=400)
-                        p_or_e_name = PersonalInfo.objects.get(pcode=owner_code).pname
-                        if pcode == p_or_e_name:
-                            pcode = owner_code
+                        p_or_e_list = PersonalInfo.objects.filter(pcode=owner_code)
+                        if p_or_e_list:
+                            if pcode == p_or_e_list[0].pname:
+                                pcode = owner_code
 
                     else:
                         if not AgencyImg or not PerIdFront or not PerIdBack or not PerHandId or not EntLicense:
@@ -2236,9 +2268,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         if not ecode:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请完善企业基本信息'}, status=400)
-                        p_or_e_name = EnterpriseBaseinfo.objects.get(ecode=owner_code).ename
-                        if ecode == p_or_e_name:
-                            ecode = owner_code
+                        p_or_e_list = EnterpriseBaseinfo.objects.filter(ecode=owner_code)
+                        if p_or_e_list:
+                            if ecode == p_or_e_list[0].ename:
+                                ecode = owner_code
 
                 else:
                     if owner_type in [1, 3]:
@@ -2247,9 +2280,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         if not pcode:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请完善个人基本信息'}, status=400)
-                        p_or_e_name = PersonalInfo.objects.get(pcode=owner_code).pname
-                        if pcode == p_or_e_name:
-                            pcode = owner_code
+                        p_or_e_list = PersonalInfo.objects.filter(pcode=owner_code)
+                        if p_or_e_list:
+                            if pcode == p_or_e_list[0].pname:
+                                pcode = owner_code
                         account_code_p = PersonalInfo.objects.get(pcode=pcode).account_code
                         if account_code_p != account_code:
                             transaction.savepoint_rollback(save_id)
@@ -2264,9 +2298,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         if not ecode:
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '请完善企业基本信息'}, status=400)
-                        p_or_e_name = EnterpriseBaseinfo.objects.get(ecode=owner_code).ename
-                        if ecode == p_or_e_name:
-                            ecode = owner_code
+                        p_or_e_list = EnterpriseBaseinfo.objects.filter(ecode=owner_code)
+                        if p_or_e_list:
+                            if ecode == p_or_e_list[0].ename:
+                                ecode = owner_code
                         account_code_e = EnterpriseBaseinfo.objects.get(ecode=ecode).account_code
                         if account_code_e != account_code:
                             transaction.savepoint_rollback(save_id)
@@ -2331,6 +2366,20 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 relative_path_front = ParamInfo.objects.get(param_code=4).param_value
                 param_value = ParamInfo.objects.get(param_code=7).param_value
 
+                # 删除编辑之前采集员上传的必填项证件照
+                if obtain_type != 1:
+                    ele_list = AttachmentFileinfo.objects.filter(ecode=serializer_ecode,
+                                                                 tcode__in=['0102', '0103', '0104', '0107', '0114'])
+                    if ele_list:
+                        for ele in ele_list:
+                            path = ele.path
+                            name = ele.file_name
+                            # 删除正式路径下的图片
+                            url_b = relative_path + path + name
+                            if os.path.exists(url_b):
+                                os.remove(url_b)
+                            # 删除表记录
+                            ele.delete()
 
                 # 图片
                 for key, value in single_dict.items():
