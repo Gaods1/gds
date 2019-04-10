@@ -2390,7 +2390,7 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
                 if instance.state != 1:
                     raise ValueError('该信息已被审核')
 
-                if IdentityAuthorizationInfo.objects.filter(account_code=instance.account_code,
+                if IdentityAuthorizationInfo.objects.filter(account_code=instance.owner.account_code,
                                                             identity_code=4,
                                                             state=2):
                     raise ValueError('此账号已存在成果持有个人身份，不能申请为成果持有企业')
@@ -3473,7 +3473,7 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                 if instance.state != 1:
                     raise ValueError('该信息已被审核')
 
-                if IdentityAuthorizationInfo.objects.filter(account_code=instance.account_code,
+                if IdentityAuthorizationInfo.objects.filter(account_code=instance.owner.account_code,
                                                             identity_code=6,
                                                             state=2):
                     raise ValueError('此账号已存在需求持有个人身份，不能申请为需求持有企业')
