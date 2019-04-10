@@ -2610,7 +2610,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
 
                     # 更新基本信息表
                     obj.update(**data)
-                    new_obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, type=1)
+                    new_obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, type=2)
                     serializer = self.get_serializer(new_obj, many=True)
                     return_data = serializer.data[0]
                     ecode = new_obj[0].owner_code
@@ -3109,7 +3109,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
 
                     # 更新基本信息表
                     obj.update(**data)
-                    new_obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, type=1)
+                    new_obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, type=2)
                     serializer = self.get_serializer(new_obj, many=True)
                     return_data = serializer.data[0]
                     ecode = new_obj[0].owner_code
