@@ -1512,8 +1512,12 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                 }
 
                 # 查询是否存在成果持有企业身份
-                if ResultOwnereBaseinfo.objects.filter(account_code=account_code, type=1, state__in=[1, 2]):
-                    raise ValueError('此账号已申请成果持有企业身份，不能成为持有个人')
+                ident = IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                            identity_code=5)
+                if ident and ident[0].state in [1, 2]:
+                    raise ValueError('此账号已存在成果持有企业身份，不能申请为成果持有个人')
+                else:
+                    ident.delete()
                 # 查询当前账号有没有伪删除身份
                 obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, state=3, type=1)
                 if obj:
@@ -2012,8 +2016,12 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                     'account_code': account_code
                 }
                 # 验证是否存在成果持有人个人身份
-                if ResultOwnerpBaseinfo.objects.filter(account_code=account_code, type=1, state__in=[1, 2]):
-                    raise ValueError('此账号已申请成果持有个人身份，不能成为持有企业')
+                ident = IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                            identity_code=4)
+                if ident and ident[0].state in [1, 2]:
+                    raise ValueError('此账号已存在成果持有个人身份，不能申请为成果持有企业')
+                else:
+                    ident.delete()
 
                 # 查询当前账号有没有伪删除身份
                 obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, state=3, type=1)
@@ -2596,8 +2604,12 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                 }
 
                 # 查询是否存在成果持有企业身份
-                if ResultOwnereBaseinfo.objects.filter(account_code=account_code, type=2, state__in=[1, 2]):
-                    raise ValueError('此账号已申请需求持有企业身份，不能成为持有个人')
+                ident = IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                            identity_code=7)
+                if ident and ident[0].state in [1, 2]:
+                    raise ValueError('此账号已存在需求持有企业身份，不能申请为需求持有个人')
+                else:
+                    ident.delete()
                 # 查询当前账号有没有伪删除身份
                 obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, state=3, type=2)
                 if obj:
@@ -3096,8 +3108,12 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                     'account_code': account_code
                 }
                 # 验证是否存在成果持有人个人身份
-                if ResultOwnerpBaseinfo.objects.filter(account_code=account_code, type=2, state__in=[1, 2]):
-                    raise ValueError('此账号已申请需求持有个人身份，不能成为持有企业')
+                ident = IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                            identity_code=6)
+                if ident and ident[0].state in [1, 2]:
+                    raise ValueError('此账号已存在需求持有个人身份，不能申请为需求持有企业')
+                else:
+                    ident.delete()
 
                 # 查询当前账号有没有伪删除身份
                 obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, state=3, type=2)
