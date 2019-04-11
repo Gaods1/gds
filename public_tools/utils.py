@@ -99,17 +99,18 @@ Quicktime (mov)，文件头：6D6F6F76
 Windows Media (asf)，文件头：3026B2758E66CF11
 MIDI (mid)，文件头：4D546864
 ---------------------
-注:docx和xlsx的文件头信息为zip的文件头信息
+注:docx和xlsx的文件头信息和zip的文件头信息一样
 """
 def typeList():
     return {
         "FFD8FF": ['.jpg','.jpeg','.JPG','.JPEG'],
-        "89504E47": ['.png','PNG'],
+        "89504E47": ['.png','.PNG'],
         "47494638":['.gif','.GIF'],
         "424D":['.BMP','.bmp'],
         "49492A00":['.tif','.TIFF','TIF'],
         "D0CF11E0":['.doc','.DOC','.xls','.XLS','.PPT','.ppt'],
         "504B0304":['.zip','.ZIP','.docx','.DOCX','.xlsx','.XLSX'],
+        #"504b0304140006000800":['.docx','.DOCX','.xlsx','.XLSX'],
         "52617221":['.rar','.RAR'],
         "255044462D312E":['.pdf','.PDF']
     }
