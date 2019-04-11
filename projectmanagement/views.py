@@ -916,12 +916,17 @@ def getCommonCheckInfo(self, request, step_code, substep_code):
                         """
     else:
         sql = """
+              select AA.* from
+              ( 
                     select a.* from project_check_info as a,project_substep_info as b
                     where a.project_code=b.project_code and a.step_code=b.step_code and a.substep_code=b.substep_code
                     and b.substep_state=-11
                     and a.cstate=0
-                    group by a.project_code
-                    """
+                    and substep_serial<>''
+                    ORDER BY a.p_serial DESC
+              ) as AA
+              group by AA.project_code
+            """
     sql = sql.format(step_code=step_code, substep_code=substep_code)
     raw_queryset = ProjectCheckInfo.objects.raw(sql)
 
