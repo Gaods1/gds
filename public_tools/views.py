@@ -221,16 +221,16 @@ class PublicInfo(APIView):
                             return Response({'detail': '该正式路径下不存在该文件'},status=400)
                         # 创建对象
                         a = FileSystemStorage(location=self.MEDIA_ROOT)
-                        a.delete(url)
-                        #os.remove(url)
+                        #a.delete(url)
+                        os.remove(url)
                         # 相同路径下删除pdf文件
                         #name_pdf= name.split('.')[-1]
                         name_pdf = os.path.splitext(name)[0] + '.pdf'
                         #name_pdf = name.replace(name_pdf, 'pdf')
                         url_pdf = url.replace(name,name_pdf)
                         if os.path.exists(url_pdf):
-                            #os.remove(url_pdf)
-                            a.delete(url_pdf)
+                            #a.delete(url_pdf)
+                            os.remove(url_pdf)
                         # 删除表记录
                         AttachmentFileinfo.objects.filter(file_name=name).order_by('-insert_time')[0].delete()
                         # 删除表(pdf)记录
