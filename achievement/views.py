@@ -1431,7 +1431,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,operation_state=3, state=1,file_caption=file_caption,publish=1,file_format=0))
 
                         # 同路经下有pdf文件
-                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx'):
+                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx') or url_j.endswith('DOC') or url_j.endswith('DOCX') or url_j.endswith('XLS') or url_j.endswith('XLSX'):
                             url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
                             url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
 
@@ -1791,7 +1791,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                                                         state=1,file_caption=file_caption,publish=1,file_format=0))
 
                         # 同路经下有pdf文件
-                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx'):
+                        #if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx'):
+                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith(
+                                    'xlsx') or url_j.endswith('docx') or url_j.endswith('DOC') or url_j.endswith(
+                                    'DOCX') or url_j.endswith('XLS') or url_j.endswith('XLSX'):
 
                             url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
                             url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
@@ -2130,8 +2133,12 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                                                         path=path, operation_state=3, state=1,file_caption=file_caption,publish=1,file_format=0))
 
                         # 同路经下有pdf文件
-                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith(
-                                'docx'):
+                        #if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith(
+                                #'docx'):
+                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith(
+                                    'xlsx') or url_j.endswith('docx') or url_j.endswith('DOC') or url_j.endswith(
+                                    'DOCX') or url_j.endswith('XLS') or url_j.endswith('XLSX'):
+
                             url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
                             url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
 
@@ -2475,8 +2482,11 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                                                         state=1,file_caption=file_caption,publish=1,file_format=0))
 
                         # 同路经下有pdf文件
-                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith(
-                                'docx'):
+                        #if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith(
+                                #'docx'):
+                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith(
+                                    'xlsx') or url_j.endswith('docx') or url_j.endswith('DOC') or url_j.endswith(
+                                    'DOCX') or url_j.endswith('XLS') or url_j.endswith('XLSX'):
 
                             url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
                             url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
