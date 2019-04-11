@@ -79,8 +79,8 @@ class KeywordsInfoSerializer(serializers.ModelSerializer):
 # 成果信息表序列化
 class ResultsInfoSerializer(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
-    expiry_dateb = serializers.DateTimeField(format="%Y-%m-%d", required=False,allow_null=True)
-    expiry_datee = serializers.DateTimeField(format="%Y-%m-%d", required=False,allow_null=True)
+    expiry_dateb = serializers.DateTimeField(required=False,allow_null=True)
+    expiry_datee = serializers.DateTimeField(required=False,allow_null=True)
     rexpiry_dateb = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False,allow_null=True)
     rexpiry_datee = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False,allow_null=True)
     sniff_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False,allow_null=True)
