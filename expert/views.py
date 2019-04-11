@@ -525,6 +525,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
             # Ensure queryset is re-evaluated on each request.
             queryset = queryset.all()
         return queryset
+
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
@@ -1519,7 +1520,7 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                 else:
                     ident.delete()
                 # 查询当前账号有没有伪删除身份
-                obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, state=3, type=1)
+                obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, state__in=[2, 3], type=1)
                 if obj:
                     # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
                     check_identity2(account_code=account_code, identity=4, info=identity_info)
@@ -2024,7 +2025,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                     ident.delete()
 
                 # 查询当前账号有没有伪删除身份
-                obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, state=3, type=1)
+                obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, state__in=[2, 3], type=1)
                 if obj:
                     # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
                     check_identity2(account_code=account_code, identity=5, info=identity_info)
@@ -2611,7 +2612,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                 else:
                     ident.delete()
                 # 查询当前账号有没有伪删除身份
-                obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, state=3, type=2)
+                obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, state__in=[2, 3], type=2)
                 if obj:
                     # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
                     check_identity2(account_code=account_code, identity=6, info=identity_info)
@@ -3116,7 +3117,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                     ident.delete()
 
                 # 查询当前账号有没有伪删除身份
-                obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, state=3, type=2)
+                obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, state__in=[2, 3], type=2)
                 if obj:
                     # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
                     check_identity2(account_code=account_code, identity=7, info=identity_info)
@@ -3730,7 +3731,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                         'account_code': account_code
                     }
                 # 查询当前账号有没有伪删除身份
-                obj = ProjectTeamBaseinfo.objects.filter(account_code=account_code, state=3)
+                obj = ProjectTeamBaseinfo.objects.filter(account_code=account_code, state__in=[2, 3])
                 if obj:
                     # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
                     check_identity2(account_code=account_code, identity=3, info=identity_info)
