@@ -9,6 +9,7 @@ import django_filters
 import threading
 import time
 import shutil
+import datetime
 
 from expert.models import IdentityAuthorizationInfo
 from misc.filter.search import ViewSearch
@@ -1217,8 +1218,13 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 obtain_type = request.data.get('obtain_type',None)
 
                 r_name = request.data.get('r_name',None)
+
                 expiry_dateb = request.data.get('expiry_dateb',None)
+                #expiry_dateb = (expiry_dateb+ datetime.timedelta(hours=8))
+
                 expiry_datee = request.data.get('expiry_datee',None)
+                #expiry_datee = (expiry_datee + datetime.timedelta(hours=8))
+
                 r_form_type = request.data.get('r_form_type',None)
                 use_type = request.data.get('use_type', None)
                 r_abstract = request.data.get('r_abstract',None)
