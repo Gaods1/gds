@@ -104,7 +104,7 @@ MIDI (mid)，文件头：4D546864
 def typeList():
     return {
         "FFD8FF": ['.jpg','.jpeg','.JPG','.JPEG'],
-        "89504E47": ['.png'],
+        "89504E47": ['.png','PNG'],
         "47494638":['.gif','.GIF'],
         "424D":['.BMP','.bmp'],
         "49492A00":['.tif','.TIFF','TIF'],
