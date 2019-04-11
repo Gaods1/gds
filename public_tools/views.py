@@ -220,7 +220,7 @@ class PublicInfo(APIView):
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该正式路径下不存在该文件'},status=400)
                         # 创建对象
-                        a = FileSystemStorage(location=self.MEDIA_ROOT)
+                        #a = FileSystemStorage(location=self.MEDIA_ROOT)
                         #a.delete(url)
                         os.remove(url)
                         # 相同路径下删除pdf文件
