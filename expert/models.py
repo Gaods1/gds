@@ -556,7 +556,7 @@ class ResultOwnereBaseinfo(models.Model):
     ecode = models.CharField(max_length=64, blank=True, null=True)      # 与企业基本信息表关联字段
     type = models.IntegerField(blank=True, null=True)                   # 持有人类型 1：成果持有人， 2：需求持有人
     owner_name = models.CharField(verbose_name='企业名称', max_length=64)
-    owner_tel = models.CharField(verbose_name='企业电话', max_length=16, validators=[validate_tel])
+    owner_tel = models.CharField(verbose_name='企业电话', max_length=16, validators=[validate_mobile_tel])
     owner_mobile = models.CharField(max_length=16, blank=True, null=True, validators=[validate_mobile])
     owner_email = models.CharField(max_length=64, blank=True, null=True, validators=[validate_email])
     owner_license = models.CharField(verbose_name='统一社会信用代码', max_length=64, validators=[validate_license])
