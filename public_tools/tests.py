@@ -50,13 +50,12 @@ def typeList():
         "89504E47": ['.png','.PNG'],
         "47494638":['.gif','.GIF'],
 
-        '424D228C010000000000': ['.BMP','.bmp'],
-        '424D8240090000000000': ['.BMP','.bmp'],
-        '424D8E1B030000000000': ['.BMP','.bmp'],
+        '424D': ['.BMP','.bmp'],
 
         "49492A00":['.tif','.TIFF','TIF'],
 
-        "D0CF11E0A1B11AE1":['.doc','.DOC','.xls','.XLS'],
+        "D0CF11E0":['.doc','.DOC','.xls','.XLS'],
+        '504B0304': ['.zip','.ZIP','.docx', '.DOCX','.xlsx', '.XLSX'],
 
         #'504B0304140000080044': ['.zip','.ZIP'],
         #'504B03040A0000080000': ['.zip','.ZIP'],
@@ -64,7 +63,8 @@ def typeList():
 
         #"504B03041400060008000000210066EE":['.docx','.DOCX'],
         #'504B030414000600080000002100CA84':['.xlsx','.XLSX'],
-        "504B0304": ['.docx', '.DOCX','.xlsx', '.XLSX','.zip','.ZIP'],
+        #"504B030414000600": ['.docx', '.DOCX','.xlsx', '.XLSX'],
+        #'504B03040A0000000000': ['.docx', '.DOCX','.xlsx', '.XLSX'],
 
         "52617221":['.rar','.RAR'],
         "255044462D312E":['.pdf','.PDF']
@@ -125,5 +125,5 @@ def filetype(filename):
     return ftype
 if __name__ == '__main__':
 
-    a = filetype('/home/python/Desktop/新建 DOCX 文档.docx')
+    a = filetype('/home/python/Desktop/空docx.zip')
     print(a)
