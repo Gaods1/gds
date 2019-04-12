@@ -92,6 +92,9 @@ class PublicInfo(APIView):
                         if f == 'unknown':
                             a.delete(url)
                             return Response({'detail': '该服务器不支持此文件类型'}, status=400)
+                        if f =='emputy':
+                            a.delete(url)
+                            return Response({'detail': '该上传文件内容不能为空'}, status=400)
                         if url_houzhui not in f:
                             a.delete(url)
                             return Response({'detail': '该文件后缀名不正确'}, status=400)

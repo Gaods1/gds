@@ -137,9 +137,12 @@ def filetype(filename):
     #print(bins)
     tl = typeList()#文件类型
     ftype = 'unknown'
-    for hcode in tl.keys():
-        lens = len(hcode) # 需要的长度
-        if bins[0:lens] == hcode:
-            ftype = tl[hcode]
-            break
+    if bins=='':
+        ftype='emputy'
+    else:
+        for hcode in tl.keys():
+            lens = len(hcode) # 需要的长度
+            if bins[0:lens] == hcode:
+                ftype = tl[hcode]
+                break
     return ftype
