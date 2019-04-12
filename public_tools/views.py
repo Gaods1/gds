@@ -103,10 +103,16 @@ class PublicInfo(APIView):
                         if url_houzhui in ['.doc', '.DOC', '.xls', '.XLS', '.xlsx', '.XLSX', '.docx', '.DOCX']:
                             # 转换office文件为pdf文件
                             child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + self.MEDIA_ROOT + 'temporary/' + account_code + ' ' + url, stdout=subprocess.PIPE, shell=True)
+                            child.wait()
+                            #if child.returncode!=0:
+                                #a.delete(url)
+                                #return Response({'detail': '该文件后缀名不正确'}, status=400)
+                            #print(child.returncode)
                             url_pp = os.path.splitext(url)[0]+'.pdf'
                             if not os.path.exists(url_pp):
                                 a.delete(url)
                                 return Response({'detail': '该文件后缀名不正确'}, status=400)
+
                         u_z = url.split('/')[-1]
                         url_front = self.absolute_path_front + 'temporary/' + account_code + '/' + u_z
                         attachment_pdf.append(url_front)
