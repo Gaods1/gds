@@ -103,49 +103,42 @@ MIDI (mid)，文件头：4D546864
 """
 def typeList():
     return {
-        "FFD8FF": ['.jpg','.jpeg','.JPG','.JPEG'],
-        "89504E47": ['.png','.PNG'],
-        "47494638":['.gif','.GIF'],
-        "424D":['.BMP','.bmp'],
-        "49492A00":['.tif','.TIFF','TIF'],
-        "D0CF11E0":['.doc','.DOC','.xls','.XLS','.PPT','.ppt'],
-        "504B0304":['.zip','.ZIP','.docx','.DOCX','.xlsx','.XLSX'],
-        #"504b0304140006000800":['.docx','.DOCX','.xlsx','.XLSX'],
-        "52617221":['.rar','.RAR'],
-        "255044462D312E":['.pdf','.PDF']
+        "FFD8FF": ['.jpg', '.jpeg', '.JPG', '.JPEG'],
+        "89504E47": ['.png', '.PNG'],
+        "47494638": ['.gif', '.GIF'],
+
+        '424D228C010000000000': ['.BMP', '.bmp'],
+        '424D8240090000000000': ['.BMP', '.bmp'],
+        '424D8E1B030000000000': ['.BMP', '.bmp'],
+
+        "49492A00": ['.tif', '.TIFF', 'TIF'],
+
+        "D0CF11E0A1B11AE1": ['.doc', '.DOC', '.xls', '.XLS'],
+
+        '504B0304140000080044': ['.zip', '.ZIP'],
+        '504B03040A0000080000': ['.zip', '.ZIP'],
+        '504B03040A0000000000': ['.zip', '.ZIP'],
+
+        "504B03041400060008000000210066EE": ['.docx', '.DOCX'],
+        '504B030414000600080000002100CA84': ['.xlsx', '.XLSX'],
+        "52617221": ['.rar', '.RAR'],
+        "255044462D312E": ['.pdf', '.PDF']
     }
-
-
-# 字节码转16进制字符串
-def bytes2hex(bytes):
-    num = len(bytes)
-    hexstr = u""
-    for i in range(num):
-        t = u"%x" % bytes[i]
-        if len(t) % 2:
-            hexstr += u"0"
-        hexstr += t
-    return hexstr.upper()
-
 
 # 获取文件类型
 def filetype(filename):
-    binfile = open(filename, 'rb')  # 必需二制字读取
-    tl = typeList()
+
+    binfile = open(filename, 'rb') # 必需二制字读取
+    bins = binfile.read(16) #提取16个字符
+    binfile.close() #关闭文件流
+    #bins = bytes2hex(bins) #转码
+    bins=bins.hex().upper() #转码
+    #print(bins)
+    tl = typeList()#文件类型
     ftype = 'unknown'
     for hcode in tl.keys():
-        numOfBytes = len(hcode) / 2  # 需要读多少字节
-        binfile.seek(0)  # 每次读取都要回到文件头，不然会一直往后读取
-        hbytes = struct.unpack_from("B" * int(numOfBytes), binfile.read(int(numOfBytes)))  # 一个 "B"表示一个字节
-        f_hcode = bytes2hex(hbytes)
-        if f_hcode == hcode:
+        lens = len(hcode) # 需要的长度
+        if bins[0:lens] == hcode:
             ftype = tl[hcode]
             break
-    binfile.close()
     return ftype
-
-
-#if __name__ == '__main__':
-
-    #a = filetype('/home/python/Desktop/新建 XLSX 工作表.xlsx')
-    #print(a)
