@@ -58,12 +58,14 @@ def typeList():
 
         "D0CF11E0A1B11AE1":['.doc','.DOC','.xls','.XLS'],
 
-        '504B0304140000080044': ['.zip','.ZIP'],
-        '504B03040A0000080000': ['.zip','.ZIP'],
-        '504B03040A0000000000': ['.zip','.ZIP'],
+        #'504B0304140000080044': ['.zip','.ZIP'],
+        #'504B03040A0000080000': ['.zip','.ZIP'],
+        #'504B03040A0000000000': ['.zip','.ZIP'],
 
-        "504B03041400060008000000210066EE":['.docx','.DOCX'],
-        '504B030414000600080000002100CA84':['.xlsx','.XLSX'],
+        #"504B03041400060008000000210066EE":['.docx','.DOCX'],
+        #'504B030414000600080000002100CA84':['.xlsx','.XLSX'],
+        "504B0304": ['.docx', '.DOCX','.xlsx', '.XLSX','.zip','.ZIP'],
+
         "52617221":['.rar','.RAR'],
         "255044462D312E":['.pdf','.PDF']
     }
@@ -104,9 +106,11 @@ def filetype(filename):
 
     binfile = open(filename, 'rb') # 必需二制字读取
     bins = binfile.read(16) #提取16个字符
+    print(bins)
     binfile.close() #关闭文件流
     #bins = bytes2hex(bins) #转码
     bins=bins.hex().upper() #转码
+    print(bins)
     #print(bins)
     tl = typeList()#文件类型
     ftype = 'unknown'
@@ -118,5 +122,5 @@ def filetype(filename):
     return ftype
 if __name__ == '__main__':
 
-    a = filetype('/home/python/Desktop/DSC_5886.jpg')
+    a = filetype('/home/python/Desktop/新建 DOCX 文档.docx')
     print(a)
