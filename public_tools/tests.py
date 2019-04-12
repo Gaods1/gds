@@ -123,7 +123,13 @@ def filetype(filename):
                 ftype = tl[hcode]
                 break
     return ftype
+
+import magic
+
 if __name__ == '__main__':
 
-    a = filetype('/home/python/Desktop/空docx.zip')
-    print(a)
+    #a = filetype('/home/python/Desktop/空docx.zip')
+    #print(a)
+    f = magic.Magic(mime=True,uncompress=True)
+    type_info = f.from_file('/home/python/Desktop/新建 XLSX 工作表.xlsx')
+    print('file_type: %s' % type_info)  # file_type: PDF document, version 1.6
