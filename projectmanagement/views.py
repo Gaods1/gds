@@ -1057,6 +1057,21 @@ class ProjectMatchInfoViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 
+        # 修改项目的技术经济人
+        rmbis = ReqMatchBrokerInfo.objects.filter(rm_code=instance.rm_code)
+        for rmbi in rmbis:
+            rmbi.delete()
+        brokers = data.get('brokers', [])
+        for broker in brokers:
+            req_match_broker_info_data = {}
+            req_match_broker_info_data['rm_code'] = instance.rm_code
+            req_match_broker_info_data['broker'] = broker
+            req_match_broker_info_data['leader_tag'] = 1
+            req_match_broker_info_data['creater'] = request.user.account
+            req_match_broker_info_data['insert_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            ReqMatchBrokerInfo.objects.create(**req_match_broker_info_data)
+
+
         if getattr(instance, '_prefetched_objects_cache', None):
             instance._prefetched_objects_cache = {}
 

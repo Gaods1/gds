@@ -279,6 +279,7 @@ class MatchCheckInfoSerializer(serializers.ModelSerializer):
 # 立项匹配技术经济人信息
 class ReqMatchBrokerInfoSerializer(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
+    brokerinfo = serializers.DictField(read_only=True)
     class Meta:
         model = ReqMatchBrokerInfo
         fields = [
@@ -288,6 +289,7 @@ class ReqMatchBrokerInfoSerializer(serializers.ModelSerializer):
             'leader_tag',
             'creater',
             'insert_time',
+            'brokerinfo'
         ]
 
 
@@ -312,7 +314,7 @@ class ReqMatchInfoSerializer(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False)
 
     check_info = MatchCheckInfoSerializer(read_only=True)
-    broker_info = serializers.ListField(read_only=True)
+    broker_info = ReqMatchBrokerInfoSerializer(read_only=True,many=True)
 
     class Meta:
         model = ReqMatchInfo
