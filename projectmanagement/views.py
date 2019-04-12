@@ -88,7 +88,7 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
                 project_info_data['project_state'] = step_code
                 project_info_data['project_sub_state'] = substep_code
                 project_info_data['project_desc'] = data.get('project_desc', None)
-                project_info_data['state'] = 0
+                project_info_data['state'] = 2
                 project_info_data['creater'] = request.user.account_code
                 project_info_data['insert_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 ProjectInfo.objects.create(**project_info_data)
