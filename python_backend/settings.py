@@ -92,6 +92,7 @@ INSTALLED_APPS = [
     'projectmanagement',  # 项目管理
     'consult',  # 征询管理
     'index',
+    'activity', #活动功能
     'enterpriseperson',  # 企业和个人管理
     'advisory'  # 咨询管理
 ]
