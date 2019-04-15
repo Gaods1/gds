@@ -9,6 +9,7 @@ import django_filters
 import threading
 import time
 import shutil
+import datetime
 
 from expert.models import IdentityAuthorizationInfo
 from misc.filter.search import ViewSearch
@@ -1217,8 +1218,13 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 obtain_type = request.data.get('obtain_type',None)
 
                 r_name = request.data.get('r_name',None)
+
                 expiry_dateb = request.data.get('expiry_dateb',None)
+                #expiry_dateb = (expiry_dateb+ datetime.timedelta(hours=8))
+
                 expiry_datee = request.data.get('expiry_datee',None)
+                #expiry_datee = (expiry_datee + datetime.timedelta(hours=8))
+
                 r_form_type = request.data.get('r_form_type',None)
                 use_type = request.data.get('use_type', None)
                 r_abstract = request.data.get('r_abstract',None)
@@ -1425,7 +1431,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,operation_state=3, state=1,file_caption=file_caption,publish=1,file_format=0))
 
                         # 同路经下有pdf文件
-                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx'):
+                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx') or url_j.endswith('DOC') or url_j.endswith('DOCX') or url_j.endswith('XLS') or url_j.endswith('XLSX'):
                             url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
                             url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
 
@@ -1785,7 +1791,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                                                         state=1,file_caption=file_caption,publish=1,file_format=0))
 
                         # 同路经下有pdf文件
-                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx'):
+                        #if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx'):
+                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith(
+                                    'xlsx') or url_j.endswith('docx') or url_j.endswith('DOC') or url_j.endswith(
+                                    'DOCX') or url_j.endswith('XLS') or url_j.endswith('XLSX'):
 
                             url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
                             url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
@@ -2124,8 +2133,12 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                                                         path=path, operation_state=3, state=1,file_caption=file_caption,publish=1,file_format=0))
 
                         # 同路经下有pdf文件
-                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith(
-                                'docx'):
+                        #if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith(
+                                #'docx'):
+                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith(
+                                    'xlsx') or url_j.endswith('docx') or url_j.endswith('DOC') or url_j.endswith(
+                                    'DOCX') or url_j.endswith('XLS') or url_j.endswith('XLSX'):
+
                             url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
                             url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
 
@@ -2469,8 +2482,11 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                                                         state=1,file_caption=file_caption,publish=1,file_format=0))
 
                         # 同路经下有pdf文件
-                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith(
-                                'docx'):
+                        #if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith(
+                                #'docx'):
+                        if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith(
+                                    'xlsx') or url_j.endswith('docx') or url_j.endswith('DOC') or url_j.endswith(
+                                    'DOCX') or url_j.endswith('XLS') or url_j.endswith('XLSX'):
 
                             url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
                             url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'

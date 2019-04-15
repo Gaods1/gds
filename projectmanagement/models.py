@@ -466,6 +466,15 @@ class ReqMatchBrokerInfo(models.Model):
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True)
 
+    @property
+    def brokerinfo(self):
+        # logger.info(self.broker)
+        broker = BrokerBaseinfo.objects.filter(broker_code=self.broker).values('serial','broker_code', 'broker_mobile','broker_name')
+        if broker != None and len(broker) > 0:
+            return broker[0]
+        else:
+            return None
+
     class Meta:
         managed = False
         db_table = 'req_match_broker_info'
@@ -508,16 +517,22 @@ class ReqMatchInfo(models.Model):
         return {}
 
     # 技术经济人信息
+    # def broker_info(self):
+    #     rmbis = ReqMatchBrokerInfo.objects.filter(rm_code=self.rm_code)
+    #     items = []
+    #     if rmbis != None and len(rmbis)>0:
+    #         for rmbi in rmbis:
+    #             logger.info(rmbi.broker)
+    #             bbis = BrokerBaseinfo.objects.values("serial","broker_code","broker_name","broker_mobile").filter(broker_code=rmbi.broker)
+    #             if bbis != None and len(bbis)>0:
+    #                 items.append(bbis[0])
+    #     return items
+
+    @property
     def broker_info(self):
-        rmbis = ReqMatchBrokerInfo.objects.filter(rm_code=self.rm_code)
-        items = []
-        if rmbis != None and len(rmbis)>0:
-            for rmbi in rmbis:
-                logger.info(rmbi.broker)
-                bbis = BrokerBaseinfo.objects.values("broker_code","broker_name","broker_mobile").filter(broker_code=rmbi.broker)
-                if bbis != None and len(bbis)>0:
-                    items.append(bbis[0])
-        return items
+        q = ReqMatchBrokerInfo.objects.filter(rm_code=self.rm_code)
+        return q
+
 
     class Meta:
         managed = False

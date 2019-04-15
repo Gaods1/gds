@@ -88,7 +88,7 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
                 project_info_data['project_state'] = step_code
                 project_info_data['project_sub_state'] = substep_code
                 project_info_data['project_desc'] = data.get('project_desc', None)
-                project_info_data['state'] = 0
+                project_info_data['state'] = 2
                 project_info_data['creater'] = request.user.account_code
                 project_info_data['insert_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 ProjectInfo.objects.create(**project_info_data)
@@ -916,12 +916,17 @@ def getCommonCheckInfo(self, request, step_code, substep_code):
                         """
     else:
         sql = """
+              select AA.* from
+              ( 
                     select a.* from project_check_info as a,project_substep_info as b
                     where a.project_code=b.project_code and a.step_code=b.step_code and a.substep_code=b.substep_code
                     and b.substep_state=-11
                     and a.cstate=0
-                    group by a.project_code
-                    """
+                    and substep_serial<>''
+                    ORDER BY a.p_serial DESC
+              ) as AA
+              group by AA.project_code
+            """
     sql = sql.format(step_code=step_code, substep_code=substep_code)
     raw_queryset = ProjectCheckInfo.objects.raw(sql)
 
@@ -1051,6 +1056,21 @@ class ProjectMatchInfoViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
+
+        # 修改项目的技术经济人
+        rmbis = ReqMatchBrokerInfo.objects.filter(rm_code=instance.rm_code)
+        for rmbi in rmbis:
+            rmbi.delete()
+        brokers = data.get('brokers', [])
+        for broker in brokers:
+            req_match_broker_info_data = {}
+            req_match_broker_info_data['rm_code'] = instance.rm_code
+            req_match_broker_info_data['broker'] = broker
+            req_match_broker_info_data['leader_tag'] = 1
+            req_match_broker_info_data['creater'] = request.user.account
+            req_match_broker_info_data['insert_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            ReqMatchBrokerInfo.objects.create(**req_match_broker_info_data)
+
 
         if getattr(instance, '_prefetched_objects_cache', None):
             instance._prefetched_objects_cache = {}

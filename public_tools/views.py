@@ -22,6 +22,7 @@ from rest_framework.views import APIView
 from public_models.models import AttachmentFileType, ParamInfo, AttachmentFileinfo
 from python_backend import settings
 from django.core.files.storage import FileSystemStorage
+from .utils import filetype
 
 from django_redis import get_redis_connection
 
@@ -75,17 +76,44 @@ class PublicInfo(APIView):
                         #url = url + file.name
                         # 6位随机字符串内容
                         file_name = '{}_{}'.format(gen_uuid6(), file.name.replace(' ',''))
+                        # url地址
                         url = url + file_name
+                        # url地址后缀
+                        url_houzhui = os.path.splitext(url)[1]
+                        # 判断服务器是否存在该文件
                         if os.path.exists(url):
                             return Response({'detail': '该附件已上传到服务器,如果要继续上传请重命名'},status=400)
                         # 创建对象
                         a = FileSystemStorage(location=self.MEDIA_ROOT)
                         # 上传服务器
                         url = a._save(url,file)
+                        # 获取文件的真是信息
+                        f = filetype(url)
+                        if f == 'unknown':
+                            a.delete(url)
+                            return Response({'detail': '该服务器不支持此文件类型'}, status=400)
+                        if f =='emputy':
+                            a.delete(url)
+                            return Response({'detail': '该上传文件内容不能为空'}, status=400)
+                        if url_houzhui not in f:
+                            a.delete(url)
+                            return Response({'detail': '该文件后缀名不正确'}, status=400)
                         # 判断如果是office文件
-                        if url.endswith('doc') or url.endswith('xls') or url.endswith('xlsx') or url.endswith('docx'):
+                        #if url.endswith('doc') or url.endswith('xls') or url.endswith('xlsx') or url.endswith('docx'):
+                        if url_houzhui in ['.doc', '.DOC', '.xls', '.XLS', '.xlsx', '.XLSX', '.docx', '.DOCX']:
                             # 转换office文件为pdf文件
                             child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + self.MEDIA_ROOT + 'temporary/' + account_code + ' ' + url, stdout=subprocess.PIPE, shell=True)
+                            child.wait()
+                            #ree = child.returncode
+                            #print(ree)
+                            #if ree!=0:
+                                #a.delete(url)
+                                #return Response({'detail': '该文件后缀名不正确'}, status=400)
+
+                            url_pp = os.path.splitext(url)[0]+'.pdf'
+                            if not os.path.exists(url_pp):
+                                a.delete(url)
+                                return Response({'detail': '该文件后缀名不正确'}, status=400)
 
                         u_z = url.split('/')[-1]
                         url_front = self.absolute_path_front + 'temporary/' + account_code + '/' + u_z
@@ -113,16 +141,30 @@ class PublicInfo(APIView):
                             os.makedirs(url)
                         # 6位随机字符串内容
                         file_name = '{}_{}'.format(gen_uuid6(),file.name)
-
+                        # url地址
                         url = url + file_name
-                        if not url.endswith('jpg') and not url.endswith('png') and not url.endswith('jpeg') and not url.endswith('bmp') and not url.endswith('gif'):
-                            return Response({'detail': '请上传图片类型'},status=400)
+                        #if not url.endswith('jpg') and not url.endswith('png') and not url.endswith('jpeg') and not url.endswith('bmp') and not url.endswith('gif'):
+                            #return Response({'detail': '请上传图片类型'},status=400)
+                        # url地址后缀
+                        url_houzhui = os.path.splitext(url)[1]
+
+                        if url_houzhui not in ['.jpg','.JPG','.png','.PNG','.jpeg','.JPEG','.bmp','.BMP','.gif','.GIF']:
+                            return Response({'detail': '请上传图片类型'}, status=400)
                         if os.path.exists(url):
                             return Response({'detail': '该图片已上传到服务器,如果要继续上传请重命名'},status=400)
                         # 创建对象
                         a = FileSystemStorage(location=self.MEDIA_ROOT)
                         # 上传服务器
                         url = a._save(url, file)
+                        # 获取文件的真实信息
+                        f = filetype(url)
+
+                        if f == 'unknown':
+                            a.delete(url)
+                            return Response({'detail': '该服务器不支持此图片类型'}, status=400)
+                        if url_houzhui not in f:
+                            a.delete(url)
+                            return Response({'detail': '该图片后缀名不正确'}, status=400)
                         # 给前端抛出文件路径
                         u_z = url.split('/')[-1]
                         jpg = self.absolute_path_front + 'temporary/' + account_code + '/'+ u_z
@@ -191,6 +233,9 @@ class PublicInfo(APIView):
                         if not os.path.exists(url):
                             transaction.savepoint_rollback(save_id)
                             return Response({'detail': '该正式路径下不存在该文件'},status=400)
+                        # 创建对象
+                        #a = FileSystemStorage(location=self.MEDIA_ROOT)
+                        #a.delete(url)
                         os.remove(url)
                         # 相同路径下删除pdf文件
                         #name_pdf= name.split('.')[-1]
@@ -198,6 +243,7 @@ class PublicInfo(APIView):
                         #name_pdf = name.replace(name_pdf, 'pdf')
                         url_pdf = url.replace(name,name_pdf)
                         if os.path.exists(url_pdf):
+                            #a.delete(url_pdf)
                             os.remove(url_pdf)
                         # 删除表记录
                         AttachmentFileinfo.objects.filter(file_name=name).order_by('-insert_time')[0].delete()
@@ -205,6 +251,8 @@ class PublicInfo(APIView):
                         #path_pdf = AttachmentFileinfo.objects.filter(file_name=name_pdf)
                         #if path_pdf:
                             #path_pdf.order_by('-insert_time')[0].delete()
+
+
                 except Exception as e:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '删除失败' % str(e)},status=400)

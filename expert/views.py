@@ -525,6 +525,7 @@ class BrokerViewSet(viewsets.ModelViewSet):
             # Ensure queryset is re-evaluated on each request.
             queryset = queryset.all()
         return queryset
+
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
 
@@ -1512,10 +1513,14 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                 }
 
                 # 查询是否存在成果持有企业身份
-                if ResultOwnereBaseinfo.objects.filter(account_code=account_code, type=1, state__in=[1, 2]):
-                    raise ValueError('此账号已申请成果持有企业身份，不能成为持有个人')
+                ident = IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                            identity_code=5)
+                if ident and ident[0].state in [1, 2]:
+                    raise ValueError('此账号已存在成果持有企业身份，不能申请为成果持有个人')
+                else:
+                    ident.delete()
                 # 查询当前账号有没有伪删除身份
-                obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, state=3, type=1)
+                obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, state__in=[2, 3], type=1)
                 if obj:
                     # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
                     check_identity2(account_code=account_code, identity=4, info=identity_info)
@@ -1806,10 +1811,12 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
                 data = request.data
                 partial = kwargs.pop('partial', False)
 
-                if IdentityAuthorizationInfo.objects.filter(account_code=instance.account_code,
-                                                            identity_code=5,
-                                                            state=2):
+                ident = IdentityAuthorizationInfo.objects.filter(account_code=instance.account_code,
+                                                            identity_code=5)
+                if ident and ident[0].state in [1, 2]:
                     raise ValueError('此账号已存在成果持有企业身份，不能申请为成果持有个人')
+                else:
+                    ident.delete()
                 # 获取基本信息
                 baseinfo = instance.owner
                 # 获取审核意见
@@ -2010,11 +2017,15 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                     'account_code': account_code
                 }
                 # 验证是否存在成果持有人个人身份
-                if ResultOwnerpBaseinfo.objects.filter(account_code=account_code, type=1, state__in=[1, 2]):
-                    raise ValueError('此账号已申请成果持有个人身份，不能成为持有企业')
+                ident = IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                            identity_code=4)
+                if ident and ident[0].state in [1, 2]:
+                    raise ValueError('此账号已存在成果持有个人身份，不能申请为成果持有企业')
+                else:
+                    ident.delete()
 
                 # 查询当前账号有没有伪删除身份
-                obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, state=3, type=1)
+                obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, state__in=[2, 3], type=1)
                 if obj:
                     # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
                     check_identity2(account_code=account_code, identity=5, info=identity_info)
@@ -2390,10 +2401,12 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
                 if instance.state != 1:
                     raise ValueError('该信息已被审核')
 
-                if IdentityAuthorizationInfo.objects.filter(account_code=instance.account_code,
-                                                            identity_code=4,
-                                                            state=2):
+                ident = IdentityAuthorizationInfo.objects.filter(account_code=instance.owner.account_code,
+                                                            identity_code=4)
+                if ident and ident[0].state in [1, 2]:
                     raise ValueError('此账号已存在成果持有个人身份，不能申请为成果持有企业')
+                else:
+                    ident.delete()
 
                 data = request.data
                 partial = kwargs.pop('partial', False)
@@ -2592,10 +2605,14 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                 }
 
                 # 查询是否存在成果持有企业身份
-                if ResultOwnereBaseinfo.objects.filter(account_code=account_code, type=2, state__in=[1, 2]):
-                    raise ValueError('此账号已申请需求持有企业身份，不能成为持有个人')
+                ident = IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                            identity_code=7)
+                if ident and ident[0].state in [1, 2]:
+                    raise ValueError('此账号已存在需求持有企业身份，不能申请为需求持有个人')
+                else:
+                    ident.delete()
                 # 查询当前账号有没有伪删除身份
-                obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, state=3, type=2)
+                obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, state__in=[2, 3], type=2)
                 if obj:
                     # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
                     check_identity2(account_code=account_code, identity=6, info=identity_info)
@@ -2610,7 +2627,7 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
 
                     # 更新基本信息表
                     obj.update(**data)
-                    new_obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, type=1)
+                    new_obj = ResultOwnerpBaseinfo.objects.filter(account_code=account_code, type=2)
                     serializer = self.get_serializer(new_obj, many=True)
                     return_data = serializer.data[0]
                     ecode = new_obj[0].owner_code
@@ -2883,10 +2900,12 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
                 if instance.state != 1:
                     raise ValueError('该信息已被审核')
 
-                if IdentityAuthorizationInfo.objects.filter(account_code=instance.account_code,
-                                                            identity_code=7,
-                                                            state=2):
+                ident = IdentityAuthorizationInfo.objects.filter(account_code=instance.account_code,
+                                                            identity_code=7)
+                if ident and ident[0].state in [1, 2]:
                     raise ValueError('此账号已存在需求持有企业身份，不能申请为需求持有个人')
+                else:
+                    ident.delete()
 
                 data = request.data
                 partial = kwargs.pop('partial', False)
@@ -3090,11 +3109,15 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                     'account_code': account_code
                 }
                 # 验证是否存在成果持有人个人身份
-                if ResultOwnerpBaseinfo.objects.filter(account_code=account_code, type=2, state__in=[1, 2]):
-                    raise ValueError('此账号已申请需求持有个人身份，不能成为持有企业')
+                ident = IdentityAuthorizationInfo.objects.filter(account_code=account_code,
+                                                            identity_code=6)
+                if ident and ident[0].state in [1, 2]:
+                    raise ValueError('此账号已存在需求持有个人身份，不能申请为需求持有企业')
+                else:
+                    ident.delete()
 
                 # 查询当前账号有没有伪删除身份
-                obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, state=3, type=2)
+                obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, state__in=[2, 3], type=2)
                 if obj:
                     # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
                     check_identity2(account_code=account_code, identity=7, info=identity_info)
@@ -3109,7 +3132,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
 
                     # 更新基本信息表
                     obj.update(**data)
-                    new_obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, type=1)
+                    new_obj = ResultOwnereBaseinfo.objects.filter(account_code=account_code, type=2)
                     serializer = self.get_serializer(new_obj, many=True)
                     return_data = serializer.data[0]
                     ecode = new_obj[0].owner_code
@@ -3473,10 +3496,12 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                 if instance.state != 1:
                     raise ValueError('该信息已被审核')
 
-                if IdentityAuthorizationInfo.objects.filter(account_code=instance.account_code,
-                                                            identity_code=6,
-                                                            state=2):
+                ident = IdentityAuthorizationInfo.objects.filter(account_code=instance.owner.account_code,
+                                                            identity_code=6)
+                if ident and ident[0].state in [1, 2]:
                     raise ValueError('此账号已存在需求持有个人身份，不能申请为需求持有企业')
+                else:
+                    ident.delete()
 
                 data = request.data
                 partial = kwargs.pop('partial', False)
@@ -3706,7 +3731,7 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                         'account_code': account_code
                     }
                 # 查询当前账号有没有伪删除身份
-                obj = ProjectTeamBaseinfo.objects.filter(account_code=account_code, state=3)
+                obj = ProjectTeamBaseinfo.objects.filter(account_code=account_code, state__in=[2, 3])
                 if obj:
                     # 查询所绑定的账号是否有此身份（若有则更新，没有则创建）
                     check_identity2(account_code=account_code, identity=3, info=identity_info)

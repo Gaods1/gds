@@ -25,6 +25,11 @@ def validate_tel(value):
     if not re.match(r'^\d{3,4}-\d{7,8}$', value):
         raise ValidationError('电话号码格式错误')
 
+# 验证企业电话
+def validate_mobile_tel(value):
+    if not re.match(r'(^1[3-9]\d{9}$)|(^\d{3,4}-\d{7,8}$)', value):
+        raise ValidationError('企业电话格式错误')
+
 
 # 验证身份证
 def validate_id(value):
