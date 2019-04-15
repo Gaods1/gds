@@ -114,6 +114,7 @@ def typeList():
         "D0CF11E0": ['.doc', '.DOC', '.xls', '.XLS'],
         '504B0304': ['.zip', '.ZIP', '.docx', '.DOCX', '.xlsx', '.XLSX'],
 
+
         # '504B0304140000080044': ['.zip','.ZIP'],
         # '504B03040A0000080000': ['.zip','.ZIP'],
         # '504B03040A0000000000': ['.zip','.ZIP'],
@@ -124,7 +125,11 @@ def typeList():
         # '504B03040A0000000000': ['.docx', '.DOCX','.xlsx', '.XLSX'],
 
         "52617221": ['.rar', '.RAR'],
-        "255044462D312E": ['.pdf', '.PDF']
+        "255044462D312E": ['.pdf', '.PDF'],
+
+        '00000020': ['.mp4'],
+        #000000206674797069736F6D00000200
+        '49443303': ['.mp3'],
     }
 
 
@@ -136,7 +141,6 @@ def filetype(filename):
     binfile.close() #关闭文件流
     #bins = bytes2hex(bins) #转码
     bins=bins.hex().upper() #转码
-    #print(bins)
     tl = typeList()#文件类型
     ftype = 'unknown'
     if bins=='':
