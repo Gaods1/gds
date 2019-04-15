@@ -42,7 +42,7 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
           "check_memo": "string ",  审核描述【必填】
     }
     """
-    queryset = ConsultInfo.objects.all().order_by('-serial')
+    queryset = ConsultInfo.objects.all().order_by('consult_state','-serial')
     serializer_class = ConsultInfoSerializer
     filter_backends = (
         filters.SearchFilter,
@@ -435,7 +435,7 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
 
 #征询审核管理
 class ConsultCheckinfoViewSet(viewsets.ModelViewSet):
-    queryset = ConsultCheckinfo.objects.all().order_by('-serial')
+    queryset = ConsultCheckinfo.objects.all().order_by('consult_state','-serial')
     serializer_class = ConsultCheckinfoSerializer
 
 

@@ -46,6 +46,12 @@ main_menu = {
         'title': "需求信息管理",
         'subs': []
     },
+    '活动管理': {
+        'icon': "el-icon-lx-edit",
+        'index': "activity",
+        'title': "活动管理",
+        'subs': []
+    },
     '领域专业信息管理': {
         'icon': "el-icon-lx-edit",
         'index': "major",
@@ -236,6 +242,18 @@ sub_menu = {
     '需求信息管理':{
         'title': "需求信息管理",
         'index': "requirement"
+    },
+    '活动管理':{
+        'title':"活动管理",
+        'index':"activity"
+    },
+    '活动报名管理':{
+        'title':"活动报名管理",
+        'index':"activity_signup"
+    },
+    '活动礼品管理':{
+        'title':"活动礼品管理",
+        'index':"activity_gift"
     },
     '领域专业管理':{
         'title':"领域专业管理",
