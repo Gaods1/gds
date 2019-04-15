@@ -56,7 +56,7 @@ class PublicInfo(APIView):
         files = request.FILES.getlist('file',None)
         flag = request.POST.get('flag',None)
         account_code = request.user.account_code
-	
+
         if not files or not flag:
             return Response({'detail':'请上传文件'},status=400)
         if flag == 'attachment':
@@ -104,7 +104,7 @@ class PublicInfo(APIView):
                             # 转换office文件为pdf文件
                             child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + self.MEDIA_ROOT + 'temporary/' + account_code + ' ' + url, stdout=subprocess.PIPE, shell=True)
                             child.wait()	 
-			    #ree = child.returncode
+                            #ree = child.returncode
                             #print(ree)
                             #if ree!=0:
                                 #a.delete(url)
