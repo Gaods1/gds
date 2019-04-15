@@ -21,7 +21,6 @@ from .utils import massege
 from django.db.models import Q
 from django.db import connection
 
-
 import logging
 logger = logging.getLogger('django')
 
