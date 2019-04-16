@@ -123,22 +123,23 @@ class NewsGroupInfoViewSet(viewsets.ModelViewSet):
                 partial = kwargs.pop('partial', False)
                 instance = self.get_object()
                 form_data = request.data
+                form_data['logo'] = form_data['logo'][0]['response']['logo'] if form_data['logo'] else ''
                 group_code = instance.group_code
                 attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
                 attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
                 upload_temp_pattern = re.compile(r''+attachment_temp_dir+'')
                 upload_pattern = re.compile(r''+attachment_dir+'')
-                upload_logo = upload_pattern.findall(form_data['logo'][0]['response']['logo'])
-                upload_temp_logo = upload_temp_pattern.findall(form_data['logo'][0]['response']['logo'])
+                upload_logo = upload_pattern.findall(form_data['logo'])
+                upload_temp_logo = upload_temp_pattern.findall(form_data['logo'])
                 form_logo = ''
                 if upload_logo:  #未更新已上传logo
                     form_logo = ''
-                    logoList = form_data['logo'][0]['response']['logo'].split('/')
+                    logoList = form_data['logo'].split('/')
                     logo_file = logoList.pop()
                     form_data['logo'] = logo_file #数据库只保存logo图片文件名及其后缀
 
                 if upload_temp_logo: #logo图片更新
-                    form_logo = form_data['logo'][0]['response']['logo']
+                    form_logo = form_data['logo']
 
                 # 栏目logo是否上传
                 if form_logo:
@@ -936,22 +937,23 @@ class PolicyGroupInfoViewSet(viewsets.ModelViewSet):
                 partial = kwargs.pop('partial', False)
                 instance = self.get_object()
                 form_data = request.data
+                form_data['logo'] = form_data['logo'][0]['response']['logo'] if form_data['logo'] else ''
                 group_code = instance.group_code
                 attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
                 attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
                 upload_temp_pattern = re.compile(r'' + attachment_temp_dir + '')
                 upload_pattern = re.compile(r'' + attachment_dir + '')
-                upload_logo = upload_pattern.findall(form_data['logo'][0]['response']['logo'])
-                upload_temp_logo = upload_temp_pattern.findall(form_data['logo'][0]['response']['logo'])
+                upload_logo = upload_pattern.findall(form_data['logo'])
+                upload_temp_logo = upload_temp_pattern.findall(form_data['logo'])
                 form_logo = ''
                 if upload_logo:  # 未更新已上传logo
                     form_logo = ''
-                    logoList = form_data['logo'][0]['response']['logo'].split('/')
+                    logoList = form_data['logo'].split('/')
                     logo_file = logoList.pop()
                     form_data['logo'] = logo_file  # 数据库只保存logo图片文件名及其后缀
 
                 if upload_temp_logo:  # logo图片更新
-                    form_logo = form_data['logo'][0]['response']['logo']
+                    form_logo = form_data['logo']
                 # 栏目logo是否上传
                 if form_logo:
                     upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value  # 富文本编辑器图片上传的临时保存目录
