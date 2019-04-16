@@ -42,8 +42,8 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
         filters.OrderingFilter,
     )
     ordering_fields = ("project_name", "project_state", "project_sub_state")
-    filter_fields = ("project_code", "project_name", "project_state", "project_sub_state")
-    search_fields = ("project_code", "project_name", "project_state", "project_sub_state")
+    filter_fields = ("project_name", "project_state", "project_sub_state")
+    search_fields = ("project_name", "project_state", "project_sub_state")
 
     # def get_queryset(self):
     #     assert self.queryset is not None, (
@@ -871,21 +871,26 @@ class ProjectCommonCheckInfoViewSet(mixins.UpdateModelMixin, mixins.ListModelMix
     def list(self, request, *args, **kwargs):
         step_code = request.GET.get('step_code')
         substep_code = request.GET.get('substep_code')
+        search = request.GET.get('search')
         if step_code == None or substep_code == None:
             queryset = []
             page = self.paginate_queryset(queryset)  # 不能省略
             serializer = self.get_serializer(queryset, many=True)
             return self.get_paginated_response(serializer.data)
 
-        return getCommonCheckInfo(self, request, step_code, substep_code)
+        return getCommonCheckInfo(self, request, step_code, substep_code, search)
 
     def update(self, request, *args, **kwargs):
         return upCheckinfo(self, request)
 
 
-def getCommonCheckInfo(self, request, step_code, substep_code):
+def getCommonCheckInfo(self, request, step_code, substep_code, search):
     step_code = int(step_code)
     substep_code = int(substep_code)
+
+    tiaojian = ""
+    if search != None and search != "":
+        tiaojian = """ and p.project_name like '%%""" +search +"""%%'"""
 
     # 判断是否终止项目
     if step_code > 0 and substep_code > 0:
@@ -898,6 +903,7 @@ def getCommonCheckInfo(self, request, step_code, substep_code):
                         and b.substep_state<>-11 and a.substep_serial=c.substep_serial
                         and a.cstate=0 and a.step_code={step_code} and a.substep_code={substep_code}
                         and a.project_code=p.project_code and p.project_state={step_code} and p.project_sub_state={substep_code}
+                        """ +tiaojian+ """
                         order by c.p_serial desc
                         """
         else:
@@ -910,6 +916,7 @@ def getCommonCheckInfo(self, request, step_code, substep_code):
                         and b.substep_state<>-11 and a.substep_serial=c.substep_serial
                         and a.cstate=0 and a.step_code={step_code} and a.substep_code={substep_code}
                         and a.project_code=p.project_code and p.project_state={step_code} and p.project_sub_state={substep_code}
+                        """ +tiaojian+ """
                         order by c.p_serial desc
                         ) as AA 
                         group by AA.project_code
@@ -918,17 +925,22 @@ def getCommonCheckInfo(self, request, step_code, substep_code):
         sql = """
               select AA.* from
               ( 
-                    select a.* from project_check_info as a,project_substep_info as b
+                    select a.* from project_check_info as a,project_substep_info as b,
+                    project_info as p
                     where a.project_code=b.project_code and a.step_code=b.step_code and a.substep_code=b.substep_code
                     and b.substep_state=-11
                     and a.cstate=0
                     and substep_serial<>''
+                    and a.project_code=p.project_code
+                    """ +tiaojian+ """
                     ORDER BY a.p_serial DESC
               ) as AA
               group by AA.project_code
             """
     sql = sql.format(step_code=step_code, substep_code=substep_code)
     raw_queryset = ProjectCheckInfo.objects.raw(sql)
+
+    # raw_queryset = self.filter_queryset(raw_queryset)
 
     # 获取当前账号所属部门及子部门 上级能查看审核下级
     dept_code = request.user.dept_code
@@ -952,6 +964,9 @@ def getCommonCheckInfo(self, request, step_code, substep_code):
         # 需要审核的项目
         projectcheckinfos = ProjectCheckInfo.objects.filter(p_serial__in=[i.p_serial for i in raw_queryset],
                                                             project_code__in=project_codes).order_by("-p_serial")
+
+
+    # projectcheckinfos = self.filter_queryset(projectcheckinfos)
 
     # 分页数据
     page = self.paginate_queryset(projectcheckinfos)

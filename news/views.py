@@ -43,7 +43,7 @@ class NewsGroupInfoViewSet(viewsets.ModelViewSet):
                 form_data = request.data
                 group_code = gen_uuid32()
                 form_data['group_code'] = group_code
-                form_logo = form_data['logo'] if form_data['logo'] else ''
+                form_logo = form_data['logo'][0]['response']['logo'] if form_data['logo'] else ''
                 #栏目logo是否上传
                 if form_logo:
                     attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
@@ -123,6 +123,7 @@ class NewsGroupInfoViewSet(viewsets.ModelViewSet):
                 partial = kwargs.pop('partial', False)
                 instance = self.get_object()
                 form_data = request.data
+                form_data['logo'] = form_data['logo'][0]['response']['logo'] if form_data['logo'] else ''
                 group_code = instance.group_code
                 attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
                 attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
@@ -855,7 +856,7 @@ class PolicyGroupInfoViewSet(viewsets.ModelViewSet):
                 form_data = request.data
                 group_code = gen_uuid32()
                 form_data['group_code'] = group_code
-                form_logo = form_data['logo'] if form_data['logo'] else ''
+                form_logo = form_data['logo'][0]['response']['logo'] if form_data['logo'] else ''
                 #栏目logo是否上传
                 if form_logo:
                     attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
@@ -936,6 +937,7 @@ class PolicyGroupInfoViewSet(viewsets.ModelViewSet):
                 partial = kwargs.pop('partial', False)
                 instance = self.get_object()
                 form_data = request.data
+                form_data['logo'] = form_data['logo'][0]['response']['logo'] if form_data['logo'] else ''
                 group_code = instance.group_code
                 attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
                 attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
@@ -1064,6 +1066,15 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
             save_id = transaction.savepoint()
             try:
                 form_data = request.data
+                current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                top_tag = form_data['top_tag']
+                top_time = form_data['top_time']
+                if top_tag and top_time is None:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '置顶时间必选'}, 400)
+                if top_tag and top_time < current_time:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '置顶则置顶时间大于等于当前时间'}, 400)
                 policy_code = gen_uuid32()
                 form_data['policy_code'] = policy_code
                 form_face_pic = form_data['face_pic'][0]['response']['face_pic'] if form_data['face_pic'] else ''
@@ -1276,6 +1287,11 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                 instance = self.get_object()
                 form_data = request.data
                 form_data['top_time'] = form_data['top_time'] if form_data['top_time'] else None
+                top_tag = form_data['top_tag']
+                top_time = form_data['top_time']
+                if top_tag and top_time is None:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '置顶时间必选'}, 400)
                 form_face_pic = form_data['face_pic'][0]['response']['face_pic'] if form_data['face_pic'] else ''
                 attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
                 attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)

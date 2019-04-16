@@ -101,7 +101,7 @@ class PolicyInfoSerializers(PatclubModelSerializer):
     attach3 = serializers.ListField(read_only=True)
     attach4 = serializers.ListField(read_only=True)
     attach5 = serializers.ListField(read_only=True)
-    top_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True)
+    top_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True,allow_null=True)
 
     class Meta:
         model = PolicyInfo
