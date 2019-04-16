@@ -1380,7 +1380,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
                         if not os.path.exists(url_x_c):
                             os.makedirs(url_x_c)
-
+                        if not value:
+                            continue
                         url_l = value.split('/')
                         url_file = url_l[-1]
 
@@ -2092,7 +2093,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
                         if not os.path.exists(url_x_c):
                             os.makedirs(url_x_c)
-
+                        if not value:
+                            continue
                         url_l = value.split('/')
                         url_file = url_l[-1]
 
