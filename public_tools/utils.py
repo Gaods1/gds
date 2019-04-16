@@ -114,33 +114,23 @@ def typeList():
         "D0CF11E0": ['.doc', '.DOC', '.xls', '.XLS'],
         '504B0304': ['.zip', '.ZIP', '.docx', '.DOCX', '.xlsx', '.XLSX'],
 
-
-        # '504B0304140000080044': ['.zip','.ZIP'],
-        # '504B03040A0000080000': ['.zip','.ZIP'],
-        # '504B03040A0000000000': ['.zip','.ZIP'],
-
-        # "504B03041400060008000000210066EE":['.docx','.DOCX'],
-        # '504B030414000600080000002100CA84':['.xlsx','.XLSX'],
-        # "504B030414000600": ['.docx', '.DOCX','.xlsx', '.XLSX'],
-        # '504B03040A0000000000': ['.docx', '.DOCX','.xlsx', '.XLSX'],
-
         "52617221": ['.rar', '.RAR'],
         "255044462D312E": ['.pdf', '.PDF'],
 
-        '00000020': ['.mp4'],
+        #'00000020': ['.mp4'],
         #000000206674797069736F6D00000200
-        '49443303': ['.mp3'],
+        #'49443303': ['.mp3','.mid','.m4a','.ogg','.flac','.wav','.amr'],
     }
 
-
 # 获取文件类型
-def filetype(filename):
+def filetypee(filename):
 
     binfile = open(filename, 'rb') # 必需二制字读取
     bins = binfile.read(16) #提取16个字符
     binfile.close() #关闭文件流
     #bins = bytes2hex(bins) #转码
     bins=bins.hex().upper() #转码
+    #print(bins)
     tl = typeList()#文件类型
     ftype = 'unknown'
     if bins=='':
