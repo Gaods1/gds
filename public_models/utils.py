@@ -1,5 +1,6 @@
 import os
 import time
+import doctest
 import shutil
 
 from public_models.models import ParamInfo, AttachmentFileType, AttachmentFileinfo
