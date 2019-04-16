@@ -22,7 +22,8 @@ from rest_framework.views import APIView
 from public_models.models import AttachmentFileType, ParamInfo, AttachmentFileinfo
 from python_backend import settings
 from django.core.files.storage import FileSystemStorage
-from .utils import filetype
+from .utils import filetypee
+import filetype
 
 from django_redis import get_redis_connection
 
@@ -87,11 +88,16 @@ class PublicInfo(APIView):
                         a = FileSystemStorage(location=self.MEDIA_ROOT)
                         # 上传服务器
                         url = a._save(url,file)
-                        # 获取文件的真是信息
-                        f = filetype(url)
+                        # 获取文件的真实信息
+                        f = filetypee(url)
                         if f == 'unknown':
-                            a.delete(url)
-                            return Response({'detail': '该服务器不支持此文件类型'}, status=400)
+                            kind = filetype.guess(url)
+                            if not kind or kind.extension not in ['mp3','mid','m4a','ogg','flac','wav','amr']:
+                                a.delete(url)
+                                return Response({'detail': '该服务器不支持此文件类型'}, status=400)
+                            else:
+                                #print(kind.extension)
+                                f = ['.mp3','.mid','.m4a','.ogg','.flac','.wav','.amr']
                         if f =='emputy':
                             a.delete(url)
                             return Response({'detail': '该上传文件内容不能为空'}, status=400)
@@ -103,7 +109,7 @@ class PublicInfo(APIView):
                         if url_houzhui in ['.doc', '.DOC', '.xls', '.XLS', '.xlsx', '.XLSX', '.docx', '.DOCX']:
                             # 转换office文件为pdf文件
                             child = subprocess.Popen('/usr/bin/libreoffice --invisible --convert-to pdf --outdir ' + self.MEDIA_ROOT + 'temporary/' + account_code + ' ' + url, stdout=subprocess.PIPE, shell=True)
-                            child.wait()
+                            child.wait()	 
                             #ree = child.returncode
                             #print(ree)
                             #if ree!=0:
