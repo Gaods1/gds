@@ -522,7 +522,8 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                 #     transaction.savepoint_rollback(save_id)
                 #     return Response({'detail': '审核时间应大于等于当前时间'}, 400)
                 form_data['top_time'] = form_data['top_time'] if form_data['top_time'] else None
-                form_face_pic = form_data['face_pic'][0]['response']['face_pic'] if form_data['face_pic'] else ''
+                form_data['face_pic'] = form_data['face_pic'][0]['response']['face_pic'] if form_data['face_pic'] else ''
+                form_face_pic = form_data['face_pic']
                 attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
                 attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
                 upload_temp_pattern = re.compile(r'' + attachment_temp_dir + '')
@@ -531,12 +532,12 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                 upload_temp_facepic = upload_temp_pattern.findall(form_face_pic)
                 form_face_pic = ''
                 if upload_facepic:  # 未更新已上传face_pic
-                    facepicList = form_data['face_pic'][0]['response']['face_pic'].split('/')
+                    facepicList = form_data['face_pic'].split('/')
                     facepic_file = facepicList.pop()
                     form_data['face_pic'] = facepic_file  # 数据库只保存face_pic图片文件名及其后缀
 
                 if upload_temp_facepic:  # face_pic图片更新
-                    form_face_pic = form_data['face_pic'][0]['response']['face_pic']
+                    form_face_pic = form_data['face_pic']
 
                 ########## 新闻导引图 ########
                 face_pic_dict = {}
@@ -1292,7 +1293,8 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                 if top_tag and top_time is None:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '置顶时间必选'}, 400)
-                form_face_pic = form_data['face_pic'][0]['response']['face_pic'] if form_data['face_pic'] else ''
+                form_data['face_pic'] = form_data['face_pic'][0]['response']['face_pic'] if form_data['face_pic'] else ''
+                form_face_pic = form_data['face_pic']
                 attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
                 attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
                 upload_temp_pattern = re.compile(r'' + attachment_temp_dir + '')
@@ -1301,12 +1303,12 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                 upload_temp_facepic = upload_temp_pattern.findall(form_face_pic)
                 form_face_pic = ''
                 if upload_facepic:  # 未更新已上传face_pic
-                    facepicList = form_data['face_pic'][0]['response']['face_pic'].split('/')
+                    facepicList = form_data['face_pic'].split('/')
                     facepic_file = facepicList.pop()
                     form_data['face_pic'] = facepic_file  # 数据库只保存face_pic图片文件名及其后缀
 
                 if upload_temp_facepic:  # face_pic图片更新
-                    form_face_pic = form_data['face_pic'][0]['response']['face_pic']
+                    form_face_pic = form_data['face_pic']
 
                 ########## 政策法规导引图 ########
                 face_pic_dict = {}
