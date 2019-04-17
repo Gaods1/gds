@@ -1189,12 +1189,17 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 data = request.data
                 # 图片
                 single_dict = request.data.pop('Cover', None)
-
-                identityFront = single_dict.get('identityFront', None)
-                identityBack = single_dict.get('identityBack', None)
-                handIdentityPhoto = single_dict.get('handIdentityPhoto', None)
-                entLicense = single_dict.get('entLicense', None)
-                agreement = single_dict.get('agreement', None)
+                identityFront = None
+                identityBack= None
+                handIdentityPhoto= None
+                entLicense= None
+                agreement= None
+                if single_dict:
+                    identityFront = single_dict.get('identityFront', None)
+                    identityBack = single_dict.get('identityBack', None)
+                    handIdentityPhoto = single_dict.get('handIdentityPhoto', None)
+                    entLicense = single_dict.get('entLicense', None)
+                    agreement = single_dict.get('agreement', None)
                 # 附件
                 attachment_list = request.data.pop('Attach', None)
                 # 所属领域表
@@ -1375,7 +1380,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                         url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
                         if not os.path.exists(url_x_c):
                             os.makedirs(url_x_c)
-
+                        if not value:
+                            continue
                         url_l = value.split('/')
                         url_file = url_l[-1]
 
@@ -1909,11 +1915,17 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 data = request.data
                 # 图片
                 single_dict = request.data.pop('Cover', None)
-                identityFront = single_dict.get('identityFront', None)
-                identityBack = single_dict.get('identityBack', None)
-                handIdentityPhoto = single_dict.get('handIdentityPhoto', None)
-                entLicense = single_dict.get('entLicense', None)
-                agreement = single_dict.get('agreement', None)
+                identityFront = None
+                identityBack = None
+                handIdentityPhoto = None
+                entLicense = None
+                agreement = None
+                if single_dict:
+                    identityFront = single_dict.get('identityFront', None)
+                    identityBack = single_dict.get('identityBack', None)
+                    handIdentityPhoto = single_dict.get('handIdentityPhoto', None)
+                    entLicense = single_dict.get('entLicense', None)
+                    agreement = single_dict.get('agreement', None)
                 # 附件
                 attachment_list = request.data.pop('Attach', None)
                 # 所属领域表
@@ -2081,7 +2093,8 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                         url_x_c = '{}{}/{}/{}'.format(relative_path, param_value, tcode, serializer_ecode)
                         if not os.path.exists(url_x_c):
                             os.makedirs(url_x_c)
-
+                        if not value:
+                            continue
                         url_l = value.split('/')
                         url_file = url_l[-1]
 

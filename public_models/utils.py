@@ -1,5 +1,6 @@
 import os
-
+import time
+import datetime
 import shutil
 
 from public_models.models import ParamInfo, AttachmentFileType, AttachmentFileinfo
@@ -242,9 +243,9 @@ def move_attachment(tname_attachment,ecode):
 
                     url_x = url_x + file.file_name
 
-                    if url.endswith('doc') or url.endswith('DOC') or url.endswith('docx') or url.endswith(
-                            'DOCX') or url.endswith('xls') or url.endswith('XLS') or url.endswith(
-                            'xlsx') or url.endswith('XLSX'):
+                    if url_j_c.endswith('doc') or url_j_c.endswith('DOC') or url_j_c.endswith('docx') or url_j_c.endswith(
+                            'DOCX') or url_j_c.endswith('xls') or url_j_c.endswith('XLS') or url_j_c.endswith(
+                            'xlsx') or url_j_c.endswith('XLSX'):
                         #拼接临时路径下的pdf
                         url_j_c_list = url_j_c.split('.')
                         url_j_c_office = url_j_c_list.pop()

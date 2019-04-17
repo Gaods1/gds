@@ -163,7 +163,7 @@ class PublicInfo(APIView):
                         # 上传服务器
                         url = a._save(url, file)
                         # 获取文件的真实信息
-                        f = filetype(url)
+                        f = filetypee(url)
 
                         if f == 'unknown':
                             a.delete(url)
