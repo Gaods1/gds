@@ -43,7 +43,8 @@ class NewsGroupInfoViewSet(viewsets.ModelViewSet):
                 form_data = request.data
                 group_code = gen_uuid32()
                 form_data['group_code'] = group_code
-                form_logo = form_data['logo'][0]['response']['logo'] if form_data['logo'] else ''
+                form_data['logo'] = form_data['logo'][0]['response']['logo'] if form_data['logo'] else ''
+                form_logo = form_data['logo']
                 #栏目logo是否上传
                 if form_logo:
                     attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
@@ -286,6 +287,7 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                 form_data['news_code'] = news_code
                 # form_face_pic = form_data['face_pic']['guidePhoto'] if form_data['face_pic'] else ''
                 form_face_pic = form_data['face_pic'][0]['response']['face_pic'] if form_data['face_pic'] else ''
+                form_data['face_pic'] = form_face_pic
                 ########## 新闻导引图 ########
                 face_pic_dict = {}
                 if form_face_pic:
@@ -857,7 +859,8 @@ class PolicyGroupInfoViewSet(viewsets.ModelViewSet):
                 form_data = request.data
                 group_code = gen_uuid32()
                 form_data['group_code'] = group_code
-                form_logo = form_data['logo'][0]['response']['logo'] if form_data['logo'] else ''
+                form_data['logo'] = form_data['logo'][0]['response']['logo'] if form_data['logo'] else ''
+                form_logo = form_data['logo']
                 #栏目logo是否上传
                 if form_logo:
                     attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
@@ -1079,6 +1082,7 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                 policy_code = gen_uuid32()
                 form_data['policy_code'] = policy_code
                 form_face_pic = form_data['face_pic'][0]['response']['face_pic'] if form_data['face_pic'] else ''
+                form_data['face_pic'] = form_face_pic
                 ########## 政策法规导引图 ########
                 face_pic_dict = {}
                 if form_face_pic:
