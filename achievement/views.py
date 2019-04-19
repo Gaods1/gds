@@ -1664,7 +1664,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 state=state, r_type=1)
 
                 # 4 更新关键字表
-                #KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
+                KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
                 #key_list = []
                 #for key_info in key_info_list:
                     #key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
