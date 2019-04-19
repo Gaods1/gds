@@ -279,6 +279,7 @@ class ResultsInfo(models.Model):
     @property
     def Keywords(self):
         Keywords = KeywordsInfo.objects.values_list('key_info', flat=True).filter(object_code=self.r_code)
+        #return Keywords
         return ','.join(Keywords)
 
     @property

@@ -96,6 +96,7 @@ class ResultsInfoSerializer(serializers.ModelSerializer):
     username = serializers.CharField(read_only=True)
     cooperation_name = serializers.CharField(read_only=True)
     Keywords = serializers.CharField(read_only=True)
+    #Keywords = serializers.ListField(read_only=True)
     Personal = serializers.CharField(read_only=True)
     Enterprise = serializers.CharField(read_only=True)
     owner_code = serializers.CharField(read_only=True)
