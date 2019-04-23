@@ -1184,9 +1184,9 @@ class ManagementpViewSet(viewsets.ModelViewSet):
         r_code = self.get_queryset().values_list('r_code', flat=True)
 
         rr_code = RrApplyHistory.objects.values_list('rr_code', flat=True).filter(rr_code__in=r_code,
-                                                                                  state=1)
+                                                                                  state__in=[2,3])
 
-        raw = self.get_queryset().exclude(r_code__in=rr_code)
+        raw = self.get_queryset().filter(r_code__in=rr_code)
 
         queryset = self.filter_queryset(raw)
 
