@@ -1933,9 +1933,9 @@ class ManagementrViewSet(viewsets.ModelViewSet):
         req_code = self.get_queryset().values_list('req_code', flat=True)
 
         rr_code = RrApplyHistory.objects.values_list('rr_code', flat=True).filter(rr_code__in=req_code,
-                                                                                  state__in=[2, 3])
+                                                                                  state__in=[1])
 
-        raw = self.get_queryset().filter(req_code__in=rr_code)
+        raw = self.get_queryset().exclude(req_code__in=rr_code)
 
         queryset = self.filter_queryset(raw)
 
