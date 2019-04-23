@@ -14,6 +14,7 @@ class ActivitySerializers(PatclubModelSerializer):
     summary_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False,allow_null=True)
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False,allow_null=True,read_only=True)
     attach = serializers.ListField(read_only=True)
+    summary_attach = serializers.ListField(read_only=True)
 
     class Meta:
         model = Activity
@@ -49,6 +50,7 @@ class ActivitySerializers(PatclubModelSerializer):
                   'district_name',
                   'activity_cover',
                   'attach',
+                  'summary_attach',
                   ]
 
 

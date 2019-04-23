@@ -79,13 +79,15 @@ insert into function_info(`func_code`,`func_name`,`func_memo`,`func_url`,`item_t
 values('w6XI8PtAYm7qdIc7kpQWiAVL20KDB9zz','活动管理','活动管理',null,1,null,0,1,'root','2019-04-02 15:35:20','2019-04-02 15:35:20'),
       ('1CZ8YvtIxR3xBeziLwmTUYwp5UdoW9Hz','活动管理','活动管理','/activity/index/',0,'w6XI8PtAYm7qdIc7kpQWiAVL20KDB9zz',0,1,'root','2019-04-02 15:35:20','2019-04-02 15:35:20'),
       ('5bW84w8G8wb1Z8H7dupmooiOqXPUTxZm','活动报名管理','活动报名管理','/activity/signup/',0,'w6XI8PtAYm7qdIc7kpQWiAVL20KDB9zz',0,1,'root','2019-04-02 15:35:20','2019-04-02 15:35:20'),
-      ('z4TEhrDPSXFaf6nMoXGFsNTrrbXGYhA2','活动礼品管理','活动礼品管理','/activity/gift/',0,'w6XI8PtAYm7qdIc7kpQWiAVL20KDB9zz',0,1,'root','2019-04-02 15:35:20','2019-04-02 15:35:20')
+      ('z4TEhrDPSXFaf6nMoXGFsNTrrbXGYhA2','活动礼品管理','活动礼品管理','/activity/gift/',0,'w6XI8PtAYm7qdIc7kpQWiAVL20KDB9zz',0,1,'root','2019-04-02 15:35:20','2019-04-02 15:35:20'),
+      ('1Z8HFaf6nMoXGFsNTr6nMoXGaix02u3l','活动总结','活动总结','/activity/summary/',0,'w6XI8PtAYm7qdIc7kpQWiAVL20KDB9zz',0,1,'root','2019-04-02 15:35:20','2019-04-02 15:35:20')
 
 
 insert into role_func_info(`role_code`,`func_code`,`state`,`creater`,`insert_time`,`update_time`)
 values('xBWLQdmufqfceJIptmQmUOP81Ro0eyTH','1CZ8YvtIxR3xBeziLwmTUYwp5UdoW9Hz',1,null,'2019-04-02 15:35:20','2019-04-02 15:35:20'),
       ('xBWLQdmufqfceJIptmQmUOP81Ro0eyTH','5bW84w8G8wb1Z8H7dupmooiOqXPUTxZm',1,null,'2019-04-02 15:35:20','2019-04-02 15:35:20'),
-      ('xBWLQdmufqfceJIptmQmUOP81Ro0eyTH','z4TEhrDPSXFaf6nMoXGFsNTrrbXGYhA2',1,null,'2019-04-02 15:35:20','2019-04-02 15:35:20')
+      ('xBWLQdmufqfceJIptmQmUOP81Ro0eyTH','z4TEhrDPSXFaf6nMoXGFsNTrrbXGYhA2',1,null,'2019-04-02 15:35:20','2019-04-02 15:35:20'),
+      ('xBWLQdmufqfceJIptmQmUOP81Ro0eyTH','1Z8HFaf6nMoXGFsNTr6nMoXGaix02u3l',1,null,'2019-04-02 15:35:20','2019-04-02 15:35:20')
 
 insert into attachment_file_type(`tcode`,`tname`,`tmemo`) 
 values('0120','activityCover','活动宣传图'),

@@ -90,6 +90,7 @@ def model_get_attach(AttachmentFileType,AttachmentFileinfo,tname,activity_code):
             attach_info['file_caption'] = attach.file_caption
             if file_ext.lower() in ['jpg','jpeg','png','bmp','gif']:
                 attach_info['file_format'] = 1
+                file_ext = 'image'
             elif file_ext.lower() in ['docx','doc','xls','xlsx','pdf','zip']:
                 attach_info['file_format'] = 0
             elif file_ext.lower() in ['mp3']:
