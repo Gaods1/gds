@@ -53,6 +53,11 @@ class Activity(models.Model):
         attach = model_get_attach(AttachmentFileType, AttachmentFileinfo, 'activityAttachment', self.activity_code)
         return attach
 
+    @property
+    def summary_attach(self):
+        summary_attach = model_get_attach(AttachmentFileType,AttachmentFileinfo,'activitySummary',self.activity_code)
+        return summary_attach
+
 
     class Meta:
         managed = False

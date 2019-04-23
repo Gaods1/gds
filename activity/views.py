@@ -798,3 +798,244 @@ class ActivityGiftViewSet(viewsets.ModelViewSet):
         else:
             return Response("删除失败",status=400)
 
+
+#活动总结管理
+class ActivitySummaryViewSet(viewsets.ModelViewSet):
+    queryset = Activity.objects.filter(state__gt=0).all().order_by('state', '-serial')
+    serializer_class = ActivitySerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("state")
+    filter_fields = ("state", "activity_code", "activity_type", "activity_sort")
+    search_fields = ["activity_title", ]
+
+    def update(self, request, *args, **kwargs):
+        with transaction.atomic():
+            save_id = transaction.savepoint()
+            try:
+                partial = kwargs.pop('partial', False)
+                params_dict = get_attach_params()
+                instance = self.get_object()
+                form_data = request.data
+                ########### 富文本编辑更新(新增或删除)   -----start
+                editor_dict = {}
+                editor_del = []
+                img_pattern = re.compile(r'<img src=\"(.*?)\"')
+                activity_summary = instance.activity_summary if instance.activity_summary else ''  # 更新前活动总结
+                imgs_list = img_pattern.findall(activity_summary)
+                new_activity_summary = form_data['activity_summary'] if form_data['activity_summary'] else ''
+                if new_activity_summary is None:
+                    return Response({'detail': '活动总结必填'}, 400)
+                editorImgs_list = img_pattern.findall(new_activity_summary)
+                imgs_set = set(imgs_list)
+                form_imgs_set = set(editorImgs_list)
+                del_imgs_set = imgs_set - form_imgs_set
+                add_imgs_set = form_imgs_set - imgs_set
+                tcode = AttachmentFileType.objects.get(tname='activityEditor').tcode
+                # 处理需要删除的富文本图片
+                if del_imgs_set:
+                    del_nameList = []
+                    for img in del_imgs_set:
+                        del_img = img.replace(params_dict[4], params_dict[2])
+                        editor_del.append(del_img)
+                        del_file_info = img.split('/')
+                        del_file_name = del_file_info.pop()
+                        del_nameList.append(del_file_name)
+                    del_result = AttachmentFileinfo.objects.filter(
+                        ecode=instance.activity_code,
+                        tcode=tcode,
+                        file_name__in=del_nameList
+                    ).delete()
+                    if not del_result:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '活动总结富文本图片' + del_nameList + '删除失败'}, 400)
+                # 处理需要新增的富文本图片
+                editor_imgs_list = list(add_imgs_set)
+                editor_dict = {}
+                if editor_imgs_list:
+                    for editor_img in editor_imgs_list:
+                        editor_temppath = editor_img.replace(params_dict[3], params_dict[1])
+                        if not os.path.exists(editor_temppath):
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '活动总结富文本图片' + editor_img + '不存在'}, 400)
+                    editor_dict = get_attach_info(editor_imgs_list, 'activity', 'editor', instance.activity_code,params_dict)
+                    editor_attachment_list = []
+                    for editor in editor_dict:
+                        if editor == 'file_normal_dir':
+                            continue
+                        new_activity_summary = new_activity_summary.replace(editor_dict[editor]['file_temp_url'],editor_dict[editor]['file_normal_url'])
+                        attachmentFileinfo_obj = AttachmentFileinfo(
+                            ecode=instance.activity_code,
+                            tcode=tcode,
+                            file_format=1,
+                            file_name=editor_dict[editor]['file_name'],
+                            state=1,
+                            publish=1,
+                            # operation_state=1,
+                            operation_state=3,
+                            creater=request.user.account_code,
+                            insert_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                            path=editor_dict[editor]['attach_path'],
+                            file_caption=editor_dict[editor]['file_caption'],
+                        )
+                        editor_attachment_list.append(attachmentFileinfo_obj)
+                    attach_fileinfo = AttachmentFileinfo.objects.bulk_create(editor_attachment_list)
+                    if not attach_fileinfo:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": "活动总结富文本图片附件信息保存失败"}, status=400)
+
+                    form_data['activity_summary'] = new_activity_summary  # 将更新后的activity_summary赋值给form表单字段activity_summary
+                ########### 富文本编辑更新(新增或删除)   -----end
+
+                ########### 活动附件编辑更新(新增或删除)   -----start
+                attach_tcode = AttachmentFileType.objects.get(tname='activitySummary').tcode
+                form_attach_dict = {}
+                form_attach_list = []
+                old_attach_list = []
+                attach_dict = {}
+                attach_del = []
+                form_attachs = form_data['summary_attach'] if form_data['summary_attach'] else ''
+                if form_attachs:
+                    for attach in form_attachs:
+                        form_attach = attach['response']['attachment'][0]
+                        form_attach_list.append(form_attach)
+                if instance.summary_attach:
+                    for old_attach in instance.summary_attach:
+                        old_attach_list.append(old_attach['down'])
+
+                attach_set = set(old_attach_list)
+                form_attach_set = set(form_attach_list)
+                del_attach_set = attach_set - form_attach_set
+                add_attach_set = form_attach_set - attach_set
+                # 处理需要删除的附件
+                if del_attach_set:
+                    del_nameList = []
+                    for attach in del_attach_set:
+                        del_attach = attach.replace(params_dict[4], params_dict[2])
+                        attach_del.append(del_attach)
+                        del_file_info = attach.split('/')
+                        del_file_name = del_file_info.pop()
+                        del_nameList.append(del_file_name)
+                    del_result = AttachmentFileinfo.objects.filter(
+                        ecode=instance.activity_code,
+                        tcode=attach_tcode,
+                        file_name__in=del_nameList
+                    ).delete()
+                    if not del_result:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '活动总结附件' + del_nameList + '删除失败'}, 400)
+                # 处理需要新增的附件
+                add_attach_list = list(add_attach_set)
+                attach_dict = {}
+                if add_attach_list:
+                    for attach in add_attach_list:
+                        attach_temppath = attach.replace(params_dict[3], params_dict[1])
+                        if not os.path.exists(attach_temppath):
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '活动总结附件' + attach_temppath + '不存在'}, 400)
+                    attach_dict = get_attach_info(add_attach_list, 'activity', 'summary_attach', instance.activity_code,params_dict)
+                    activity_attachment_list = []
+                    for attach in attach_dict:
+                        if attach == 'file_normal_dir':
+                            continue
+                        attachmentFileinfo_obj = AttachmentFileinfo(
+                            ecode=instance.activity_code,
+                            tcode=attach_tcode,
+                            file_format=attach_dict[attach]['file_format'],
+                            file_name=attach_dict[attach]['file_name'],
+                            state=1,
+                            publish=1,
+                            # operation_state=1,
+                            operation_state=3,
+                            creater=request.user.account_code,
+                            insert_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                            path=attach_dict[attach]['attach_path'],
+                            file_caption=attach_dict[attach]['file_caption'],
+                        )
+                        activity_attachment_list.append(attachmentFileinfo_obj)
+                    attach_fileinfo = AttachmentFileinfo.objects.bulk_create(activity_attachment_list)
+                    if not attach_fileinfo:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": "活动总结附件信息保存失败"}, status=400)
+                ########### 活动附件编辑更新(新增或删除)   -----end
+
+                serializer = self.get_serializer(instance, data=form_data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                try:
+                    self.perform_update(serializer)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": "活动总结失败：%s" % str(e)})
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return Response({"detail": "活动总结失败：%s" % str(e)})
+
+            upload_file_cache = []
+            # 移动活动富文本图片到正式目录
+            if editor_dict:
+                if not os.path.exists(editor_dict['file_normal_dir']):
+                    try:
+                        os.makedirs(editor_dict['file_normal_dir'])
+                    except Exception as e:
+                        os.remove(upload_file_cache[0])
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": "活动总结富文本图片上传目录创建失败"}, status=400)
+
+                try:
+                    for editor_img in editor_dict:
+                        if editor_img != 'file_normal_dir':
+                            shutil.move(editor_dict[editor_img]['file_temp_path'],editor_dict[editor_img]['file_normal_path'])
+                            upload_file_cache.append(editor_dict[editor_img]['file_normal_path'])
+                except Exception as e:
+                    os.remove(upload_file_cache[0])
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": "活动总结富文本图片移动到正式目录失败"}, status=400)
+
+            # 移动活动附件到正式目录
+            if attach_dict:
+                if not os.path.exists(attach_dict['file_normal_dir']):
+                    try:
+                        os.makedirs(attach_dict['file_normal_dir'])
+                    except Exception as e:
+                        for del_file in upload_file_cache:
+                            os.remove(del_file)
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": "活动总结附件上传目录创建失败"}, status=400)
+
+                try:
+                    for attach_file in attach_dict:
+                        if attach_file != 'file_normal_dir':
+                            shutil.move(attach_dict[attach_file]['file_temp_path'],attach_dict[attach_file]['file_normal_path'])
+                            upload_file_cache.append(attach_dict[attach_file]['file_normal_path'])
+                except Exception as e:
+                    for del_file in upload_file_cache:
+                        os.remove(del_file)
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": "活动总结附件移动到正式目录失败"}, status=400)
+
+            # 删除富文本编辑器图片
+            if editor_del:
+                try:
+                    for del_editor_img in editor_del:
+                        os.remove(del_editor_img)
+                except Exception as e:
+                    pass
+
+            # 删除附件
+            if attach_del:
+                try:
+                    for del_attach_file in attach_del:
+                        os.remove(del_attach_file)
+                except Exception as e:
+                    pass
+
+            if getattr(instance, '_prefetched_objects_cache', None):
+                instance._prefetched_objects_cache = {}
+
+            transaction.savepoint_commit(save_id)
+            return Response(serializer.data)
