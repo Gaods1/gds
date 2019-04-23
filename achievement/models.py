@@ -152,7 +152,8 @@ class RequirementsInfo(models.Model):
     @property
     def Keywords(self):
         Keywords = KeywordsInfo.objects.values_list('key_info', flat=True).filter(object_code=self.req_code)
-        return Keywords
+        return ','.join(Keywords)
+        #return Keywords
 
     @property
     def Personal(self):
@@ -279,7 +280,8 @@ class ResultsInfo(models.Model):
     @property
     def Keywords(self):
         Keywords = KeywordsInfo.objects.values_list('key_info', flat=True).filter(object_code=self.r_code)
-        return Keywords
+        #return Keywords
+        return ','.join(Keywords)
 
     @property
     def Personal(self):

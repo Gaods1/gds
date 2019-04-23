@@ -1332,10 +1332,12 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 state=state, r_type=1)
 
                 #4 创建关键字表
-                key_list=[]
-                for key_info in key_info_list:
-                    key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode,key_info=key_info, state=state, creater=request.user.account))
-                KeywordsInfo.objects.bulk_create(key_list)
+                #key_list=[]
+                #for key_info in key_info_list:
+                    #key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode,key_info=key_info, state=state, creater=request.user.account))
+                #KeywordsInfo.objects.bulk_create(key_list)
+
+                KeywordsInfo.objects.create(key_type=1, object_code=serializer_ecode,key_info=key_info_list, state=state, creater=request.user.account)
 
                 #5 创建所属领域
                 major_list = []
@@ -1663,10 +1665,13 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 # 4 更新关键字表
                 KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
-                key_list = []
-                for key_info in key_info_list:
-                    key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
-                KeywordsInfo.objects.bulk_create(key_list)
+                #key_list = []
+                #for key_info in key_info_list:
+                    #key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
+                #KeywordsInfo.objects.bulk_create(key_list)
+
+                KeywordsInfo.objects.create(key_type=1, object_code=serializer_ecode,key_info=key_info_list, state=state, creater=request.user.account)
+
 
                 #5 更新新纪录
                 MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
@@ -2044,10 +2049,12 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                                                 state=state, r_type=2)
 
                 # 4 创建关键字表
-                key_list = []
-                for key_info in key_info_list:
-                    key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
-                KeywordsInfo.objects.bulk_create(key_list)
+                #key_list = []
+                #for key_info in key_info_list:
+                    #key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
+                #KeywordsInfo.objects.bulk_create(key_list)
+                KeywordsInfo.objects.create(key_type=2, object_code=serializer_ecode,key_info=key_info_list, state=state, creater=request.user.account)
+
 
                 # 5 创建所属领域
                 major_list = []
@@ -2372,10 +2379,12 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 # 4 更新关键字表
                 KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
-                key_list = []
-                for key_info in key_info_list:
-                    key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
-                KeywordsInfo.objects.bulk_create(key_list)
+                #key_list = []
+                #for key_info in key_info_list:
+                    #key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
+                #KeywordsInfo.objects.bulk_create(key_list)
+                KeywordsInfo.objects.create(key_type=2, object_code=serializer_ecode,key_info=key_info_list, state=state, creater=request.user.account)
+
                 # 5 更新新纪录
                 MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
                 major_list = []
