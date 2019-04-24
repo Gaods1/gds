@@ -1180,6 +1180,24 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 queryset = queryset.all()
             return queryset
 
+    def list(self, request, *args, **kwargs):
+        r_code = self.get_queryset().values_list('r_code', flat=True)
+
+        rr_code = RrApplyHistory.objects.values_list('rr_code', flat=True).filter(rr_code__in=r_code,
+                                                                                  state=1)
+
+        raw = self.get_queryset().exclude(r_code__in=rr_code)
+
+        queryset = self.filter_queryset(raw)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     def create(self, request, *args, **kwargs):
         # 建立事物机制
         with transaction.atomic():
@@ -1910,6 +1928,24 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 # Ensure queryset is re-evaluated on each request.
                 queryset = queryset.all()
             return queryset
+
+    def list(self, request, *args, **kwargs):
+        req_code = self.get_queryset().values_list('req_code', flat=True)
+
+        rr_code = RrApplyHistory.objects.values_list('rr_code', flat=True).filter(rr_code__in=req_code,
+                                                                                  state__in=[1])
+
+        raw = self.get_queryset().exclude(req_code__in=rr_code)
+
+        queryset = self.filter_queryset(raw)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
         # 建立事物机制
