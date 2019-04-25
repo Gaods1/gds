@@ -12,9 +12,10 @@ from django.db import transaction
 from misc.misc import gen_uuid32
 from public_models.utils import move_attachment,move_single,get_detcode_str,get_dept_codes
 from django.core.exceptions import ValidationError
-from public_models.models import  AttachmentFileinfo,AttachmentFileType,ParamInfo
+from public_models.models import  AttachmentFileinfo,AttachmentFileType,ParamInfo,Message
 import time,os,shutil,re
 from .utils import *
+from account.models import AccountInfo
 
 
 #活动管理
@@ -715,16 +716,74 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
     活动报名编辑
     """
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+        with transaction.atomic():
+            save_id = transaction.savepoint()
+            try:
+                partial = kwargs.pop('partial', False)
+                instance = self.get_object()
+                form_data = request.data
+                activity_code = form_data['activity_code']
+                activity = Activity.objects.filter(activity_code=activity_code).get()
+                if activity.signup_check == 1:
+                    if form_data['check_state'] == 1:
+                        check_result = '审核通过'
+                        sms_state = 1
+                    elif form_data['check_state'] == 2:
+                        check_result = '审核未通过'
+                        sms_state = 0
+                    mobile = form_data['signup_mobile']
+                    name = form_data['signup_name']
+                    email = form_data['signup_email']
+                    message_content = activity.activity_title + check_result
+                    #审核是否通过都只发送一次
+                    sms_sended = Message.objects.filter(message_title=activity.activity_title,message_content=message_content,sms_phone=mobile,email_account=email)
+                    if not sms_sended:
+                        account_info = AccountInfo.objects.filter(user_mobile=mobile)
+                        if account_info:
+                            account_code = account_info[0]['user_mobile']
+                        else:
+                            account_code = ''
+                        # 发送邮件
+                        email_result = send_email(name, email, message_content)
+                        if not email_result:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '邮件发送失败'}, 400)
+                        #发送短信
+                        sms_result = send_message(sms_state,mobile,activity.activity_title)
+                        if sms_result['state'] == 0:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail':sms_result['msg']}, 400)
+                        #保存短信邮件发送记录
+                        insert_result = Message.objects.create(
+                            message_title=activity.activity_title,
+                            message_content= message_content,
+                            account_code= account_code,
+                            state=0,
+                            send_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                            sender=request.user.account,
+                            sms=1,
+                            sms_state=1,
+                            sms_phone=mobile,
+                            email= 1,
+                            email_state=1,
+                            email_account=email,
+                            type=2
+                        )
+                        if insert_result is None:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '短信邮件发送记录保存失败'}, 400)
 
-        if getattr(instance, '_prefetched_objects_cache', None):
-            instance._prefetched_objects_cache = {}
+                serializer = self.get_serializer(instance, data=request.data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
 
-        return Response(serializer.data)
+                if getattr(instance, '_prefetched_objects_cache', None):
+                    instance._prefetched_objects_cache = {}
+                transaction.savepoint_commit(save_id)
+                return Response(serializer.data)
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return Response({"detail" : "活动报名编辑失败：%s" % str(e)})
 
     """
     活动报名删除:伪删除即更新活动状态
