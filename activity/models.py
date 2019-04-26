@@ -88,6 +88,30 @@ class ActivitySignup(models.Model):
         managed = False
         db_table = 'activity_signup'
 
+# 活动评论 *
+class ActivityComment(models.Model):
+    serial = models.AutoField(primary_key=True)
+    comment_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
+    activity_code = models.CharField(verbose_name='活动标题',max_length=64)
+    signup_code = models.CharField(verbose_name='报名编号',max_length=64)
+    comment = models.CharField(verbose_name='评论内容', max_length=255,blank=True,null=True)
+    state = models.IntegerField(verbose_name='评论状态',blank=True,null=True,default=2)
+    insert_time = models.DateTimeField(verbose_name='评论时间', blank=True, null=True,default=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+
+    @property
+    def activity_title(self):
+        return Activity.objects.get(activity_code=self.activity_code).activity_title
+
+    @property
+    def signup_info(self):
+        signup = ActivitySignup.objects.get(activity_code=self.activity_code)
+        signup_info = '姓名:{}手机:{}邮箱:{}'.format(signup.signup_name,signup.signup_mobile,signup.signup_email)
+        return signup_info
+
+    class Meta:
+        managed = False
+        db_table = 'activity_comment'
+
 
 # 活动礼品 *
 class ActivityGift(models.Model):

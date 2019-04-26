@@ -78,6 +78,27 @@ class ActivitySignupSerializers(PatclubModelSerializer):
                   ]
 
 
+# 活动评论管理序列器
+class ActivityCommentSerializers(PatclubModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, allow_null=True,read_only=True)
+    activity_title = serializers.CharField(read_only=True)
+    signup_info = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = ActivityComment
+        fields = ['serial',
+                  'comment_code',
+                  'activity_title',
+                  'activity_code',
+                  'signup_code',
+                  'signup_info',
+                  'comment',
+                  'state',
+                  'insert_time',
+                  ]
+
+
+
 # 活动礼品管理序列器
 class ActivityGiftSerializers(PatclubModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False,allow_null=True, read_only=True)

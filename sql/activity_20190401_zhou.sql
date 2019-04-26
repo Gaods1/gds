@@ -74,11 +74,25 @@ primary key(serial),
 UNIQUE KEY `index_gift_code` (`gift_code`)
 ) engine=innodb   default  character set utf8 comment '活动礼品表';
 
+drop table if exists activity_comment;
+create table activity_comment(
+  `serial`  int unsigned not null auto_increment,
+  `comment_code` varchar(64) not null default '' comment '评论编号',
+  `activity_code` varchar(64) not null default '' comment '活动编号',
+  `signup_code` varchar(64) not null default '' comment '报名编号',
+  `comment` varchar(255) not null default '' comment '活动评论内容',
+  `state` tinyint(1) unsigned not null default 2 comment '评论状态1提交等待审核2审核通过3审核未通过',
+  `insert_time` datetime not null default '0000-00-00 00:00:00' comment '评论时间',
+  primary key(serial),
+  unique key `index_comment_code` (`comment_code`)
+) engine=innodb   default  character set utf8 comment '活动评论表';
+
 
 insert into function_info(`func_code`,`func_name`,`func_memo`,`func_url`,`item_type`,`pfunc_code`,`func_order`,`state`,`creater`,`insert_time`,`update_time`) 
 values('w6XI8PtAYm7qdIc7kpQWiAVL20KDB9zz','活动管理','活动管理',null,1,null,0,1,'root','2019-04-02 15:35:20','2019-04-02 15:35:20'),
       ('1CZ8YvtIxR3xBeziLwmTUYwp5UdoW9Hz','活动管理','活动管理','/activity/index/',0,'w6XI8PtAYm7qdIc7kpQWiAVL20KDB9zz',0,1,'root','2019-04-02 15:35:20','2019-04-02 15:35:20'),
       ('5bW84w8G8wb1Z8H7dupmooiOqXPUTxZm','活动报名管理','活动报名管理','/activity/signup/',0,'w6XI8PtAYm7qdIc7kpQWiAVL20KDB9zz',0,1,'root','2019-04-02 15:35:20','2019-04-02 15:35:20'),
+      ('R3xBew8G8w5Udo7dupmooiO2Qxsztbeu','活动评论管理','活动评论管理','/activity/comment/',0,'w6XI8PtAYm7qdIc7kpQWiAVL20KDB9zz',0,1,'root','2019-04-02 15:35:20','2019-04-02 15:35:20'),
       ('z4TEhrDPSXFaf6nMoXGFsNTrrbXGYhA2','活动礼品管理','活动礼品管理','/activity/gift/',0,'w6XI8PtAYm7qdIc7kpQWiAVL20KDB9zz',0,1,'root','2019-04-02 15:35:20','2019-04-02 15:35:20'),
       ('1Z8HFaf6nMoXGFsNTr6nMoXGaix02u3l','活动总结','活动总结','/activity/summary/',0,'w6XI8PtAYm7qdIc7kpQWiAVL20KDB9zz',0,1,'root','2019-04-02 15:35:20','2019-04-02 15:35:20')
 
@@ -87,6 +101,7 @@ insert into role_func_info(`role_code`,`func_code`,`state`,`creater`,`insert_tim
 values('xBWLQdmufqfceJIptmQmUOP81Ro0eyTH','1CZ8YvtIxR3xBeziLwmTUYwp5UdoW9Hz',1,null,'2019-04-02 15:35:20','2019-04-02 15:35:20'),
       ('xBWLQdmufqfceJIptmQmUOP81Ro0eyTH','5bW84w8G8wb1Z8H7dupmooiOqXPUTxZm',1,null,'2019-04-02 15:35:20','2019-04-02 15:35:20'),
       ('xBWLQdmufqfceJIptmQmUOP81Ro0eyTH','z4TEhrDPSXFaf6nMoXGFsNTrrbXGYhA2',1,null,'2019-04-02 15:35:20','2019-04-02 15:35:20'),
+      ('xBWLQdmufqfceJIptmQmUOP81Ro0eyTH','R3xBew8G8w5Udo7dupmooiO2Qxsztbeu',1,null,'2019-04-02 15:35:20','2019-04-02 15:35:20'),
       ('xBWLQdmufqfceJIptmQmUOP81Ro0eyTH','1Z8HFaf6nMoXGFsNTr6nMoXGaix02u3l',1,null,'2019-04-02 15:35:20','2019-04-02 15:35:20')
 
 insert into attachment_file_type(`tcode`,`tname`,`tmemo`) 

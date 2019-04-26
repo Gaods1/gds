@@ -255,6 +255,10 @@ sub_menu = {
         'title':"活动礼品管理",
         'index':"activity_gift"
     },
+    '活动评论管理':{
+        'title':"活动评论管理",
+        'index':"activity_comment"
+    },
     '领域专业管理':{
         'title':"领域专业管理",
         'index':"major_info"
