@@ -9,6 +9,7 @@ router.register(r'index', ActivityViewSet)
 router.register(r'signup', ActivitySignupViewSet)
 router.register(r'gift', ActivityGiftViewSet)
 router.register(r'summary',ActivitySummaryViewSet)
+router.register(r'comment',ActivityCommentViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
