@@ -1,5 +1,5 @@
 from rest_framework import permissions
-from account.models import AccountInfo, FunctionInfo, AccountRoleInfo, RoleInfo, RoleFuncInfo, AccountDisableFuncinfo
+from account.models import AccountInfo, FunctionInfo, AccountRoleInfo, RoleInfo, RoleFuncInfo, AccountDisableFuncinfo, Deptinfo
 import re
 from python_backend.settings import public_url
 
@@ -8,6 +8,7 @@ model_map = {
     "account_disable_func": AccountDisableFuncinfo,
     "account_role": AccountRoleInfo,
     "roles": RoleInfo,
+    "dept": Deptinfo,
 }
 
 
@@ -91,6 +92,11 @@ class DontCheckRoot(permissions.BasePermission):
                 account = AccountRoleInfo.objects.values_list('account', flat=True).filter(role_code=role_code)
                 if 'root' in account or user in account:
                     return False
+            elif model in ['dept']:
+                dept_code = model_map[model].objects.values_list('dept_code', flat=True).get(serial=serial)
+                account = AccountInfo.objects.values_list('account', flat=True).filter(dept_code=dept_code)
+                if 'root' in account or user in account:
+                    return False
         elif method in ['PATCH', 'PUT'] and serial:
             if model in ['account_disable_func', 'account_role']:
                 account = model_map[model].objects.values_list('account', flat=True).get(serial=serial)
@@ -99,6 +105,11 @@ class DontCheckRoot(permissions.BasePermission):
             elif model in ['roles']:
                 role_code = model_map[model].objects.values_list('role_code', flat=True).get(serial=serial)
                 account = AccountRoleInfo.objects.values_list('account', flat=True).filter(role_code=role_code)
+                if 'root' in account or user in account:
+                    return False
+            elif model in ['dept']:
+                dept_code = model_map[model].objects.values_list('dept_code', flat=True).get(serial=serial)
+                account = AccountInfo.objects.values_list('account', flat=True).filter(dept_code=dept_code)
                 if 'root' in account or user in account:
                     return False
         elif method in ['POST'] and not serial:
