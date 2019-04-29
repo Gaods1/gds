@@ -40,7 +40,6 @@ class ActivityViewSet(viewsets.ModelViewSet):
               activity_end_time  max_people_number
       a当活动形式为线下或线上线下时 district_id  address为必填写项
       b当活动分类为直播类时 activity_site为必填写项
-      c当活动有抽奖时 lottery_type为必填写项
     2 隐含逻辑: a活动上线时间(online_time) >= 创建时间(insert_time)
                b报名开始时间(signup_start_time) >= 活动上线时间(online_time) and 报名结束时间(signup_end_time) >= 报名开始时间(signup_start_time)
                c活动开始时间(activity_start_time) >= 报名结束时间(signup_end_time)  and 活动结束时间(activity_end_time)>=活动开始时间(activity_start_time)
@@ -684,6 +683,118 @@ class ActivityViewSet(viewsets.ModelViewSet):
         else:
             return Response("删除失败", status=400)
 
+
+#抽奖管理
+class ActivityLotteryViewSet(viewsets.ModelViewSet):
+    queryset = ActivityLottery.objects.all().order_by('insert_time', '-serial')
+    serializer_class = ActivityLotterySerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time")
+    filter_fields = ("insert_time", "activity_code", "lottery_code", "type", "state")
+    search_fields = ("",)
+
+    def get_queryset(self,activity_code):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        if activity_code:
+            raw_queryset = ActivityLottery.objects.raw("select serial  from activity_lottery  where activity_code =  '" + activity_code + "'")
+            queryset = ActivityLottery.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("insert_time")
+        else:
+            queryset = self.queryset
+
+        if isinstance(queryset, QuerySet):
+            queryset = queryset.all()
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        if 'activity_code' in request.query_params:
+            activity_code = request.query_params['activity_code']
+        else:
+            activity_code = ''
+        if not activity_code:
+            return Response("请选择要创建抽奖的活动", status=400)
+
+        queryset = self.filter_queryset(self.get_queryset(activity_code))
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        data = request.data if request.data else []
+        instance = self.get_object()
+        serial_list = [instance.serial]
+        del_serial = serial_list + data
+
+        res = ActivityLottery.objects.filter(serial__in=del_serial).update(state=2)
+        if res:
+            return Response("删除成功")
+        else:
+            return Response("删除失败", status=400)
+
+
+#奖品管理
+class ActivityPrizeViewSet(viewsets.ModelViewSet):
+    queryset = ActivityPrize.objects.all().order_by('insert_time', '-serial')
+    serializer_class = ActivityPrizeSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time")
+    filter_fields = ("insert_time", "prize_code", "lottery_code", "prize_type", "state")
+    search_fields = ("prize_name",)
+
+
+#中奖管理
+class ActivityWinnerViewSet(viewsets.ModelViewSet):
+    queryset = ActivityPrizeWinner.objects.all().order_by('win_time', '-serial')
+    serializer_class = ActivityWinnerSerializers
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("win_time")
+    filter_fields = ("insert_time", "prize_code", "win_code", "mobile")
+    search_fields = ("",)
 
 
 

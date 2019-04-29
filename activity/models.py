@@ -16,7 +16,6 @@ class Activity(models.Model):
     activity_content = models.TextField(verbose_name='活动内容')
     activity_type = models.IntegerField(verbose_name='活动形式')
     has_lottery = models.IntegerField(verbose_name='是否有抽奖',blank=True, null=True,default=2)
-    lottery_type = models.IntegerField(verbose_name='抽奖形式',blank=True, null=True)
     activity_sort = models.IntegerField(verbose_name='活动内容分类')
     activity_site = models.URLField(verbose_name='线上活动url',max_length=255, blank=True, null=True)
     district_id = models.IntegerField(verbose_name='活动地区',blank=True, null=True)
@@ -62,6 +61,57 @@ class Activity(models.Model):
     class Meta:
         managed = False
         db_table = 'activity'
+
+#抽奖管理
+class ActivityLottery(models.Model):
+    serial = models.AutoField(primary_key=True)
+    lottery_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
+    activity_code = models.CharField(verbose_name='活动标题', max_length=64)
+    type = models.IntegerField(verbose_name='抽奖形式1线上2线下',blank=False,null=False)
+    start_time = models.DateField(verbose_name='抽奖开始时间',blank=False,null=False)
+    end_time = models.DateField(verbose_name='抽奖结束时间', blank=False, null=False)
+    state = models.IntegerField(verbose_name='抽奖状态1正常2禁用',blank=False,null=False)
+    insert_time = models.DateTimeField(verbose_name='添加时间', blank=True, null=True,default=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+
+    @property
+    def activity_title(self):
+        activity = Activity.objects.filter(activity_code=self.activity_code).get()
+        return activity.activity_title
+
+    class Meta:
+        managed = False
+        db_table = 'activity_lottery'
+
+#奖品管理
+class ActivityPrize(models.Model):
+    serial = models.AutoField(primary_key=True)
+    prize_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
+    lottery_code = models.CharField(verbose_name='抽奖编号', max_length=64)
+    prize_name = models.CharField(verbose_name='奖品名称', max_length=64)
+    prize_type = models.IntegerField(verbose_name='奖品类型0未中奖(谢谢参与)1一等奖2二等奖3三等奖4四等将',blank=False,null=False)
+    probability = models.IntegerField(verbose_name='概率',blank=False,null=False)
+    prize_desc = models.CharField(verbose_name='奖品描述', max_length=255,blank=True,null=True)
+    prize_num = models.IntegerField(verbose_name='奖品数量',blank=False,null=False)
+    remain_num = models.IntegerField(verbose_name='剩余未抽中数量',blank=True,null=True)
+    state = models.IntegerField(verbose_name='奖品状态1正常2禁用',blank=False,null=False)
+    insert_time = models.DateTimeField(verbose_name='添加时间', blank=True, null=True,default=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+
+    class Meta:
+        managed = False
+        db_table = 'activity_prize'
+
+#中奖管理
+class ActivityPrizeWinner(models.Model):
+    serial = models.AutoField(primary_key=True)
+    win_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
+    prize_code = models.CharField(verbose_name='奖品编号', max_length=64)
+    mobile = models.CharField(verbose_name='中奖者手机号', max_length=64)
+    win_time = models.DateTimeField(verbose_name='中奖时间')
+
+    class Meta:
+        managed = False
+        db_table = 'activity_prize_winner'
+
 
 
 # 活动报名 *

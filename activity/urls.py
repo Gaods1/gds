@@ -10,6 +10,9 @@ router.register(r'signup', ActivitySignupViewSet)
 router.register(r'gift', ActivityGiftViewSet)
 router.register(r'summary',ActivitySummaryViewSet)
 router.register(r'comment',ActivityCommentViewSet)
+router.register(r'lottery',ActivityLotteryViewSet)
+router.register(r'prize',ActivityPrizeViewSet)
+router.register(r'winner',ActivityWinnerViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
