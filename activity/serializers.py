@@ -25,6 +25,7 @@ class ActivitySerializers(PatclubModelSerializer):
                   'activity_content',
                   'activity_type',
                   'has_lottery',
+                  'lottery_desc',
                   'activity_sort',
                   'activity_site',
                   'district_id',
@@ -54,6 +55,8 @@ class ActivitySerializers(PatclubModelSerializer):
 
 #抽奖管理序列器
 class ActivityLotterySerializers(PatclubModelSerializer):
+    start_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True)
+    end_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True)
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, allow_null=True, read_only=True)
     activity_title = serializers.CharField(read_only=True)
 
@@ -64,6 +67,7 @@ class ActivityLotterySerializers(PatclubModelSerializer):
             'lottery_code',
             'activity_code',
             'type',
+            'lottery_title',
             'start_time',
             'end_time',
             'state',
@@ -96,15 +100,25 @@ class ActivityPrizeSerializers(PatclubModelSerializer):
 #中奖管理序列器
 class ActivityWinnerSerializers(PatclubModelSerializer):
     win_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=True, allow_null=False)
+    lottery_title = serializers.CharField(read_only=True)
+    prize_name = serializers.CharField(read_only=True)
+    prize_type = serializers.IntegerField(read_only=True)
+    signup_name = serializers.CharField(read_only=True)
 
     class Meta:
         model = ActivityPrizeWinner
         fields = [
             'serial',
             'win_code',
+            'activity_code',
+            'lottery_code',
             'prize_code',
             'mobile',
-            'win_time'
+            'win_time',
+            'lottery_title',
+            'prize_name',
+            'prize_type',
+            'signup_name'
         ]
 
 

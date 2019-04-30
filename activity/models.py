@@ -16,6 +16,7 @@ class Activity(models.Model):
     activity_content = models.TextField(verbose_name='活动内容')
     activity_type = models.IntegerField(verbose_name='活动形式')
     has_lottery = models.IntegerField(verbose_name='是否有抽奖',blank=True, null=True,default=2)
+    lottery_desc = models.TextField(verbose_name='抽奖描述',blank=True,null=True)
     activity_sort = models.IntegerField(verbose_name='活动内容分类')
     activity_site = models.URLField(verbose_name='线上活动url',max_length=255, blank=True, null=True)
     district_id = models.IntegerField(verbose_name='活动地区',blank=True, null=True)
@@ -68,8 +69,9 @@ class ActivityLottery(models.Model):
     lottery_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     activity_code = models.CharField(verbose_name='活动标题', max_length=64)
     type = models.IntegerField(verbose_name='抽奖形式1线上2线下',blank=False,null=False)
-    start_time = models.DateField(verbose_name='抽奖开始时间',blank=False,null=False)
-    end_time = models.DateField(verbose_name='抽奖结束时间', blank=False, null=False)
+    lottery_title = models.CharField(verbose_name='抽奖标题',blank=False,null=False,max_length=50)
+    start_time = models.DateTimeField(verbose_name='抽奖开始时间',blank=False,null=False)
+    end_time = models.DateTimeField(verbose_name='抽奖结束时间', blank=False, null=False)
     state = models.IntegerField(verbose_name='抽奖状态1正常2禁用',blank=False,null=False)
     insert_time = models.DateTimeField(verbose_name='添加时间', blank=True, null=True,default=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
 
@@ -77,6 +79,7 @@ class ActivityLottery(models.Model):
     def activity_title(self):
         activity = Activity.objects.filter(activity_code=self.activity_code).get()
         return activity.activity_title
+
 
     class Meta:
         managed = False
@@ -104,13 +107,37 @@ class ActivityPrize(models.Model):
 class ActivityPrizeWinner(models.Model):
     serial = models.AutoField(primary_key=True)
     win_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
+    activity_code = models.CharField(verbose_name='活动编号', max_length=64)
+    lottery_code = models.CharField(verbose_name='抽奖编号',max_length=64)
     prize_code = models.CharField(verbose_name='奖品编号', max_length=64)
     mobile = models.CharField(verbose_name='中奖者手机号', max_length=64)
     win_time = models.DateTimeField(verbose_name='中奖时间')
 
+    @property
+    def lottery_title(self):
+        lottery = ActivityLottery.objects.filter(lottery_code=self.lottery_code).get()
+        return lottery.lottery_title
+
+    @property
+    def prize_name(self):
+        prize = ActivityPrize.objects.filter(prize_code=self.prize_code).get()
+        return prize.prize_name
+
+    @property
+    def prize_type(self):
+        prize = ActivityPrize.objects.filter(prize_code=self.prize_code).get()
+        return prize.prize_type
+
+    @property
+    def signup_name(self):
+        signup = ActivitySignup.objects.filter(signup_mobile=self.mobile,activity_code=self.activity_code).get()
+        return signup.signup_name
+
+
     class Meta:
         managed = False
         db_table = 'activity_prize_winner'
+        unique_together = (('lottery_code', 'mobile'),)
 
 
 
@@ -125,6 +152,7 @@ class ActivitySignup(models.Model):
     signup_email = models.CharField(verbose_name='电子邮箱', max_length=64,validators=[validate_email])
     company_info = models.CharField(verbose_name='单位信息', max_length=64,blank=True,null=True)
     concern_content = models.CharField(verbose_name='比较关注的内容', max_length=255,blank=True,null=True)
+    account_code = models.CharField(verbose_name='报名者账号',max_length=32,blank=True,null=True)
     change_num = models.IntegerField(verbose_name='信息修改次数',blank=True,null=True)
     check_time = models.DateTimeField(verbose_name='审核时间',blank=True,null=True)
     check_state = models.IntegerField(verbose_name='审核状态',blank=True,null=True,default=1)
@@ -137,6 +165,7 @@ class ActivitySignup(models.Model):
     class Meta:
         managed = False
         db_table = 'activity_signup'
+        unique_together = (('activity_code', 'signup_mobile'),)
 
 # 活动评论 *
 class ActivityComment(models.Model):
