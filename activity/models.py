@@ -183,7 +183,7 @@ class ActivityComment(models.Model):
 
     @property
     def signup_info(self):
-        signup = ActivitySignup.objects.get(activity_code=self.activity_code)
+        signup = ActivitySignup.objects.get(signup_code=self.signup_code)
         signup_info = '姓名:{}手机:{}邮箱:{}'.format(signup.signup_name,signup.signup_mobile,signup.signup_email)
         return signup_info
 
