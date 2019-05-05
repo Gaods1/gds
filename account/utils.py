@@ -46,7 +46,7 @@ def copy_img(url, identity, img_type):
         upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value
         if url and upload_temp_dir in url and os.path.isfile(url):
             file_name = url.split('/')[-1]
-            file_caption = '_'.join(file_name.split('_')[0:-1])+ '.' + file_name.split('.')[-1]
+            file_caption = '_'.join(file_name.split('_')[1:])
             formal_path = ParamInfo.objects.get(param_name='upload_dir').param_value
             tcode = AttachmentFileType.objects.get(tname=img_type).tcode
             file_formal_path = os.path.join(formal_path, identity, tcode)
