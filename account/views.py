@@ -13,6 +13,9 @@ from misc.filter.search import ViewSearch
 from django.db import transaction
 from expert.models import *
 from projectmanagement.models import *
+from public_models.models import *
+from public_models.serializers import *
+from .utils import copy_img
 # Create your views here.
 
 
@@ -679,3 +682,35 @@ class SystemDistrictViewSet(viewsets.ModelViewSet):
     ordering_fields = ("district_id", "insert_time")
     filter_fields = ("parent_id",)
     search_fields = ("district_name",)
+
+
+# Banner图管理
+class BannerViewSet(viewsets.ModelViewSet):
+    queryset = AttachmentFileinfo.objects.filter(tcode='0124').order_by('file_order')
+    serializer_class = AttachmentFileinfoSerializers
+    filter_backends = (
+        ViewSearch,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("file_order", "insert_time")
+    filter_fields = ("file_caption", "creater", "publish", "state")
+    search_fields = ("file_caption", "creater")
+
+    def create(self, request, *args, **kwargs):
+        data = request.data
+        banner = url_to_path(data.pop('banner', None))
+        file_dict = copy_img(banner, 'HomeBanner', 'homeBanner')
+        data.update(file_dict)
+        base_data = {
+            'creater':request.user.account,
+            'ecode': None,
+            'publish': 1,
+            'operation_state': 3
+        }
+        data.update(base_data)
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

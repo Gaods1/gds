@@ -1,6 +1,7 @@
 from .models import *
 from rest_framework import serializers
 
+
 # 领域类型序列器
 class MajorInfoSerializers(serializers.ModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
@@ -22,4 +23,29 @@ class MajorInfoSerializers(serializers.ModelSerializer):
                   'insert_time',
                   'pmname',
                   'major_cover',
+                  ]
+
+
+# 附件表序列化器
+class AttachmentFileinfoSerializers(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+
+
+    class Meta:
+        model = AttachmentFileinfo
+        fields = ['serial',
+                  'ecode',
+                  'tcode',
+                  'file_format',
+                  'file_name',
+                  'add_id',
+                  'file_order',
+                  'state',
+                  'publish',
+                  'operation_state',
+                  'creater',
+                  'insert_time',
+                  'path',
+                  'file_caption',
+                  'banner'
                   ]

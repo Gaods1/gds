@@ -1,8 +1,9 @@
 from django.db import models
 from misc.misc import gen_uuid32
 import time
-from account.utils import *
+# from account.utils import *
 from misc.validate import *
+import os
 
 
 # *******************************django 用户模型相关表， 勿动，如对程序无影响，后续可能删除****************************
@@ -214,6 +215,16 @@ class AttachmentFileinfo(models.Model):
     path = models.CharField(max_length=64, blank=True, null=True)
     file_caption = models.CharField(max_length=64, blank=True, null=True)
     publish = models.IntegerField(blank=True, null=True)
+
+    @property
+    def banner(self):
+        if self.tcode == '0124':
+            url = ParamInfo.objects.get(param_code=4).param_value
+            return os.path.join(url, self.path,self.file_name)
+        else:
+            return None
+
+
     class Meta:
         managed = False
         db_table = 'attachment_fileinfo'
