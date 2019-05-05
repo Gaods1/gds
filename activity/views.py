@@ -7,7 +7,7 @@ from activity.serializers import *
 from rest_framework import filters
 import django_filters
 from rest_framework.response import Response
-from django.db.models.query import QuerySet
+from django.db.models.query import QuerySet,Q
 from django.db import transaction
 from misc.misc import gen_uuid32
 from public_models.utils import move_attachment,move_single,get_detcode_str,get_dept_codes
@@ -40,7 +40,6 @@ class ActivityViewSet(viewsets.ModelViewSet):
               activity_end_time  max_people_number
       a当活动形式为线下或线上线下时 district_id  address为必填写项
       b当活动分类为直播类时 activity_site为必填写项
-      c当活动有抽奖时 lottery_type为必填写项
     2 隐含逻辑: a活动上线时间(online_time) >= 创建时间(insert_time)
                b报名开始时间(signup_start_time) >= 活动上线时间(online_time) and 报名结束时间(signup_end_time) >= 报名开始时间(signup_start_time)
                c活动开始时间(activity_start_time) >= 报名结束时间(signup_end_time)  and 活动结束时间(activity_end_time)>=活动开始时间(activity_start_time)
@@ -74,6 +73,9 @@ class ActivityViewSet(viewsets.ModelViewSet):
                 if form_data['down_time'] < form_data['activity_end_time']:
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": "活动下架时间应>=活动结束时间"})
+                if form_data['has_lottery'] == 1 and form_data['lottery_desc'] is None:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": "含有抽奖环节时抽奖描述必填写"})
                 ########### 隐含逻辑判断 ----end
 
                 ########### 活动封面(1张或多张[最多5张轮播],必上传)  ----begin
@@ -138,7 +140,7 @@ class ActivityViewSet(viewsets.ModelViewSet):
 
                 # 活动内容富文本编辑器附件(图片) --------- begin wangedit支持插入线上视频链接
                 form_activity_content = form_data['activity_content']
-                img_pattern = re.compile(r'src=\"(.*?)\"')
+                img_pattern = re.compile(r'<img src=\"(.*?)\"')
                 editor_dict = {}
                 if form_activity_content:
                     editor_imgs_list = img_pattern.findall(form_activity_content)
@@ -344,6 +346,9 @@ class ActivityViewSet(viewsets.ModelViewSet):
                 if form_data['down_time'] < form_data['activity_end_time']:
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": "活动下架时间应>=活动结束时间"})
+                if form_data['has_lottery'] == 1 and form_data['lottery_desc'] is None:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": "含有抽奖环节时抽奖描述必填写"})
                 ########### 隐含逻辑判断 ----end
                 attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
                 attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
@@ -424,7 +429,7 @@ class ActivityViewSet(viewsets.ModelViewSet):
                 ########### 富文本编辑更新(新增或删除)   -----start
                 editor_dict = {}
                 editor_del = []
-                img_pattern = re.compile(r'src=\"(.*?)\"')
+                img_pattern = re.compile(r'<img src=\"(.*?)\"')
                 activity_content = instance.activity_content  # 更新前详情
                 imgs_list = img_pattern.findall(activity_content)
                 new_activity_content = form_data['activity_content']
@@ -685,6 +690,288 @@ class ActivityViewSet(viewsets.ModelViewSet):
             return Response("删除失败", status=400)
 
 
+#抽奖管理
+class ActivityLotteryViewSet(viewsets.ModelViewSet):
+    queryset = ActivityLottery.objects.all().order_by('insert_time', '-serial')
+    serializer_class = ActivityLotterySerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time")
+    filter_fields = ("insert_time", "activity_code", "lottery_code", "type", "state")
+    search_fields = ("lottery_title",)
+
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        if 'activity_code' in self.request.query_params:
+            activity_code = self.request.query_params['activity_code']
+        elif 'activity_code' in self.request.data:
+            activity_code = self.request.data['activity_code']
+        else:
+            activity_code = ''
+
+        if activity_code:
+            raw_queryset = ActivityLottery.objects.raw("select serial  from activity_lottery  where activity_code =  '" + activity_code + "'")
+            queryset = ActivityLottery.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("insert_time")
+        else:
+            queryset = self.queryset
+
+        if isinstance(queryset, QuerySet):
+            queryset = queryset.all()
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        if 'activity_code' in request.query_params:
+            activity_code = request.query_params['activity_code']
+        else:
+            activity_code = ''
+        if not activity_code:
+            return Response("请选择要创建抽奖的活动", status=400)
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+    def create(self, request, *args, **kwargs):
+        form_data = request.data
+        if form_data['start_time'] >= form_data['end_time']:
+            return Response({'detail': '抽奖开始时间应该小于结束时间'}, 400)
+        activity_code = form_data['activity_code']
+        activity = Activity.objects.filter(activity_code=activity_code).get()
+        if form_data['start_time'] < str(activity.activity_start_time) or form_data['start_time'] > str(activity.activity_end_time):
+            return Response({'detail':'抽奖开始时间应该大于活动开始时间且小于活动结束时间'},400)
+        if form_data['end_time'] < str(activity.activity_start_time) or form_data['end_time'] > str(activity.activity_end_time):
+            return Response({'detail':'抽奖结束时间应该大于活动开始时间且小于活动结束时间'},400)
+        #判断是否有重叠时间段
+        exist_lottery = ActivityLottery.objects.filter(
+            Q(start_time__lte=form_data['start_time'],end_time__gte=form_data['start_time']) |
+            Q(start_time__lte=form_data['end_time'],end_time__gte=form_data['end_time'])).exists()
+        if exist_lottery:
+            return Response({'detail':'抽奖时间区间不能重叠'},400)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def update(self, request, *args, **kwargs):
+        form_data =request.data
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        if form_data['start_time'] >= form_data['end_time']:
+            return Response({'detail': '抽奖开始时间应该小于结束时间'}, 400)
+        activity_code = instance.activity_code
+        activity = Activity.objects.filter(activity_code=activity_code).get()
+        if form_data['start_time'] < str(activity.activity_start_time) or form_data['start_time'] > str(activity.activity_end_time):
+            return Response({'detail':'抽奖开始时间应该大于活动开始时间且小于活动结束时间'},400)
+        if form_data['end_time'] < str(activity.activity_start_time) or form_data['end_time'] > str(activity.activity_end_time):
+            return Response({'detail':'抽奖结束时间应该大于活动开始时间且小于活动结束时间'},400)
+        # 判断是否有重叠时间段
+        exist_lottery = ActivityLottery.objects.filter(
+            (Q(start_time__lte=form_data['start_time'], end_time__gte=form_data['start_time']) |
+            Q(start_time__lte=form_data['end_time'], end_time__gte=form_data['end_time'])),~Q(lottery_code=instance.lottery_code)
+        ).exists()
+        if exist_lottery:
+            return Response({'detail':'抽奖时间区间不能重叠'}, 400)
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        data = request.data if request.data else []
+        instance = self.get_object()
+        serial_list = [instance.serial]
+        del_serial = serial_list + data
+
+        res = ActivityLottery.objects.filter(serial__in=del_serial).update(state=2)
+        if res:
+            return Response("删除成功")
+        else:
+            return Response("删除失败", status=400)
+
+
+#奖品管理
+class ActivityPrizeViewSet(viewsets.ModelViewSet):
+    queryset = ActivityPrize.objects.all().order_by('insert_time', '-serial')
+    serializer_class = ActivityPrizeSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time")
+    filter_fields = ("insert_time", "prize_code", "lottery_code", "prize_type", "state")
+    search_fields = ("prize_name",)
+
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        if 'lottery_code' in self.request.query_params:
+            lottery_code = self.request.query_params['lottery_code']
+        elif 'lottery_code' in self.request.data:
+            lottery_code = self.request.data['lottery_code']
+        else:
+            lottery_code = ''
+
+        if lottery_code:
+            raw_queryset = ActivityPrize.objects.raw("select serial  from activity_prize  where lottery_code =  '" + lottery_code + "'")
+            queryset = ActivityPrize.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("insert_time")
+        else:
+            queryset = self.queryset
+
+        if isinstance(queryset, QuerySet):
+            queryset = queryset.all()
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        if 'lottery_code' in request.query_params:
+            lottery_code = request.query_params['lottery_code']
+        else:
+            lottery_code = ''
+        if not lottery_code:
+            return Response("请选择要创建奖品的抽奖", status=400)
+
+        activity_code = ''
+        if 'activity_code' in request.query_params:
+            activity_code = request.query_params['activity_code']
+        if not activity_code:
+            return Response("缺少活动code参数", status=400)
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        form_data = request.data
+        form_data['remain_num'] = form_data['prize_num']
+        serializer = self.get_serializer(data=form_data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+    def destroy(self, request, *args, **kwargs):
+        data = request.data if request.data else []
+        instance = self.get_object()
+        serial_list = [instance.serial]
+        del_serial = serial_list + data
+
+        res = ActivityPrize.objects.filter(serial__in=del_serial).update(state=2)
+        if res:
+            return Response("删除成功")
+        else:
+            return Response("删除失败", status=400)
+
+
+
+#中奖管理
+class ActivityWinnerViewSet(viewsets.ModelViewSet):
+    queryset = ActivityPrizeWinner.objects.all().order_by('win_time', '-serial')
+    serializer_class = ActivityWinnerSerializers
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("win_time")
+    filter_fields = ("activity_code","lottery_code","prize_code", "win_code", "mobile")
+    search_fields = ("",)
+
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        if 'lottery_code' in self.request.query_params:
+            lottery_code = self.request.query_params['lottery_code']
+        elif 'lottery_code' in self.request.data:
+            lottery_code = self.request.data['lottery_code']
+        else:
+            lottery_code = ''
+
+        if lottery_code:
+            raw_queryset = ActivityPrizeWinner.objects.raw("select serial  from activity_prize_winner  where lottery_code =  '" + lottery_code + "'")
+            queryset = ActivityPrizeWinner.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("win_time")
+        else:
+            queryset = self.queryset
+
+        if isinstance(queryset, QuerySet):
+            queryset = queryset.all()
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        if 'lottery_code' in request.query_params:
+            lottery_code = request.query_params['lottery_code']
+        else:
+            lottery_code = ''
+        if not lottery_code:
+            return Response("请选择要创建中奖记录的抽奖", status=400)
+
+        activity_code = ''
+        if 'activity_code' in request.query_params:
+            activity_code = request.query_params['activity_code']
+        if not activity_code:
+            return Response("缺少活动code参数", status=400)
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        form_data = request.data
+        lottery = ActivityLottery.objects.filter(lottery_code=form_data['lottery_code']).get()
+        activity = Activity.objects.filter(activity_code=lottery.activity_code).get()
+        form_data['activity_code'] = activity.activity_code
+        #判断是在抽奖时间区间
+        win_time = form_data['win_time']
+        exist_lottery = ActivityLottery.objects.filter(start_time__lte=win_time,end_time__gte=win_time,state=1).exists()
+        if not exist_lottery:
+            return Response({'detail':'中奖时间不在抽奖时间区间内'},400)
+        serializer = self.get_serializer(data=form_data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 #活动报名管理
