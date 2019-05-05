@@ -28,7 +28,7 @@ CREATE TABLE `activity`(
 `contacter` varchar(32) default null comment '活动联系人',
 `mobile` char(11) default  null comment '活动联系人手机号',
 `reach_intent` varchar(255) DEFAULT NULL COMMENT '活动达成意向',
-`state` tinyint(1) DEFAULT NULL COMMENT '活动状态0伪删除1已创建2已上线3报名中4进行中5已结束',
+`state` tinyint(1) DEFAULT NULL COMMENT '活动状态0伪删除1已创建2已上线3报名中4待开始5进行中6已结束7已下架',
 `insert_time`	datetime DEFAULT NULL  comment '创建时间',
 `creater` varchar(32)  DEFAULT NULL COMMENT '活动创建人(account_code)',
 primary key(serial),
@@ -165,3 +165,45 @@ values('0120','activityCover','活动宣传图'),
       ('0121','activityEditor','活动富文本编辑器'),
       ('0122','activityAttachment','活动附件'),
       ('0123','activitySummary','活动总结附件')
+
+
+1
+SET GLOBAL event_scheduler = ON;
+
+2
+CREATE PROCEDURE update_activity_state()
+BEGIN
+    IF exists (select serial from activity where  current_timestamp()=online_time) THEN
+            update activity set `state`='2' where current_timestamp() = online_time;
+    END IF;
+
+    IF exists (select serial from activity where  current_timestamp()=signup_start_time) THEN
+            update activity set `state`='3' where current_timestamp() = signup_start_time;
+    END IF;
+
+    IF exists (select serial from activity where  current_timestamp()=signup_end_time) THEN
+            update activity set `state`='4' where current_timestamp() = signup_end_time;
+    END IF;
+
+    IF exists (select serial from activity where  current_timestamp()= activity_start_time) THEN
+            update activity set `state`='5' where current_timestamp() = activity_start_time;
+    END IF;
+
+    IF exists (select serial from activity where  current_timestamp()= activity_end_time) THEN
+            update activity set `state`='6' where current_timestamp() = activity_end_time;
+    END IF;
+
+    IF exists (select serial from activity where  current_timestamp()= down_time) THEN
+            update activity set `state`='7' where current_timestamp() = down_time;
+    END IF;
+END
+
+3
+CREATE EVENT  event_update_status
+ON SCHEDULE EVERY 1 second  do
+begin
+call update_activity_state();
+end
+
+4
+ALTER EVENT event_update_status ON COMPLETION PRESERVE ENABLE;
