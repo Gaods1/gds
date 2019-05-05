@@ -140,7 +140,7 @@ class ActivityViewSet(viewsets.ModelViewSet):
 
                 # 活动内容富文本编辑器附件(图片) --------- begin wangedit支持插入线上视频链接
                 form_activity_content = form_data['activity_content']
-                img_pattern = re.compile(r'src=\"(.*?)\"')
+                img_pattern = re.compile(r'<img src=\"(.*?)\"')
                 editor_dict = {}
                 if form_activity_content:
                     editor_imgs_list = img_pattern.findall(form_activity_content)
@@ -429,7 +429,7 @@ class ActivityViewSet(viewsets.ModelViewSet):
                 ########### 富文本编辑更新(新增或删除)   -----start
                 editor_dict = {}
                 editor_del = []
-                img_pattern = re.compile(r'src=\"(.*?)\"')
+                img_pattern = re.compile(r'<img src=\"(.*?)\"')
                 activity_content = instance.activity_content  # 更新前详情
                 imgs_list = img_pattern.findall(activity_content)
                 new_activity_content = form_data['activity_content']
