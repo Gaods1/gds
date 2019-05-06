@@ -218,10 +218,11 @@ class AttachmentFileinfo(models.Model):
 
     @property
     def banner(self):
-        if self.tcode == '0124':
-            url = ParamInfo.objects.get(param_code=4).param_value
-            return os.path.join(url, self.path,self.file_name)
-        else:
+        try:
+            if self.tcode == '0124':
+                url = ParamInfo.objects.get(param_code=4).param_value
+                return os.path.join(url, self.path,self.file_name)
+        except Exception:
             return None
 
 
