@@ -1,5 +1,6 @@
 from .models import *
 from rest_framework import serializers
+from misc.serializers.serializers import PatclubModelSerializer
 
 
 # 领域类型序列器
@@ -27,7 +28,7 @@ class MajorInfoSerializers(serializers.ModelSerializer):
 
 
 # 附件表序列化器
-class AttachmentFileinfoSerializers(serializers.ModelSerializer):
+class AttachmentFileinfoSerializers(PatclubModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
 
 

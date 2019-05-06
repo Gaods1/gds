@@ -67,6 +67,12 @@ def copy_img(url, identity, img_type):
                 "file_caption":file_caption,
                 "file_format": 1
             }
-        return None
+        return {
+            "tcode": None,
+            "path": None,
+            "file_name": None,
+            "file_caption": None,
+            "file_format": 1
+        }
     except Exception as e:
         raise ValueError(e)
