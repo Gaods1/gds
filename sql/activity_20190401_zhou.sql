@@ -99,6 +99,7 @@ create table activity_lottery(
   `type` tinyint(1) unsigned not null default 1 comment '抽奖形式1线上2线下',
   `start_time` datetime not null default '0000-00-00 00:00:00' comment '抽奖开始时间',
   `end_time` datetime not null default '0000-00-00 00:00:00' comment '抽奖结束时间',
+  `lottery_num` tinyint(1) NOT NULL DEFAULT '1' COMMENT '抽奖次数',
   `state` tinyint(1) unsigned not null default 1 comment '抽奖状态1正常2禁用',
   `insert_time` datetime not null default '0000-00-00 00:00:00' comment '添加时间',
   primary key(serial),
@@ -131,6 +132,7 @@ create table activity_prize_winner(
       `prize_code` varchar(64) not null default '' comment '奖品编号',
       `mobile` char(11) not null default '' comment '中奖者手机号',
       `win_time`   datetime not null default '0000-00-00 00:00:00' comment '中奖时间',
+      `account_code` varchar(64) NOT NULL COMMENT '登陆者账号',
       primary key(serial),
       unique key `index_win_code` (`win_code`),
       UNIQUE KEY `index_lottery_mobile` (`lottery_code`,`mobile`)

@@ -2,6 +2,7 @@ from django.db import models
 from misc.misc import gen_uuid32
 from public_models.models import AttachmentFileinfo,AttachmentFileType,ParamInfo
 from public_models.models import SystemDistrict
+from account.models import AccountInfo
 from .utils import model_get_attach
 from misc.validate import validate_email, validate_mobile
 import time
@@ -72,6 +73,7 @@ class ActivityLottery(models.Model):
     lottery_title = models.CharField(verbose_name='抽奖标题',blank=False,null=False,max_length=50)
     start_time = models.DateTimeField(verbose_name='抽奖开始时间',blank=False,null=False)
     end_time = models.DateTimeField(verbose_name='抽奖结束时间', blank=False, null=False)
+    lottery_num = models.IntegerField(verbose_name='抽奖次数',blank=True,default=1)
     state = models.IntegerField(verbose_name='抽奖状态1正常2禁用',blank=False,null=False)
     insert_time = models.DateTimeField(verbose_name='添加时间', blank=True, null=True,default=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
 
@@ -112,6 +114,7 @@ class ActivityPrizeWinner(models.Model):
     prize_code = models.CharField(verbose_name='奖品编号', max_length=64)
     mobile = models.CharField(verbose_name='中奖者手机号', max_length=64)
     win_time = models.DateTimeField(verbose_name='中奖时间')
+    account_code = models.CharField(verbose_name='中奖者关联帐号', max_length=64)
 
     @property
     def lottery_title(self):
@@ -133,6 +136,9 @@ class ActivityPrizeWinner(models.Model):
         signup = ActivitySignup.objects.filter(signup_mobile=self.mobile,activity_code=self.activity_code).get()
         return signup.signup_name
 
+    @property
+    def user_name(self):
+        return AccountInfo.objects.get(account_code=self.account_code).user_name
 
     class Meta:
         managed = False

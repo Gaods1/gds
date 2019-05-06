@@ -70,6 +70,7 @@ class ActivityLotterySerializers(PatclubModelSerializer):
             'lottery_title',
             'start_time',
             'end_time',
+            'lottery_num',
             'state',
             'insert_time',
             'activity_title'
@@ -104,6 +105,7 @@ class ActivityWinnerSerializers(PatclubModelSerializer):
     prize_name = serializers.CharField(read_only=True)
     prize_type = serializers.IntegerField(read_only=True)
     signup_name = serializers.CharField(read_only=True)
+    user_name =serializers.CharField(read_only=True)
 
     class Meta:
         model = ActivityPrizeWinner
@@ -115,10 +117,12 @@ class ActivityWinnerSerializers(PatclubModelSerializer):
             'prize_code',
             'mobile',
             'win_time',
+            'account_code',
             'lottery_title',
             'prize_name',
             'prize_type',
-            'signup_name'
+            'signup_name',
+            'user_name'
         ]
 
 
