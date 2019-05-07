@@ -749,5 +749,11 @@ class BannerViewSet(viewsets.ModelViewSet):
         if serial:
             serial = serial.split(',')
 
-        AttachmentFileinfo.objects.filter(serial__in=serial).delete()
+        att= AttachmentFileinfo.objects.filter(serial__in=serial)
+        path = ParamInfo.objects.get(param_code=2)
+        for a in att:
+            url = os.path.join(path,a.path, a.file_name)
+            if os.path.isfile(url):
+                os.remove(url)
+        att.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
