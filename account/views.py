@@ -713,7 +713,8 @@ class BannerViewSet(viewsets.ModelViewSet):
             'creater':request.user.account,
             'ecode': None,
             'publish': 1,
-            'operation_state': 3
+            'operation_state': 3,
+            'file_order':1
         }
         data = request.data
         banner = data.pop('banner', None)
