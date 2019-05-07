@@ -722,7 +722,7 @@ class BannerViewSet(viewsets.ModelViewSet):
             base_data.update(data)
             url = b['response']['banner']
             path = url_to_path(url)
-            file_dict = copy_img(banner, 'HomeBanner', 'homeBanner')
+            file_dict = copy_img(path, 'HomeBanner', 'homeBanner')
             base_data.update(file_dict)
             banner_list.append(AttachmentFileinfo(**base_data))
 
