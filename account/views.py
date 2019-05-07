@@ -697,6 +697,17 @@ class BannerViewSet(viewsets.ModelViewSet):
     filter_fields = ("file_caption", "creater", "publish", "state")
     search_fields = ("file_caption", "creater")
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # page = self.paginate_queryset(queryset)
+        # if page is not None:
+        #     serializer = self.get_serializer(page, many=True)
+        #     return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     def create(self, request, *args, **kwargs):
         data = request.data
         banner = url_to_path(data.pop('banner', None))
