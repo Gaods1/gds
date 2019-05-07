@@ -745,8 +745,9 @@ class BannerViewSet(viewsets.ModelViewSet):
         return Response("修改成功")
 
     def destroy(self, request, *args, **kwargs):
-        data = request.data
-        serial = data.get('serial', None)
-        
+        serial = kwargs.get('pk', [])
+        if serial:
+            serial = serial.split(',')
+
         AttachmentFileinfo.objects.filter(serial__in=serial).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
