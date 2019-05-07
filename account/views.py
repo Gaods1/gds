@@ -709,22 +709,25 @@ class BannerViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
-        data = request.data
-        banner = url_to_path(data.pop('banner', None))
-        file_dict = copy_img(banner, 'HomeBanner', 'homeBanner')
-        data.update(file_dict)
         base_data = {
             'creater':request.user.account,
             'ecode': None,
             'publish': 1,
             'operation_state': 3
         }
-        data.update(base_data)
-        serializer = self.get_serializer(data=data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        data = request.data
+        banner = data.pop('banner', None)
+        banner_list = []
+        for b in banner:
+            base_data.update(data)
+            url = b['response']['banner']
+            path = url_to_path(url)
+            file_dict = copy_img(banner, 'HomeBanner', 'homeBanner')
+            base_data.update(file_dict)
+            banner_list.append(AttachmentFileinfo(**base_data))
+
+        AttachmentFileinfo.objects.bulk_create(banner_list)
+        return Response("创建成功", status=status.HTTP_201_CREATED)
 
 
     def update(self, request, *args, **kwargs):
