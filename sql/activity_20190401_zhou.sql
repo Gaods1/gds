@@ -12,6 +12,8 @@ CREATE TABLE `activity`(
 `activity_site` varchar(64) DEFAULT NULL COMMENT '线上活动url(活动详情页面或直播类活动链接)',
 `district_id` bigint(20) unsigned DEFAULT NULL COMMENT '活动地区(线下活动时必填)',
 `address` varchar(255) DEFAULT NULL COMMENT  '活动详细地址(线下活动时必填)',
+`longitude` decimal(10,6) NOT NULL DEFAULT '000.000000' COMMENT '经度',
+`latitude` decimal(10,6) NOT NULL DEFAULT '000.000000' COMMENT '纬度',
 `online_time` datetime DEFAULT NULL  COMMENT '上线时间(到达上线时间前台显示)',
 `down_time` datetime DEFAULT NULL COMMENT '下架时间(到达下线时间前台不再显示)',
 `signup_start_time` datetime DEFAULT NULL comment '报名开始时间',

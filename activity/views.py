@@ -873,13 +873,188 @@ class ActivityPrizeViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def create(self, request, *args, **kwargs):
-        form_data = request.data
-        form_data['remain_num'] = form_data['prize_num']
-        serializer = self.get_serializer(data=form_data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        with transaction.atomic():
+            save_id = transaction.savepoint()
+            try:
+                form_data = request.data
+                prize_code = gen_uuid32()
+                form_data['prize_code'] = prize_code
+                form_data['logo'] = form_data['logo'][0]['response']['logo'] if form_data['logo'] else ''
+                form_logo = form_data['logo']
+                # logo是否上传
+                if form_logo:
+                    attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
+                    upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value  # 富文本编辑器图片上传的临时保存目录
+                    upload_dir = ParamInfo.objects.get(param_name='upload_dir').param_value  # 富文本编辑器图片上传的正式保存目录
+                    attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
+                    logo_temp_path = form_logo.replace(attachment_temp_dir, upload_temp_dir)
+                    if not os.path.exists(logo_temp_path):
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '上传的logo图片不存在'}, 400)
+
+                    year = time.strftime('%Y', time.localtime(time.time()))
+                    month = time.strftime('%m', time.localtime(time.time()))
+                    day = time.strftime('%d', time.localtime(time.time()))
+                    date_dir = '{}{}{}'.format(year, month, day)
+                    form_logo_list = form_logo.split('/')
+                    file_caption = form_logo_list.pop()  # 原图片名词及后缀
+                    logo_list = file_caption.split('.')
+                    logo_ext = logo_list.pop()
+                    new_logo = prize_code + '.' + logo_ext  # logo新名称和group_code一致
+                    logo_online_dir = upload_dir.rstrip('/') + '/activity/prize/' + date_dir + '/' + prize_code + '/'
+                    logo_online_path = logo_online_dir + new_logo
+                    attach_path = 'activity/prize/' + date_dir + '/' + prize_code + '/'  # 保存到附件表
+                    tcode = AttachmentFileType.objects.get(tname='coverImg').tcode
+                    attach_fileinfo = AttachmentFileinfo.objects.create(
+                        ecode=prize_code,
+                        tcode=tcode,
+                        file_format=1,
+                        file_name=new_logo,
+                        state=1,
+                        publish=1,
+                        # operation_state = 1,
+                        operation_state=3,
+                        creater=request.user.account_code,
+                        insert_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                        path=attach_path,
+                        file_caption=file_caption
+                    )
+                    if not attach_fileinfo:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": "图片附件信息保存失败"}, status=400)
+                else:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '请上传奖品图片'}, 400)
+
+                form_data['remain_num'] = form_data['prize_num']
+                serializer = self.get_serializer(data=form_data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return Response({"detail": "创建奖品失败：%s" % str(e)})
+
+            # 移动图片
+            if form_logo:
+                # 创建目录
+                if not os.path.exists(logo_online_dir):
+                    try:
+                        os.makedirs(logo_online_dir)
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": "图片上传目录创建失败"}, status=400)
+                # 移动图片
+                try:
+                    shutil.move(logo_temp_path, logo_online_path)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": "图片移动到正式目录失败"}, status=400)
+
+            transaction.savepoint_commit(save_id)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def update(self, request, *args, **kwargs):
+        with transaction.atomic():
+            save_id = transaction.savepoint()
+            try:
+                partial = kwargs.pop('partial', False)
+                instance = self.get_object()
+                form_data = request.data
+                form_data['logo'] = form_data['logo'][0]['response']['logo'] if form_data['logo'] else ''
+                prize_code = instance.prize_code
+                attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
+                attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
+                upload_temp_pattern = re.compile(r''+attachment_temp_dir+'')
+                upload_pattern = re.compile(r''+attachment_dir+'')
+                upload_logo = upload_pattern.findall(form_data['logo'])
+                upload_temp_logo = upload_temp_pattern.findall(form_data['logo'])
+                form_logo = ''
+                if upload_logo:  #未更新已上传
+                    form_logo = ''
+                    logoList = form_data['logo'].split('/')
+                    logo_file = logoList.pop()
+                    form_data['logo'] = logo_file #数据库只保存图片文件名及其后缀
+
+                if upload_temp_logo: #图片更新
+                    form_logo = form_data['logo']
+
+                # 奖品图片是否上传
+                if form_logo:
+                    upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value  # 富文本编辑器图片上传的临时保存目录
+                    upload_dir = ParamInfo.objects.get(param_name='upload_dir').param_value  # 富文本编辑器图片上传的正式保存目录
+                    logo_temp_path = form_logo.replace(attachment_temp_dir, upload_temp_dir)
+                    if not os.path.exists(logo_temp_path):
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '上传的图片不存在'}, 400)
+
+                    year = time.strftime('%Y', time.localtime(time.time()))
+                    month = time.strftime('%m', time.localtime(time.time()))
+                    day = time.strftime('%d', time.localtime(time.time()))
+                    date_dir = '{}{}{}'.format(year, month, day)
+                    form_logo_list = form_logo.split('/')
+                    file_caption = form_logo_list.pop()  # 原图片名词及后缀
+                    logo_list = file_caption.split('.')
+                    logo_ext = logo_list.pop()
+                    new_logo = prize_code + '.' + logo_ext
+                    logo_online_dir = upload_dir.rstrip('/') + '/activity/prize/' + date_dir + '/' + prize_code + '/'
+                    logo_online_path = logo_online_dir + new_logo
+                    attach_path = 'activity/prize/' + date_dir + '/' + prize_code + '/'  # 保存到附件表
+                    tcode = AttachmentFileType.objects.get(tname='coverImg').tcode
+                    attach_exist = AttachmentFileinfo.objects.filter(ecode=prize_code,tcode=tcode,file_name=new_logo)
+                    if attach_exist:
+                        attach_fileinfo = AttachmentFileinfo.objects.filter(ecode=prize_code,tcode=tcode,file_name=new_logo).update(file_caption=file_caption)
+                    else:
+                        attach_fileinfo = AttachmentFileinfo.objects.create(
+                            ecode=prize_code,
+                            tcode=tcode,
+                            file_format=1,
+                            file_name=new_logo,
+                            state=1,
+                            publish=1,
+                            # operation_state=1,
+                            operation_state=3,
+                            creater=request.user.account_code,
+                            insert_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                            path=attach_path,
+                            file_caption=file_caption
+                        )
+                    if not attach_fileinfo:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": "图片附件信息保存失败"}, status=400)
+                else:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '请上传奖品图片'}, 400)
+
+                serializer = self.get_serializer(instance, data=form_data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return Response({"detail": "更新失败：%s" % str(e)})
+
+            # 移动图片
+            if form_logo:
+                # 创建目录
+                if not os.path.exists(logo_online_dir):
+                    try:
+                        os.makedirs(logo_online_dir)
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": "图片上传目录创建失败"}, status=400)
+                # 移动图片
+                try:
+                    shutil.move(logo_temp_path, logo_online_path)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": "图片移动到正式目录失败"}, status=400)
+
+
+            if getattr(instance, '_prefetched_objects_cache', None):
+                instance._prefetched_objects_cache = {}
+
+            transaction.savepoint_commit(save_id)
+            return Response(serializer.data)
 
 
     def destroy(self, request, *args, **kwargs):
