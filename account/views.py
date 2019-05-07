@@ -750,7 +750,7 @@ class BannerViewSet(viewsets.ModelViewSet):
             serial = serial.split(',')
 
         att= AttachmentFileinfo.objects.filter(serial__in=serial)
-        path = ParamInfo.objects.get(param_code=2)
+        path = ParamInfo.objects.get(param_code=2).param_value
         for a in att:
             url = os.path.join(path,a.path, a.file_name)
             if os.path.isfile(url):
