@@ -22,6 +22,8 @@ class Activity(models.Model):
     activity_site = models.URLField(verbose_name='线上活动url',max_length=255, blank=True, null=True)
     district_id = models.IntegerField(verbose_name='活动地区',blank=True, null=True)
     address = models.CharField(verbose_name='活动详细地址',max_length=255, blank=True, null=True)
+    longitude = models.DecimalField(verbose_name='经度',max_length=15,blank=True,max_digits=10,decimal_places=6,default=000.000000)
+    latitude = models.DecimalField(verbose_name='纬度', max_length=15, blank=True,max_digits=10,decimal_places=6, default=000.000000)
     online_time = models.DateTimeField(verbose_name='上线时间')
     down_time = models.DateTimeField(verbose_name='下架时间')
     signup_start_time = models.DateTimeField(verbose_name='报名开始时间')
@@ -100,6 +102,18 @@ class ActivityPrize(models.Model):
     remain_num = models.IntegerField(verbose_name='剩余未抽中数量',blank=True,null=True)
     state = models.IntegerField(verbose_name='奖品状态1正常2禁用',blank=False,null=False)
     insert_time = models.DateTimeField(verbose_name='添加时间', blank=True, null=True,default=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+
+    @property
+    def logo(self):
+        logo_path = ''
+        tcode = AttachmentFileType.objects.get(tname='coverImg').tcode
+        attach_fileinfo = AttachmentFileinfo.objects.filter(ecode=self.prize_code, tcode=tcode)
+        if attach_fileinfo:
+            attach_path = attach_fileinfo[0].path
+            file_name = attach_fileinfo[0].file_name
+            attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value
+            logo_path = '{}{}{}'.format(attachment_dir, attach_path,file_name)
+        return logo_path
 
     class Meta:
         managed = False

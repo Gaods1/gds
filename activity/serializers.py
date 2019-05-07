@@ -30,6 +30,8 @@ class ActivitySerializers(PatclubModelSerializer):
                   'activity_site',
                   'district_id',
                   'address',
+                  'longitude',
+                  'latitude',
                   'online_time',
                   'down_time',
                   'signup_start_time',
@@ -80,6 +82,7 @@ class ActivityLotterySerializers(PatclubModelSerializer):
 #奖品管理序列器
 class ActivityPrizeSerializers(PatclubModelSerializer):
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, allow_null=True, read_only=True)
+    logo = serializers.CharField(read_only=True)
 
     class Meta:
         model = ActivityPrize
@@ -94,7 +97,8 @@ class ActivityPrizeSerializers(PatclubModelSerializer):
             'prize_num',
             'remain_num',
             'state',
-            'insert_time'
+            'insert_time',
+            'logo'
         ]
 
 
