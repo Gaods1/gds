@@ -286,16 +286,26 @@ class ResultsInfo(models.Model):
 
     @property
     def Personal(self):
-        owner_code = ResultsOwnerInfo.objects.get(r_code=self.r_code).owner_code
-        Personal = PersonalInfo.objects.values_list('pname', flat=True).get(pcode=owner_code)
-        return Personal
+        owner_code = ResultsOwnerInfo.objects.values_list('owner_code', flat=True).filter(r_code=self.r_code)
+        if owner_code:
+            owner_code = owner_code[0]
+        if owner_code:
+            Personal = PersonalInfo.objects.values_list('pname', flat=True).get(pcode=owner_code)
+            return Personal
+        else:
+            return None
 
 
     @property
     def Enterprise(self):
-        owner_code = ResultsOwnerInfo.objects.get(r_code=self.r_code).owner_code
-        Enterprise = EnterpriseBaseinfo.objects.values_list('ename', flat=True).get(ecode=owner_code)
-        return Enterprise
+        owner_code = ResultsOwnerInfo.objects.values_list('owner_code', flat=True).filter(r_code=self.r_code)
+        if owner_code:
+            owner_code = owner_code[0]
+        if owner_code:
+            Enterprise = EnterpriseBaseinfo.objects.values_list('ename', flat=True).get(ecode=owner_code)
+            return Enterprise
+        else:
+            return None
 
     @property
     def owner_code(self):
