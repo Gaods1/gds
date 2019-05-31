@@ -7,14 +7,15 @@ from activity.serializers import *
 from rest_framework import filters
 import django_filters
 from rest_framework.response import Response
-from django.db.models.query import QuerySet
+from django.db.models.query import QuerySet,Q
 from django.db import transaction
 from misc.misc import gen_uuid32
 from public_models.utils import move_attachment,move_single,get_detcode_str,get_dept_codes
 from django.core.exceptions import ValidationError
-from public_models.models import  AttachmentFileinfo,AttachmentFileType,ParamInfo
+from public_models.models import  AttachmentFileinfo,AttachmentFileType,ParamInfo,Message
 import time,os,shutil,re
 from .utils import *
+from account.models import AccountInfo
 
 
 #活动管理
@@ -39,7 +40,6 @@ class ActivityViewSet(viewsets.ModelViewSet):
               activity_end_time  max_people_number
       a当活动形式为线下或线上线下时 district_id  address为必填写项
       b当活动分类为直播类时 activity_site为必填写项
-      c当活动有抽奖时 lottery_type为必填写项
     2 隐含逻辑: a活动上线时间(online_time) >= 创建时间(insert_time)
                b报名开始时间(signup_start_time) >= 活动上线时间(online_time) and 报名结束时间(signup_end_time) >= 报名开始时间(signup_start_time)
                c活动开始时间(activity_start_time) >= 报名结束时间(signup_end_time)  and 活动结束时间(activity_end_time)>=活动开始时间(activity_start_time)
@@ -73,6 +73,9 @@ class ActivityViewSet(viewsets.ModelViewSet):
                 if form_data['down_time'] < form_data['activity_end_time']:
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": "活动下架时间应>=活动结束时间"})
+                if form_data['has_lottery'] == 1 and form_data['lottery_desc'] is None:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": "含有抽奖环节时抽奖描述必填写"})
                 ########### 隐含逻辑判断 ----end
 
                 ########### 活动封面(1张或多张[最多5张轮播],必上传)  ----begin
@@ -137,7 +140,7 @@ class ActivityViewSet(viewsets.ModelViewSet):
 
                 # 活动内容富文本编辑器附件(图片) --------- begin wangedit支持插入线上视频链接
                 form_activity_content = form_data['activity_content']
-                img_pattern = re.compile(r'src=\"(.*?)\"')
+                img_pattern = re.compile(r'<img src=\"(.*?)\"')
                 editor_dict = {}
                 if form_activity_content:
                     editor_imgs_list = img_pattern.findall(form_activity_content)
@@ -343,6 +346,9 @@ class ActivityViewSet(viewsets.ModelViewSet):
                 if form_data['down_time'] < form_data['activity_end_time']:
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": "活动下架时间应>=活动结束时间"})
+                if form_data['has_lottery'] == 1 and form_data['lottery_desc'] is None:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": "含有抽奖环节时抽奖描述必填写"})
                 ########### 隐含逻辑判断 ----end
                 attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
                 attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
@@ -423,7 +429,7 @@ class ActivityViewSet(viewsets.ModelViewSet):
                 ########### 富文本编辑更新(新增或删除)   -----start
                 editor_dict = {}
                 editor_del = []
-                img_pattern = re.compile(r'src=\"(.*?)\"')
+                img_pattern = re.compile(r'<img src=\"(.*?)\"')
                 activity_content = instance.activity_content  # 更新前详情
                 imgs_list = img_pattern.findall(activity_content)
                 new_activity_content = form_data['activity_content']
@@ -684,6 +690,463 @@ class ActivityViewSet(viewsets.ModelViewSet):
             return Response("删除失败", status=400)
 
 
+#抽奖管理
+class ActivityLotteryViewSet(viewsets.ModelViewSet):
+    queryset = ActivityLottery.objects.all().order_by('insert_time', '-serial')
+    serializer_class = ActivityLotterySerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time")
+    filter_fields = ("insert_time", "activity_code", "lottery_code", "type", "state")
+    search_fields = ("lottery_title",)
+
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        if 'activity_code' in self.request.query_params:
+            activity_code = self.request.query_params['activity_code']
+        elif 'activity_code' in self.request.data:
+            activity_code = self.request.data['activity_code']
+        else:
+            activity_code = ''
+
+        if activity_code:
+            raw_queryset = ActivityLottery.objects.raw("select serial  from activity_lottery  where activity_code =  '" + activity_code + "'")
+            queryset = ActivityLottery.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("insert_time")
+        else:
+            queryset = self.queryset
+
+        if isinstance(queryset, QuerySet):
+            queryset = queryset.all()
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        if 'activity_code' in request.query_params:
+            activity_code = request.query_params['activity_code']
+        else:
+            activity_code = ''
+        if not activity_code:
+            return Response("请选择要创建抽奖的活动", status=400)
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+
+    def create(self, request, *args, **kwargs):
+        form_data = request.data
+        if form_data['start_time'] >= form_data['end_time']:
+            return Response({'detail': '抽奖开始时间应该小于结束时间'}, 400)
+        activity_code = form_data['activity_code']
+        activity = Activity.objects.filter(activity_code=activity_code).get()
+        if form_data['start_time'] < str(activity.activity_start_time) or form_data['start_time'] > str(activity.activity_end_time):
+            return Response({'detail':'抽奖开始时间应该大于活动开始时间且小于活动结束时间'},400)
+        if form_data['end_time'] < str(activity.activity_start_time) or form_data['end_time'] > str(activity.activity_end_time):
+            return Response({'detail':'抽奖结束时间应该大于活动开始时间且小于活动结束时间'},400)
+        #判断是否有重叠时间段
+        exist_lottery = ActivityLottery.objects.filter(
+            Q(start_time__lte=form_data['start_time'],end_time__gte=form_data['start_time']) |
+            Q(start_time__lte=form_data['end_time'],end_time__gte=form_data['end_time'])).exists()
+        if exist_lottery:
+            return Response({'detail':'抽奖时间区间不能重叠'},400)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def update(self, request, *args, **kwargs):
+        form_data =request.data
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        if form_data['start_time'] >= form_data['end_time']:
+            return Response({'detail': '抽奖开始时间应该小于结束时间'}, 400)
+        activity_code = instance.activity_code
+        activity = Activity.objects.filter(activity_code=activity_code).get()
+        if form_data['start_time'] < str(activity.activity_start_time) or form_data['start_time'] > str(activity.activity_end_time):
+            return Response({'detail':'抽奖开始时间应该大于活动开始时间且小于活动结束时间'},400)
+        if form_data['end_time'] < str(activity.activity_start_time) or form_data['end_time'] > str(activity.activity_end_time):
+            return Response({'detail':'抽奖结束时间应该大于活动开始时间且小于活动结束时间'},400)
+        # 判断是否有重叠时间段
+        exist_lottery = ActivityLottery.objects.filter(
+            (Q(start_time__lte=form_data['start_time'], end_time__gte=form_data['start_time']) |
+            Q(start_time__lte=form_data['end_time'], end_time__gte=form_data['end_time'])),~Q(lottery_code=instance.lottery_code)
+        ).exists()
+        if exist_lottery:
+            return Response({'detail':'抽奖时间区间不能重叠'}, 400)
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+
+    def destroy(self, request, *args, **kwargs):
+        data = request.data if request.data else []
+        instance = self.get_object()
+        serial_list = [instance.serial]
+        del_serial = serial_list + data
+
+        res = ActivityLottery.objects.filter(serial__in=del_serial).update(state=2)
+        if res:
+            return Response("删除成功")
+        else:
+            return Response("删除失败", status=400)
+
+
+#奖品管理
+class ActivityPrizeViewSet(viewsets.ModelViewSet):
+    queryset = ActivityPrize.objects.all().order_by('insert_time', '-serial')
+    serializer_class = ActivityPrizeSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time")
+    filter_fields = ("insert_time", "prize_code", "lottery_code", "prize_type", "state")
+    search_fields = ("prize_name",)
+
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        if 'lottery_code' in self.request.query_params:
+            lottery_code = self.request.query_params['lottery_code']
+        elif 'lottery_code' in self.request.data:
+            lottery_code = self.request.data['lottery_code']
+        else:
+            lottery_code = ''
+
+        if lottery_code:
+            raw_queryset = ActivityPrize.objects.raw("select serial  from activity_prize  where lottery_code =  '" + lottery_code + "'")
+            queryset = ActivityPrize.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("insert_time")
+        else:
+            queryset = self.queryset
+
+        if isinstance(queryset, QuerySet):
+            queryset = queryset.all()
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        if 'lottery_code' in request.query_params:
+            lottery_code = request.query_params['lottery_code']
+        else:
+            lottery_code = ''
+        if not lottery_code:
+            return Response("请选择要创建奖品的抽奖", status=400)
+
+        activity_code = ''
+        if 'activity_code' in request.query_params:
+            activity_code = request.query_params['activity_code']
+        if not activity_code:
+            return Response("缺少活动code参数", status=400)
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        with transaction.atomic():
+            save_id = transaction.savepoint()
+            try:
+                form_data = request.data
+                prize_code = gen_uuid32()
+                form_data['prize_code'] = prize_code
+                form_data['logo'] = form_data['logo'][0]['response']['logo'] if form_data['logo'] else ''
+                form_logo = form_data['logo']
+                # logo是否上传
+                if form_logo:
+                    attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
+                    upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value  # 富文本编辑器图片上传的临时保存目录
+                    upload_dir = ParamInfo.objects.get(param_name='upload_dir').param_value  # 富文本编辑器图片上传的正式保存目录
+                    attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
+                    logo_temp_path = form_logo.replace(attachment_temp_dir, upload_temp_dir)
+                    if not os.path.exists(logo_temp_path):
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '上传的logo图片不存在'}, 400)
+
+                    year = time.strftime('%Y', time.localtime(time.time()))
+                    month = time.strftime('%m', time.localtime(time.time()))
+                    day = time.strftime('%d', time.localtime(time.time()))
+                    date_dir = '{}{}{}'.format(year, month, day)
+                    form_logo_list = form_logo.split('/')
+                    file_caption = form_logo_list.pop()  # 原图片名词及后缀
+                    logo_list = file_caption.split('.')
+                    logo_ext = logo_list.pop()
+                    new_logo = prize_code + '.' + logo_ext  # logo新名称和group_code一致
+                    logo_online_dir = upload_dir.rstrip('/') + '/activity/prize/' + date_dir + '/' + prize_code + '/'
+                    logo_online_path = logo_online_dir + new_logo
+                    attach_path = 'activity/prize/' + date_dir + '/' + prize_code + '/'  # 保存到附件表
+                    tcode = AttachmentFileType.objects.get(tname='coverImg').tcode
+                    attach_fileinfo = AttachmentFileinfo.objects.create(
+                        ecode=prize_code,
+                        tcode=tcode,
+                        file_format=1,
+                        file_name=new_logo,
+                        state=1,
+                        publish=1,
+                        # operation_state = 1,
+                        operation_state=3,
+                        creater=request.user.account_code,
+                        insert_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                        path=attach_path,
+                        file_caption=file_caption
+                    )
+                    if not attach_fileinfo:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": "图片附件信息保存失败"}, status=400)
+                else:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '请上传奖品图片'}, 400)
+
+                form_data['remain_num'] = form_data['prize_num']
+                serializer = self.get_serializer(data=form_data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return Response({"detail": "创建奖品失败：%s" % str(e)})
+
+            # 移动图片
+            if form_logo:
+                # 创建目录
+                if not os.path.exists(logo_online_dir):
+                    try:
+                        os.makedirs(logo_online_dir)
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": "图片上传目录创建失败"}, status=400)
+                # 移动图片
+                try:
+                    shutil.move(logo_temp_path, logo_online_path)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": "图片移动到正式目录失败"}, status=400)
+
+            transaction.savepoint_commit(save_id)
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def update(self, request, *args, **kwargs):
+        with transaction.atomic():
+            save_id = transaction.savepoint()
+            try:
+                partial = kwargs.pop('partial', False)
+                instance = self.get_object()
+                form_data = request.data
+                form_data['logo'] = form_data['logo'][0]['response']['logo'] if form_data['logo'] else ''
+                prize_code = instance.prize_code
+                attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
+                attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(正式)
+                upload_temp_pattern = re.compile(r''+attachment_temp_dir+'')
+                upload_pattern = re.compile(r''+attachment_dir+'')
+                upload_logo = upload_pattern.findall(form_data['logo'])
+                upload_temp_logo = upload_temp_pattern.findall(form_data['logo'])
+                form_logo = ''
+                if upload_logo:  #未更新已上传
+                    form_logo = ''
+                    logoList = form_data['logo'].split('/')
+                    logo_file = logoList.pop()
+                    form_data['logo'] = logo_file #数据库只保存图片文件名及其后缀
+
+                if upload_temp_logo: #图片更新
+                    form_logo = form_data['logo']
+
+                # 奖品图片是否上传
+                if form_logo:
+                    upload_temp_dir = ParamInfo.objects.get(param_name='upload_temp_dir').param_value  # 富文本编辑器图片上传的临时保存目录
+                    upload_dir = ParamInfo.objects.get(param_name='upload_dir').param_value  # 富文本编辑器图片上传的正式保存目录
+                    logo_temp_path = form_logo.replace(attachment_temp_dir, upload_temp_dir)
+                    if not os.path.exists(logo_temp_path):
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '上传的图片不存在'}, 400)
+
+                    year = time.strftime('%Y', time.localtime(time.time()))
+                    month = time.strftime('%m', time.localtime(time.time()))
+                    day = time.strftime('%d', time.localtime(time.time()))
+                    date_dir = '{}{}{}'.format(year, month, day)
+                    form_logo_list = form_logo.split('/')
+                    file_caption = form_logo_list.pop()  # 原图片名词及后缀
+                    logo_list = file_caption.split('.')
+                    logo_ext = logo_list.pop()
+                    new_logo = prize_code + '.' + logo_ext
+                    logo_online_dir = upload_dir.rstrip('/') + '/activity/prize/' + date_dir + '/' + prize_code + '/'
+                    logo_online_path = logo_online_dir + new_logo
+                    attach_path = 'activity/prize/' + date_dir + '/' + prize_code + '/'  # 保存到附件表
+                    tcode = AttachmentFileType.objects.get(tname='coverImg').tcode
+                    attach_exist = AttachmentFileinfo.objects.filter(ecode=prize_code,tcode=tcode,file_name=new_logo)
+                    if attach_exist:
+                        attach_fileinfo = AttachmentFileinfo.objects.filter(ecode=prize_code,tcode=tcode,file_name=new_logo).update(file_caption=file_caption)
+                    else:
+                        attach_fileinfo = AttachmentFileinfo.objects.create(
+                            ecode=prize_code,
+                            tcode=tcode,
+                            file_format=1,
+                            file_name=new_logo,
+                            state=1,
+                            publish=1,
+                            # operation_state=1,
+                            operation_state=3,
+                            creater=request.user.account_code,
+                            insert_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                            path=attach_path,
+                            file_caption=file_caption
+                        )
+                    if not attach_fileinfo:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": "图片附件信息保存失败"}, status=400)
+                else:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '请上传奖品图片'}, 400)
+
+                serializer = self.get_serializer(instance, data=form_data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return Response({"detail": "更新失败：%s" % str(e)})
+
+            # 移动图片
+            if form_logo:
+                # 创建目录
+                if not os.path.exists(logo_online_dir):
+                    try:
+                        os.makedirs(logo_online_dir)
+                    except Exception as e:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({"detail": "图片上传目录创建失败"}, status=400)
+                # 移动图片
+                try:
+                    shutil.move(logo_temp_path, logo_online_path)
+                except Exception as e:
+                    transaction.savepoint_rollback(save_id)
+                    return Response({"detail": "图片移动到正式目录失败"}, status=400)
+
+
+            if getattr(instance, '_prefetched_objects_cache', None):
+                instance._prefetched_objects_cache = {}
+
+            transaction.savepoint_commit(save_id)
+            return Response(serializer.data)
+
+
+    def destroy(self, request, *args, **kwargs):
+        data = request.data if request.data else []
+        instance = self.get_object()
+        serial_list = [instance.serial]
+        del_serial = serial_list + data
+
+        res = ActivityPrize.objects.filter(serial__in=del_serial).update(state=2)
+        if res:
+            return Response("删除成功")
+        else:
+            return Response("删除失败", status=400)
+
+
+
+#中奖管理
+class ActivityWinnerViewSet(viewsets.ModelViewSet):
+    queryset = ActivityPrizeWinner.objects.all().order_by('win_time', '-serial')
+    serializer_class = ActivityWinnerSerializers
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("win_time")
+    filter_fields = ("activity_code","lottery_code","prize_code", "win_code", "mobile")
+    search_fields = ("",)
+
+    def get_queryset(self):
+        assert self.queryset is not None, (
+            "'%s' should either include a `queryset` attribute, "
+            "or override the `get_queryset()` method."
+            % self.__class__.__name__
+        )
+        if 'lottery_code' in self.request.query_params:
+            lottery_code = self.request.query_params['lottery_code']
+        elif 'lottery_code' in self.request.data:
+            lottery_code = self.request.data['lottery_code']
+        else:
+            lottery_code = ''
+
+        if lottery_code:
+            raw_queryset = ActivityPrizeWinner.objects.raw("select serial  from activity_prize_winner  where lottery_code =  '" + lottery_code + "'")
+            queryset = ActivityPrizeWinner.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("win_time")
+        else:
+            queryset = self.queryset
+
+        if isinstance(queryset, QuerySet):
+            queryset = queryset.all()
+        return queryset
+
+    def list(self, request, *args, **kwargs):
+        if 'lottery_code' in request.query_params:
+            lottery_code = request.query_params['lottery_code']
+        else:
+            lottery_code = ''
+        if not lottery_code:
+            return Response("请选择要创建中奖记录的抽奖", status=400)
+
+        activity_code = ''
+        if 'activity_code' in request.query_params:
+            activity_code = request.query_params['activity_code']
+        if not activity_code:
+            return Response("缺少活动code参数", status=400)
+
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        form_data = request.data
+        lottery = ActivityLottery.objects.filter(lottery_code=form_data['lottery_code']).get()
+        activity = Activity.objects.filter(activity_code=lottery.activity_code).get()
+        form_data['activity_code'] = activity.activity_code
+        #判断是在抽奖时间区间
+        win_time = form_data['win_time']
+        exist_lottery = ActivityLottery.objects.filter(start_time__lte=win_time,end_time__gte=win_time,state=1).exists()
+        if not exist_lottery:
+            return Response({'detail':'中奖时间不在抽奖时间区间内'},400)
+        serializer = self.get_serializer(data=form_data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 #活动报名管理
@@ -715,16 +1178,74 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
     活动报名编辑
     """
     def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+        with transaction.atomic():
+            save_id = transaction.savepoint()
+            try:
+                partial = kwargs.pop('partial', False)
+                instance = self.get_object()
+                form_data = request.data
+                activity_code = form_data['activity_code']
+                activity = Activity.objects.filter(activity_code=activity_code).get()
+                if activity.signup_check == 1:
+                    if form_data['check_state'] == 1:
+                        check_result = '审核通过'
+                        sms_state = 1
+                    elif form_data['check_state'] == 2:
+                        check_result = '审核未通过'
+                        sms_state = 0
+                    mobile = form_data['signup_mobile']
+                    name = form_data['signup_name']
+                    email = form_data['signup_email']
+                    message_content = activity.activity_title + check_result
+                    #审核是否通过都只发送一次
+                    sms_sended = Message.objects.filter(message_title=activity.activity_title,message_content=message_content,sms_phone=mobile,email_account=email)
+                    if not sms_sended:
+                        account_info = AccountInfo.objects.filter(user_mobile=mobile)
+                        if account_info:
+                            account_code = account_info[0]['user_mobile']
+                        else:
+                            account_code = ''
+                        # 发送邮件
+                        email_result = send_email(name, email, message_content)
+                        if not email_result:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '邮件发送失败'}, 400)
+                        #发送短信
+                        sms_result = send_message(sms_state,mobile,activity.activity_title)
+                        if sms_result['state'] == 0:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail':sms_result['msg']}, 400)
+                        #保存短信邮件发送记录
+                        insert_result = Message.objects.create(
+                            message_title=activity.activity_title,
+                            message_content= message_content,
+                            account_code= account_code,
+                            state=0,
+                            send_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                            sender=request.user.account,
+                            sms=1,
+                            sms_state=1,
+                            sms_phone=mobile,
+                            email= 1,
+                            email_state=1,
+                            email_account=email,
+                            type=2
+                        )
+                        if insert_result is None:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '短信邮件发送记录保存失败'}, 400)
 
-        if getattr(instance, '_prefetched_objects_cache', None):
-            instance._prefetched_objects_cache = {}
+                serializer = self.get_serializer(instance, data=request.data, partial=partial)
+                serializer.is_valid(raise_exception=True)
+                self.perform_update(serializer)
 
-        return Response(serializer.data)
+                if getattr(instance, '_prefetched_objects_cache', None):
+                    instance._prefetched_objects_cache = {}
+                transaction.savepoint_commit(save_id)
+                return Response(serializer.data)
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return Response({"detail" : "活动报名编辑失败：%s" % str(e)})
 
     """
     活动报名删除:伪删除即更新活动状态
@@ -740,6 +1261,44 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
             return Response("删除成功")
         else:
             return Response("删除失败", status=400)
+
+
+#活动评论管理
+class ActivityCommentViewSet(viewsets.ModelViewSet):
+    queryset = ActivityComment.objects.filter(state__gt=0).all().order_by('insert_time', '-serial')
+    serializer_class = ActivityCommentSerializers
+
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+
+    ordering_fields = ("insert_time")
+    filter_fields = ("insert_time","activity_code","signup_code","comment_code","state")
+    search_fields = ("comment",)
+
+    """
+    活动评论创建
+    """
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
 
 
 

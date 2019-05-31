@@ -1422,7 +1422,7 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
     ordering_fields = ("insert_time",)
     filter_fields = ("state", "creater", "owner_id", "owner_city",)
     search_fields = ("owner_name", "owner_id", "owner_mobile", "major.mname",
-                     "account.username")
+                     "account.user_name")
 
     major_model = MajorInfo
     major_intermediate_model = MajorUserinfo
@@ -1911,7 +1911,7 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
     ordering_fields = ("insert_time",)
     filter_fields = ("state", "creater", "owner_id", "owner_city", "owner_license", "legal_person")
     search_fields = ("owner_name", "owner_license", "owner_mobile", "major.mname",
-                     "account.username")
+                     "account.user_name")
 
     major_model = MajorInfo
     major_intermediate_model = MajorUserinfo
@@ -3003,7 +3003,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
     ordering_fields = ("insert_time",)
     filter_fields = ("state", "creater", "owner_id", "owner_city", "owner_license", "legal_person")
     search_fields = ("owner_name", "owner_license", "owner_mobile", "major.mname",
-                     "account.username")
+                     "account.user_name")
 
     major_model = MajorInfo
     major_intermediate_model = MajorUserinfo

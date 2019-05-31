@@ -1,0 +1,1 @@
+alter table major_info add `is_hot` tinyint(1) default 0 comment '是否热门领域专业分类(0否1是)' after `state`;

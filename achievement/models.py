@@ -210,6 +210,7 @@ class ResultsInfo(models.Model):
     account_code = models.CharField(max_length=64, blank=True, null=True)
     r_abstract_detail = models.TextField(blank=True, null=True)
     patent_number = models.CharField(max_length=64, blank=True, null=True)
+    is_participle = models.IntegerField(default=1)
 
     @property
     def Attach(self):

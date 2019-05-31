@@ -13,6 +13,9 @@ from misc.filter.search import ViewSearch
 from django.db import transaction
 from expert.models import *
 from projectmanagement.models import *
+from public_models.models import *
+from public_models.serializers import *
+from .utils import copy_img
 # Create your views here.
 
 
@@ -679,3 +682,78 @@ class SystemDistrictViewSet(viewsets.ModelViewSet):
     ordering_fields = ("district_id", "insert_time")
     filter_fields = ("parent_id",)
     search_fields = ("district_name",)
+
+
+# Banner图管理
+class BannerViewSet(viewsets.ModelViewSet):
+    queryset = AttachmentFileinfo.objects.filter(tcode='0124').order_by('file_order')
+    serializer_class = AttachmentFileinfoSerializers
+    filter_backends = (
+        ViewSearch,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("file_order", "insert_time")
+    filter_fields = ("file_caption", "creater", "publish", "state")
+    search_fields = ("file_caption", "creater")
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        # page = self.paginate_queryset(queryset)
+        # if page is not None:
+        #     serializer = self.get_serializer(page, many=True)
+        #     return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        base_data = {
+            'creater':request.user.account,
+            'ecode': None,
+            'publish': 1,
+            'operation_state': 3,
+            'file_order':1
+        }
+        data = request.data
+        banner = data.pop('banner', None)
+        banner_list = []
+        for b in banner:
+            base_data.update(data)
+            url = b['response']['banner']
+            path = url_to_path(url)
+            file_dict = copy_img(path, 'HomeBanner', 'homeBanner')
+            base_data.update(file_dict)
+            banner_list.append(AttachmentFileinfo(**base_data))
+
+        AttachmentFileinfo.objects.bulk_create(banner_list)
+        return Response("创建成功", status=status.HTTP_201_CREATED)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        data = request.data
+        serial = data.get('serial', None)
+        state = data.get('state', None)
+
+        AttachmentFileinfo.objects.filter(serial__in=serial).update(state=state)
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response("修改成功")
+
+    def destroy(self, request, *args, **kwargs):
+        serial = kwargs.get('pk', [])
+        if serial:
+            serial = serial.split(',')
+
+        att= AttachmentFileinfo.objects.filter(serial__in=serial)
+        path = ParamInfo.objects.get(param_code=2).param_value
+        for a in att:
+            url = os.path.join(path,a.path, a.file_name)
+            if os.path.isfile(url):
+                os.remove(url)
+        att.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

@@ -1,8 +1,9 @@
 from django.db import models
 from misc.misc import gen_uuid32
 import time
-from account.utils import *
+# from account.utils import *
 from misc.validate import *
+import os
 
 
 # *******************************django 用户模型相关表， 勿动，如对程序无影响，后续可能删除****************************
@@ -135,19 +136,37 @@ class InterestInfo(models.Model):
 class MajorInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     mtype = models.IntegerField(default=2)
-    mcode = models.CharField(unique=True, max_length=32, default=gen_uuid32)
-    pmcode = models.CharField(max_length=32, blank=True, null=True,default=-1)
-    mname = models.CharField(max_length=64, blank=True, null=True)
-    mabbr = models.CharField(max_length=32, blank=True, null=True)
-    mlevel = models.IntegerField(blank=True, null=True)
-    state = models.IntegerField(blank=True, null=True,default=1)
-    creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(auto_now_add=True)
+    mcode = models.CharField(verbose_name='类型代码',unique=True, max_length=32, default=gen_uuid32)
+    pmcode = models.CharField(verbose_name='上级类型',max_length=32, blank=True, null=True,default=-1)
+    mname = models.CharField(verbose_name='类型简称',max_length=64, blank=True, null=True)
+    mabbr = models.CharField(verbose_name='类型简称',max_length=32, blank=True, null=True)
+    mlevel = models.IntegerField(verbose_name='类型级别',blank=True, null=True)
+    state = models.IntegerField(verbose_name='状态',blank=True,default=1)
+    is_hot = models.IntegerField(verbose_name='是否热门(首页置顶)',blank=True,default=0)
+    creater = models.CharField(verbose_name='创建者',max_length=32, blank=True, null=True)
+    insert_time = models.DateTimeField(verbose_name='创建时间',auto_now_add=True)
 
     @property
     def pmname(self):
         major_info = MajorInfo.objects.get(mcode=self.pmcode, state=1)
         return major_info.mname
+
+    @property
+    def major_cover(self):
+        tcode = AttachmentFileType.objects.get(tname='coverImg').tcode
+        attachment_dir = ParamInfo.objects.get(param_name='attachment_dir').param_value
+        attachments = AttachmentFileinfo.objects.filter(
+            ecode=self.mcode,
+            tcode=tcode,
+            state=1,
+        ).all()
+
+        if attachments:
+            attach = attachments[0]
+            major_cover = '{}{}{}'.format(attachment_dir, attach.path, attach.file_name)
+        else:
+            major_cover = ''
+        return major_cover
 
     class Meta:
         managed = False
@@ -193,9 +212,20 @@ class AttachmentFileinfo(models.Model):
     creater = models.CharField(max_length=32, blank=True, null=True)
     insert_time = models.DateTimeField(auto_now_add=True)
     operation_state = models.IntegerField(blank=True, null=True)
-    path = models.CharField(max_length=64, blank=True, null=True)
+    path = models.CharField(max_length=255, blank=True, null=True)
     file_caption = models.CharField(max_length=64, blank=True, null=True)
     publish = models.IntegerField(blank=True, null=True)
+
+    @property
+    def banner(self):
+        try:
+            if self.tcode == '0124':
+                url = ParamInfo.objects.get(param_code=4).param_value
+                return os.path.join(url, self.path,self.file_name)
+        except Exception:
+            return None
+
+
     class Meta:
         managed = False
         db_table = 'attachment_fileinfo'
