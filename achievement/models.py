@@ -266,7 +266,7 @@ class ResultsInfo(models.Model):
 
     @property
     def cooperation_name(self):
-        cooperation_name = ResultsCooperationTypeInfo.objects.values_list('cooperation_name', flat=True).get(rr_code=self.r_code)
+        cooperation_name = ResultsCooperationTypeInfo.objects.values_list('cooperation_name', flat=True).filter(rr_code=self.r_code)
         if cooperation_name:
             return cooperation_name[0]
         return None
