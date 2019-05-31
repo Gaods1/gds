@@ -299,8 +299,10 @@ class ResultsInfo(models.Model):
 
     @property
     def owner_code(self):
-        owner_code = ResultsOwnerInfo.objects.get(r_code=self.r_code).owner_code
-        return owner_code
+        owner_code = ResultsOwnerInfo.objects.values_list('owner_code', flat=True).filter(r_code=self.r_code)
+        if owner_code:
+            return owner_code[0]
+        return None
 
     @property
     def consultEditor(self):
