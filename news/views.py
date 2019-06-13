@@ -285,6 +285,7 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                     return Response({'detail': '审核时间应大于等于当前时间'}, 400)
                 news_code = gen_uuid32()
                 form_data['news_code'] = news_code
+                form_data['account_code'] = request.user.account_code
                 # form_face_pic = form_data['face_pic']['guidePhoto'] if form_data['face_pic'] else ''
                 form_face_pic = form_data['face_pic'][0]['response']['face_pic'] if form_data['face_pic'] else ''
                 form_data['face_pic'] = form_face_pic
@@ -1081,6 +1082,7 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                     return Response({'detail': '置顶则置顶时间大于等于当前时间'}, 400)
                 policy_code = gen_uuid32()
                 form_data['policy_code'] = policy_code
+                form_data['creater'] = request.user.account_code
                 form_face_pic = form_data['face_pic'][0]['response']['face_pic'] if form_data['face_pic'] else ''
                 form_data['face_pic'] = form_face_pic
                 ########## 政策法规导引图 ########

@@ -1180,6 +1180,24 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 queryset = queryset.all()
             return queryset
 
+    def list(self, request, *args, **kwargs):
+        r_code = self.get_queryset().values_list('r_code', flat=True)
+
+        rr_code = RrApplyHistory.objects.values_list('rr_code', flat=True).filter(rr_code__in=r_code,
+                                                                                  state=1)
+
+        raw = self.get_queryset().exclude(r_code__in=rr_code)
+
+        queryset = self.filter_queryset(raw)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     def create(self, request, *args, **kwargs):
         # 建立事物机制
         with transaction.atomic():
@@ -1332,10 +1350,12 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 state=state, r_type=1)
 
                 #4 创建关键字表
-                key_list=[]
-                for key_info in key_info_list:
-                    key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode,key_info=key_info, state=state, creater=request.user.account))
-                KeywordsInfo.objects.bulk_create(key_list)
+                #key_list=[]
+                #for key_info in key_info_list:
+                    #key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode,key_info=key_info, state=state, creater=request.user.account))
+                #KeywordsInfo.objects.bulk_create(key_list)
+
+                KeywordsInfo.objects.create(key_type=1, object_code=serializer_ecode,key_info=key_info_list, state=state, creater=request.user.account)
 
                 #5 创建所属领域
                 major_list = []
@@ -1663,10 +1683,13 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 # 4 更新关键字表
                 KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
-                key_list = []
-                for key_info in key_info_list:
-                    key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
-                KeywordsInfo.objects.bulk_create(key_list)
+                #key_list = []
+                #for key_info in key_info_list:
+                    #key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
+                #KeywordsInfo.objects.bulk_create(key_list)
+
+                KeywordsInfo.objects.create(key_type=1, object_code=serializer_ecode,key_info=key_info_list, state=state, creater=request.user.account)
+
 
                 #5 更新新纪录
                 MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
@@ -1906,6 +1929,24 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 queryset = queryset.all()
             return queryset
 
+    def list(self, request, *args, **kwargs):
+        req_code = self.get_queryset().values_list('req_code', flat=True)
+
+        rr_code = RrApplyHistory.objects.values_list('rr_code', flat=True).filter(rr_code__in=req_code,
+                                                                                  state__in=[1])
+
+        raw = self.get_queryset().exclude(req_code__in=rr_code)
+
+        queryset = self.filter_queryset(raw)
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     def create(self, request, *args, **kwargs):
         # 建立事物机制
         with transaction.atomic():
@@ -2044,10 +2085,12 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                                                 state=state, r_type=2)
 
                 # 4 创建关键字表
-                key_list = []
-                for key_info in key_info_list:
-                    key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
-                KeywordsInfo.objects.bulk_create(key_list)
+                #key_list = []
+                #for key_info in key_info_list:
+                    #key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
+                #KeywordsInfo.objects.bulk_create(key_list)
+                KeywordsInfo.objects.create(key_type=2, object_code=serializer_ecode,key_info=key_info_list, state=state, creater=request.user.account)
+
 
                 # 5 创建所属领域
                 major_list = []
@@ -2372,10 +2415,12 @@ class ManagementrViewSet(viewsets.ModelViewSet):
 
                 # 4 更新关键字表
                 KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
-                key_list = []
-                for key_info in key_info_list:
-                    key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
-                KeywordsInfo.objects.bulk_create(key_list)
+                #key_list = []
+                #for key_info in key_info_list:
+                    #key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
+                #KeywordsInfo.objects.bulk_create(key_list)
+                KeywordsInfo.objects.create(key_type=2, object_code=serializer_ecode,key_info=key_info_list, state=state, creater=request.user.account)
+
                 # 5 更新新纪录
                 MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
                 major_list = []

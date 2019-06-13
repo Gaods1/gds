@@ -103,6 +103,10 @@ sub_menu = {
         'index': "param",
         'title': "系统参数配置"
     },
+    '轮播图管理':{
+        "index": "banner",
+        "title": "轮播图管理"
+    },
     '技术经纪人认证管理':{
         'title': "技术经纪人认证管理",
         'index': "broker_apply"
@@ -254,6 +258,10 @@ sub_menu = {
     '活动礼品管理':{
         'title':"活动礼品管理",
         'index':"activity_gift"
+    },
+    '活动评论管理':{
+        'title':"活动评论管理",
+        'index':"activity_comment"
     },
     '领域专业管理':{
         'title':"领域专业管理",

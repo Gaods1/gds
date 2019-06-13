@@ -1,6 +1,8 @@
 from public_models.models import  ParamInfo
 from misc.misc import gen_uuid32
-import time
+import time,smtplib,requests
+from email.mime.text import MIMEText
+from email.utils import formataddr
 
 """
 获取多媒体上传参数
@@ -90,6 +92,7 @@ def model_get_attach(AttachmentFileType,AttachmentFileinfo,tname,activity_code):
             attach_info['file_caption'] = attach.file_caption
             if file_ext.lower() in ['jpg','jpeg','png','bmp','gif']:
                 attach_info['file_format'] = 1
+                file_ext = 'image'
             elif file_ext.lower() in ['docx','doc','xls','xlsx','pdf','zip']:
                 attach_info['file_format'] = 0
             elif file_ext.lower() in ['mp3']:
@@ -103,6 +106,61 @@ def model_get_attach(AttachmentFileType,AttachmentFileinfo,tname,activity_code):
             attachments_list.append(attach_info)
 
     return attachments_list
+
+
+def send_message(sms_state,mobile,activity_title):
+    sms_url = '{}{}{}{}'.format("http://120.77.58.203:8808/sms/patclubmanage/send/verify/", sms_state, "/", mobile)
+    sms_data = {
+        'type': '活动报名',
+        'name': activity_title,
+    }
+    # json.dumps(sms_data)
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json"
+    }
+    result_info = eval(requests.post(sms_url, data=sms_data, headers=headers).text)
+    if int(result_info['ret']) == 1:
+        result = {'state':1,'msg':'发送成功'}
+        return result
+    else:
+        code_dict = {
+            'syserr' : '系统异常，请尝试切换其它短信接口发送',
+            'limiterr' : '业务限流，发送频率太高或次数太多，尝试重新发送或切换短信接口',
+            'serverr' : '服务异常，请尝试重新发送',
+            'blacklisterr' : '用户手机号在黑名单，请切换短信接口',
+            'INVALID_PARAMETERS' : '短信查询接口SendDate日期格式yyyyMMdd',
+            'MOBILE_NUMBER_ILLEGAL' : '请传入11位国内号段的手机号码',
+            'MOBILE_COUNT_OVER_LIMIT' : '短信接收号码,支持以英文逗号分隔的形式进行批量调用',
+            'PARAM_LENGTH_LIMIT' : '单个变量长度限制在20字符内',
+            'PARAM_NOT_SUPPORT_URL' : '变量不支持透传url，同时检查通过变量是否透传了一些敏感信息触发关键字',
+            'TEMPLATE_PARAMS_ILLEGAL' : '变量不支持透传url，同时检查通过变量是否透传了一些敏感信息触发关键字'
+        }
+        msg = result_info['msg']+code_dict[result_info['code']]
+        result = {'state': 0, 'msg': msg}
+        return result
+
+def send_email(receiver_name,receiver_email,content):
+    mail_host = "smtphz.qiye.163.com"  # 设置服务器
+    mail_user = "patclub@imzgc.com"  # 用户名
+    mail_pass = "1212121Pc"  # 口令
+    sender = 'patclub@imzgc.com'
+
+    try:
+        msg = MIMEText(content, 'plain', 'utf-8')
+        msg['From'] = formataddr(["科技成果转化平台", sender])  # 括号里的对应发件人邮箱昵称、发件人邮箱账号
+        msg['To'] = formataddr([receiver_name, receiver_email])  # 括号里的对应收件人邮箱昵称、收件人邮箱账号
+        msg['Subject'] = "活动报名审核通知"  # 邮件的主题，也可以说是标题
+
+        server = smtplib.SMTP_SSL("smtphz.qiye.163.com", 465)  # 发件人邮箱中的SMTP服务器，端口是25
+        server.login(mail_user, mail_pass)  # 括号中对应的是发件人邮箱账号、邮箱密码
+        server.sendmail(sender, [receiver_email, ], msg.as_string())  # 括号中对应的是发件人邮箱账号、收件人邮箱账号、发送邮件
+        server.quit()  # 关闭连接
+        result = True
+    except Exception:  # 如果 try 中的语句没有执行，则会执行下面的 ret=False
+        result = False
+
+    return result
 
 
 

@@ -152,7 +152,8 @@ class RequirementsInfo(models.Model):
     @property
     def Keywords(self):
         Keywords = KeywordsInfo.objects.values_list('key_info', flat=True).filter(object_code=self.req_code)
-        return Keywords
+        return ','.join(Keywords)
+        #return Keywords
 
     @property
     def Personal(self):
@@ -209,6 +210,7 @@ class ResultsInfo(models.Model):
     account_code = models.CharField(max_length=64, blank=True, null=True)
     r_abstract_detail = models.TextField(blank=True, null=True)
     patent_number = models.CharField(max_length=64, blank=True, null=True)
+    is_participle = models.IntegerField(default=1)
 
     @property
     def Attach(self):
@@ -264,9 +266,9 @@ class ResultsInfo(models.Model):
 
     @property
     def cooperation_name(self):
-        cooperation_name = ResultsCooperationTypeInfo.objects.values_list('cooperation_name', flat=True).get(rr_code=self.r_code)
+        cooperation_name = ResultsCooperationTypeInfo.objects.values_list('cooperation_name', flat=True).filter(rr_code=self.r_code)
         if cooperation_name:
-            return cooperation_name
+            return cooperation_name[0]
         return None
 
     #@property
@@ -279,25 +281,38 @@ class ResultsInfo(models.Model):
     @property
     def Keywords(self):
         Keywords = KeywordsInfo.objects.values_list('key_info', flat=True).filter(object_code=self.r_code)
-        return Keywords
+        #return Keywords
+        return ','.join(Keywords)
 
     @property
     def Personal(self):
-        owner_code = ResultsOwnerInfo.objects.get(r_code=self.r_code).owner_code
-        Personal = PersonalInfo.objects.values_list('pname', flat=True).get(pcode=owner_code)
-        return Personal
+        owner_code = ResultsOwnerInfo.objects.values_list('owner_code', flat=True).filter(r_code=self.r_code)
+        if owner_code:
+            owner_code = owner_code[0]
+        if owner_code:
+            Personal = PersonalInfo.objects.values_list('pname', flat=True).get(pcode=owner_code)
+            return Personal
+        else:
+            return None
 
 
     @property
     def Enterprise(self):
-        owner_code = ResultsOwnerInfo.objects.get(r_code=self.r_code).owner_code
-        Enterprise = EnterpriseBaseinfo.objects.values_list('ename', flat=True).get(ecode=owner_code)
-        return Enterprise
+        owner_code = ResultsOwnerInfo.objects.values_list('owner_code', flat=True).filter(r_code=self.r_code)
+        if owner_code:
+            owner_code = owner_code[0]
+        if owner_code:
+            Enterprise = EnterpriseBaseinfo.objects.values_list('ename', flat=True).get(ecode=owner_code)
+            return Enterprise
+        else:
+            return None
 
     @property
     def owner_code(self):
-        owner_code = ResultsOwnerInfo.objects.get(r_code=self.r_code).owner_code
-        return owner_code
+        owner_code = ResultsOwnerInfo.objects.values_list('owner_code', flat=True).filter(r_code=self.r_code)
+        if owner_code:
+            return owner_code[0]
+        return None
 
     @property
     def consultEditor(self):

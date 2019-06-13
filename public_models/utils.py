@@ -320,3 +320,18 @@ def move_single(tname_singgle,ecode):
 
 
 
+"""
+2019-04-24 add  zhou
+获取多媒体上传参数
+1:upload_temp_dir        (多媒体上传临时目录绝对路径)
+2:upload_dir             (多媒体上传正式目录绝对路径)
+3:attachment_temp_dir    (多媒体显示临时网址)
+4:attachment_dir         (多媒体显示正式网址)
+"""
+def get_attach_params():
+    params = ParamInfo.objects.filter(param_code__in=[1,2,3,4])
+    params_dict = {}
+    if params:
+        for obj in params:
+            params_dict[int(obj.param_code)] = obj.param_value
+    return params_dict
