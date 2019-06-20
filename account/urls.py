@@ -13,6 +13,7 @@ router.register(r'dept', DeptinfoViewSet)   # 部门机构管理
 router.register(r'param', ParamInfoViewSet) # 系统参数
 router.register(r'district', SystemDistrictViewSet) # 区域代理
 router.register(r'banner', BannerViewSet)       # 首页轮播图管理
+router.register(r'topsearch', TopsearchViewSet)       # 热搜词管理
 
 
 urlpatterns = [
