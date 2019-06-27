@@ -1699,7 +1699,16 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 # 4 更新关键字表
                 KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
-                key_info_list = key_info_list.split('，')
+                if '，' in key_info_list:
+                    key_info_list = key_info_list.split('，')
+                elif ',' in key_info_list:
+                    key_info_list = key_info_list.split(',')
+                elif ' ' in key_info_list:
+                    key_info_list = key_info_list.split(' ')
+                elif '　' in key_info_list:
+                    key_info_list = key_info_list.split('　')
+                else:
+                    key_info_list = key_info_list.split('，')
                 key_list = []
                 for key_info in key_info_list:
                     key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
