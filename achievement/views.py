@@ -1698,7 +1698,13 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 state=state, r_type=1)
 
                 # 4 更新关键字表
-                KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
+
+                if ('，' in key_info_list and ',' in key_info_list) or ('，' in key_info_list
+                and ' ' in key_info_list) or ('，' in key_info_list and '　' in key_info_list) or (',' in key_info_list
+                and ' ' in key_info_list) or (',' in key_info_list and '　' in key_info_list) or (' ' in key_info_list and '　' in key_info_list):
+
+                     return Response({'error':'请统一标点符号'},status=400)
+
                 if '，' in key_info_list:
                     key_info_list = key_info_list.split('，')
                 elif ',' in key_info_list:
@@ -1709,6 +1715,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     key_info_list = key_info_list.split('　')
                 else:
                     key_info_list = key_info_list.split('，')
+                KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
                 key_list = []
                 for key_info in key_info_list:
                     if not key_info:
