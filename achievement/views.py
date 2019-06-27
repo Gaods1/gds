@@ -1485,10 +1485,15 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                             list2.append(url_x_f_pdf)
                         else:
-                            if url_j.endswith('ppt'):
+                            url_j = os.path.splitext(url_j)[1]
+                            if url_j in ['.jpg','.JPG','.png','.PNG','.jpeg','.JPEG','.bmp','.BMP','.gif','.GIF']:
+                                file_format = 1
+                            elif url_j in ['.ppt','.PPT']:
                                 file_format = 2
-                            else:
+                            elif url_j in ['.zip','.ZIP']:
                                 file_format = 3
+                            else:
+                                file_format = 4
 
                             # 将doc临时目录转移到正式目录
                             dict_items[url_j]=url_x
@@ -1864,10 +1869,16 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                             list2.append(url_x_f_pdf)
                         else:
-                            if url_j.endswith('ppt'):
+                            url_j = os.path.splitext(url_j)[1]
+                            if url_j in ['.jpg', '.JPG', '.png', '.PNG', '.jpeg', '.JPEG', '.bmp', '.BMP', '.gif',
+                                         '.GIF']:
+                                file_format = 1
+                            elif url_j in ['.ppt', '.PPT']:
                                 file_format = 2
-                            else:
+                            elif url_j in ['.zip', '.ZIP']:
                                 file_format = 3
+                            else:
+                                file_format = 4
 
                             # 将doc临时目录转移到正式目录
                             dict_items[url_j]=url_x
@@ -2240,10 +2251,17 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                             url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                             list2.append(url_x_f_pdf)
                         else:
-                            if url_j.endswith('ppt'):
+                            url_j = os.path.splitext(url_j)[1]
+                            if url_j in ['.jpg', '.JPG', '.png', '.PNG', '.jpeg', '.JPEG', '.bmp', '.BMP', '.gif',
+                                         '.GIF']:
+                                file_format = 1
+                            elif url_j in ['.ppt', '.PPT']:
                                 file_format = 2
-                            else:
+                            elif url_j in ['.zip', '.ZIP']:
                                 file_format = 3
+                            else:
+                                file_format = 4
+
                             # 将doc临时目录转移到正式目录
                             dict_items[url_j]=url_x
                         list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file,
@@ -2600,10 +2618,16 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                             url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                             list2.append(url_x_f_pdf)
                         else:
-                            if url_j.endswith('ppt'):
+                            url_j = os.path.splitext(url_j)[1]
+                            if url_j in ['.jpg', '.JPG', '.png', '.PNG', '.jpeg', '.JPEG', '.bmp', '.BMP', '.gif',
+                                         '.GIF']:
+                                file_format = 1
+                            elif url_j in ['.ppt', '.PPT']:
                                 file_format = 2
-                            else:
+                            elif url_j in ['.zip', '.ZIP']:
                                 file_format = 3
+                            else:
+                                file_format = 4
                             # 将doc临时目录转移到正式目录
                             dict_items[url_j]=url_x
                         list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
