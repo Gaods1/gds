@@ -1702,8 +1702,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 if ('，' in key_info_list and ',' in key_info_list) or ('，' in key_info_list
                 and ' ' in key_info_list) or ('，' in key_info_list and '　' in key_info_list) or (',' in key_info_list
                 and ' ' in key_info_list) or (',' in key_info_list and '　' in key_info_list) or (' ' in key_info_list and '　' in key_info_list):
-
-                     return Response({'error':'请统一标点符号'},status=400)
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '请统一标点'}, status=400)
 
                 if '，' in key_info_list:
                     key_info_list = key_info_list.split('，')
