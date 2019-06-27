@@ -1711,6 +1711,8 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                     key_info_list = key_info_list.split('，')
                 key_list = []
                 for key_info in key_info_list:
+                    if not key_info:
+                        continue
                     key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
                 KeywordsInfo.objects.bulk_create(key_list)
 
