@@ -1699,7 +1699,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                 # 4 更新关键字表
                 KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
-                key_info_list = key_info_list.split(',')
+                key_info_list = key_info_list.split('，')
                 key_list = []
                 for key_info in key_info_list:
                     key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
@@ -1870,13 +1870,13 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                             list2.append(url_x_f_pdf)
                         else:
-                            url_j = os.path.splitext(url_j)[1]
-                            if url_j in ['.jpg', '.JPG', '.png', '.PNG', '.jpeg', '.JPEG', '.bmp', '.BMP', '.gif',
+                            url_j_j = os.path.splitext(url_j)[1]
+                            if url_j_j in ['.jpg', '.JPG', '.png', '.PNG', '.jpeg', '.JPEG', '.bmp', '.BMP', '.gif',
                                          '.GIF']:
                                 file_format = 1
-                            elif url_j in ['.ppt', '.PPT']:
+                            elif url_j_j in ['.ppt', '.PPT']:
                                 file_format = 2
-                            elif url_j in ['.zip', '.ZIP']:
+                            elif url_j_j in ['.zip', '.ZIP']:
                                 file_format = 3
                             else:
                                 file_format = 4
