@@ -1351,7 +1351,22 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 state=state, r_type=1)
 
                 #4 创建关键字表
-                key_info_list = key_info_list.split(',')
+                if ('，' in key_info_list and ',' in key_info_list) or ('，' in key_info_list
+                and ' ' in key_info_list) or ('，' in key_info_list and '　' in key_info_list) or (',' in key_info_list
+                and ' ' in key_info_list) or (',' in key_info_list and '　' in key_info_list) or (' ' in key_info_list and '　' in key_info_list):
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '请统一标点'}, status=400)
+
+                if '，' in key_info_list:
+                    key_info_list = key_info_list.split('，')
+                elif ',' in key_info_list:
+                    key_info_list = key_info_list.split(',')
+                elif ' ' in key_info_list:
+                    key_info_list = key_info_list.split(' ')
+                elif '　' in key_info_list:
+                    key_info_list = key_info_list.split('　')
+                else:
+                    key_info_list = key_info_list.split('，')
                 key_list = []
                 for key_info in key_info_list:
                     key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode,key_info=key_info, state=state, creater=request.user.account))
@@ -1486,12 +1501,12 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                             list2.append(url_x_f_pdf)
                         else:
-                            url_j = os.path.splitext(url_j)[1]
-                            if url_j in ['.jpg','.JPG','.png','.PNG','.jpeg','.JPEG','.bmp','.BMP','.gif','.GIF']:
+                            url_j_j = os.path.splitext(url_j)[1]
+                            if url_j_j in ['.jpg','.JPG','.png','.PNG','.jpeg','.JPEG','.bmp','.BMP','.gif','.GIF']:
                                 file_format = 1
-                            elif url_j in ['.ppt','.PPT']:
+                            elif url_j_j in ['.ppt','.PPT']:
                                 file_format = 2
-                            elif url_j in ['.zip','.ZIP']:
+                            elif url_j_j in ['.zip','.ZIP']:
                                 file_format = 3
                             else:
                                 file_format = 4
@@ -2132,8 +2147,23 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                                                 state=state, r_type=2)
 
                 # 4 创建关键字表
+                if ('，' in key_info_list and ',' in key_info_list) or ('，' in key_info_list
+                and ' ' in key_info_list) or ('，' in key_info_list and '　' in key_info_list) or (',' in key_info_list
+                and ' ' in key_info_list) or (',' in key_info_list and '　' in key_info_list) or (' ' in key_info_list and '　' in key_info_list):
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '请统一标点'}, status=400)
+
+                if '，' in key_info_list:
+                    key_info_list = key_info_list.split('，')
+                elif ',' in key_info_list:
+                    key_info_list = key_info_list.split(',')
+                elif ' ' in key_info_list:
+                    key_info_list = key_info_list.split(' ')
+                elif '　' in key_info_list:
+                    key_info_list = key_info_list.split('　')
+                else:
+                    key_info_list = key_info_list.split('，')
                 key_list = []
-                key_info_list = key_info_list.split(',')
                 for key_info in key_info_list:
                     key_list.append(KeywordsInfo(key_type=2, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
                 KeywordsInfo.objects.bulk_create(key_list)
@@ -2270,13 +2300,13 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                             url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                             list2.append(url_x_f_pdf)
                         else:
-                            url_j = os.path.splitext(url_j)[1]
-                            if url_j in ['.jpg', '.JPG', '.png', '.PNG', '.jpeg', '.JPEG', '.bmp', '.BMP', '.gif',
+                            url_j_j = os.path.splitext(url_j)[1]
+                            if url_j_j in ['.jpg', '.JPG', '.png', '.PNG', '.jpeg', '.JPEG', '.bmp', '.BMP', '.gif',
                                          '.GIF']:
                                 file_format = 1
-                            elif url_j in ['.ppt', '.PPT']:
+                            elif url_j_j in ['.ppt', '.PPT']:
                                 file_format = 2
-                            elif url_j in ['.zip', '.ZIP']:
+                            elif url_j_j in ['.zip', '.ZIP']:
                                 file_format = 3
                             else:
                                 file_format = 4
@@ -2474,8 +2504,23 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     state=state, r_type=2)
 
                 # 4 更新关键字表
+                if ('，' in key_info_list and ',' in key_info_list) or ('，' in key_info_list
+                and ' ' in key_info_list) or ('，' in key_info_list and '　' in key_info_list) or (',' in key_info_list
+                and ' ' in key_info_list) or (',' in key_info_list and '　' in key_info_list) or (' ' in key_info_list and '　' in key_info_list):
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '请统一标点'}, status=400)
+
+                if '，' in key_info_list:
+                    key_info_list = key_info_list.split('，')
+                elif ',' in key_info_list:
+                    key_info_list = key_info_list.split(',')
+                elif ' ' in key_info_list:
+                    key_info_list = key_info_list.split(' ')
+                elif '　' in key_info_list:
+                    key_info_list = key_info_list.split('　')
+                else:
+                    key_info_list = key_info_list.split('，')
                 KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
-                key_info_list = key_info_list.split(',')
                 key_list = []
                 for key_info in key_info_list:
                     key_list.append(KeywordsInfo(key_type=2, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
@@ -2637,13 +2682,13 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                             url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                             list2.append(url_x_f_pdf)
                         else:
-                            url_j = os.path.splitext(url_j)[1]
-                            if url_j in ['.jpg', '.JPG', '.png', '.PNG', '.jpeg', '.JPEG', '.bmp', '.BMP', '.gif',
+                            url_j_j = os.path.splitext(url_j)[1]
+                            if url_j_j in ['.jpg', '.JPG', '.png', '.PNG', '.jpeg', '.JPEG', '.bmp', '.BMP', '.gif',
                                          '.GIF']:
                                 file_format = 1
-                            elif url_j in ['.ppt', '.PPT']:
+                            elif url_j_j in ['.ppt', '.PPT']:
                                 file_format = 2
-                            elif url_j in ['.zip', '.ZIP']:
+                            elif url_j_j in ['.zip', '.ZIP']:
                                 file_format = 3
                             else:
                                 file_format = 4
