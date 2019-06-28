@@ -47,6 +47,8 @@ class ActivitySerializers(PatclubModelSerializer):
                   'activity_summary',
                   'reach_intent',
                   'state',
+                  'contacter',
+                  'mobile',
                   'insert_time',
                   'creater',
                   'district_name',
