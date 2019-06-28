@@ -757,3 +757,19 @@ class BannerViewSet(viewsets.ModelViewSet):
                 os.remove(url)
         att.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+# 热搜词管理
+class TopsearchViewSet(viewsets.ModelViewSet):
+    queryset = TopSearchInfo.objects.all().order_by('-insert_time')
+    serializer_class = TopSearchSerializer
+    filter_backends = (
+        filters.SearchFilter,
+        django_filters.rest_framework.DjangoFilterBackend,
+        filters.OrderingFilter,
+    )
+    ordering_fields = ("serial", "insert_time")
+    filter_fields = ("word", "word_order")
+    search_fields = ("word", "word_order")
+
+

@@ -211,3 +211,9 @@ class ParamInfoSerializer(PatclubModelSerializer):
                   'param_value',
                   'insert_time',
                   'creater']
+
+class TopSearchSerializer(serializers.ModelSerializer):
+    insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    class Meta:
+        model = TopSearchInfo
+        fields = '__all__'

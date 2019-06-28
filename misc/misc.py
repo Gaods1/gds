@@ -51,3 +51,4 @@ def genearteMD5(str):
 
 def check_md5_password(password, md5password):
     return genearteMD5(password) == md5password
+

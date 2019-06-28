@@ -107,6 +107,10 @@ sub_menu = {
         "index": "banner",
         "title": "轮播图管理"
     },
+    '热搜词管理': {
+        'index': "topsearch",
+        'title': "热搜词管理"
+    },
     '技术经纪人认证管理':{
         'title': "技术经纪人认证管理",
         'index': "broker_apply"

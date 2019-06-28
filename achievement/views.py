@@ -10,6 +10,7 @@ import threading
 import time
 import shutil
 import datetime
+import os
 
 from expert.models import IdentityAuthorizationInfo
 from misc.filter.search import ViewSearch
@@ -1350,12 +1351,28 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 state=state, r_type=1)
 
                 #4 创建关键字表
-                #key_list=[]
-                #for key_info in key_info_list:
-                    #key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode,key_info=key_info, state=state, creater=request.user.account))
-                #KeywordsInfo.objects.bulk_create(key_list)
+                if ('，' in key_info_list and ',' in key_info_list) or ('，' in key_info_list
+                and ' ' in key_info_list) or ('，' in key_info_list and '　' in key_info_list) or (',' in key_info_list
+                and ' ' in key_info_list) or (',' in key_info_list and '　' in key_info_list) or (' ' in key_info_list and '　' in key_info_list):
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '请统一标点'}, status=400)
 
-                KeywordsInfo.objects.create(key_type=1, object_code=serializer_ecode,key_info=key_info_list, state=state, creater=request.user.account)
+                if '，' in key_info_list:
+                    key_info_list = key_info_list.split('，')
+                elif ',' in key_info_list:
+                    key_info_list = key_info_list.split(',')
+                elif ' ' in key_info_list:
+                    key_info_list = key_info_list.split(' ')
+                elif '　' in key_info_list:
+                    key_info_list = key_info_list.split('　')
+                else:
+                    key_info_list = key_info_list.split('，')
+                key_list = []
+                for key_info in key_info_list:
+                    key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode,key_info=key_info, state=state, creater=request.user.account))
+                KeywordsInfo.objects.bulk_create(key_list)
+
+                #KeywordsInfo.objects.create(key_type=1, object_code=serializer_ecode,key_info=key_info_list, state=state, creater=request.user.account)
 
                 #5 创建所属领域
                 major_list = []
@@ -1458,6 +1475,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
 
                         # 同路经下有pdf文件
                         if url_j.endswith('doc') or url_j.endswith('xls') or url_j.endswith('xlsx') or url_j.endswith('docx') or url_j.endswith('DOC') or url_j.endswith('DOCX') or url_j.endswith('XLS') or url_j.endswith('XLSX'):
+
+                            # file_format字段类型' file_format=1图片，0可转pdf的文档，2ppt,3,zip'
+                            file_format = 0
+
                             url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
                             url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
 
@@ -1480,9 +1501,19 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                             list2.append(url_x_f_pdf)
                         else:
+                            url_j_j = os.path.splitext(url_j)[1]
+                            if url_j_j in ['.jpg','.JPG','.png','.PNG','.jpeg','.JPEG','.bmp','.BMP','.gif','.GIF']:
+                                file_format = 1
+                            elif url_j_j in ['.ppt','.PPT']:
+                                file_format = 2
+                            elif url_j_j in ['.zip','.ZIP']:
+                                file_format = 3
+                            else:
+                                file_format = 4
+
                             # 将doc临时目录转移到正式目录
                             dict_items[url_j]=url_x
-                        list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,operation_state=3, state=1,file_caption=file_caption,publish=1,file_format=0))
+                        list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file, path=path,operation_state=3, state=1,file_caption=file_caption,publish=1,file_format=file_format))
 
                 if list1:
                     # 创建atachmentinfo表
@@ -1682,13 +1713,32 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 state=state, r_type=1)
 
                 # 4 更新关键字表
-                KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
-                #key_list = []
-                #for key_info in key_info_list:
-                    #key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
-                #KeywordsInfo.objects.bulk_create(key_list)
 
-                KeywordsInfo.objects.create(key_type=1, object_code=serializer_ecode,key_info=key_info_list, state=state, creater=request.user.account)
+                if ('，' in key_info_list and ',' in key_info_list) or ('，' in key_info_list
+                and ' ' in key_info_list) or ('，' in key_info_list and '　' in key_info_list) or (',' in key_info_list
+                and ' ' in key_info_list) or (',' in key_info_list and '　' in key_info_list) or (' ' in key_info_list and '　' in key_info_list):
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '请统一标点'}, status=400)
+
+                if '，' in key_info_list:
+                    key_info_list = key_info_list.split('，')
+                elif ',' in key_info_list:
+                    key_info_list = key_info_list.split(',')
+                elif ' ' in key_info_list:
+                    key_info_list = key_info_list.split(' ')
+                elif '　' in key_info_list:
+                    key_info_list = key_info_list.split('　')
+                else:
+                    key_info_list = key_info_list.split('，')
+                KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
+                key_list = []
+                for key_info in key_info_list:
+                    if not key_info:
+                        continue
+                    key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
+                KeywordsInfo.objects.bulk_create(key_list)
+
+                #KeywordsInfo.objects.create(key_type=1, object_code=serializer_ecode,key_info=key_info_list, state=state, creater=request.user.account)
 
 
                 #5 更新新纪录
@@ -1827,6 +1877,7 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                                     'xlsx') or url_j.endswith('docx') or url_j.endswith('DOC') or url_j.endswith(
                                     'DOCX') or url_j.endswith('XLS') or url_j.endswith('XLSX'):
 
+                            file_format = 0
                             url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
                             url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
 
@@ -1852,11 +1903,22 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                             list2.append(url_x_f_pdf)
                         else:
+                            url_j_j = os.path.splitext(url_j)[1]
+                            if url_j_j in ['.jpg', '.JPG', '.png', '.PNG', '.jpeg', '.JPEG', '.bmp', '.BMP', '.gif',
+                                         '.GIF']:
+                                file_format = 1
+                            elif url_j_j in ['.ppt', '.PPT']:
+                                file_format = 2
+                            elif url_j_j in ['.zip', '.ZIP']:
+                                file_format = 3
+                            else:
+                                file_format = 4
+
                             # 将doc临时目录转移到正式目录
                             dict_items[url_j]=url_x
                         list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
                                                         file_name=url_file, path=path, operation_state=3,
-                                                        state=1, file_caption=file_caption, publish=1, file_format=0))
+                                                        state=1, file_caption=file_caption, publish=1, file_format=file_format))
 
                 if list1:
                     # 创建atachmentinfo表
@@ -2085,11 +2147,27 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                                                 state=state, r_type=2)
 
                 # 4 创建关键字表
-                #key_list = []
-                #for key_info in key_info_list:
-                    #key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
-                #KeywordsInfo.objects.bulk_create(key_list)
-                KeywordsInfo.objects.create(key_type=2, object_code=serializer_ecode,key_info=key_info_list, state=state, creater=request.user.account)
+                if ('，' in key_info_list and ',' in key_info_list) or ('，' in key_info_list
+                and ' ' in key_info_list) or ('，' in key_info_list and '　' in key_info_list) or (',' in key_info_list
+                and ' ' in key_info_list) or (',' in key_info_list and '　' in key_info_list) or (' ' in key_info_list and '　' in key_info_list):
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '请统一标点'}, status=400)
+
+                if '，' in key_info_list:
+                    key_info_list = key_info_list.split('，')
+                elif ',' in key_info_list:
+                    key_info_list = key_info_list.split(',')
+                elif ' ' in key_info_list:
+                    key_info_list = key_info_list.split(' ')
+                elif '　' in key_info_list:
+                    key_info_list = key_info_list.split('　')
+                else:
+                    key_info_list = key_info_list.split('，')
+                key_list = []
+                for key_info in key_info_list:
+                    key_list.append(KeywordsInfo(key_type=2, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
+                KeywordsInfo.objects.bulk_create(key_list)
+                #KeywordsInfo.objects.create(key_type=2, object_code=serializer_ecode,key_info=key_info_list, state=state, creater=request.user.account)
 
 
                 # 5 创建所属领域
@@ -2199,6 +2277,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                                     'xlsx') or url_j.endswith('docx') or url_j.endswith('DOC') or url_j.endswith(
                                     'DOCX') or url_j.endswith('XLS') or url_j.endswith('XLSX'):
 
+                            file_format = 0
                             url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
                             url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
 
@@ -2221,11 +2300,22 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                             url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                             list2.append(url_x_f_pdf)
                         else:
+                            url_j_j = os.path.splitext(url_j)[1]
+                            if url_j_j in ['.jpg', '.JPG', '.png', '.PNG', '.jpeg', '.JPEG', '.bmp', '.BMP', '.gif',
+                                         '.GIF']:
+                                file_format = 1
+                            elif url_j_j in ['.ppt', '.PPT']:
+                                file_format = 2
+                            elif url_j_j in ['.zip', '.ZIP']:
+                                file_format = 3
+                            else:
+                                file_format = 4
+
                             # 将doc临时目录转移到正式目录
                             dict_items[url_j]=url_x
                         list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode, file_name=url_file,
                                                 path=path, operation_state=3, state=1, file_caption=file_caption,
-                                                publish=1, file_format=0))
+                                                publish=1, file_format=file_format))
 
                 if list1:
                     # 创建atachmentinfo表
@@ -2414,12 +2504,28 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                     state=state, r_type=2)
 
                 # 4 更新关键字表
+                if ('，' in key_info_list and ',' in key_info_list) or ('，' in key_info_list
+                and ' ' in key_info_list) or ('，' in key_info_list and '　' in key_info_list) or (',' in key_info_list
+                and ' ' in key_info_list) or (',' in key_info_list and '　' in key_info_list) or (' ' in key_info_list and '　' in key_info_list):
+                    transaction.savepoint_rollback(save_id)
+                    return Response({'detail': '请统一标点'}, status=400)
+
+                if '，' in key_info_list:
+                    key_info_list = key_info_list.split('，')
+                elif ',' in key_info_list:
+                    key_info_list = key_info_list.split(',')
+                elif ' ' in key_info_list:
+                    key_info_list = key_info_list.split(' ')
+                elif '　' in key_info_list:
+                    key_info_list = key_info_list.split('　')
+                else:
+                    key_info_list = key_info_list.split('，')
                 KeywordsInfo.objects.filter(object_code=serializer_ecode).delete()
-                #key_list = []
-                #for key_info in key_info_list:
-                    #key_list.append(KeywordsInfo(key_type=1, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
-                #KeywordsInfo.objects.bulk_create(key_list)
-                KeywordsInfo.objects.create(key_type=2, object_code=serializer_ecode,key_info=key_info_list, state=state, creater=request.user.account)
+                key_list = []
+                for key_info in key_info_list:
+                    key_list.append(KeywordsInfo(key_type=2, object_code=serializer_ecode, key_info=key_info, state=state,creater=request.user.account))
+                KeywordsInfo.objects.bulk_create(key_list)
+                #KeywordsInfo.objects.create(key_type=2, object_code=serializer_ecode,key_info=key_info_list, state=state, creater=request.user.account)
 
                 # 5 更新新纪录
                 MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
@@ -2553,6 +2659,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                                     'xlsx') or url_j.endswith('docx') or url_j.endswith('DOC') or url_j.endswith(
                                     'DOCX') or url_j.endswith('XLS') or url_j.endswith('XLSX'):
 
+                            file_format = 0
                             url_j_pdf = os.path.splitext(url_j)[0] + '.pdf'
                             url_x_pdf = os.path.splitext(url_x)[0] + '.pdf'
 
@@ -2575,11 +2682,21 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                             url_x_f_pdf = url_x_pdf.replace(relative_path, relative_path_front)
                             list2.append(url_x_f_pdf)
                         else:
+                            url_j_j = os.path.splitext(url_j)[1]
+                            if url_j_j in ['.jpg', '.JPG', '.png', '.PNG', '.jpeg', '.JPEG', '.bmp', '.BMP', '.gif',
+                                         '.GIF']:
+                                file_format = 1
+                            elif url_j_j in ['.ppt', '.PPT']:
+                                file_format = 2
+                            elif url_j_j in ['.zip', '.ZIP']:
+                                file_format = 3
+                            else:
+                                file_format = 4
                             # 将doc临时目录转移到正式目录
                             dict_items[url_j]=url_x
                         list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
                                                         file_name=url_file, path=path, operation_state=3,
-                                                        state=1, file_caption=file_caption, publish=1, file_format=0))
+                                                        state=1, file_caption=file_caption, publish=1, file_format=file_format))
 
 
                 if list1:

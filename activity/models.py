@@ -38,6 +38,8 @@ class Activity(models.Model):
     signup_people_number = models.IntegerField(verbose_name='报名人数',blank=True,null=True)
     activity_summary = models.TextField(verbose_name='活动总结',blank=True,null=True)
     reach_intent = models.CharField(verbose_name='活动达成意向',max_length=255, blank=True, null=True)
+    contacter = models.CharField(verbose_name='活动联系人', max_length=32)
+    mobile = models.CharField(verbose_name='手机号码', max_length=11, validators=[validate_mobile])
     state = models.IntegerField(verbose_name='活动状态',blank=True, null=True,default=1)
     insert_time = models.DateTimeField(verbose_name='创建时间', blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)

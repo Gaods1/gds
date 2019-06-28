@@ -324,3 +324,15 @@ class RoleFuncInfo(models.Model):
         return "role:%s func:%s"%(self.role, self.func)
 
 
+class TopSearchInfo(models.Model):
+    serial = models.AutoField(primary_key=True)
+    word = models.CharField(max_length=255,blank=True, null=True)
+    word_order = models.IntegerField(blank=True, null=True)
+    is_artifical = models.IntegerField(default=1,blank=True, null=True)
+    insert_time = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        managed = True
+        db_table = 'top_search'
+
+
