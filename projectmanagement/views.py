@@ -1081,6 +1081,16 @@ class ProjectMatchInfoViewSet(viewsets.ModelViewSet):
             req_match_broker_info_data = {}
             req_match_broker_info_data['rm_code'] = instance.rm_code
             req_match_broker_info_data['broker'] = broker
+            req_match_broker_info_data['leader_tag'] = 0
+            req_match_broker_info_data['creater'] = request.user.account
+            req_match_broker_info_data['insert_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+            ReqMatchBrokerInfo.objects.create(**req_match_broker_info_data)
+
+        mainbroker = data.get('mainbroker')
+        if mainbroker != None:
+            req_match_broker_info_data = {}
+            req_match_broker_info_data['rm_code'] = instance.rm_code
+            req_match_broker_info_data['broker'] = mainbroker
             req_match_broker_info_data['leader_tag'] = 1
             req_match_broker_info_data['creater'] = request.user.account
             req_match_broker_info_data['insert_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
