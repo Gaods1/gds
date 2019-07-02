@@ -1504,12 +1504,16 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             url_j_j = os.path.splitext(url_j)[1]
                             if url_j_j in ['.jpg','.JPG','.png','.PNG','.jpeg','.JPEG','.bmp','.BMP','.gif','.GIF']:
                                 file_format = 1
-                            elif url_j_j in ['.ppt','.PPT']:
+                            elif url_j_j in ['.ppt','.PPT','.pptx','.PPTX']:
                                 file_format = 2
-                            elif url_j_j in ['.zip','.ZIP']:
+                            elif url_j_j in ['.zip','.ZIP','.rar','.RAR','.gzip','.GZIP','.bzip','.BZIP']:
                                 file_format = 3
-                            else:
+                            elif url_j_j in ['.mp3','.MP3']:
                                 file_format = 4
+                            elif url_j_j in ['.mp4','.MP4','.rmvb','.RMVB','.avi','.AVI','.3gp','.3GP','.MKV','.mkv']:
+                                file_format = 5
+                            else:
+                                file_format = 0
 
                             # 将doc临时目录转移到正式目录
                             dict_items[url_j]=url_x
@@ -1904,15 +1908,18 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                             list2.append(url_x_f_pdf)
                         else:
                             url_j_j = os.path.splitext(url_j)[1]
-                            if url_j_j in ['.jpg', '.JPG', '.png', '.PNG', '.jpeg', '.JPEG', '.bmp', '.BMP', '.gif',
-                                         '.GIF']:
+                            if url_j_j in ['.jpg','.JPG','.png','.PNG','.jpeg','.JPEG','.bmp','.BMP','.gif','.GIF']:
                                 file_format = 1
-                            elif url_j_j in ['.ppt', '.PPT']:
+                            elif url_j_j in ['.ppt','.PPT','.pptx','.PPTX']:
                                 file_format = 2
-                            elif url_j_j in ['.zip', '.ZIP']:
+                            elif url_j_j in ['.zip','.ZIP','.rar','.RAR','.gzip','.GZIP','.bzip','.BZIP']:
                                 file_format = 3
-                            else:
+                            elif url_j_j in ['.mp3','.MP3']:
                                 file_format = 4
+                            elif url_j_j in ['.mp4','.MP4','.rmvb','.RMVB','.avi','.AVI','.3gp','.3GP','.MKV','.mkv']:
+                                file_format = 5
+                            else:
+                                file_format = 0
 
                             # 将doc临时目录转移到正式目录
                             dict_items[url_j]=url_x
@@ -2302,15 +2309,18 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                             list2.append(url_x_f_pdf)
                         else:
                             url_j_j = os.path.splitext(url_j)[1]
-                            if url_j_j in ['.jpg', '.JPG', '.png', '.PNG', '.jpeg', '.JPEG', '.bmp', '.BMP', '.gif',
-                                         '.GIF']:
+                            if url_j_j in ['.jpg','.JPG','.png','.PNG','.jpeg','.JPEG','.bmp','.BMP','.gif','.GIF']:
                                 file_format = 1
-                            elif url_j_j in ['.ppt', '.PPT']:
+                            elif url_j_j in ['.ppt','.PPT','.pptx','.PPTX']:
                                 file_format = 2
-                            elif url_j_j in ['.zip', '.ZIP']:
+                            elif url_j_j in ['.zip','.ZIP','.rar','.RAR','.gzip','.GZIP','.bzip','.BZIP']:
                                 file_format = 3
-                            else:
+                            elif url_j_j in ['.mp3','.MP3']:
                                 file_format = 4
+                            elif url_j_j in ['.mp4','.MP4','.rmvb','.RMVB','.avi','.AVI','.3gp','.3GP','.MKV','.mkv']:
+                                file_format = 5
+                            else:
+                                file_format = 0
 
                             # 将doc临时目录转移到正式目录
                             dict_items[url_j]=url_x
@@ -2684,15 +2694,18 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                             list2.append(url_x_f_pdf)
                         else:
                             url_j_j = os.path.splitext(url_j)[1]
-                            if url_j_j in ['.jpg', '.JPG', '.png', '.PNG', '.jpeg', '.JPEG', '.bmp', '.BMP', '.gif',
-                                         '.GIF']:
+                            if url_j_j in ['.jpg','.JPG','.png','.PNG','.jpeg','.JPEG','.bmp','.BMP','.gif','.GIF']:
                                 file_format = 1
-                            elif url_j_j in ['.ppt', '.PPT']:
+                            elif url_j_j in ['.ppt','.PPT','.pptx','.PPTX']:
                                 file_format = 2
-                            elif url_j_j in ['.zip', '.ZIP']:
+                            elif url_j_j in ['.zip','.ZIP','.rar','.RAR','.gzip','.GZIP','.bzip','.BZIP']:
                                 file_format = 3
-                            else:
+                            elif url_j_j in ['.mp3','.MP3']:
                                 file_format = 4
+                            elif url_j_j in ['.mp4','.MP4','.rmvb','.RMVB','.avi','.AVI','.3gp','.3GP','.MKV','.mkv']:
+                                file_format = 5
+                            else:
+                                file_format = 0
                             # 将doc临时目录转移到正式目录
                             dict_items[url_j]=url_x
                         list1.append(AttachmentFileinfo(tcode=tcode_attachment, ecode=serializer_ecode,
