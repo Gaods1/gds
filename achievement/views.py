@@ -94,7 +94,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         data = request.data
-
+        data['update_time']=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         if instance.state != 1:
             logger.error('该成果信息已审核')
             return Response({"detail": '该成果信息已审核'}, status=400)
@@ -637,7 +637,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         data = request.data
-
+        data['update_time']=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
         if instance.state != 1:
             return Response({"detail": '该需求信息已审核'}, status=400)
 
@@ -1992,6 +1992,7 @@ class ManagementrViewSet(viewsets.ModelViewSet):
             return queryset
 
     def list(self, request, *args, **kwargs):
+
         req_code = self.get_queryset().values_list('req_code', flat=True)
 
         rr_code = RrApplyHistory.objects.values_list('rr_code', flat=True).filter(rr_code__in=req_code,

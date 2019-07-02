@@ -1,6 +1,7 @@
 import base64
 import struct
 from django.test import TestCase
+from django.utils.deprecation import MiddlewareMixin
 
 # Create your tests here.
 # ! /usr/bin/python
