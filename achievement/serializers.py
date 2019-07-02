@@ -225,6 +225,7 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
 # 成果/需求申请表序列化
 class RrApplyHistorySerializer(serializers.ModelSerializer):
     apply_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     Results = ResultsInfoSerializer(read_only=True)
     Requirements = RequirementsInfoSerializer(read_only=True)
     opinion = serializers.CharField(read_only=True)
@@ -242,4 +243,5 @@ class RrApplyHistorySerializer(serializers.ModelSerializer):
                   'Requirements',
                   'apply_time',
                   'opinion',
+                  'update_time',
                   ]

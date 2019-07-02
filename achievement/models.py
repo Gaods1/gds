@@ -27,6 +27,7 @@ class RrApplyHistory(models.Model):
     apply_time = models.DateTimeField(blank=True, null=True,auto_now_add=True)
     apply_type = models.IntegerField(blank=True, null=True)
     type = models.IntegerField(blank=True, null=True)
+    update_time = models.DateTimeField(blank=True, null=True, auto_now=True)
 
     @property
     def Results(self):
