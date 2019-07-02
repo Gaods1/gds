@@ -260,7 +260,7 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
             partial = kwargs.pop('partial', False)
             instance = self.get_object()
             del request.data['rr']
-            print(request.data)
+            request.data['update_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             serializer = self.get_serializer(instance, data=request.data, partial=partial)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)
