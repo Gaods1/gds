@@ -10,7 +10,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import filters
 import django_filters
-from misc.misc import gen_uuid32, genearteMD5
+from misc.misc import gen_uuid32, genearteMD5,gen_uuid12
 from django.db import transaction
 import random,requests,time,json
 from django.http import HttpResponse,JsonResponse
@@ -117,6 +117,7 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                 with transaction.atomic():
                     # 1 更新征询表状态(共通)
                     data['consult_state'] = check_state
+                    data['update_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                     serializer = self.get_serializer(consult_info, data=data,partial=kwargs.pop('partial', False))
                     serializer.is_valid(raise_exception=True)
                     self.perform_update(serializer)
@@ -168,6 +169,7 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                                 #组合生成短信消息发送列表
                                 message_list = []
                                 enable_expert_list = []
+                                enable_expert_code = []
                                 for expert_baseinfo in expert_baseinfos:
                                     message_obj = Message(message_title='征询回复邀请',
                                                           message_content='有征询信息'+ consult_info.consult_title+ '需要您的回复，请登陆平台到个人中心查看',
@@ -184,16 +186,26 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                                                           type=2)
                                     message_list.append(message_obj)
                                     enable_expert_list.append(expert_baseinfo.expert_code)
+                                    enable_expert_code.append(expert_baseinfo.account_code)
 
                                 expert_mobiles = [expert_baseinfo.expert_mobile for expert_baseinfo in expert_baseinfos]
 
                                 # 5 生成征询和专家关系记录
-                                consult_expert_list = []
-                                for expert_code in enable_expert_list:
-                                    consult_expert_list.append(ConsultExpert(expert_code=expert_code, consult_code=consult_info.consult_code,creater=request.user.account))
-
-                                ConsultExpert.objects.bulk_create(consult_expert_list)
-
+                                # consult_expert_list = []
+                                # for expert_code in enable_expert_list:
+                                #     consult_expert_list.append(ConsultExpert(expert_code=expert_code, consult_code=consult_info.consult_code,creater=request.user.account))
+                                #
+                                # ConsultExpert.objects.bulk_create(consult_expert_list)
+                                #20190702逻辑修改弃用consult_expert表保存到consult_reply_info表
+                                consult_replyinfo_list =[]
+                                for expert_account_code in enable_expert_code:
+                                    consult_replyinfo_list.append(ConsultReplyInfo(
+                                        reply_code = 'Conrep'+time.strftime("%Y%m%d%H%M%S", time.localtime())+gen_uuid12(),
+                                        account_code = expert_account_code,
+                                        consult_code = consult_info.consult_code,
+                                        reply_state = 6,
+                                    ))
+                                ConsultReplyInfo.objects.bulk_create(consult_replyinfo_list)
 
                                 # 6 群发短信给领域专家
                                 sms_url = 'http://120.77.58.203:8808/sms/patclubmanage/send/needreply'
@@ -248,7 +260,7 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
             partial = kwargs.pop('partial', False)
             instance = self.get_object()
             del request.data['rr']
-            print(request.data)
+            request.data['update_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             serializer = self.get_serializer(instance, data=request.data, partial=partial)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)

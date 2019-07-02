@@ -1,0 +1,1 @@
+alter table consult_info add `update_time` datetime DEFAULT NULL COMMENT '更新时间' after insert_time;

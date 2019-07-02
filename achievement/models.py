@@ -27,6 +27,7 @@ class RrApplyHistory(models.Model):
     apply_time = models.DateTimeField(blank=True, null=True,auto_now_add=True)
     apply_type = models.IntegerField(blank=True, null=True)
     type = models.IntegerField(blank=True, null=True)
+    update_time = models.DateTimeField(blank=True, null=True, auto_now=True)
 
     @property
     def Results(self):
@@ -81,7 +82,7 @@ class RequirementsInfo(models.Model):
     sniff_state = models.IntegerField(blank=True, null=True)
     sniff_time = models.DateTimeField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True,auto_now=True)
+    insert_time = models.DateTimeField(blank=True, null=True,auto_now_add=True)
     account_code = models.CharField(max_length=64, blank=True, null=True)
     r_abstract_detail = models.TextField(blank=True, null=True)
 
@@ -206,7 +207,7 @@ class ResultsInfo(models.Model):
     sniff_state = models.IntegerField(blank=True, null=True)
     sniff_time = models.DateTimeField(blank=True, null=True)
     creater = models.CharField(max_length=32, blank=True, null=True)
-    insert_time = models.DateTimeField(blank=True, null=True,auto_now=True)
+    insert_time = models.DateTimeField(blank=True, null=True,auto_now_add=True)
     account_code = models.CharField(max_length=64, blank=True, null=True)
     r_abstract_detail = models.TextField(blank=True, null=True)
     patent_number = models.CharField(max_length=64, blank=True, null=True)
