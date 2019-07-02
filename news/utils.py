@@ -43,6 +43,20 @@ def get_attach_info(file_list,module_type,file_type,file_dir,params_dict):
             # real_file_caption = file_caption[33:]
             file_arr = file_caption.split('.')
             file_ext = file_arr.pop()           #上传的文件后缀
+            # 文件后缀判断20190701添加
+            if file_ext.lower() in ['jpg', 'jpeg', 'png', 'bmp', 'gif']:
+                file_dict['file_format'] = 1
+            elif file_ext.lower() in ['docx', 'doc', 'xls', 'xlsx', 'pdf']:
+                file_dict['file_format'] = 0
+            elif file_ext.lower() in ['ppt', 'pptx']:
+                file_dict['file_format'] = 2
+            elif file_ext.lower() in ['zip', 'rar', 'gzip', 'tar', 'bzip']:
+                file_dict['file_format'] = 3
+            elif file_ext.lower() in ['mp3',]:
+                file_dict['file_format'] = 4
+            elif file_ext.lower() in ['mp4', '3gp', 'avi', 'rmvb', 'mkv']:
+                file_dict['file_format'] = 5
+
             file_name = '{}.{}'.format(gen_uuid32(),file_ext)  #新的文件名保存到附件表
             file_temp_path = file_info.replace(params_dict[3],params_dict[1]) #文件保存临时绝对路径
             file_normal_path = '{}/{}'.format(file_normal_dir,file_name)     #文件保存正式绝对路径

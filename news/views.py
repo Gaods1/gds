@@ -395,7 +395,7 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                         attachmentFileinfo_obj = AttachmentFileinfo(
                             ecode=news_code,
                             tcode=attach_tcode,
-                            file_format=0,
+                            file_format=attach_dict[attach]['file_format'],
                             file_name=attach_dict[attach]['file_name'],
                             add_id=form_attach_dict[attach],  # 用于表单回显时使用 attach1,attach2,attach3 ...
                             state=1,
@@ -712,7 +712,7 @@ class NewsInfoViewSet(viewsets.ModelViewSet):
                             attach_create = AttachmentFileinfo.objects.create(
                                 ecode=instance.news_code,
                                 tcode=attach_tcode,
-                                file_format=0,
+                                file_format=attach_dict[attach]['file_format'],
                                 file_name=attach_dict[attach]['file_name'],
                                 add_id=form_attach_dict[attach],  # 用于表单回显时使用 attach1,attach2,attach3 ...
                                 state=1,
@@ -1191,7 +1191,7 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                         attachmentFileinfo_obj = AttachmentFileinfo(
                             ecode=policy_code,
                             tcode=attach_tcode,
-                            file_format=0,
+                            file_format=attach_dict[attach]['file_format'],
                             file_name=attach_dict[attach]['file_name'],
                             add_id=form_attach_dict[attach],  # 用于表单回显时使用 attach1,attach2,attach3 ...
                             state=1,
@@ -1486,7 +1486,7 @@ class PolicyInfoViewSet(viewsets.ModelViewSet):
                             attach_create = AttachmentFileinfo.objects.create(
                                 ecode=instance.policy_code,
                                 tcode=attach_tcode,
-                                file_format=0,
+                                file_format=attach_dict[attach]['file_format'],
                                 file_name=attach_dict[attach]['file_name'],
                                 add_id=form_attach_dict[attach],  # 用于表单回显时使用 attach1,attach2,attach3 ...
                                 state=1,
