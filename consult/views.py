@@ -204,6 +204,7 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                                         account_code = expert_account_code,
                                         consult_code = consult_info.consult_code,
                                         reply_state = 6,
+                                        update_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                                     ))
                                 ConsultReplyInfo.objects.bulk_create(consult_replyinfo_list)
 
@@ -391,6 +392,7 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
                     #2 更新征询回复表状态
                     reply_data = {}
                     reply_data['reply_state'] = check_state
+                    reply_data['update_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                     serializer = self.get_serializer(reply_info, data=reply_data, partial=kwargs.pop('partial', False))
                     serializer.is_valid(raise_exception=True)
                     self.perform_update(serializer)
