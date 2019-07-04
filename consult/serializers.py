@@ -6,6 +6,7 @@ class ConsultInfoSerializer(serializers.ModelSerializer):
     consult_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     consult_endtime = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
     insert_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=True)
+    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=False)
     rr = serializers.ListField(required=False)
     cover_img = serializers.CharField(read_only=True)
     # attachments = serializers.DictField(read_only=True)
@@ -24,6 +25,7 @@ class ConsultInfoSerializer(serializers.ModelSerializer):
                   'consult_endtime',
                   'consult_state',
                   'insert_time',
+                  'update_time',
                   'creater',
                   'account',
                   'rr',
@@ -56,6 +58,7 @@ class ConsultReplyInfoSerializer(serializers.ModelSerializer):
     consult_title = serializers.CharField(read_only=True)
     user_name = serializers.CharField(read_only=True)
     check_memo = serializers.CharField(read_only=True)
+    update_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", required=False, read_only=False)
 
     class Meta:
         model = ConsultReplyInfo
@@ -70,6 +73,7 @@ class ConsultReplyInfoSerializer(serializers.ModelSerializer):
                   'consult_title',
                   'user_name',
                   'check_memo',
+                  'update_time',
                   ]
 
 

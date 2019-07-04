@@ -34,6 +34,7 @@ class ConsultInfo(models.Model):
     consult_endtime = models.DateTimeField(blank=True, null=True)
     consult_state = models.IntegerField(blank=True, null=True)
     insert_time = models.DateTimeField(blank=True, null=True)
+    update_time = models.DateTimeField(blank=True, null=True)
     creater = models.CharField(max_length=64, blank=True, null=True)
 
     # @property
@@ -107,6 +108,7 @@ class ConsultReplyInfo(models.Model):
     reply_time = models.DateTimeField(blank=True, null=True)
     reply_state = models.IntegerField(blank=True, null=True)
     accept_time = models.DateTimeField(blank=True,null=True)
+    update_time = models.DateTimeField(blank=True, null=True)
 
     @property
     def check_memo(self):
