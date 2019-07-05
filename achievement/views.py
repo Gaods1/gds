@@ -1377,8 +1377,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 #5 创建所属领域
                 major_list = []
                 for mname in mname_list:
-                    mcode = MajorInfo.objects.get(mname=mname).mcode
-                    major_list.append(MajorUserinfo(mcode=mcode,user_type=4,user_code=serializer_ecode,mtype=2))
+                    mcode = MajorInfo.objects.filter(mname=mname,mlevel=2,state=1)
+                    if mcode:
+                        mcode = mcode[0].mcode
+                        major_list.append(MajorUserinfo(mcode=mcode,user_type=4,user_code=serializer_ecode,mtype=2))
                 MajorUserinfo.objects.bulk_create(major_list)
 
                 # 创建申请表
@@ -1749,8 +1751,10 @@ class ManagementpViewSet(viewsets.ModelViewSet):
                 MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
                 major_list = []
                 for mname in mname_list:
-                    mcode = MajorInfo.objects.get(mname=mname).mcode
-                    major_list.append(MajorUserinfo(mcode=mcode, user_type=4, user_code=serializer_ecode, mtype=2))
+                    mcode = MajorInfo.objects.filter(mname=mname, mlevel=2, state=1)
+                    if mcode:
+                        mcode = mcode[0].mcode
+                        major_list.append(MajorUserinfo(mcode=mcode, user_type=4, user_code=serializer_ecode, mtype=2))
                 MajorUserinfo.objects.bulk_create(major_list)
 
                 dict = {}
@@ -2181,8 +2185,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 # 5 创建所属领域
                 major_list = []
                 for mname in mname_list:
-                    mcode = MajorInfo.objects.get(mname=mname).mcode
-                    major_list.append(MajorUserinfo(mcode=mcode, user_type=5, user_code=serializer_ecode, mtype=2))
+                    mcode = MajorInfo.objects.filter(mname=mname, mlevel=2, state=1)
+                    if mcode:
+                        mcode = mcode[0].mcode
+                        major_list.append(MajorUserinfo(mcode=mcode, user_type=5, user_code=serializer_ecode, mtype=2))
                 MajorUserinfo.objects.bulk_create(major_list)
 
                 # 创建申请表
@@ -2542,8 +2548,10 @@ class ManagementrViewSet(viewsets.ModelViewSet):
                 MajorUserinfo.objects.filter(user_code=serializer_ecode).delete()
                 major_list = []
                 for mname in mname_list:
-                    mcode = MajorInfo.objects.get(mname=mname).mcode
-                    major_list.append(MajorUserinfo(mcode=mcode, user_type=5, user_code=serializer_ecode, mtype=2))
+                    mcode = MajorInfo.objects.filter(mname=mname, mlevel=2, state=1)
+                    if mcode:
+                        mcode = mcode[0].mcode
+                        major_list.append(MajorUserinfo(mcode=mcode, user_type=5, user_code=serializer_ecode, mtype=2))
                 MajorUserinfo.objects.bulk_create(major_list)
 
                 dict = {}
