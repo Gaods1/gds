@@ -69,13 +69,20 @@ class MajorInfoViewSet(viewsets.ModelViewSet):
                 #判断同类型不能有同名
                 majorinfo_exists = MajorInfo.objects.filter(mname=mname,mtype=mtype).exists()
                 if majorinfo_exists:
-                    return Response({"detail": { "detail": ["同类型同名称已存在"]}}, status=400)
+                    return Response({"detail": "同类型同名称已存在"}, status=400)
                 mcode = gen_uuid32()
                 form_data = request.data
                 form_data['mcode'] = mcode
                 form_data['creater'] = request.user.account
                 form_data['major_cover'] = form_data['major_cover'][0]['response']['major_cover'] if form_data['major_cover'] else ''
                 form_major_cover = form_data['major_cover']
+                #热门专业领域最多6个
+                hotenable_num = MajorInfo.objects.filter(is_hot=1,state=1,mlevel=1,mtype=2).count()
+                if form_data['is_hot'] and form_data['pmcode']=='-1' and hotenable_num >= 6:
+                    return Response({"detail": "启用状态的热门一级领域最多6个"}, status=400)
+                #判断如果为热门则封面必须上传
+                if form_data['is_hot'] and not form_major_cover:
+                    return Response({'detail': '热门专业领域封面必须上传'}, 400)
                 ########## 领域专业分类封面 ########
                 major_cover_dict = {}
                 if form_major_cover:
@@ -155,7 +162,13 @@ class MajorInfoViewSet(viewsets.ModelViewSet):
                 form_major_cover = ''
                 if upload_temp_cover:  # major_cover图片更新
                     form_major_cover = form_data['major_cover']
-
+                # 热门专业领域最多6个
+                hotenable_num = MajorInfo.objects.filter(is_hot=1, state=1, mlevel=1, mtype=2).exclude(serial=instance.serial).count()
+                if form_data['is_hot'] and form_data['pmcode']=='-1' and hotenable_num >= 6:
+                    return Response({"detail": "启用状态的热门一级领域最多6个"}, status=400)
+                # 判断如果为热门则封面必须上传
+                if form_data['is_hot'] and not form_data['major_cover']:
+                    return Response({'detail': '热门专业领域封面必须上传'}, 400)
                 ########## 领域专业分类封面 ########
                 major_cover_del = ''
                 major_cover_dict = {}
