@@ -1151,7 +1151,7 @@ class ActivityWinnerViewSet(viewsets.ModelViewSet):
 
 #活动报名管理
 class ActivitySignupViewSet(viewsets.ModelViewSet):
-    queryset = ActivitySignup.objects.filter(check_state__gt=0).all().order_by('insert_time', '-serial')
+    queryset = ActivitySignup.objects.filter(check_state__gt=0).all().order_by('-insert_time', '-serial')
     serializer_class = ActivitySignupSerializers
 
     filter_backends = (
@@ -1160,7 +1160,7 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
         filters.OrderingFilter,
     )
 
-    ordering_fields = ("insert_time")
+    ordering_fields = ("-insert_time")
     filter_fields = ("insert_time","activity_code","signup_code","signup_mobile","check_state")
     search_fields = ("signup_name",)
 
@@ -1204,7 +1204,7 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
                         if not sms_sended:
                             account_info = AccountInfo.objects.filter(user_mobile=mobile)
                             if account_info:
-                                account_code = account_info[0]['user_mobile']
+                                account_code = account_info['user_mobile']
                             else:
                                 account_code = ''
                             # 发送邮件
