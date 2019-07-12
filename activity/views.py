@@ -1151,7 +1151,7 @@ class ActivityWinnerViewSet(viewsets.ModelViewSet):
 
 #活动报名管理
 class ActivitySignupViewSet(viewsets.ModelViewSet):
-    queryset = ActivitySignup.objects.filter(check_state__gt=0).all().order_by('insert_time', '-serial')
+    queryset = ActivitySignup.objects.filter(check_state__gt=0).all().order_by('-insert_time', '-serial')
     serializer_class = ActivitySignupSerializers
 
     filter_backends = (
@@ -1160,7 +1160,7 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
         filters.OrderingFilter,
     )
 
-    ordering_fields = ("insert_time")
+    ordering_fields = ("-insert_time")
     filter_fields = ("insert_time","activity_code","signup_code","signup_mobile","check_state")
     search_fields = ("signup_name",)
 
@@ -1202,11 +1202,12 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
                         #审核是否通过都只发送一次
                         sms_sended = Message.objects.filter(message_title=activity.activity_title,message_content=message_content,sms_phone=mobile,email_account=email)
                         if not sms_sended:
-                            account_info = AccountInfo.objects.filter(user_mobile=mobile)
-                            if account_info:
-                                account_code = account_info[0]['user_mobile']
-                            else:
-                                account_code = ''
+                            try:
+                                account_code = AccountInfo.objects.values_list('account_code',flat=True).get(user_mobile=mobile)
+                            except Exception as e:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({'detail':'检索account_code失败 %s' % str(e)},400)
+
                             # 发送邮件
                             email_result = send_email(name, email, message_content)
                             if not email_result:
