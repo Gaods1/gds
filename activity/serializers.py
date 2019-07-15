@@ -154,6 +154,7 @@ class ActivitySignupSerializers(PatclubModelSerializer):
                   'check_time',
                   'check_state',
                   'insert_time',
+                  'account_code',
                   ]
 
 

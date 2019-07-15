@@ -46,6 +46,19 @@ class ActivityViewSet(viewsets.ModelViewSet):
                d活动下架时间(down_time) >= 活动结束时间(activity_end_time)
     3 活动封面(附件)必须上传一张图片 活动摘要为不包含图片的富文本编辑器  活动 详情为包含图片+附件(文本 音频 视频等)
     """
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
+             page = None
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.get_paginated_response(serializer.data)
+
     def create(self, request, *args, **kwargs):
         with transaction.atomic():
             save_id = transaction.savepoint()

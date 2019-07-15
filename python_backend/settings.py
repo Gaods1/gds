@@ -94,7 +94,8 @@ INSTALLED_APPS = [
     'index',
     'activity', #活动功能
     'enterpriseperson',  # 企业和个人管理
-    'advisory'  # 咨询管理
+    'advisory',  # 咨询管理
+    'deep_search' # 深度搜索
 ]
 
 MIDDLEWARE = [
