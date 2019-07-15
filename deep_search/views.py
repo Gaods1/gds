@@ -88,7 +88,10 @@ class DeepSerarchViewSet(viewsets.ModelViewSet):
         if type == "1":
             queryset = self.queryset.filter(r_code__in=obj)
         elif type == "2":
-            queryset = self.queryset.filter(req_code__in= obj)
+            # queryset = self.queryset.filter(req_code__in=obj)
+            queryset = self.queryset
+        else:
+            queryset = self.queryset
 
         queryset = self.filter_queryset(queryset)
 
