@@ -46,6 +46,19 @@ class ActivityViewSet(viewsets.ModelViewSet):
                d活动下架时间(down_time) >= 活动结束时间(activity_end_time)
     3 活动封面(附件)必须上传一张图片 活动摘要为不包含图片的富文本编辑器  活动 详情为包含图片+附件(文本 音频 视频等)
     """
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
+             page = None
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.get_paginated_response(serializer.data)
+
     def create(self, request, *args, **kwargs):
         with transaction.atomic():
             save_id = transaction.savepoint()
@@ -1202,11 +1215,12 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
                         #审核是否通过都只发送一次
                         sms_sended = Message.objects.filter(message_title=activity.activity_title,message_content=message_content,sms_phone=mobile,email_account=email)
                         if not sms_sended:
-                            account_info = AccountInfo.objects.filter(user_mobile=mobile)
-                            if account_info:
-                                account_code = account_info['user_mobile']
-                            else:
-                                account_code = ''
+                            try:
+                                account_code = AccountInfo.objects.values_list('account_code',flat=True).get(user_mobile=mobile)
+                            except Exception as e:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({'detail':'检索account_code失败 %s' % str(e)},400)
+
                             # 发送邮件
                             email_result = send_email(name, email, message_content)
                             if not email_result:
