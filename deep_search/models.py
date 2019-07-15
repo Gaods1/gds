@@ -1,5 +1,7 @@
 from django.db import models
-from achievement.models import *
+from public_models.utils import get_single
+from public_models.models import ParamInfo, AttachmentFileinfo
+from misc.misc import *
 import os
 
 # Create your models here.
