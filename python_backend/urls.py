@@ -46,5 +46,7 @@ urlpatterns = [
     path('activity/',include('activity.urls')),
     path('ep/',include('enterpriseperson.urls')),
     path('newspolicy/',include('news.urls')),
-    path('advisory/', include('advisory.urls'))
+    path('advisory/', include('advisory.urls')),
+    path('deep_search/', include('deep_search.urls'))
+
 ]

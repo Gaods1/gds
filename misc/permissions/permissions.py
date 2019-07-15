@@ -127,3 +127,12 @@ class ReadOnlyPermission(permissions.BasePermission):
         if method != 'GET':
             return False
         return True
+
+
+class PostOnlyPermission(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        method = request.method
+        if method != 'POST':
+            return False
+        return True
