@@ -62,7 +62,7 @@ class AccountViewSet(viewsets.ModelViewSet):
         filters.OrderingFilter,
     )
     ordering_fields = ("account","user_name", "user_email", "dept_code", "insert_time")
-    filter_fields = ("state", "dept_code", "creater", "account")
+    filter_fields = ("state", "dept_code", "creater", "account","account_code")
     search_fields = ("account","user_name", "user_email", "user_mobile", "dept.dept_name")
 
     dept_model = Deptinfo
