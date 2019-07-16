@@ -68,6 +68,22 @@ class AccountViewSet(viewsets.ModelViewSet):
     dept_model = Deptinfo
     dept_associated_field = ("dept_code", "dept_code")
 
+    identity = {
+        1: CollectorBaseinfo,
+        2: BrokerBaseinfo,
+        3: ProjectTeamBaseinfo,
+        4: ResultOwnerpBaseinfo,
+        5: ResultOwnereBaseinfo,
+        6: ResultOwnerpBaseinfo,
+        7: ResultOwnereBaseinfo,
+        9: ExpertBaseinfo
+    }
+
+    identity_state = {
+        1: 1,
+        0: 2
+    }
+
     def get_queryset(self):
         assert self.queryset is not None, (
             "'%s' should either include a `queryset` attribute, "
@@ -140,6 +156,17 @@ class AccountViewSet(viewsets.ModelViewSet):
         if instance.account == request.user.account:
             if 'dept_code' in data.keys() and data['dept_code'] != instance.dept_code:
                 return Response({"detail": "不允许修改自己的机构部门"}, status=400)
+
+        with transaction.atomic():
+
+        # 修改状态后相关身份的状态也修改
+            state = data.get('state')
+            if state != instance.state:
+                identity_code = IdentityAuthorizationInfo.objects.values_list('identity_code', flat=True).filter(
+                    account_code=instance.account_code)
+                identity_state = self.identity_state.get(state)
+                for i in identity_code:
+                    self.identity.get(i).objects.filter(account_code=instance.account_code).update(state=identity_state)
 
         partial = kwargs.pop('partial', False)
 
