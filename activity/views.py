@@ -46,6 +46,19 @@ class ActivityViewSet(viewsets.ModelViewSet):
                d活动下架时间(down_time) >= 活动结束时间(activity_end_time)
     3 活动封面(附件)必须上传一张图片 活动摘要为不包含图片的富文本编辑器  活动 详情为包含图片+附件(文本 音频 视频等)
     """
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
+             page = None
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return self.get_paginated_response(serializer.data)
+
     def create(self, request, *args, **kwargs):
         with transaction.atomic():
             save_id = transaction.savepoint()
@@ -720,7 +733,7 @@ class ActivityLotteryViewSet(viewsets.ModelViewSet):
 
         if activity_code:
             raw_queryset = ActivityLottery.objects.raw("select serial  from activity_lottery  where activity_code =  '" + activity_code + "'")
-            queryset = ActivityLottery.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("insert_time")
+            queryset = ActivityLottery.objects.filter(serial__in=[i.serial for i in raw_queryset]).order_by("-start_time")
         else:
             queryset = self.queryset
 
@@ -1022,7 +1035,7 @@ class ActivityPrizeViewSet(viewsets.ModelViewSet):
                     if not attach_fileinfo:
                         transaction.savepoint_rollback(save_id)
                         return Response({"detail": "图片附件信息保存失败"}, status=400)
-                else:
+                elif not form_data['logo']:
                     transaction.savepoint_rollback(save_id)
                     return Response({'detail': '请上传奖品图片'}, 400)
 
@@ -1151,7 +1164,7 @@ class ActivityWinnerViewSet(viewsets.ModelViewSet):
 
 #活动报名管理
 class ActivitySignupViewSet(viewsets.ModelViewSet):
-    queryset = ActivitySignup.objects.filter(check_state__gt=0).all().order_by('insert_time', '-serial')
+    queryset = ActivitySignup.objects.filter(check_state__gt=0).all().order_by('-insert_time', '-serial')
     serializer_class = ActivitySignupSerializers
 
     filter_backends = (
@@ -1160,7 +1173,7 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
         filters.OrderingFilter,
     )
 
-    ordering_fields = ("insert_time")
+    ordering_fields = ("-insert_time")
     filter_fields = ("insert_time","activity_code","signup_code","signup_mobile","check_state")
     search_fields = ("signup_name",)
 
@@ -1187,6 +1200,7 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
                 activity_code = form_data['activity_code']
                 activity = Activity.objects.filter(activity_code=activity_code).get()
                 if activity.signup_check == 1:
+                    check_result = ''
                     if form_data['check_state'] == 1:
                         check_result = '审核通过'
                         sms_state = 1
@@ -1197,43 +1211,45 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
                     name = form_data['signup_name']
                     email = form_data['signup_email']
                     message_content = activity.activity_title + check_result
-                    #审核是否通过都只发送一次
-                    sms_sended = Message.objects.filter(message_title=activity.activity_title,message_content=message_content,sms_phone=mobile,email_account=email)
-                    if not sms_sended:
-                        account_info = AccountInfo.objects.filter(user_mobile=mobile)
-                        if account_info:
-                            account_code = account_info[0]['user_mobile']
-                        else:
-                            account_code = ''
-                        # 发送邮件
-                        email_result = send_email(name, email, message_content)
-                        if not email_result:
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '邮件发送失败'}, 400)
-                        #发送短信
-                        sms_result = send_message(sms_state,mobile,activity.activity_title)
-                        if sms_result['state'] == 0:
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail':sms_result['msg']}, 400)
-                        #保存短信邮件发送记录
-                        insert_result = Message.objects.create(
-                            message_title=activity.activity_title,
-                            message_content= message_content,
-                            account_code= account_code,
-                            state=0,
-                            send_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                            sender=request.user.account,
-                            sms=1,
-                            sms_state=1,
-                            sms_phone=mobile,
-                            email= 1,
-                            email_state=1,
-                            email_account=email,
-                            type=2
-                        )
-                        if insert_result is None:
-                            transaction.savepoint_rollback(save_id)
-                            return Response({'detail': '短信邮件发送记录保存失败'}, 400)
+                    if form_data['check_state'] in [1,2]:
+                        #审核是否通过都只发送一次
+                        sms_sended = Message.objects.filter(message_title=activity.activity_title,message_content=message_content,sms_phone=mobile,email_account=email)
+                        if not sms_sended:
+                            try:
+                                account_code = AccountInfo.objects.values_list('account_code',flat=True).get(user_mobile=mobile)
+                            except Exception as e:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({'detail':'检索account_code失败 %s' % str(e)},400)
+
+                            # 发送邮件
+                            email_result = send_email(name, email, message_content)
+                            if not email_result:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({'detail': '邮件发送失败'}, 400)
+                            #发送短信
+                            sms_result = send_message(sms_state,mobile,activity.activity_title)
+                            if sms_result['state'] == 0:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({'detail':sms_result['msg']}, 400)
+                            #保存短信邮件发送记录
+                            insert_result = Message.objects.create(
+                                message_title=activity.activity_title,
+                                message_content= message_content,
+                                account_code= account_code,
+                                state=0,
+                                send_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                                sender=request.user.account,
+                                sms=1,
+                                sms_state=1,
+                                sms_phone=mobile,
+                                email= 1,
+                                email_state=1,
+                                email_account=email,
+                                type=2
+                            )
+                            if insert_result is None:
+                                transaction.savepoint_rollback(save_id)
+                                return Response({'detail': '短信邮件发送记录保存失败'}, 400)
 
                 serializer = self.get_serializer(instance, data=request.data, partial=partial)
                 serializer.is_valid(raise_exception=True)
@@ -1265,7 +1281,7 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
 
 #活动评论管理
 class ActivityCommentViewSet(viewsets.ModelViewSet):
-    queryset = ActivityComment.objects.filter(state__gt=0).all().order_by('insert_time', '-serial')
+    queryset = ActivityComment.objects.filter(state__gt=0).all().order_by('-insert_time', '-serial')
     serializer_class = ActivityCommentSerializers
 
     filter_backends = (
@@ -1274,7 +1290,7 @@ class ActivityCommentViewSet(viewsets.ModelViewSet):
         filters.OrderingFilter,
     )
 
-    ordering_fields = ("insert_time")
+    ordering_fields = ("-insert_time")
     filter_fields = ("insert_time","activity_code","signup_code","comment_code","state")
     search_fields = ("comment",)
 
