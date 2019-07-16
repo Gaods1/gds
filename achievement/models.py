@@ -157,21 +157,23 @@ class RequirementsInfo(models.Model):
         #return Keywords
 
     @property
+    def owner_code(self):
+        owner_code = ResultsOwnerInfo.objects.get(r_code=self.req_code, state=1).owner_code
+        return owner_code
+
+    @property
     def Personal(self):
-        owner_code = ResultsOwnerInfo.objects.get(r_code=self.req_code).owner_code
-        Personal = PersonalInfo.objects.values_list('pname', flat=True).get(pcode=owner_code)
+        #owner_code = ResultsOwnerInfo.objects.get(r_code=self.req_code).owner_code
+        Personal = PersonalInfo.objects.values_list('pname', flat=True).get(pcode=self.owner_code)
         return Personal
 
     @property
     def Enterprise(self):
-        owner_code = ResultsOwnerInfo.objects.get(r_code=self.req_code).owner_code
-        Enterprise = EnterpriseBaseinfo.objects.values_list('ename', flat=True).get(ecode=owner_code)
+        #owner_code = ResultsOwnerInfo.objects.get(r_code=self.req_code).owner_code
+        Enterprise = EnterpriseBaseinfo.objects.values_list('ename', flat=True).get(ecode=self.owner_code)
         return Enterprise
 
-    @property
-    def owner_code(self):
-        owner_code = ResultsOwnerInfo.objects.get(r_code=self.req_code).owner_code
-        return owner_code
+
 
     @property
     def consultEditor(self):
