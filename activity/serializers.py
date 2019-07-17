@@ -143,6 +143,7 @@ class ActivitySignupSerializers(PatclubModelSerializer):
         fields = ['serial',
                   'signup_code',
                   'activity_title',
+                  'signup_check',
                   'activity_code',
                   'signup_name',
                   'signup_mobile',
