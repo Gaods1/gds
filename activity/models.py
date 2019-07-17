@@ -184,6 +184,10 @@ class ActivitySignup(models.Model):
     def activity_title(self):
         return Activity.objects.get(activity_code=self.activity_code).activity_title
 
+    @property
+    def signup_check(self):
+        return Activity.objects.get(activity_code=self.activity_code).signup_check
+
     class Meta:
         managed = False
         db_table = 'activity_signup'

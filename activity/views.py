@@ -1181,11 +1181,33 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
     活动报名创建
     """
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        with transaction.atomic():
+            save_id = transaction.savepoint()
+            try:
+                activity_code = request.data['activity_code']
+                activity = Activity.objects.get(activity_code=activity_code)
+                signup_pass_count = ActivitySignup.objects.filter(activity_code=activity_code, check_state=1).count()
+                if signup_pass_count >= activity.max_people_number:
+                    if request.data['check_state'] == 1:
+                        transaction.savepoint_rollback(save_id)
+                        return Response({'detail': '报名人数已满,审核状态请修改为不通过'}, 400)
+                else:
+                    if request.data['check_state'] == 1:
+                        signup_num = activity.signup_people_number if activity.signup_people_number else 0
+                        new_signup_num = signup_num + 1
+                        Activity.objects.filter(activity_code=activity_code).update(signup_people_number=new_signup_num)
+                        # 报名名额已满批量更新其他待审核报名为未通过
+                        if new_signup_num == activity.max_people_number:
+                            ActivitySignup.objects.filter(activity_code=activity_code, check_state=3).update(check_state=2)
+
+                serializer = self.get_serializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                self.perform_create(serializer)
+                headers = self.get_success_headers(serializer.data)
+                return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            except Exception as e:
+                transaction.savepoint_rollback(save_id)
+                return Response({"detail" : "活动报名创建失败：%s" % str(e)})
 
     """
     活动报名编辑
@@ -1199,7 +1221,22 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
                 form_data = request.data
                 activity_code = form_data['activity_code']
                 activity = Activity.objects.filter(activity_code=activity_code).get()
-                if activity.signup_check == 1:
+                if activity.signup_check == 1 and instance.check_state != form_data['check_state']:
+                    #添加逻辑:更新活动表报名人数(审核通过报名成果)  统计除当前报名者报名通过数量 如果为通过且满额则更新其他待审核状态为审核未通过
+                    signup_pass_count = ActivitySignup.objects.filter(activity_code=activity_code,check_state=1).exclude(signup_code=instance.signup_code).count()
+                    if signup_pass_count >= activity.max_people_number:
+                        if form_data['check_state'] == 1:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({'detail': '报名人数已满,审核状态请修改为不通过'}, 400)
+                    else:
+                        if form_data['check_state'] == 1:
+                            signup_num = activity.signup_people_number if activity.signup_people_number else 0
+                            new_signup_num = signup_num +1
+                            Activity.objects.filter(activity_code=instance.activity_code).update(signup_people_number=new_signup_num)
+                            #报名名额已满批量更新其他待审核报名为未通过
+                            if new_signup_num == activity.max_people_number:
+                                ActivitySignup.objects.filter(activity_code=instance.activity_code,check_state=3).update(check_state=2)
+
                     check_result = ''
                     if form_data['check_state'] == 1:
                         check_result = '审核通过'
@@ -1212,7 +1249,7 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
                     email = form_data['signup_email']
                     message_content = activity.activity_title + check_result
                     if form_data['check_state'] in [1,2]:
-                        #审核是否通过都只发送一次
+                        #审核是否通过都只发送一次(前台已限制审核一次)
                         sms_sended = Message.objects.filter(message_title=activity.activity_title,message_content=message_content,sms_phone=mobile,email_account=email)
                         if not sms_sended:
                             try:

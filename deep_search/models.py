@@ -1,5 +1,7 @@
 from django.db import models
-from achievement.models import *
+from public_models.utils import get_single
+from public_models.models import ParamInfo, AttachmentFileinfo
+from misc.misc import *
 import os
 
 # Create your models here.
@@ -39,7 +41,7 @@ class ResultsInfo(models.Model):
     def Cover(self):
         str = get_single('coverImg',self.r_code)
         if not str:
-            upload_path = ParamInfo.objects.get(param_code=2).param_value
+            upload_path = ParamInfo.objects.get(param_code=4).param_value
             file = AttachmentFileinfo.objects.get(ecode='DefaultPublishResultCover', tcode='0112')
             file_path = file.path
             file_name = file.file_name
@@ -90,7 +92,7 @@ class RequirementsInfo(models.Model):
     def Cover(self):
         str = get_single('coverImg',self.req_code)
         if not str:
-            upload_path = ParamInfo.objects.get(param_code=2).param_value
+            upload_path = ParamInfo.objects.get(param_code=4).param_value
             file = AttachmentFileinfo.objects.get(ecode='DefaultPublishRequirementCover', tcode='0112')
             file_path = file.path
             file_name = file.file_name
