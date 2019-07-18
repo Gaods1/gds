@@ -160,17 +160,18 @@ class DeepSerarchViewSet(viewsets.ModelViewSet):
         # obj = KeywordsInfo.objects.values_list('object_code', flat=True).filter(key_code__in=v_keywords)
         if resut_type == "1":
             queryset = self.queryset.filter(r_code__in=obj_code_list)
+            code = 'r_code'
             # queryset = self.queryset
         elif resut_type == "2":
-            # queryset = self.queryset.filter(req_code__in=obj)
-            queryset = self.queryset
+            queryset = self.queryset.filter(req_code__in=obj_code_list)
+            code = 'req_code'
         else:
             queryset = self.queryset
 
         serializer = self.get_serializer(queryset, many=True)
         serializer_data = serializer.data
         for i in serializer_data:
-            i['order'] = obj_code_list.index(i['r_code'])
+            i['order'] = obj_code_list.index(i[code])
         serializer_data = sorted(serializer_data, key=lambda x:x['order'])
         page_queryset = self.paginate_queryset(queryset)
         if page_queryset is not None:
