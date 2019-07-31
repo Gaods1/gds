@@ -2,6 +2,7 @@ import os
 import re
 
 from account.models import AccountInfo
+from expert.models import CollectorBaseinfo, ResultOwnerpBaseinfo, ResultOwnereBaseinfo
 from misc.misc import gen_uuid32, genearteMD5
 #from _mysql_exceptions import DatabaseError
 
@@ -365,6 +366,7 @@ class ResultsOwnerInfo(models.Model):
 class KeywordsInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     key_type = models.IntegerField(blank=True, null=True)
+    key_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     object_code = models.CharField(max_length=64)
     key_info = models.CharField(max_length=64, blank=True, null=True)
     state = models.IntegerField(blank=True, null=True)
@@ -417,3 +419,5 @@ class Requirement_Broker_Info(models.Model):
         managed = False
         db_table = 'requirement_broker_info'
         unique_together = (('rcode','bcode'),)
+
+

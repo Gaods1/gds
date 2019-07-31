@@ -406,3 +406,18 @@ class IdentityInfo(models.Model):
     class Meta:
         managed = True
         db_table = 'identity_info'
+
+
+
+# 深度搜索账号表
+class Systematic_info(models.Model):
+    serial = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=64, unique=True)
+    group = models.CharField(max_length=64)
+    value = models.CharField(max_length=255)
+    state = models.IntegerField(default=1)
+    updatetime = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        managed = True
+        db_table = 'systematic_info'
