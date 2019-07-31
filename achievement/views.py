@@ -176,7 +176,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 # 如果是采集员
                 if Results.obtain_type == 1:
                     try:
-                        collector_element_list = CollectorBaseinfo.objects.filter(account_code=Results.account_code)
+                        collector_element_list = CollectorBaseinfo.objects.filter(account_code=Results.account_code, state=1)
 
                         if not collector_element_list:
                             transaction.savepoint_rollback(save_id)
@@ -251,7 +251,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         #映射
                         p_or_e_dict = {1: ResultOwnerpBaseinfo, 2: ResultOwnereBaseinfo, 3: ResultOwnerpBaseinfo}
                         owner_t = owner.owner_type
-                        p_or_e_element_list = p_or_e_dict.get(owner_t).objects.filter(account_code=Results.account_code)
+                        p_or_e_element_list = p_or_e_dict.get(owner_t).objects.filter(account_code=Results.account_code, type=1, state=1)
 
                         if not p_or_e_element_list:
                             transaction.savepoint_rollback(save_id)
@@ -386,7 +386,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 # 如果是采集员
                 if Results.obtain_type == 1:
                     try:
-                        collector_element_list = CollectorBaseinfo.objects.filter(account_code=Results.account_code)
+                        collector_element_list = CollectorBaseinfo.objects.filter(account_code=Results.account_code, state=1)
 
                         if not collector_element_list:
                             transaction.savepoint_rollback(save_id)
@@ -452,7 +452,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         p_or_e_dict = {1: ResultOwnerpBaseinfo, 2: ResultOwnereBaseinfo, 3: ResultOwnerpBaseinfo}
                         owner_t = owner.owner_type
                         p_or_e_element_list = p_or_e_dict.get(owner_t).objects.filter(
-                            account_code=Results.account_code)
+                            account_code=Results.account_code, type=1, state=1)
 
                         if not p_or_e_element_list:
                             transaction.savepoint_rollback(save_id)
@@ -675,7 +675,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 # 如果是采集员
                 if Requirements.obtain_type == 1:
                     try:
-                        collector_element_list = CollectorBaseinfo.objects.filter(account_code=Requirements.account_code)
+                        collector_element_list = CollectorBaseinfo.objects.filter(account_code=Requirements.account_code, state=1)
 
                         if not collector_element_list:
                             transaction.savepoint_rollback(save_id)
@@ -751,7 +751,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         p_or_e_dict = {1: ResultOwnerpBaseinfo, 2: ResultOwnereBaseinfo, 3: ResultOwnerpBaseinfo}
                         owner_t = owner.owner_type
                         p_or_e_element_list = p_or_e_dict.get(owner_t).objects.filter(
-                            account_code=Requirements.account_code)
+                            account_code=Requirements.account_code, type=2, state=1)
 
                         if not p_or_e_element_list:
                             transaction.savepoint_rollback(save_id)
@@ -887,7 +887,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 # 如果是采集员
                 if Requirements.obtain_type == 1:
                     try:
-                        collector_element_list = CollectorBaseinfo.objects.filter(account_code=Requirements.account_code)
+                        collector_element_list = CollectorBaseinfo.objects.filter(account_code=Requirements.account_code, state=1)
 
                         if not collector_element_list:
                             transaction.savepoint_rollback(save_id)
@@ -953,7 +953,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         p_or_e_dict = {1: ResultOwnerpBaseinfo, 2: ResultOwnereBaseinfo, 3: ResultOwnerpBaseinfo}
                         owner_t = owner.owner_type
                         p_or_e_element_list = p_or_e_dict.get(owner_t).objects.filter(
-                            account_code=Requirements.account_code)
+                            account_code=Requirements.account_code, type=2, state=1)
 
                         if not p_or_e_element_list:
                             transaction.savepoint_rollback(save_id)
