@@ -174,72 +174,42 @@ class ProfileViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": '更新成果持有人表失败%s' % str(e)}, status=400)
                 # 如果是采集员
-                if Results.obtain_type==1:
+                if Results.obtain_type == 1:
                     try:
-                        # 如果是采集的个人或者团队
-                        if owner.owner_type != 2:
-                            ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
-                            # 如果是不通过的状态
-                            if ownerp.state == 3:
-                                transaction.savepoint_rollback(save_id)
-                                return Response({"detail": '请先通过成果持有人(个人)审核'}, status=400)
-                            else:
+                        collector_element_list = CollectorBaseinfo.objects.filter(account_code=Results.account_code)
 
-                                ownerp.state=2
-                                ownerp.save()
+                        if not collector_element_list:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({"detail": '该采集员查询不到基本信息'}, status=400)
 
-                                tel = ownerp.pmobile
-                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
-                                body = {'type': '成果', 'name': Results.r_name}
-                                headers = {
-                                    "Content-Type": "application/x-www-form-urlencoded",
-                                    "Accept": "application/json"
-                                }
-                                # 多线程发送短信
-                                t1 = threading.Thread(target=massege, args=(url, body, headers))
-                                t1.start()
+                        collector_element = collector_element_list[0]
+                        collector_element_mobile = collector_element.collector_mobile
+                        if not collector_element_mobile:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({"detail": '该采集员没有手机号'}, status=400)
 
-                                # 附件与封面与其他证件照
-                                move_attachment('attachment', instance.rr_code)
-                                move_single('coverImg', instance.rr_code)
-                                move_single('agreement', instance.rr_code)
-                                move_single('identityFront', instance.rr_code)
-                                move_single('identityBack', instance.rr_code)
-                                move_single('handIdentityPhoto', instance.rr_code)
+                        tel = collector_element_mobile
 
+                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
+                        body = {'type': '成果', 'name': Results.r_name}
+                        headers = {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "Accept": "application/json"
+                        }
+                        # 多线程发送短信
+                        t1 = threading.Thread(target=massege, args=(url, body, headers))
+                        t1.start()
 
-                        # 如果是采集持有人企业
-                        else:
-                            ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
-                            # 如果是采集企业不通过的状态
-                            if ownere.state == 3:
-                                transaction.savepoint_rollback(save_id)
-                                return Response({"detail": '请先通过成果持有人(企业)审核'}, status=400)
+                        # 附件与封面与其他证件照
+                        move_attachment('attachment', instance.rr_code)
+                        move_single('coverImg', instance.rr_code)
+                        move_single('agreement', instance.rr_code)
+                        move_single('identityFront', instance.rr_code)
+                        move_single('identityBack', instance.rr_code)
+                        move_single('handIdentityPhoto', instance.rr_code)
+                        if owner.owner_type == 2:
+                            move_single('entLicense', instance.rr_code)
 
-                            else:
-
-                                ownere.state = 2
-                                ownere.save()
-
-                                tel = ownere.emobile
-                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
-                                body = {'type': '成果', 'name': Results.r_name}
-                                headers = {
-                                    "Content-Type": "application/x-www-form-urlencoded",
-                                    "Accept": "application/json"
-                                }
-                                # 多线程发送短信
-                                t1 = threading.Thread(target=massege, args=(url, body, headers))
-                                t1.start()
-
-                                # 附件与封面与其他证件照
-                                move_attachment('attachment', instance.rr_code)
-                                move_single('coverImg', instance.rr_code)
-                                move_single('agreement', instance.rr_code)
-                                move_single('identityFront', instance.rr_code)
-                                move_single('identityBack', instance.rr_code)
-                                move_single('handIdentityPhoto', instance.rr_code)
-                                move_single('entLicense', instance.rr_code)
                         # 创建推送表
                         mm = Message.objects.create(**{
                             'message_title': '成果消息审核通知',
@@ -254,7 +224,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             'email': 1,
                             'email_state': 1,
                             'email_account': '',
-                            'type':2
+                            'type': 2
 
                         })
 
@@ -278,44 +248,32 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 # 如果不是采集员
                 else:
                     try:
-                        # 如果是持有人个人或者是持有人团队
-                        if owner.owner_type != 2:
-                            ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
-                            # 如果是持有人个人或团队不通过的状态
-                            if ownerp.state==3:
-                                transaction.savepoint_rollback(save_id)
-                                return Response({"detail": '请先通过成果持有人(个人)审核'}, status=400)
-                            else:
-                                tel = ownerp.pmobile
-                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
-                                body = {'type': '成果', 'name': Results.r_name}
-                                headers = {
-                                    "Content-Type": "application/x-www-form-urlencoded",
-                                    "Accept": "application/json"
-                                }
-                                # 多线程发送短信
-                                t1 = threading.Thread(target=massege, args=(url, body, headers))
-                                t1.start()
+                        #映射
+                        p_or_e_dict = {1: ResultOwnerpBaseinfo, 2: ResultOwnereBaseinfo, 3: ResultOwnerpBaseinfo}
+                        owner_t = owner.owner_type
+                        p_or_e_element_list = p_or_e_dict.get(owner_t).objects.filter(account_code=Results.account_code)
 
-                        # 如果是持有人企业
-                        else:
-                            ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
-                            # 如果是持有人企业不通过的状态
-                            if ownere.state==3:
-                                transaction.savepoint_rollback(save_id)
-                                return Response({"detail": '请先通过成果持有人(企业)审核'}, status=400)
+                        if not p_or_e_element_list:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({"detail": '该成果持有人查询不到基本信息'}, status=400)
 
-                            else:
-                                tel = ownere.emobile
-                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
-                                body = {'type': '成果', 'name': Results.r_name}
-                                headers = {
-                                    "Content-Type": "application/x-www-form-urlencoded",
-                                    "Accept": "application/json"
-                                }
-                                # 多线程发送短信
-                                t1 = threading.Thread(target=massege, args=(url, body, headers))
-                                t1.start()
+                        p_or_e_element = p_or_e_element_list[0]
+                        p_or_e_element_mobile = p_or_e_element.owner_mobile
+                        if not p_or_e_element_mobile:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({"detail": '该成果持有人没有手机号'}, status=400)
+
+                        tel = p_or_e_element_mobile
+
+                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
+                        body = {'type': '成果', 'name': Results.r_name}
+                        headers = {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "Accept": "application/json"
+                        }
+                        # 多线程发送短信
+                        t1 = threading.Thread(target=massege, args=(url, body, headers))
+                        t1.start()
 
                         # 附件与封面
                         move_attachment('attachment', instance.rr_code)
@@ -428,43 +386,29 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 # 如果是采集员
                 if Results.obtain_type == 1:
                     try:
-                        # 如果是采集的个人或者团队
-                        if owner.owner_type != 2:
-                            ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
-                            # 如果是不通过的状态
-                            if ownerp.state == 3:
-                                transaction.savepoint_rollback(save_id)
-                                return Response({"detail": '请先通过成果持有人(个人)审核'}, status=400)
-                            else:
-                                tel = ownerp.pmobile
-                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
-                                body = {'type': '成果', 'name': Results.r_name}
-                                headers = {
-                                    "Content-Type": "application/x-www-form-urlencoded",
-                                    "Accept": "application/json"
-                                }
-                                # 多线程发送短信
-                                t1 = threading.Thread(target=massege, args=(url, body, headers))
-                                t1.start()
+                        collector_element_list = CollectorBaseinfo.objects.filter(account_code=Results.account_code)
 
-                        # 如果是采集持有人企业
-                        else:
-                            ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
-                            # 如果是采集企业不通过的状态
-                            if ownere.state == 3:
-                                transaction.savepoint_rollback(save_id)
-                                return Response({"detail": '请先通过成果持有人(企业)审核'}, status=400)
-                            else:
-                                tel = ownere.emobile
-                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
-                                body = {'type': '成果', 'name': Results.r_name}
-                                headers = {
-                                    "Content-Type": "application/x-www-form-urlencoded",
-                                    "Accept": "application/json"
-                                }
-                                # 多线程发送短信
-                                t1 = threading.Thread(target=massege, args=(url, body, headers))
-                                t1.start()
+                        if not collector_element_list:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({"detail": '该采集员查询不到基本信息'}, status=400)
+
+                        collector_element = collector_element_list[0]
+                        collector_element_mobile = collector_element.collector_mobile
+                        if not collector_element_mobile:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({"detail": '该采集员没有手机号'}, status=400)
+
+                        tel = collector_element_mobile
+
+                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
+                        body = {'type': '成果', 'name': Results.r_name}
+                        headers = {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "Accept": "application/json"
+                        }
+                        # 多线程发送短信
+                        t1 = threading.Thread(target=massege, args=(url, body, headers))
+                        t1.start()
 
                         # 创建推送表
                         mm = Message.objects.create(**{
@@ -504,44 +448,33 @@ class ProfileViewSet(viewsets.ModelViewSet):
                 # 如果不是采集员
                 else:
                     try:
-                        # 如果是持有人个人或者是持有人团队
-                        if owner.owner_type != 2:
-                            ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
-                            # 如果是持有人个人或团队不通过的状态
-                            if ownerp.state == 3:
-                                transaction.savepoint_rollback(save_id)
-                                return Response({"detail": '请先通过成果持有人(个人)审核'}, status=400)
-                            else:
-                                tel = ownerp.pmobile
-                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
-                                body = {'type': '成果', 'name': Results.r_name}
-                                headers = {
-                                    "Content-Type": "application/x-www-form-urlencoded",
-                                    "Accept": "application/json"
-                                }
-                                # 多线程发送短信
-                                t1 = threading.Thread(target=massege, args=(url, body, headers))
-                                t1.start()
+                        # 映射
+                        p_or_e_dict = {1: ResultOwnerpBaseinfo, 2: ResultOwnereBaseinfo, 3: ResultOwnerpBaseinfo}
+                        owner_t = owner.owner_type
+                        p_or_e_element_list = p_or_e_dict.get(owner_t).objects.filter(
+                            account_code=Results.account_code)
 
-                        # 如果是持有人企业
-                        else:
-                            ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
-                            # 如果是持有人企业不通过的状态
-                            if ownere.state == 3:
-                                transaction.savepoint_rollback(save_id)
-                                return Response({"detail": '请先通过成果持有人(企业)审核'}, status=400)
+                        if not p_or_e_element_list:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({"detail": '该成果持有人查询不到基本信息'}, status=400)
 
-                            else:
-                                tel = ownere.emobile
-                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
-                                body = {'type': '成果', 'name': Results.r_name}
-                                headers = {
-                                    "Content-Type": "application/x-www-form-urlencoded",
-                                    "Accept": "application/json"
-                                }
-                                # 多线程发送短信
-                                t1 = threading.Thread(target=massege, args=(url, body, headers))
-                                t1.start()
+                        p_or_e_element = p_or_e_element_list[0]
+                        p_or_e_element_mobile = p_or_e_element.owner_mobile
+                        if not p_or_e_element_mobile:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({"detail": '该成果持有人没有手机号'}, status=400)
+
+                        tel = p_or_e_element_mobile
+
+                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
+                        body = {'type': '成果', 'name': Results.r_name}
+                        headers = {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "Accept": "application/json"
+                        }
+                        # 多线程发送短信
+                        t1 = threading.Thread(target=massege, args=(url, body, headers))
+                        t1.start()
 
                         # 创建推送表
                         mm = Message.objects.create(**{
@@ -577,6 +510,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
                     transaction.savepoint_commit(save_id)
                     return Response({'message': '审核不通过'})
+
+
 
 # 需求
 class RequirementViewSet(viewsets.ModelViewSet):
@@ -737,74 +672,43 @@ class RequirementViewSet(viewsets.ModelViewSet):
                     transaction.savepoint_rollback(save_id)
                     return Response({"detail": '更新需求持有人表失败%s' % str(e)}, status=400)
 
-
-                    # 如果是采集员
+                # 如果是采集员
                 if Requirements.obtain_type == 1:
                     try:
-                        # 如果是采集的个人或者团队
-                        if owner.owner_type != 2:
-                            ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
-                            # 如果是不通过的状态
-                            if ownerp.state == 3:
-                                transaction.savepoint_rollback(save_id)
-                                return Response({"detail": '请先通过需求持有人(个人)审核'}, status=400)
-                            else:
+                        collector_element_list = CollectorBaseinfo.objects.filter(account_code=Requirements.account_code)
 
-                                ownerp.state = 2
-                                ownerp.save()
+                        if not collector_element_list:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({"detail": '该采集员查询不到基本信息'}, status=400)
 
-                                tel = ownerp.pmobile
-                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
-                                body = {'type': '需求', 'name': Requirements.req_name}
-                                headers = {
-                                    "Content-Type": "application/x-www-form-urlencoded",
-                                    "Accept": "application/json"
-                                }
-                                # 多线程发送短信
-                                t1 = threading.Thread(target=massege, args=(url, body, headers))
-                                t1.start()
+                        collector_element = collector_element_list[0]
+                        collector_element_mobile = collector_element.collector_mobile
+                        if not collector_element_mobile:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({"detail": '该采集员没有手机号'}, status=400)
 
-                                # 附件与封面与其他证件照
-                                move_attachment('attachment', instance.rr_code)
-                                move_single('coverImg', instance.rr_code)
-                                move_single('agreement', instance.rr_code)
-                                move_single('identityFront', instance.rr_code)
-                                move_single('identityBack', instance.rr_code)
-                                move_single('handIdentityPhoto', instance.rr_code)
+                        tel = collector_element_mobile
 
+                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
+                        body = {'type': '需求', 'name': Requirements.req_name}
+                        headers = {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "Accept": "application/json"
+                        }
+                        # 多线程发送短信
+                        t1 = threading.Thread(target=massege, args=(url, body, headers))
+                        t1.start()
 
-                        # 如果是采集持有人企业
-                        else:
-                            ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
-                            # 如果是采集企业不通过的状态
-                            if ownere.state == 3:
-                                transaction.savepoint_rollback(save_id)
-                                return Response({"detail": '请先通过需求持有人(企业)审核'}, status=400)
+                        # 附件与封面与其他证件照
+                        move_attachment('attachment', instance.rr_code)
+                        move_single('coverImg', instance.rr_code)
+                        move_single('agreement', instance.rr_code)
+                        move_single('identityFront', instance.rr_code)
+                        move_single('identityBack', instance.rr_code)
+                        move_single('handIdentityPhoto', instance.rr_code)
+                        if owner.owner_type == 2:
+                            move_single('entLicense', instance.rr_code)
 
-                            else:
-
-                                ownere.state = 2
-                                ownere.save()
-
-                                tel = ownere.emobile
-                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
-                                body = {'type': '成果', 'name': Requirements.req_name}
-                                headers = {
-                                    "Content-Type": "application/x-www-form-urlencoded",
-                                    "Accept": "application/json"
-                                }
-                                # 多线程发送短信
-                                t1 = threading.Thread(target=massege, args=(url, body, headers))
-                                t1.start()
-
-                                # 附件与封面与其他证件照
-                                move_attachment('attachment', instance.rr_code)
-                                move_single('coverImg', instance.rr_code)
-                                move_single('agreement', instance.rr_code)
-                                move_single('identityFront', instance.rr_code)
-                                move_single('identityBack', instance.rr_code)
-                                move_single('handIdentityPhoto', instance.rr_code)
-                                move_single('entLicense', instance.rr_code)
                         # 创建推送表
                         mm = Message.objects.create(**{
                             'message_title': '需求消息审核通知',
@@ -843,44 +747,33 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 # 如果不是采集员
                 else:
                     try:
-                        # 如果是持有人个人或者是持有人团队
-                        if owner.owner_type != 2:
-                            ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
-                            # 如果是持有人个人或团队不通过的状态
-                            if ownerp.state == 3:
-                                transaction.savepoint_rollback(save_id)
-                                return Response({"detail": '请先通过需求持有人(个人)审核'}, status=400)
-                            else:
-                                tel = ownerp.pmobile
-                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
-                                body = {'type': '需求', 'name': Requirements.req_name}
-                                headers = {
-                                    "Content-Type": "application/x-www-form-urlencoded",
-                                    "Accept": "application/json"
-                                }
-                                # 多线程发送短信
-                                t1 = threading.Thread(target=massege, args=(url, body, headers))
-                                t1.start()
+                        # 映射
+                        p_or_e_dict = {1: ResultOwnerpBaseinfo, 2: ResultOwnereBaseinfo, 3: ResultOwnerpBaseinfo}
+                        owner_t = owner.owner_type
+                        p_or_e_element_list = p_or_e_dict.get(owner_t).objects.filter(
+                            account_code=Requirements.account_code)
 
-                        # 如果是持有人企业
-                        else:
-                            ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
-                            # 如果是持有人企业不通过的状态
-                            if ownere.state == 3:
-                                transaction.savepoint_rollback(save_id)
-                                return Response({"detail": {"detail": ['请先通过需求持有人(企业)审核']}}, status=400)
+                        if not p_or_e_element_list:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({"detail": '该需求持有人查询不到基本信息'}, status=400)
 
-                            else:
-                                tel = ownere.emobile
-                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
-                                body = {'type': '需求', 'name': Requirements.req_name}
-                                headers = {
-                                    "Content-Type": "application/x-www-form-urlencoded",
-                                    "Accept": "application/json"
-                                }
-                                # 多线程发送短信
-                                t1 = threading.Thread(target=massege, args=(url, body, headers))
-                                t1.start()
+                        p_or_e_element = p_or_e_element_list[0]
+                        p_or_e_element_mobile = p_or_e_element.owner_mobile
+                        if not p_or_e_element_mobile:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({"detail": '该需求持有人没有手机号'}, status=400)
+
+                        tel = p_or_e_element_mobile
+
+                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/1/' + tel
+                        body = {'type': '需求', 'name': Requirements.req_name}
+                        headers = {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "Accept": "application/json"
+                        }
+                        # 多线程发送短信
+                        t1 = threading.Thread(target=massege, args=(url, body, headers))
+                        t1.start()
 
                         # 附件与封面
                         move_attachment('attachment', instance.rr_code)
@@ -919,7 +812,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         return Response({"detail": '申请表更新失败%s' % str(e)}, status=400)
 
                     transaction.savepoint_commit(save_id)
-                return Response({'message': '审核通过'})
+                    return Response({'message': '审核通过'})
 
 
         else:
@@ -994,43 +887,29 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 # 如果是采集员
                 if Requirements.obtain_type == 1:
                     try:
-                        # 如果是采集的个人或者团队
-                        if owner.owner_type != 2:
-                            ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
-                            # 如果是不通过的状态
-                            if ownerp.state == 3:
-                                transaction.savepoint_rollback(save_id)
-                                return Response({"detail": '请先通过需求持有人(个人)审核'}, status=400)
-                            else:
-                                tel = ownerp.pmobile
-                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
-                                body = {'type': '需求', 'name': Requirements.req_name}
-                                headers = {
-                                    "Content-Type": "application/x-www-form-urlencoded",
-                                    "Accept": "application/json"
-                                }
-                                # 多线程发送短信
-                                t1 = threading.Thread(target=massege, args=(url, body, headers))
-                                t1.start()
+                        collector_element_list = CollectorBaseinfo.objects.filter(account_code=Requirements.account_code)
 
-                        # 如果是采集持有人企业
-                        else:
-                            ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
-                            # 如果是采集企业不通过的状态
-                            if ownere.state == 3:
-                                transaction.savepoint_rollback(save_id)
-                                return Response({"detail":'请先通过需求持有人(企业)审核'}, status=400)
-                            else:
-                                tel = ownere.emobile
-                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
-                                body = {'type': '需求', 'name': Requirements.req_name}
-                                headers = {
-                                    "Content-Type": "application/x-www-form-urlencoded",
-                                    "Accept": "application/json"
-                                }
-                                # 多线程发送短信
-                                t1 = threading.Thread(target=massege, args=(url, body, headers))
-                                t1.start()
+                        if not collector_element_list:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({"detail": '该采集员查询不到基本信息'}, status=400)
+
+                        collector_element = collector_element_list[0]
+                        collector_element_mobile = collector_element.collector_mobile
+                        if not collector_element_mobile:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({"detail": '该采集员没有手机号'}, status=400)
+
+                        tel = collector_element_mobile
+
+                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
+                        body = {'type': '需求', 'name': Requirements.req_name}
+                        headers = {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "Accept": "application/json"
+                        }
+                        # 多线程发送短信
+                        t1 = threading.Thread(target=massege, args=(url, body, headers))
+                        t1.start()
 
                         # 创建推送表
                         mm = Message.objects.create(**{
@@ -1070,44 +949,33 @@ class RequirementViewSet(viewsets.ModelViewSet):
                 # 如果不是采集员
                 else:
                     try:
-                        # 如果是持有人个人或者是持有人团队
-                        if owner.owner_type != 2:
-                            ownerp = PersonalInfo.objects.get(pcode=owner.owner_code)
-                            # 如果是持有人个人或团队不通过的状态
-                            if ownerp.state == 3:
-                                transaction.savepoint_rollback(save_id)
-                                return Response({"detail": '请先通过需求持有人(个人)审核'}, status=400)
-                            else:
-                                tel = ownerp.pmobile
-                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
-                                body = {'type': '需求', 'name': Requirements.req_name}
-                                headers = {
-                                    "Content-Type": "application/x-www-form-urlencoded",
-                                    "Accept": "application/json"
-                                }
-                                # 多线程发送短信
-                                t1 = threading.Thread(target=massege, args=(url, body, headers))
-                                t1.start()
+                        # 映射
+                        p_or_e_dict = {1: ResultOwnerpBaseinfo, 2: ResultOwnereBaseinfo, 3: ResultOwnerpBaseinfo}
+                        owner_t = owner.owner_type
+                        p_or_e_element_list = p_or_e_dict.get(owner_t).objects.filter(
+                            account_code=Requirements.account_code)
 
-                        # 如果是持有人企业
-                        else:
-                            ownere = EnterpriseBaseinfo.objects.get(ecode=owner.owner_code)
-                            # 如果是持有人企业不通过的状态
-                            if ownere.state == 3:
-                                transaction.savepoint_rollback(save_id)
-                                return Response({"detail": '请先通过需求持有人(企业)审核'}, status=400)
+                        if not p_or_e_element_list:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({"detail": '该需求持有人查询不到基本信息'}, status=400)
 
-                            else:
-                                tel = ownere.emobile
-                                url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
-                                body = {'type': '需求', 'name': Requirements.req_name}
-                                headers = {
-                                    "Content-Type": "application/x-www-form-urlencoded",
-                                    "Accept": "application/json"
-                                }
-                                # 多线程发送短信
-                                t1 = threading.Thread(target=massege, args=(url, body, headers))
-                                t1.start()
+                        p_or_e_element = p_or_e_element_list[0]
+                        p_or_e_element_mobile = p_or_e_element.owner_mobile
+                        if not p_or_e_element_mobile:
+                            transaction.savepoint_rollback(save_id)
+                            return Response({"detail": '该需求持有人没有手机号'}, status=400)
+
+                        tel = p_or_e_element_mobile
+
+                        url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/0/' + tel
+                        body = {'type': '需求', 'name': Requirements.req_name}
+                        headers = {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "Accept": "application/json"
+                        }
+                        # 多线程发送短信
+                        t1 = threading.Thread(target=massege, args=(url, body, headers))
+                        t1.start()
 
                         # 创建推送表
                         mm = Message.objects.create(**{
