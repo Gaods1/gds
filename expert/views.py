@@ -938,7 +938,7 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                         )
 
                     # 发送信息
-                    send_msg(baseinfo.broker_mobile, '技术经纪人',
+                    send_msg(baseinfo.broker_mobile, '技术经理人',
                              apply_state, baseinfo.account_code, request.user.account)
                 # 当申请状态为删除时
                 elif apply_type in [3]:
