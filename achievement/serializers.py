@@ -189,7 +189,7 @@ class RequirementsInfoSerializer(serializers.ModelSerializer):
             'obtain_source',
             'entry_type',
             'owner_type',
-            'owner_code',
+            #'owner_code',
             'owner_abstract',
             'rcoop_t_abstract',
             'expiry_dateb',

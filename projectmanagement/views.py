@@ -643,6 +643,8 @@ def upCheckinfo(self, request):
             psi.step_msg = cmsg
             psi.save()
 
+            """
+            # 董琳媛 7.30 提出不修改该表
             # 项目步骤信息表
             if step_code == 1 and substep_code == 1 and substep_serial_type == 1:
                 # 项目步骤信息表
@@ -695,6 +697,8 @@ def upCheckinfo(self, request):
                 psi.step_state = step_state
                 psi.step_msg = cmsg
                 psi.save()
+            """
+
 
             # 修改项目主表状态
             # 和 子步骤状态一致 固话清单内容审核之后，不更新project_info和project_substep_info

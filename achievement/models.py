@@ -2,6 +2,7 @@ import os
 import re
 
 from account.models import AccountInfo
+from expert.models import CollectorBaseinfo, ResultOwnerpBaseinfo, ResultOwnereBaseinfo
 from misc.misc import gen_uuid32, genearteMD5
 #from _mysql_exceptions import DatabaseError
 
@@ -158,7 +159,7 @@ class RequirementsInfo(models.Model):
 
     @property
     def owner_code(self):
-        owner_code = ResultsOwnerInfo.objects.get(r_code=self.req_code, state=1).owner_code
+        owner_code = ResultsOwnerInfo.objects.get(r_code=self.req_code).owner_code
         return owner_code
 
     @property
@@ -418,3 +419,5 @@ class Requirement_Broker_Info(models.Model):
         managed = False
         db_table = 'requirement_broker_info'
         unique_together = (('rcode','bcode'),)
+
+
