@@ -189,7 +189,7 @@ def get_single(tname_single,ecode):
                 url = url.replace(relative_path, relative_path_front)
                 return url
         except Exception as e:
-            return ''
+            return None
 
 def move_attachment(tname_attachment,ecode):
     absolute_path = ParamInfo.objects.get(param_code=1).param_value
