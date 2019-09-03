@@ -88,14 +88,14 @@ class ExpertViewSet(viewsets.ModelViewSet):
                 idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
                 if not major:
                     raise ValueError('所属领域是必填项')
-                if not head:
-                    raise ValueError('头像是必填项')
-                if not idfront:
-                    raise ValueError('证件照正面是必填项')
-                if not idback:
-                    raise ValueError('证件照背面是必填项')
-                if not idphoto:
-                    raise ValueError('手持身份证是必填项')
+                # if not head:
+                #     raise ValueError('头像是必填项')
+                # if not idfront:
+                #     raise ValueError('证件照正面是必填项')
+                # if not idback:
+                #     raise ValueError('证件照背面是必填项')
+                # if not idphoto:
+                #     raise ValueError('手持身份证是必填项')
                 # 身份信息关联表基本信息
                 identity_info = {
                     'account_code': account_code,
@@ -244,16 +244,16 @@ class ExpertViewSet(viewsets.ModelViewSet):
 
                 if account_code != instance.account_code:
                     raise ValueError('不允许更改关联账号')
-                if not major:
-                    raise ValueError('所属领域是必填项')
-                if not data.pop('head', None):
-                    raise ValueError('头像是必填项')
-                if not data.pop('idfront', None):
-                    raise ValueError('证件照正面是必填项')
-                if not data.pop('idback', None):
-                    raise ValueError('证件照背面是必填项')
-                if not data.pop('idphoto', None):
-                    raise ValueError('手持身份证是必填项')
+                # if not major:
+                #     raise ValueError('所属领域是必填项')
+                # if not data.pop('head', None):
+                #     raise ValueError('头像是必填项')
+                # if not data.pop('idfront', None):
+                #     raise ValueError('证件照正面是必填项')
+                # if not data.pop('idback', None):
+                #     raise ValueError('证件照背面是必填项')
+                # if not data.pop('idphoto', None):
+                #     raise ValueError('手持身份证是必填项')
 
                 # 身份信息关联表基本信息
                 identity_info = {
@@ -563,8 +563,8 @@ class BrokerViewSet(viewsets.ModelViewSet):
                 idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
                 if not major:
                     raise ValueError('所属领域是必填项')
-                if not head:
-                    raise ValueError('头像是必填项')
+                # if not head:
+                #     raise ValueError('头像是必填项')
                 # if not idfront:
                 #     raise ValueError('证件照正面是必填项')
                 # if not idback:
@@ -721,8 +721,8 @@ class BrokerViewSet(viewsets.ModelViewSet):
                     raise ValueError('不允许更改关联账号')
                 if not major:
                     raise ValueError('所属领域是必填项')
-                if not data.pop('head', None):
-                    raise ValueError('头像是必填项')
+                # if not data.pop('head', None):
+                #     raise ValueError('头像是必填项')
                 # if not data.pop('idfront', None):
                 #     raise ValueError('证件照正面是必填项')
                 # if not data.pop('idback', None):
@@ -1023,14 +1023,14 @@ class CollectorViewSet(viewsets.ModelViewSet):
                 idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
                 idback = url_to_path(data.pop('idback', None))     # 身份证背面
                 idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
-                if not head:
-                    raise ValueError('头像是必填项')
-                if not idfront:
-                    raise ValueError('证件照正面是必填项')
-                if not idback:
-                    raise ValueError('证件照背面是必填项')
-                if not idphoto:
-                    raise ValueError('手持身份证是必填项')
+                # if not head:
+                #     raise ValueError('头像是必填项')
+                # if not idfront:
+                #     raise ValueError('证件照正面是必填项')
+                # if not idback:
+                #     raise ValueError('证件照背面是必填项')
+                # if not idphoto:
+                #     raise ValueError('手持身份证是必填项')
                 # 身份信息关联表基本信息
                 identity_info = {
                     'account_code': account_code,
@@ -1173,14 +1173,14 @@ class CollectorViewSet(viewsets.ModelViewSet):
 
                 if account_code != instance.account_code:
                     raise ValueError('不允许更改关联账号')
-                if not data.pop('head', None):
-                    raise ValueError('头像是必填项')
-                if not data.pop('idfront', None):
-                    raise ValueError('证件照正面是必填项')
-                if not data.pop('idback', None):
-                    raise ValueError('证件照背面是必填项')
-                if not data.pop('idphoto', None):
-                    raise ValueError('手持身份证是必填项')
+                # if not data.pop('head', None):
+                #     raise ValueError('头像是必填项')
+                # if not data.pop('idfront', None):
+                #     raise ValueError('证件照正面是必填项')
+                # if not data.pop('idback', None):
+                #     raise ValueError('证件照背面是必填项')
+                # if not data.pop('idphoto', None):
+                #     raise ValueError('手持身份证是必填项')
 
                 # 身份信息关联表基本信息
                 identity_info = {
@@ -1479,14 +1479,14 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                 idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
                 if not major:
                     raise ValueError('所属领域是必填项')
-                if not head:
-                    raise ValueError('头像是必填项')
-                if not idfront:
-                    raise ValueError('证件照正面是必填项')
-                if not idback:
-                    raise ValueError('证件照背面是必填项')
-                if not idphoto:
-                    raise ValueError('手持身份证是必填项')
+                # if not head:
+                #     raise ValueError('头像是必填项')
+                # if not idfront:
+                #     raise ValueError('证件照正面是必填项')
+                # if not idback:
+                #     raise ValueError('证件照背面是必填项')
+                # if not idphoto:
+                #     raise ValueError('手持身份证是必填项')
                 # 身份信息关联表基本信息
                 identity_info = {
                     'account_code': account_code,
@@ -1646,14 +1646,14 @@ class ResultsOwnerViewSet(viewsets.ModelViewSet):
                     raise ValueError('不允许更改关联账号')
                 if not major:
                     raise ValueError('所属领域是必填项')
-                if not data.pop('head', None):
-                    raise ValueError('头像是必填项')
-                if not data.pop('idfront', None):
-                    raise ValueError('证件照正面是必填项')
-                if not data.pop('idback', None):
-                    raise ValueError('证件照背面是必填项')
-                if not data.pop('idphoto', None):
-                    raise ValueError('手持身份证是必填项')
+                # if not data.pop('head', None):
+                #     raise ValueError('头像是必填项')
+                # if not data.pop('idfront', None):
+                #     raise ValueError('证件照正面是必填项')
+                # if not data.pop('idback', None):
+                #     raise ValueError('证件照背面是必填项')
+                # if not data.pop('idphoto', None):
+                #     raise ValueError('手持身份证是必填项')
 
                 # 身份信息关联表基本信息
                 identity_info = {
@@ -1979,12 +1979,12 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
 
                 if not major:
                     raise ValueError('所属领域是必填项')
-                if not idfront:
-                    raise ValueError('证件照正面是必填项')
-                if not idback:
-                    raise ValueError('证件照背面是必填项')
-                if not idphoto:
-                    raise ValueError('手持身份证是必填项')
+                # if not idfront:
+                #     raise ValueError('证件照正面是必填项')
+                # if not idback:
+                #     raise ValueError('证件照背面是必填项')
+                # if not idphoto:
+                #     raise ValueError('手持身份证是必填项')
                 if not owner_license:
                     raise ValueError('营业执照是必填项')
 
@@ -2209,12 +2209,12 @@ class ResultsOwnereViewSet(viewsets.ModelViewSet):
                     raise ValueError('不允许更改关联账号')
                 if not major:
                     raise ValueError('所属领域是必填项')
-                if not data.pop('idfront', None):
-                    raise ValueError('证件照正面是必填项')
-                if not data.pop('idback', None):
-                    raise ValueError('证件照背面是必填项')
-                if not data.pop('idphoto', None):
-                    raise ValueError('手持身份证是必填项')
+                # if not data.pop('idfront', None):
+                #     raise ValueError('证件照正面是必填项')
+                # if not data.pop('idback', None):
+                #     raise ValueError('证件照背面是必填项')
+                # if not data.pop('idphoto', None):
+                #     raise ValueError('手持身份证是必填项')
                 if not data.pop('license', None):
                     raise ValueError('营业执照是必填项')
 
@@ -2571,14 +2571,14 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                 idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
                 if not major:
                     raise ValueError('所属领域是必填项')
-                if not head:
-                    raise ValueError('头像是必填项')
-                if not idfront:
-                    raise ValueError('证件照正面是必填项')
-                if not idback:
-                    raise ValueError('证件照背面是必填项')
-                if not idphoto:
-                    raise ValueError('手持身份证是必填项')
+                # if not head:
+                #     raise ValueError('头像是必填项')
+                # if not idfront:
+                #     raise ValueError('证件照正面是必填项')
+                # if not idback:
+                #     raise ValueError('证件照背面是必填项')
+                # if not idphoto:
+                #     raise ValueError('手持身份证是必填项')
                 # 身份信息关联表基本信息
                 identity_info = {
                     'account_code': account_code,
@@ -2738,14 +2738,14 @@ class RequirementOwnerViewSet(viewsets.ModelViewSet):
                     raise ValueError('不允许更改关联账号')
                 if not major:
                     raise ValueError('所属领域是必填项')
-                if not data.pop('head', None):
-                    raise ValueError('头像是必填项')
-                if not data.pop('idfront', None):
-                    raise ValueError('证件照正面是必填项')
-                if not data.pop('idback', None):
-                    raise ValueError('证件照背面是必填项')
-                if not data.pop('idphoto', None):
-                    raise ValueError('手持身份证是必填项')
+                # if not data.pop('head', None):
+                #     raise ValueError('头像是必填项')
+                # if not data.pop('idfront', None):
+                #     raise ValueError('证件照正面是必填项')
+                # if not data.pop('idback', None):
+                #     raise ValueError('证件照背面是必填项')
+                # if not data.pop('idphoto', None):
+                #     raise ValueError('手持身份证是必填项')
 
                 # 身份信息关联表基本信息
                 identity_info = {
@@ -3071,12 +3071,12 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
 
                 if not major:
                     raise ValueError('所属领域是必填项')
-                if not data.pop('idfront', None):
-                    raise ValueError('证件照正面是必填项')
-                if not data.pop('idback', None):
-                    raise ValueError('证件照背面是必填项')
-                if not data.pop('idphoto', None):
-                    raise ValueError('手持身份证是必填项')
+                # if not data.pop('idfront', None):
+                #     raise ValueError('证件照正面是必填项')
+                # if not data.pop('idback', None):
+                #     raise ValueError('证件照背面是必填项')
+                # if not data.pop('idphoto', None):
+                #     raise ValueError('手持身份证是必填项')
                 if not data.pop('license', None):
                     raise ValueError('营业执照是必填项')
 
@@ -3301,12 +3301,12 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                     raise ValueError('不允许更改关联账号')
                 if not major:
                     raise ValueError('所属领域是必填项')
-                if not data.pop('idfront', None):
-                    raise ValueError('证件照正面是必填项')
-                if not data.pop('idback', None):
-                    raise ValueError('证件照背面是必填项')
-                if not data.pop('idphoto', None):
-                    raise ValueError('手持身份证是必填项')
+                # if not data.pop('idfront', None):
+                #     raise ValueError('证件照正面是必填项')
+                # if not data.pop('idback', None):
+                #     raise ValueError('证件照背面是必填项')
+                # if not data.pop('idphoto', None):
+                #     raise ValueError('手持身份证是必填项')
                 if not data.pop('license', None):
                     raise ValueError('营业执照是必填项')
 
@@ -3682,12 +3682,12 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                         editor_imgs_path[e] = url_to_path(e)
                 if not major:
                     raise ValueError('所属领域是必填项')
-                if not idfront:
-                    raise ValueError('证件照正面是必填项')
-                if not idback:
-                    raise ValueError('证件照背面是必填项')
-                if not idphoto:
-                    raise ValueError('手持身份证是必填项')
+                # if not idfront:
+                #     raise ValueError('证件照正面是必填项')
+                # if not idback:
+                #     raise ValueError('证件照背面是必填项')
+                # if not idphoto:
+                #     raise ValueError('手持身份证是必填项')
                 # 身份信息关联表基本信息
                 identity_info = {
                     'account_code': account_code,
@@ -3914,12 +3914,12 @@ class TeamBaseinfoViewSet(viewsets.ModelViewSet):
                     raise ValueError('不允许更改关联账号')
                 if not major:
                     raise ValueError('所属领域是必填项')
-                if not data.pop('idfront', None):
-                    raise ValueError('证件照正面是必填项')
-                if not data.pop('idback', None):
-                    raise ValueError('证件照背面是必填项')
-                if not data.pop('idphoto', None):
-                    raise ValueError('手持身份证是必填项')
+                # if not data.pop('idfront', None):
+                #     raise ValueError('证件照正面是必填项')
+                # if not data.pop('idback', None):
+                #     raise ValueError('证件照背面是必填项')
+                # if not data.pop('idphoto', None):
+                #     raise ValueError('手持身份证是必填项')
 
                 # 身份信息关联表基本信息
                 identity_info = {
