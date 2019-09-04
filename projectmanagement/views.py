@@ -824,9 +824,9 @@ def upCheckinfo(self, request):
                             "Accept": "application/json"
                         }
                         # 测试时先不发
-                        # requests.post(sms_url, data=sms_data, headers=headers)
-                        # sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
-                        sms_ret = 1
+                        requests.post(sms_url, data=sms_data, headers=headers)
+                        sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
+                        # sms_ret = 1
                         # 保存短信发送记录
                         if int(sms_ret) == 1:
                             Message.objects.bulk_create(message_list)
@@ -1258,9 +1258,9 @@ def upCheckMatchinfo(self, request):
                         "Accept": "application/json"
                     }
                     # 测试时先不发
-                    # requests.post(sms_url, data=sms_data, headers=headers)
-                    # sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
-                    sms_ret = 1
+                    requests.post(sms_url, data=sms_data, headers=headers)
+                    sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
+                    # sms_ret = 1
                     # 保存短信发送记录
                     if int(sms_ret) == 1:
                         Message.objects.bulk_create(message_list)
