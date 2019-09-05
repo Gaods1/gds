@@ -183,7 +183,7 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                                                           email=0,
                                                           email_state=0,
                                                           email_account='',
-                                                          type=2)
+                                                          type=1)
                                     message_list.append(message_obj)
                                     enable_expert_list.append(expert_baseinfo.expert_code)
                                     enable_expert_code.append(expert_baseinfo.account_code)
@@ -244,7 +244,7 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                         email=0,
                         email_state=0,
                         email_account='',
-                        type=2
+                        type=1
                     )
             except Exception as e:
                 fail_msg = "审核失败%s" % str(e)
@@ -425,7 +425,7 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
                                                   email=0,
                                                   email_state=0,
                                                   email_account='',
-                                                  type=2)]
+                                                  type=1)]
                             Message.objects.bulk_create(message_list)
             except Exception as e:
                 fail_msg = "审核失败%s" % str(e)
