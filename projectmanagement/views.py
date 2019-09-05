@@ -824,9 +824,9 @@ def upCheckinfo(self, request):
                             "Accept": "application/json"
                         }
                         # 测试时先不发
-                        # requests.post(sms_url, data=sms_data, headers=headers)
-                        # sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
-                        sms_ret = 1
+                        requests.post(sms_url, data=sms_data, headers=headers)
+                        sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
+                        # sms_ret = 1
                         # 保存短信发送记录
                         if int(sms_ret) == 1:
                             Message.objects.bulk_create(message_list)
@@ -1173,6 +1173,9 @@ def upCheckMatchinfo(self, request):
             match_check_info_data["checker"] = request.user.account
             MatchCheckInfo.objects.create(**match_check_info_data)
 
+            # 技术经纪人代码
+            broker = None
+
             # 如果没有技术经济人就随机指定一个技术经济人
             rmbis = ReqMatchBrokerInfo.objects.filter(rm_code=rm_code)
             if rmbis == None or len(rmbis) <= 0:
@@ -1189,6 +1192,41 @@ def upCheckMatchinfo(self, request):
                     req_match_broker_data['creater'] = request.user.account_code
                     req_match_broker_data['insert_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                     ReqMatchBrokerInfo.objects.create(**req_match_broker_data)
+            else:
+                brokerinfo = None
+                for rmbi in rmbis:
+                    if rmbi.leader_tag == 1:
+                        # 多个技术经纪人中的负责人。可以有多个负责人。1：是负责人；0：不是负责人
+                        brokerinfo = rmbi.brokerinfo
+                        break
+                if brokerinfo == None:
+                    # 如果没有负责人，就取第一个人发短信
+                    brokerinfo = rmbis[0]
+                broker = brokerinfo["broker_code"]
+
+
+            # 根据broker取得broker_baseinfo
+            # 给技术经济人发短信 审核通过再给经纪人发短信吧，不通过就不用发了
+            if cstate == 1:
+                broker_baseinfo = BrokerBaseinfo.objects.get(broker_code=broker)
+                if broker_baseinfo != None and broker_baseinfo.broker_mobile != None and broker_baseinfo.broker_mobile != '':
+                    phone = broker_baseinfo.broker_mobile
+                    message_content_unpass = '您有一个{}《{}》审核未通过，请登陆平台查看修改。'
+                    message_content_pass = '您有一个{}《{}》审核已通过。请登陆平台查看。'
+                    type = '匹配申请项目'
+                    message_title = '匹配项目审核通知'
+                    sendsms(self,request, phone, cstate, rmi.rm_title,broker_baseinfo.account_code,type, message_title,message_content_pass,message_content_unpass)
+
+            # 给发布者发短信
+            accountinfo = AccountInfo.objects.get(account_code=rmi.creater)
+            if accountinfo != None:
+                phone = accountinfo.user_mobile
+                message_content_unpass = '您发布的{}《{}》审核未通过，请登陆平台查看修改。'
+                message_content_pass = '您发布的{}《{}》审核已通过。修改信息需重新审核，请谨慎修改。'
+                type = '匹配申请项目'
+                message_title = '匹配项目审核通知'
+                sendsms(self, request, phone, cstate, rmi.rm_title, rmi.creater, type, message_title,
+                        message_content_pass, message_content_unpass)
 
             transaction.savepoint_commit(save_id)
         except Exception as e:
@@ -1197,6 +1235,65 @@ def upCheckMatchinfo(self, request):
             return JsonResponse({"state": 0, "msg": fail_msg})
 
     return JsonResponse({"state": 1, "msg": "审核成功"})
+
+def sendsms(self, request, phone, cstate, title, account_code, type, message_title,message_content_pass,message_content_unpass):
+    # 检测电话格式
+    if ismobile(phone):
+
+        # 需要发送的消息
+        message_list = []
+
+        # message_content_unpass = '您发布的{}信息《{}》审核未通过，请登陆平台查看修改。'
+        # message_content_pass = '您发布的{}信息《{}》审核已通过。修改信息需重新审核，请谨慎修改。'
+        # type = '匹配项目'
+        # message_title = '匹配项目审核通知'
+
+        if cstate == 1:
+            message_content = message_content_pass.format(type, title)
+        else:
+            message_content = message_content_unpass.format(type, title)
+
+        message_obj = Message(message_title=message_title,
+                              message_content=message_content,
+                              account_code=account_code,
+                              state=0,
+                              send_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                              sender=request.user.account,
+                              sms=1,
+                              sms_state=1,
+                              sms_phone=phone,
+                              email=0,
+                              email_state=0,
+                              email_account='',
+                              type=2)
+        message_list.append(message_obj)
+
+        # broker_mobiles = [phone]
+
+        checkstate = 1
+        if cstate == -1:
+            checkstate = 0
+
+        # 发短信给技术经济人
+        sms_url = 'http://120.77.58.203:8808/sms/patclubmanage/send/verify/' + str(
+            checkstate) + '/' + phone
+        sms_data = {
+            'type': type,
+            'name': title,
+            # 'tel': ','.join(broker_mobiles),
+        }
+        # json.dumps(sms_data)
+        headers = {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Accept": "application/json"
+        }
+        # 测试时先不发
+        requests.post(sms_url, data=sms_data, headers=headers)
+        sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
+        # sms_ret = 1
+        # 保存短信发送记录
+        if int(sms_ret) == 1:
+            Message.objects.bulk_create(message_list)
 
 
 def get_current_brokers(self, request):

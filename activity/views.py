@@ -1239,15 +1239,15 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
 
                     check_result = ''
                     if form_data['check_state'] == 1:
-                        check_result = '审核通过'
+                        check_result = '审核通过,请及时参加该活动'
                         sms_state = 1
                     elif form_data['check_state'] == 2:
-                        check_result = '审核未通过'
+                        check_result = '审核未通过,请重新报名'
                         sms_state = 0
                     mobile = form_data['signup_mobile']
                     name = form_data['signup_name']
                     email = form_data['signup_email']
-                    message_content = activity.activity_title + check_result
+                    message_content = '您参加的《'+activity.activity_title+ '》活动' + check_result
                     if form_data['check_state'] in [1,2]:
                         #审核是否通过都只发送一次(前台已限制审核一次)
                         sms_sended = Message.objects.filter(message_title=activity.activity_title,message_content=message_content,sms_phone=mobile,email_account=email)
@@ -1282,7 +1282,7 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
                                 email= 1,
                                 email_state=1,
                                 email_account=email,
-                                type=2
+                                type=1
                             )
                             if insert_result is None:
                                 transaction.savepoint_rollback(save_id)
