@@ -224,7 +224,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             'email': 1,
                             'email_state': 1,
                             'email_account': '',
-                            'type': 2
+                            'type': 1
 
                         })
 
@@ -293,7 +293,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             'email': 1,
                             'email_state': 1,
                             'email_account': '',
-                            'type': 2
+                            'type': 1
 
                         })
 
@@ -424,7 +424,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             'email': 1,
                             'email_state': 1,
                             'email_account': '',
-                            'type': 2
+                            'type': 1
 
                         })
 
@@ -490,7 +490,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             'email': 1,
                             'email_state': 1,
                             'email_account': '',
-                            'type': 2
+                            'type': 1
 
                         })
 
@@ -723,7 +723,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             'email': 1,
                             'email_state': 1,
                             'email_account': '',
-                            'type': 2
+                            'type': 1
 
                         })
 
@@ -793,7 +793,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             'email': 1,
                             'email_state': 1,
                             'email_account': '',
-                            'type': 2
+                            'type': 1
 
                         })
 
@@ -925,7 +925,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             'email': 1,
                             'email_state': 1,
                             'email_account': '',
-                            'type': 2
+                            'type': 1
 
                         })
 
@@ -991,7 +991,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             'email': 1,
                             'email_state': 1,
                             'email_account': '',
-                            'type': 2
+                            'type': 1
 
                         })
 
