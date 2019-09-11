@@ -801,7 +801,7 @@ def upCheckinfo(self, request):
                                               email=0,
                                               email_state=0,
                                               email_account='',
-                                              type=2)
+                                              type=1)
                         message_list.append(message_obj)
 
                         # broker_mobiles = [phone]
@@ -1265,7 +1265,7 @@ def sendsms(self, request, phone, cstate, title, account_code, type, message_tit
                               email=0,
                               email_state=0,
                               email_account='',
-                              type=2)
+                              type=1)
         message_list.append(message_obj)
 
         # broker_mobiles = [phone]
