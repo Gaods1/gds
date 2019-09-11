@@ -116,9 +116,14 @@ def validate_military_officer_card1(value):
         raise ValueError('军官证号码格式错误')
 
 
+# 验证其他证件类型
+def validate_other(value):
+    return True
+
 # 后台验证证件号码（根据不同的证件）
 def check_card_id(type, value):
     card_validate = {
+        0: validate_other, # 其他证件验证
         1: validate_id1,     # 身份证
         2: validate_passport1,   # 护照
         3: validate_driver_license1,  # 驾照
