@@ -213,7 +213,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         # 创建推送表
                         mm = Message.objects.create(**{
                             'message_title': '成果消息审核通知',
-                            'message_content': history.opinion,
+                            'message_content': '您发布的成果信息《{}》{}.修改信息需重新审核,请谨慎修改.'.format(Results.r_name, history.opinion),
                             'account_code': Results.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
@@ -224,7 +224,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             'email': 1,
                             'email_state': 1,
                             'email_account': '',
-                            'type': 2
+                            'type': 1
 
                         })
 
@@ -282,7 +282,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         # 创建推送表
                         mm = Message.objects.create(**{
                             'message_title': '成果消息审核通知',
-                            'message_content': history.opinion,
+                            'message_content': '您发布的成果信息《{}》{}.修改信息需重新审核,请谨慎修改.'.format(Results.r_name, history.opinion),
                             'account_code': Results.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
@@ -293,7 +293,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             'email': 1,
                             'email_state': 1,
                             'email_account': '',
-                            'type': 2
+                            'type': 1
 
                         })
 
@@ -413,7 +413,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         # 创建推送表
                         mm = Message.objects.create(**{
                             'message_title': '成果消息审核通知',
-                            'message_content': history.opinion,
+                            'message_content': '您发布的成果信息《{}》{}.'.format(Results.r_name, history.opinion),
                             'account_code': Results.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
@@ -424,7 +424,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             'email': 1,
                             'email_state': 1,
                             'email_account': '',
-                            'type': 2
+                            'type': 1
 
                         })
 
@@ -479,7 +479,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                         # 创建推送表
                         mm = Message.objects.create(**{
                             'message_title': '成果消息审核通知',
-                            'message_content': history.opinion,
+                            'message_content': '您发布的成果信息《{}》{}.'.format(Results.r_name, history.opinion),
                             'account_code': Results.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
@@ -490,7 +490,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
                             'email': 1,
                             'email_state': 1,
                             'email_account': '',
-                            'type': 2
+                            'type': 1
 
                         })
 
@@ -712,7 +712,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         # 创建推送表
                         mm = Message.objects.create(**{
                             'message_title': '需求消息审核通知',
-                            'message_content': history.opinion,
+                            'message_content': '您发布的需求信息《{}》{}.修改信息需重新修改,请谨慎修改.'.format(Requirements.req_name, history.opinion),
                             'account_code': Requirements.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
@@ -723,7 +723,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             'email': 1,
                             'email_state': 1,
                             'email_account': '',
-                            'type': 2
+                            'type': 1
 
                         })
 
@@ -782,7 +782,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         # 创建推送表
                         mm = Message.objects.create(**{
                             'message_title': '需求消息审核通知',
-                            'message_content': history.opinion,
+                            'message_content': '您发布的需求信息《{}》{}.修改信息需重新修改,请谨慎修改.'.format(Requirements.req_name, history.opinion),
                             'account_code': Requirements.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
@@ -793,7 +793,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             'email': 1,
                             'email_state': 1,
                             'email_account': '',
-                            'type': 2
+                            'type': 1
 
                         })
 
@@ -914,7 +914,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         # 创建推送表
                         mm = Message.objects.create(**{
                             'message_title': '需求消息审核通知',
-                            'message_content': history.opinion,
+                            'message_content': '您发布的需求信息《{}》{}.'.format(Requirements.req_name, history.opinion),
                             'account_code': Requirements.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
@@ -925,7 +925,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             'email': 1,
                             'email_state': 1,
                             'email_account': '',
-                            'type': 2
+                            'type': 1
 
                         })
 
@@ -980,7 +980,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                         # 创建推送表
                         mm = Message.objects.create(**{
                             'message_title': '需求消息审核通知',
-                            'message_content': history.opinion,
+                            'message_content': '您发布的需求信息《{}》{}.'.format(Requirements.req_name, history.opinion),
                             'account_code': Requirements.account_code,
                             'state': 0,
                             'send_time': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
@@ -991,7 +991,7 @@ class RequirementViewSet(viewsets.ModelViewSet):
                             'email': 1,
                             'email_state': 1,
                             'email_account': '',
-                            'type': 2
+                            'type': 1
 
                         })
 
