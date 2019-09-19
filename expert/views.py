@@ -3077,7 +3077,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                 #     raise ValueError('证件照背面是必填项')
                 # if not data.pop('idphoto', None):
                 #     raise ValueError('手持身份证是必填项')
-                if not data.pop('license', None):
+                if not owner_license:
                     raise ValueError('营业执照是必填项')
 
                 # 身份信息关联表基本信息
