@@ -3056,10 +3056,10 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                 account_code = data['account_code']
 
                 major = data.pop('major_code', None)  # 相关领域（列表）
-                idfront = url_to_path(data.get('idfront', None))  # 身份证正面
-                idback = url_to_path(data.get('idback', None))     # 身份证背面
-                idphoto = url_to_path(data.get('idphoto', None))    # 手持身份证
-                owner_license = url_to_path(data.get('license', None))  # 营业执照
+                idfront = url_to_path(data.pop('idfront', None))  # 身份证正面
+                idback = url_to_path(data.pop('idback', None))     # 身份证背面
+                idphoto = url_to_path(data.pop('idphoto', None))    # 手持身份证
+                owner_license = url_to_path(data.pop('license', None))  # 营业执照
                 logo = url_to_path(data.pop('logo', None))  # logo
                 promotional = url_to_path(data.pop('promotional', None))  # 宣传照
                 owner_abstract_detail = data.get('owner_abstract_detail', '')  # 富文本
@@ -3077,7 +3077,7 @@ class RequirementOwnereViewSet(viewsets.ModelViewSet):
                 #     raise ValueError('证件照背面是必填项')
                 # if not data.pop('idphoto', None):
                 #     raise ValueError('手持身份证是必填项')
-                if not data.pop('license', None):
+                if not owner_license:
                     raise ValueError('营业执照是必填项')
 
                 # 身份信息关联表基本信息

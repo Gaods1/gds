@@ -184,6 +184,13 @@ if os.environ.get('DATABASE_DEBUG', None):
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
     }
+    account_redis = {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://:l0092687dd@120.77.58.203:6379/0",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
 else:
     database_setting = {
         'ENGINE': 'django.db.backends.mysql',
@@ -202,15 +209,28 @@ else:
         }
     }
 
+    account_redis = {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://:l0092687dd@127.0.0.1:6379/0",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+
 DATABASES = {
-    'default': database_setting
+    'default': database_setting,
 }
 
 # redis 数据库默认1号
 
 CACHES = {
-    "default": redis_setting
+    "default": redis_setting,
+    'account_redis': account_redis  # 用于强制推迟发布系统的账号登陆状态
 }
+# 用于查找发布系统缓存的key
+KEY_LOGIN_UID_TOKEN = "imway:admin:manage:uid:token:"
+KEY_LOGIN_TOKEN_UID = "imway:admin:manage:token:uid:"
+
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 # SESSION_CACHE_ALIAS = "session"
 
