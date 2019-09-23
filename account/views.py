@@ -16,6 +16,8 @@ from projectmanagement.models import *
 from public_models.models import *
 from public_models.serializers import *
 from .utils import copy_img
+from python_backend.settings import KEY_LOGIN_TOKEN_UID, KEY_LOGIN_UID_TOKEN
+from django_redis import get_redis_connection
 # Create your views here.
 
 
@@ -161,12 +163,12 @@ class AccountViewSet(viewsets.ModelViewSet):
 
         # 修改状态后相关身份的状态也修改
             state = data.get('state')
-            if state != instance.state:
-                identity_code = IdentityAuthorizationInfo.objects.values_list('identity_code', flat=True).filter(
-                    account_code=instance.account_code)
-                identity_state = self.identity_state.get(state)
-                for i in identity_code:
-                    self.identity.get(i).objects.filter(account_code=instance.account_code).update(state=identity_state)
+            # if state != instance.state:
+            #     identity_code = IdentityAuthorizationInfo.objects.values_list('identity_code', flat=True).filter(
+            #         account_code=instance.account_code)
+            #     identity_state = self.identity_state.get(state)
+            #     for i in identity_code:
+            #         self.identity.get(i).objects.filter(account_code=instance.account_code).update(state=identity_state)
 
         partial = kwargs.pop('partial', False)
 
@@ -179,6 +181,14 @@ class AccountViewSet(viewsets.ModelViewSet):
             # forcibly invalidate the prefetch cache on the instance.
             instance._prefetched_objects_cache = {}
 
+        if state == 0:
+            conn = get_redis_connection('account_redis')
+            token_uid = KEY_LOGIN_UID_TOKEN + kwargs.get('pk', "")
+            token_value = conn.get(token_uid)
+            uid_token = KEY_LOGIN_TOKEN_UID + str(token_value, encoding="utf-8")
+            conn.delete(uid_token)
+            conn.delete(token_uid)
+
         return Response(serializer.data)
 
     def destroy(self, request, *args, **kwargs):
@@ -190,6 +200,12 @@ class AccountViewSet(viewsets.ModelViewSet):
                         'broker_code', flat=True).filter(account_code=instance.account)
                     if brokers and ProjectBrokerInfo.objects.filter(broker_code__in=brokers):
                         raise ValueError('当前账号有技术经纪人身份且有项目正在进行中，请先为项目更换技术经纪人')
+                    conn = get_redis_connection('account_redis')
+                    token_uid = KEY_LOGIN_UID_TOKEN + kwargs.get('pk', "")
+                    token_value = conn.get(token_uid)
+                    uid_token = KEY_LOGIN_TOKEN_UID + str(token_value, encoding="utf-8")
+                    conn.delete(uid_token)
+                    conn.delete(token_uid)
                 if instance.account:
                     AccountRoleInfo.objects.filter(account=instance.account).delete()
                 self.perform_destroy(instance)
