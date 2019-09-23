@@ -504,7 +504,7 @@ class ActivityViewSet(viewsets.ModelViewSet):
                         transaction.savepoint_rollback(save_id)
                         return Response({"detail": "富文本图片附件信息保存失败"}, status=400)
 
-                    form_data['activity_body'] = new_activity_content  # 将更新后的news_body赋值给form表单字段news_body
+                    form_data['activity_content'] = new_activity_content  # 将更新后的news_body赋值给form表单字段news_body
                 ########### 富文本编辑更新(新增或删除)   -----end
 
                 ########### 活动附件编辑更新(新增或删除)   -----start
