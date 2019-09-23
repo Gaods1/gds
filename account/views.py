@@ -163,12 +163,12 @@ class AccountViewSet(viewsets.ModelViewSet):
 
         # 修改状态后相关身份的状态也修改
             state = data.get('state')
-            # if state != instance.state:
-            #     identity_code = IdentityAuthorizationInfo.objects.values_list('identity_code', flat=True).filter(
-            #         account_code=instance.account_code)
-            #     identity_state = self.identity_state.get(state)
-            #     for i in identity_code:
-            #         self.identity.get(i).objects.filter(account_code=instance.account_code).update(state=identity_state)
+            if state != instance.state:
+                identity_code = IdentityAuthorizationInfo.objects.values_list('identity_code', flat=True).filter(
+                    account_code=instance.account_code)
+                identity_state = self.identity_state.get(state)
+                for i in identity_code:
+                    self.identity.get(i).objects.filter(account_code=instance.account_code).update(state=identity_state)
 
         partial = kwargs.pop('partial', False)
 
