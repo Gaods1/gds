@@ -974,6 +974,11 @@ class ActivityPrizeViewSet(viewsets.ModelViewSet):
                 partial = kwargs.pop('partial', False)
                 instance = self.get_object()
                 form_data = request.data
+                #更新奖品数量则同时更新奖品剩余数量
+                if form_data['prize_num'] != instance.prize_num:
+                    winner_prize = ActivityPrizeWinner.objects.filter(prize_code=instance.prize_code).count()
+                    remain_num = int(form_data['prize_num']) - winner_prize
+                    form_data['remain_num'] = remain_num if remain_num else 0
                 form_data['logo'] = form_data['logo'][0]['response']['logo'] if form_data['logo'] else ''
                 prize_code = instance.prize_code
                 attachment_temp_dir = ParamInfo.objects.get(param_name='attachment_temp_dir').param_value  # 富文本编辑器图片上传后用于前台显示的网址(临时)
