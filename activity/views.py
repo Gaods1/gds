@@ -1252,11 +1252,11 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
                         #审核是否通过都只发送一次(前台已限制审核一次)
                         sms_sended = Message.objects.filter(message_title=activity.activity_title,message_content=message_content,sms_phone=mobile,email_account=email)
                         if not sms_sended:
-                            try:
-                                account_code = AccountInfo.objects.values_list('account_code',flat=True).get(user_mobile=mobile)
-                            except Exception as e:
-                                transaction.savepoint_rollback(save_id)
-                                return Response({'detail':'检索account_code失败 %s' % str(e)},400)
+                            # try:
+                            #     account_code = AccountInfo.objects.values_list('account_code',flat=True).get(user_mobile=mobile)
+                            # except Exception as e:
+                            #     transaction.savepoint_rollback(save_id)
+                            #     return Response({'detail':'检索account_code失败 %s' % str(e)},400)
 
                             # 发送邮件
                             email_result = send_email(name, email, message_content)
@@ -1272,7 +1272,7 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
                             insert_result = Message.objects.create(
                                 message_title=activity.activity_title,
                                 message_content= message_content,
-                                account_code= account_code,
+                                account_code= instance.account_code,
                                 state=0,
                                 send_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                                 sender=request.user.account,
