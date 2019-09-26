@@ -112,7 +112,7 @@ sub_menu = {
         'title': "热搜词管理"
     },
     '技术经纪人认证管理':{
-        'title': "技术经纪人认证管理",
+        'title': "技术经理人认证管理",
         'index': "broker_apply"
     },
     '领域专家认证管理':{
@@ -212,7 +212,7 @@ sub_menu = {
         'index': "requirement_apply"
     },
     '技术经纪人管理': {
-        'title': "技术经纪人管理",
+        'title': "技术经理人管理",
         'index': "broker"
     },
     '领域专家管理': {
