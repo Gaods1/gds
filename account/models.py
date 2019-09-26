@@ -68,6 +68,9 @@ class AccountInfoManager(BaseUserManager):
         user_role = AccountRoleInfo.objects.create(account=user.account, role_code=role.role_code, creater=user.account)
         return user
 
+    def get_by_natural_key(self, username):
+        return self.get(**{self.model.USERNAME_FIELD: username, "state": 1})
+
 
 # 账号信息表
 class AccountInfo(AbstractBaseUser):
