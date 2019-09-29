@@ -5,6 +5,8 @@ import base64
 import shutil
 import uuid
 
+import re
+
 from misc.misc import gen_uuid32, gen_uuid6
 
 import time
@@ -77,9 +79,14 @@ class PublicInfo(APIView):
                         #url = url + file.name
                         # 6位随机字符串内容
                         file_name = '{}_{}'.format(gen_uuid6(), file.name.replace(' ', ''))
-                        # 去除&和中文空格
-                        file_name = file_name.replace('&', '')
+                        # 去除特殊符号
+                        p = re.compile(r'[-,$()#!/+&*%^@><~:;?="\\\{\}\[\]\'／、；：【】｛｝（）×＆…％￥＃＠！，。》《‘’～]')
+                        file_name = re.sub(p, '', file_name)
+                        # 去除中文空格
                         file_name = file_name.replace('　', '')
+                        # 去除多余的.
+                        ppp = os.path.splitext(file_name)[0].replace('.', '')
+                        file_name = '{}{}'.format(ppp, os.path.splitext(file_name)[1])
                         # url地址
                         url = url + file_name
                         # url地址后缀
