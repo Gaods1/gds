@@ -772,8 +772,8 @@ class ActivityLotteryViewSet(viewsets.ModelViewSet):
             return Response({'detail':'抽奖结束时间应该大于活动开始时间且小于活动结束时间'},400)
         #判断是否有重叠时间段
         exist_lottery = ActivityLottery.objects.filter(
-            Q(start_time__lte=form_data['start_time'],end_time__gte=form_data['start_time']) |
-            Q(start_time__lte=form_data['end_time'],end_time__gte=form_data['end_time'])).exists()
+            (Q(start_time__lte=form_data['start_time'],end_time__gte=form_data['start_time']) | Q(start_time__lte=form_data['end_time'],end_time__gte=form_data['end_time'])) & Q(activity_code=activity_code)
+        ).exists()
         if exist_lottery:
             return Response({'detail':'抽奖时间区间不能重叠'},400)
         serializer = self.get_serializer(data=request.data)
@@ -1169,7 +1169,7 @@ class ActivityWinnerViewSet(viewsets.ModelViewSet):
 
 #活动报名管理
 class ActivitySignupViewSet(viewsets.ModelViewSet):
-    queryset = ActivitySignup.objects.filter(check_state__gt=0).all().order_by('-insert_time', '-serial')
+    queryset = ActivitySignup.objects.filter(check_state__gt=0).all().order_by('-check_time','-insert_time', '-serial')
     serializer_class = ActivitySignupSerializers
 
     filter_backends = (
@@ -1226,6 +1226,8 @@ class ActivitySignupViewSet(viewsets.ModelViewSet):
                 form_data = request.data
                 activity_code = form_data['activity_code']
                 activity = Activity.objects.filter(activity_code=activity_code).get()
+                if form_data['check_state'] == 1 and instance.check_state != form_data['check_state']:
+                    ActivitySignup.objects.filter(Q(activity_code=instance.activity_code) & Q(check_state=3) & Q(signup_mobile=instance.signup_mobile) & ~Q(serial=instance.serial)).update(check_state=2)
                 if activity.signup_check == 1 and instance.check_state != form_data['check_state']:
                     #添加逻辑:更新活动表报名人数(审核通过报名成果)  统计除当前报名者报名通过数量 如果为通过且满额则更新其他待审核状态为审核未通过
                     signup_pass_count = ActivitySignup.objects.filter(activity_code=activity_code,check_state=1).exclude(signup_code=instance.signup_code).count()
