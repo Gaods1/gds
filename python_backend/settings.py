@@ -175,6 +175,7 @@ if os.environ.get('DATABASE_DEBUG', None):
         'PORT': 3306,
         'USER': 'forcar',
         'PASSWORD': 'l0092687dd'
+
     }
     redis_setting = {
         "BACKEND": "django_redis.cache.RedisCache",

@@ -76,7 +76,10 @@ class PublicInfo(APIView):
                         #上传服务器的路径
                         #url = url + file.name
                         # 6位随机字符串内容
-                        file_name = '{}_{}'.format(gen_uuid6(), file.name.replace(' ',''))
+                        file_name = '{}_{}'.format(gen_uuid6(), file.name.replace(' ', ''))
+                        # 去除&和中文空格
+                        file_name = file_name.replace('&', '')
+                        file_name = file_name.replace('　', '')
                         # url地址
                         url = url + file_name
                         # url地址后缀
