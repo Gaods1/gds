@@ -191,7 +191,7 @@ class ActivitySignup(models.Model):
     class Meta:
         managed = False
         db_table = 'activity_signup'
-        unique_together = (('activity_code', 'signup_mobile'),)
+        # unique_together = (('activity_code', 'signup_mobile'),)
 
 # 活动评论 *
 class ActivityComment(models.Model):
