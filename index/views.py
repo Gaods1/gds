@@ -1,4 +1,6 @@
 from rest_framework import  permissions
+from rest_framework.viewsets import ViewSetMixin
+
 from misc.permissions.permissions import  *
 from django.http import JsonResponse
 from rest_framework.views import APIView
@@ -52,8 +54,8 @@ def fun1(list_data,list_result,list_requirement,num):
     for i in range(0, num):
         da = datetime.date.today()
         d3 = da - datetime.timedelta(days=i)
-        result_count = ResultsInfo.objects.filter(state=1, insert_time=d3).count()
-        requirement_count = RequirementsInfo.objects.filter(state=1, insert_time=d3).count()
+        result_count = ResultsInfo.objects.filter(show_state=1, insert_time__contains=d3).count()
+        requirement_count = RequirementsInfo.objects.filter(show_state=1, insert_time__contains=d3).count()
         list_data.append(d3)
         list_result.append(result_count)
         list_requirement.append(requirement_count)
@@ -65,8 +67,8 @@ def fun2(list_data,list_result,list_requirement,num):
         da = datetime.date.today()
         d3 = da - datetime.timedelta(days=i)
         d4 = da - datetime.timedelta(days=i + 30)
-        result_count = ResultsInfo.objects.filter(state=1, insert_time__gt=d4, insert_time__lt=d3).count()
-        requirement_count = RequirementsInfo.objects.filter(state=1, insert_time__gt=d4, insert_time__lt=d3).count()
+        result_count = ResultsInfo.objects.filter(show_state=1, insert_time__gt=d4, insert_time__lt=d3).count()
+        requirement_count = RequirementsInfo.objects.filter(show_state=1, insert_time__gt=d4, insert_time__lt=d3).count()
         list_data.append(d3)
         list_result.append(result_count)
         list_requirement.append(requirement_count)
@@ -74,9 +76,25 @@ def fun2(list_data,list_result,list_requirement,num):
 
 def fun3(list_data,list_result,list_requirement,date2,date3):
     for i in range(0, date3):
+        date44 = date2 - datetime.timedelta(days=i)
+        date4 = str(date44) + ' ' + '00:00:00'
+        date5 = str(date2 - datetime.timedelta(days=i+1)) + ' ' + '00:00:00'
+        date4 = datetime.datetime.strptime(date4, '%Y-%m-%d %H:%M:%S')
+        date5 = datetime.datetime.strptime(date5, '%Y-%m-%d %H:%M:%S')
+
+        result_count = ResultsInfo.objects.filter(show_state=1, insert_time__gt=date5, insert_time__lt=date4).count()
+        requirement_count = RequirementsInfo.objects.filter(show_state=1, insert_time__gt=date5, insert_time__lt=date4).count()
+        list_data.append(date44)
+        list_result.append(result_count)
+        list_requirement.append(requirement_count)
+    return list_data, list_result, list_requirement
+
+def fun4(list_data,list_result,list_requirement,date2,date3):
+    for i in range(0, date3, 30):
         date4 = date2 - datetime.timedelta(days=i)
-        result_count = ResultsInfo.objects.filter(state=1, insert_time=date4).count()
-        requirement_count = RequirementsInfo.objects.filter(state=1, insert_time=date4).count()
+        date5 = date2 - datetime.timedelta(days=i+30)
+        result_count = ResultsInfo.objects.filter(show_state=1, insert_time__gt=date5, insert_time__lt=date4).count()
+        requirement_count = RequirementsInfo.objects.filter(show_state=1, insert_time__gt=date5, insert_time__lt=date4).count()
         list_data.append(date4)
         list_result.append(result_count)
         list_requirement.append(requirement_count)
@@ -92,35 +110,55 @@ class ResultIndex(APIView):
         list_requirement = []
 
         # 判断参数在某个时间段显示的信息
-        params = request.params
+        params = request.query_params
 
-        if not params:
-            # 默认显示一周的信息
-            list_data, list_result, list_requirement = fun1(list_data, list_result, list_requirement, 7)
-
-        #从当前时间算起时间段的信息
-        elif len(params) == 1:
-            date_day = params.get('date_day', None)
-
-            # 显示一个月的信息
-            if date_day == 'month':
-                list_data, list_result, list_requirement = fun1(list_data, list_result, list_requirement, 30)
-
-            # 显示半年的信息
-            elif date_day == 'halfyear':
-                list_data, list_result, list_requirement = fun2(list_data, list_result, list_requirement, 180)
-
-            # 显示一年的信息
-            else:
-                list_data, list_result, list_requirement = fun1(list_data, list_result, list_requirement, 360)
-
-        #日期区间信息显示
-        else:
-            date1 = params.get('date1', None)
-            date2 = params.get('date2', None)
-            date3 = (date2 - date1).days()
+        date_params = params.get('date_params', None)
+        date_params = date_params.split(',')
+        date1 = date_params[0]
+        date2 = date_params[1]
+        date1 = datetime.datetime.strptime(date1, '%Y-%m-%d').date()
+        date2 = datetime.datetime.strptime(date2, '%Y-%m-%d').date()
+        date3 = (date2 - date1).days
+        if date3 <= 30:
             list_data, list_result, list_requirement = fun3(list_data, list_result, list_requirement, date2, date3)
+        else:
+            list_data, list_result, list_requirement = fun4(list_data, list_result, list_requirement, date2, date3)
 
+        # if not params:
+        #     # 默认显示一周的信息
+        #     list_data, list_result, list_requirement = fun1(list_data, list_result, list_requirement, 7)
+        #
+        # #从当前时间算起时间段的信息
+        # elif len(params) == 1:
+        #     date_day = params.get('date_day', None)
+        #
+        #     # 显示一个月的信息
+        #     if date_day == 'month':
+        #         list_data, list_result, list_requirement = fun1(list_data, list_result, list_requirement, 30)
+        #
+        #     # 显示半年的信息
+        #     elif date_day == 'halfyear':
+        #         list_data, list_result, list_requirement = fun2(list_data, list_result, list_requirement, 180)
+        #
+        #     # 显示一年的信息
+        #     else:
+        #         list_data, list_result, list_requirement = fun2(list_data, list_result, list_requirement, 360)
+        #
+        # #日期区间信息显示
+        # else:
+        #     #date1 = params.get('date1', None)
+        #     #date2 = params.get('date2', None)
+        #     date_params = params.get('date', None)
+        #     date_params = date_params.split(',')
+        #     date1 = date_params[0]
+        #     date2 = date_params[1]
+        #     date1 = datetime.datetime.strptime(date1, '%Y-%m-%d').date()
+        #     date2 = datetime.datetime.strptime(date2, '%Y-%m-%d').date()
+        #     date3 = (date2 - date1).days
+        #     if date3 <= 30:
+        #         list_data, list_result, list_requirement = fun3(list_data, list_result, list_requirement, date2, date3)
+        #     else:
+        #         list_data, list_result, list_requirement = fun4(list_data, list_result, list_requirement, date2, date3)
         # 返回相应的数据格式
         return JsonResponse({
             'list_data': list_data,
