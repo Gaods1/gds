@@ -46,3 +46,95 @@ class Index(APIView):
             'consult_apply_count':consult_apply_count,
             'consult_reply_count':consult_reply_count
         })
+
+def fun1(list_data,list_result,list_requirement,num):
+
+    for i in range(0, num):
+        da = datetime.date.today()
+        d3 = da - datetime.timedelta(days=i)
+        result_count = ResultsInfo.objects.filter(state=1, insert_time=d3).count()
+        requirement_count = RequirementsInfo.objects.filter(state=1, insert_time=d3).count()
+        list_data.append(d3)
+        list_result.append(result_count)
+        list_requirement.append(requirement_count)
+    return list_data, list_result, list_requirement
+
+def fun2(list_data,list_result,list_requirement,num):
+
+    for i in range(0, num, 30):
+        da = datetime.date.today()
+        d3 = da - datetime.timedelta(days=i)
+        d4 = da - datetime.timedelta(days=i + 30)
+        result_count = ResultsInfo.objects.filter(state=1, insert_time__gt=d4, insert_time__lt=d3).count()
+        requirement_count = RequirementsInfo.objects.filter(state=1, insert_time__gt=d4, insert_time__lt=d3).count()
+        list_data.append(d3)
+        list_result.append(result_count)
+        list_requirement.append(requirement_count)
+    return list_data, list_result, list_requirement
+
+def fun3(list_data,list_result,list_requirement,date2,date3):
+    for i in range(0, date3):
+        date4 = date2 - datetime.timedelta(days=i)
+        result_count = ResultsInfo.objects.filter(state=1, insert_time=date4).count()
+        requirement_count = RequirementsInfo.objects.filter(state=1, insert_time=date4).count()
+        list_data.append(date4)
+        list_result.append(result_count)
+        list_requirement.append(requirement_count)
+    return list_data, list_result, list_requirement
+
+class ResultIndex(APIView):
+    permission_classes = (permissions.IsAuthenticated, ReadOnlyPermission)
+    def get(self, request):
+
+        # 创建空数组
+        list_data = []
+        list_result = []
+        list_requirement = []
+
+        # 判断参数在某个时间段显示的信息
+        params = request.params
+
+        if not params:
+            # 默认显示一周的信息
+            list_data, list_result, list_requirement = fun1(list_data, list_result, list_requirement, 7)
+
+        #从当前时间算起时间段的信息
+        elif len(params) == 1:
+            date_day = params.get('date_day', None)
+
+            # 显示一个月的信息
+            if date_day == 'month':
+                list_data, list_result, list_requirement = fun1(list_data, list_result, list_requirement, 30)
+
+            # 显示半年的信息
+            elif date_day == 'halfyear':
+                list_data, list_result, list_requirement = fun2(list_data, list_result, list_requirement, 180)
+
+            # 显示一年的信息
+            else:
+                list_data, list_result, list_requirement = fun1(list_data, list_result, list_requirement, 360)
+
+        #日期区间信息显示
+        else:
+            date1 = params.get('date1', None)
+            date2 = params.get('date2', None)
+            date3 = (date2 - date1).days()
+            list_data, list_result, list_requirement = fun3(list_data, list_result, list_requirement, date2, date3)
+
+        # 返回相应的数据格式
+        return JsonResponse({
+            'list_data': list_data,
+            'list_result': list_result,
+            'list_requirement': list_requirement,
+
+        })
+
+class BrokerIndex(APIView):
+    permission_classes = (permissions.IsAuthenticated, ReadOnlyPermission)
+    def get(self, request):
+        pass
+
+class AccountIndex(APIView):
+    permission_classes = (permissions.IsAuthenticated, ReadOnlyPermission)
+    def get(self, request):
+        pass
