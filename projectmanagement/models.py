@@ -59,6 +59,7 @@ class ProjectInfo(models.Model):
         #     substep_serial_info = {}
         return substep_serial_info
 
+
     # 项目审核信息
     # @property
     # def check_info(self):
@@ -244,6 +245,14 @@ class ProjectSubstepSerialInfo(models.Model):
         else:
             check_info = {}
         return check_info
+
+    @property
+    def substep_file_info(self):
+        fjs = ProjectSubstepFileInfo.objects.filter(substep_serial=self.substep_serial,
+                                                    project_code=self.project_code,
+                                                    step_code=self.step_code,
+                                                    substep_code=self.substep_code)
+        return fjs
 
     class Meta:
         managed = False

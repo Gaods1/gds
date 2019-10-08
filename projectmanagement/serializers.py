@@ -65,6 +65,9 @@ class ProjectSubstepSerialInfoSerializer(PatclubModelSerializer):
 
     check_info = serializers.DictField(read_only=True)
 
+    # 附件
+    substep_file_info = ProjectSubstepFileInfoSerializer(many=True, read_only=True)
+
     class Meta:
         model = ProjectSubstepSerialInfo
         fields = ['p_serial',
@@ -76,7 +79,8 @@ class ProjectSubstepSerialInfoSerializer(PatclubModelSerializer):
                   'substep_serial_type',
                   'substep_serial_state',
                   'step_msg',
-                  'check_info'
+                  'check_info',
+                  'substep_file_info'
                   ]
 
 
