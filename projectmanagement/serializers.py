@@ -174,6 +174,7 @@ class ProjectInfoSerializer(serializers.ModelSerializer):
     # from_code_info = RrApplyHistorySerializer(many=True)
     substep_info = ProjectSubstepInfoSerializer(read_only=True)
     substep_serial_info = ProjectSubstepSerialInfoSerializer(read_only=True, many=True)
+    coverImg = ProjectSubstepFileInfoSerializer(read_only=True, many=True)
     # check_info = ProjectCheckInfoSerializer(read_only=True)
     broker_info = ProjectBrokerInfoSerializer(read_only=True)
     team_info = ProjectTeamInfoSerializer(read_only=True)
@@ -204,6 +205,7 @@ class ProjectInfoSerializer(serializers.ModelSerializer):
             # 'from_code_info',
             'substep_info',
             'substep_serial_info',
+            'coverImg',
             # 'check_info',
             'broker_info',
             'team_info',

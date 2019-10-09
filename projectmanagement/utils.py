@@ -99,37 +99,37 @@ def move_project_cover(project_code, step_code, substep_code, substep_serial, co
 
         # 把封面放到临时文件夹或者正式文件夹
         psfis = ProjectSubstepFileInfo.objects.filter(project_code=project_code,file_typecode='0111')
-        if psfis != None and len(psfis) == 1:
+        if psfis != None and len(psfis) > 0:
             # 有封面
             psfi = psfis[0]
             if psfi.state == 0:
                 # 未审核
                 t1 = absolute_path + 'project/'+project_code+'/1/1/' + psfi.substep_serial
-                # if not os.path.exists(t1):
-                #     t1.mkdirs()
+                if not os.path.exists(t1):
+                    t1.mkdirs()
                 oldFilePath = t1 + '/' + psfi.filename
                 toPath = t1 + '/' + fileName
             else:
                 # 已经审核通过
                 t1 = relative_path + 'project/' + project_code + '/1/1/' + psfi.substep_serial
-                # if not os.path.exists(t1):
-                #     t1.mkdirs()
+                if not os.path.exists(t1):
+                    t1.mkdirs()
                 oldFilePath = t1 + '/' + psfi.filename
                 toPath = t1 + '/' + fileName
 
             psfi.file_caption = oldFileName
             psfi.filename = fileName
             psfi.submit_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-            # psfi.save()
+            psfi.save()
 
             logger.info(oldFilePath)
-            # if os.path.exists(oldFilePath):
-            #     os.remove(oldFilePath)
+            if os.path.exists(oldFilePath):
+                os.remove(oldFilePath)
         else:
             # 没有封面
             t1 = absolute_path + 'project/' + project_code + '/1/1/' + substep_serial
-            # if not os.path.exists(t1):
-            #     t1.mkdirs()
+            if not os.path.exists(t1):
+                t1.mkdirs()
             toPath = t1 + '/' + fileName
 
             project_substep_file_info = {}
@@ -145,13 +145,74 @@ def move_project_cover(project_code, step_code, substep_code, substep_serial, co
             project_substep_file_info['file_caption'] = oldFileName
             project_substep_file_info['filename'] = fileName
             project_substep_file_info['submit_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-            # ProjectSubstepFileInfo.objects.create(**project_substep_file_info)
+            ProjectSubstepFileInfo.objects.create(**project_substep_file_info)
         logger.info('toPath = ' + toPath)
 
         # 移动文件
-        # shutil.move(filePath, toPath)
+        shutil.move(filePath, toPath)
 
 
 def move_project_attach(project_code, step_code, substep_code, substep_serial, attachs):
     # ['http://patclub.for8.cn:8764/temp/uploads/temporary/hvPuTKYWKfEKk99704N8biyRvqa7LBiH/O0Uh5Y_InstallKClock.zip']
-    pass
+    absolute_path = ParamInfo.objects.get(param_code=1).param_value
+    absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
+    relative_path = ParamInfo.objects.get(param_code=2).param_value
+    relative_path_front = ParamInfo.objects.get(param_code=4).param_value
+
+    # 临时文件
+    oldpath = '{}{}/{}/{}/{}/'.format(absolute_path, 'project', project_code, step_code,
+                                      substep_code) + substep_serial + '/'
+    # 正式文件
+    newpath = '{}{}/{}/{}/{}/'.format(relative_path, 'project', project_code, step_code,
+                                      substep_code) + substep_serial + '/'
+
+    if attachs != None and len(attachs)>0:
+        up_perial = 0;
+        for attach in attachs:
+            if attach == None or attach == '':
+                continue
+
+            if "/uploads/temporary" in attach:
+                oldFileName = attach.split("/")[-1]
+                filePath = absolute_path + 'temporary' + attach.split('/uploads/temporary')[1]
+                fileExt = attach.split(".")[-1]
+                fileName = time.strftime("%Y%m%d%H%M%S", time.localtime()) + gen_uuid20() + "." + fileExt
+
+                t1 = absolute_path + 'project/' + project_code + '/1/1/' + substep_serial
+                if not os.path.exists(t1):
+                    t1.mkdirs()
+                toPath = t1 + '/' + fileName
+
+                fileformat = 0
+                if fileExt.upper() == 'PDF':
+                    fileformat = 2
+                elif fileExt.upper() == 'DOC' or fileExt.upper() == 'DOCX':
+                    fileformat = 3
+                elif fileExt.upper() == 'PPT' or fileExt.upper() == 'PPS' or fileExt.upper() == 'POT' or fileExt.upper() == 'PPA':
+                    fileformat = 4
+                elif fileExt.upper() == 'XLS' or fileExt.upper() == 'XLSX':
+                    fileformat = 5
+                else:
+                    fileformat = 99
+
+                project_substep_file_info = {}
+                project_substep_file_info['project_code'] = project_code
+                project_substep_file_info['step_code'] = 1
+                project_substep_file_info['substep_code'] = 1
+                project_substep_file_info['substep_serial'] = substep_serial
+                project_substep_file_info['file_typecode'] = '0116'
+                project_substep_file_info['fileformat'] = fileformat
+                project_substep_file_info['up_perial'] = up_perial
+                project_substep_file_info['showtag'] = '1'
+                project_substep_file_info['state'] = '0'
+                project_substep_file_info['file_caption'] = oldFileName
+                project_substep_file_info['filename'] = fileName
+                project_substep_file_info['submit_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                ProjectSubstepFileInfo.objects.create(**project_substep_file_info)
+                logger.info('toPath = ' + toPath)
+
+                # 移动文件
+                shutil.move(filePath, toPath)
+
+                up_perial = up_perial + 1
+
