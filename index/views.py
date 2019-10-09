@@ -170,7 +170,10 @@ class ResultIndex(APIView):
 class BrokerIndex(APIView):
     permission_classes = (permissions.IsAuthenticated, ReadOnlyPermission)
     def get(self, request):
-        pass
+        return JsonResponse({
+            'ceshi':'ceshi'
+
+        })
 
 class AccountIndex(APIView):
     permission_classes = (permissions.IsAuthenticated, ReadOnlyPermission)
