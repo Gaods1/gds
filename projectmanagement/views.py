@@ -193,9 +193,21 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
 
                 # 项目封面
                 cover = data.get('Cover', None)
+                if cover != None:
+                    coverImg = cover["coverImg"]
+                    if coverImg != None and coverImg != '':
+                        # 有封面
+                        logger.info('有封面')
+                        logger.info(coverImg)
+                        move_project_cover(project_code, step_code, substep_code, substep_serial, coverImg)
 
                 # 项目附件表
                 attachs = data.get('Attach', [])
+                if attachs != None and len(attachs) > 0:
+                    # 有附件
+                    logger.info('有附件')
+                    logger.info(attachs)
+                    move_project_attach(project_code, step_code, substep_code, substep_serial, attachs)
 
 
 
@@ -356,7 +368,7 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
             major_userinfo_data['mcode'] = major
             MajorUserinfo.objects.create(**major_userinfo_data)
 
-        """
+
         # 项目封面
         cover = data.get('Cover', None)
         if cover != None:
@@ -374,7 +386,7 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
             logger.info('有附件')
             logger.info(attachs)
             move_project_attach(project_code,step_code,substep_code,substep_serial,attachs)
-        """
+
 
         if getattr(instance, '_prefetched_objects_cache', None):
             instance._prefetched_objects_cache = {}

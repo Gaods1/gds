@@ -60,6 +60,12 @@ class ProjectInfo(models.Model):
         return substep_serial_info
 
 
+    # 项目封面文件
+    @property
+    def coverImg(self):
+        coverImgs = ProjectSubstepFileInfo.objects.filter(project_code=self.project_code,file_typecode='0111')
+        return coverImgs
+
     # 项目审核信息
     # @property
     # def check_info(self):
