@@ -9,6 +9,7 @@ from public_models.models import ParamInfo
 from projectmanagement.models import ProjectSubstepFileInfo
 
 import logging
+
 logger = logging.getLogger('django')
 
 
@@ -76,7 +77,7 @@ def move_project_file(project_code, step_code, substep_code, substep_serial):
         # shutil.rmtree(oldpath)
 
 
-def move_project_cover(project_code, step_code, substep_code, substep_serial, coverImg):
+def move_project_cover(project_code, step_code, substep_code, substep_serial, coverImg, creater):
     absolute_path = ParamInfo.objects.get(param_code=1).param_value
     absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
     relative_path = ParamInfo.objects.get(param_code=2).param_value
@@ -89,33 +90,40 @@ def move_project_cover(project_code, step_code, substep_code, substep_serial, co
     newpath = '{}{}/{}/{}/{}/'.format(relative_path, 'project', project_code, step_code,
                                       substep_code) + substep_serial + '/'
 
-
     # http://patclub.for8.cn:8764/temp/uploads/temporary/hvPuTKYWKfEKk99704N8biyRvqa7LBiH/3AD3Zg_splash.jpeg
     if "/uploads/temporary" in coverImg:
         oldFileName = coverImg.split("/")[-1]
         filePath = absolute_path + 'temporary' + coverImg.split('/uploads/temporary')[1]
         fileExt = coverImg.split(".")[-1]
         fileName = time.strftime("%Y%m%d%H%M%S", time.localtime()) + gen_uuid20() + "." + fileExt
+        logger.info('fileName = ' + fileName)
 
         # 把封面放到临时文件夹或者正式文件夹
-        psfis = ProjectSubstepFileInfo.objects.filter(project_code=project_code,file_typecode='0111')
+        psfis = ProjectSubstepFileInfo.objects.filter(project_code=project_code, file_typecode='0111')
         if psfis != None and len(psfis) > 0:
             # 有封面
+            logger.info('有封面 ' + len(psfis))
             psfi = psfis[0]
             if psfi.state == 0:
                 # 未审核
-                t1 = absolute_path + 'project/'+project_code+'/1/1/' + psfi.substep_serial
+                t1 = absolute_path + 'project/' + project_code + '/1/1/' + psfi.substep_serial
+                logger.info('t1 = ' + t1)
                 if not os.path.exists(t1):
-                    t1.mkdirs()
+                    logger.info('t1不存在')
+                    os.makedirs(t1)
                 oldFilePath = t1 + '/' + psfi.filename
                 toPath = t1 + '/' + fileName
+                logger.info(toPath)
             else:
                 # 已经审核通过
                 t1 = relative_path + 'project/' + project_code + '/1/1/' + psfi.substep_serial
+                logger.info('t1 = ' + t1)
                 if not os.path.exists(t1):
-                    t1.mkdirs()
+                    logger.info('t1不存在')
+                    os.makedirs(t1)
                 oldFilePath = t1 + '/' + psfi.filename
                 toPath = t1 + '/' + fileName
+                logger.info(toPath)
 
             psfi.file_caption = oldFileName
             psfi.filename = fileName
@@ -128,9 +136,12 @@ def move_project_cover(project_code, step_code, substep_code, substep_serial, co
         else:
             # 没有封面
             t1 = absolute_path + 'project/' + project_code + '/1/1/' + substep_serial
+            logger.info('t1 = ' + t1)
             if not os.path.exists(t1):
-                t1.mkdirs()
+                logger.info('t1不存在')
+                os.makedirs(t1)
             toPath = t1 + '/' + fileName
+            logger.info(toPath)
 
             project_substep_file_info = {}
             project_substep_file_info['project_code'] = project_code
@@ -144,6 +155,7 @@ def move_project_cover(project_code, step_code, substep_code, substep_serial, co
             project_substep_file_info['state'] = '0'
             project_substep_file_info['file_caption'] = oldFileName
             project_substep_file_info['filename'] = fileName
+            project_substep_file_info['uper'] = creater
             project_substep_file_info['submit_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             ProjectSubstepFileInfo.objects.create(**project_substep_file_info)
         logger.info('toPath = ' + toPath)
@@ -152,7 +164,7 @@ def move_project_cover(project_code, step_code, substep_code, substep_serial, co
         shutil.move(filePath, toPath)
 
 
-def move_project_attach(project_code, step_code, substep_code, substep_serial, attachs):
+def move_project_attach(project_code, step_code, substep_code, substep_serial, attachs, creater):
     # ['http://patclub.for8.cn:8764/temp/uploads/temporary/hvPuTKYWKfEKk99704N8biyRvqa7LBiH/O0Uh5Y_InstallKClock.zip']
     absolute_path = ParamInfo.objects.get(param_code=1).param_value
     absolute_path_front = ParamInfo.objects.get(param_code=3).param_value
@@ -166,7 +178,7 @@ def move_project_attach(project_code, step_code, substep_code, substep_serial, a
     newpath = '{}{}/{}/{}/{}/'.format(relative_path, 'project', project_code, step_code,
                                       substep_code) + substep_serial + '/'
 
-    if attachs != None and len(attachs)>0:
+    if attachs != None and len(attachs) > 0:
         up_perial = 0;
         for attach in attachs:
             if attach == None or attach == '':
@@ -180,7 +192,7 @@ def move_project_attach(project_code, step_code, substep_code, substep_serial, a
 
                 t1 = absolute_path + 'project/' + project_code + '/1/1/' + substep_serial
                 if not os.path.exists(t1):
-                    t1.mkdirs()
+                    os.makedirs(t1)
                 toPath = t1 + '/' + fileName
 
                 fileformat = 0
@@ -207,6 +219,7 @@ def move_project_attach(project_code, step_code, substep_code, substep_serial, a
                 project_substep_file_info['state'] = '0'
                 project_substep_file_info['file_caption'] = oldFileName
                 project_substep_file_info['filename'] = fileName
+                project_substep_file_info['uper'] = creater
                 project_substep_file_info['submit_time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
                 ProjectSubstepFileInfo.objects.create(**project_substep_file_info)
                 logger.info('toPath = ' + toPath)
@@ -215,4 +228,3 @@ def move_project_attach(project_code, step_code, substep_code, substep_serial, a
                 shutil.move(filePath, toPath)
 
                 up_perial = up_perial + 1
-

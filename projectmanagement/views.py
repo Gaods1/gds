@@ -74,6 +74,8 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
         step_code = 1
         substep_code = 1
 
+        creater = request.user.account_code
+
         # 建立事物机制
         with transaction.atomic():
             # 创建一个保存点
@@ -199,7 +201,10 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
                         # 有封面
                         logger.info('有封面')
                         logger.info(coverImg)
-                        move_project_cover(project_code, step_code, substep_code, substep_serial, coverImg)
+                        try:
+                            move_project_cover(project_code, step_code, substep_code, substep_serial, coverImg, creater)
+                        except Exception as e:
+                            logger.info('保存封面失败')
 
                 # 项目附件表
                 attachs = data.get('Attach', [])
@@ -207,7 +212,10 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
                     # 有附件
                     logger.info('有附件')
                     logger.info(attachs)
-                    move_project_attach(project_code, step_code, substep_code, substep_serial, attachs)
+                    try:
+                        move_project_attach(project_code, step_code, substep_code, substep_serial, attachs, creater)
+                    except Exception as e:
+                        logger.info('保存附件失败')
 
 
 
@@ -319,6 +327,8 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
         step_code = instance.project_state
         substep_code = instance.project_sub_state
 
+        creater = request.user.account_code
+
         # 子步骤流水
         pssis = ProjectSubstepSerialInfo.objects.filter(project_code=project_code,step_code=step_code,substep_code=substep_code).order_by('-p_serial')
         pssi = None
@@ -377,7 +387,10 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
                 # 有封面
                 logger.info('有封面')
                 logger.info(coverImg)
-                move_project_cover(project_code,step_code,substep_code,substep_serial,coverImg)
+                try:
+                    move_project_cover(project_code,step_code,substep_code,substep_serial,coverImg,creater)
+                except Exception as e:
+                    logger.info('保存封面失败')
 
         # 项目附件表
         attachs = data.get('Attach', [])
@@ -385,8 +398,10 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
             # 有附件
             logger.info('有附件')
             logger.info(attachs)
-            move_project_attach(project_code,step_code,substep_code,substep_serial,attachs)
-
+            try:
+                move_project_attach(project_code,step_code,substep_code,substep_serial,attachs,creater)
+            except Exception as e:
+                logger.info('保存附件失败')
 
         if getattr(instance, '_prefetched_objects_cache', None):
             instance._prefetched_objects_cache = {}
