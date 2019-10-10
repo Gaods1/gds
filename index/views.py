@@ -67,20 +67,20 @@ def fun3(list_data,list_one,list_two,date2,date3,ma):
         if ma == 1:
             result_count = map[ma][0].objects.filter(show_state=1, insert_time__gt=date5, insert_time__lt=date4).count()
             requirement_count = map[ma][1].objects.filter(show_state=1, insert_time__gt=date5, insert_time__lt=date4).count()
-            list_data.append(date44)
-            list_one.append(result_count)
-            list_two.append(requirement_count)
+            list_data.insert(0, date44)
+            list_one.insert(0, result_count)
+            list_two.insert(0, requirement_count)
         elif ma == 2:
             result_count = map[ma][0].objects.filter(state=1, insert_time__gt=date5, insert_time__lt=date4).count()
             requirement_count = map[ma][1].objects.filter(state=1, insert_time__gt=date5,
                                                           insert_time__lt=date4).count()
-            list_data.append(date44)
-            list_one.append(result_count)
-            list_two.append(requirement_count)
+            list_data.insert(0, date44)
+            list_one.insert(0, result_count)
+            list_two.insert(0, requirement_count)
         else:
             result_count = map[ma][0].objects.filter(state=1, account=None, insert_time__gt=date5, insert_time__lt=date4).count()
-            list_data.append(date44)
-            list_one.append(result_count)
+            list_data.insert(0, date44)
+            list_one.insert(0, result_count)
 
     return list_data, list_one, list_two
 
@@ -92,20 +92,20 @@ def fun4(list_data,list_one,list_two,date2,date3,ma):
             result_count = map[ma][0].objects.filter(show_state=1, insert_time__gt=date5, insert_time__lt=date4).count()
             requirement_count = map[ma][1].objects.filter(show_state=1, insert_time__gt=date5,
                                                           insert_time__lt=date4).count()
-            list_data.append(date4)
-            list_one.append(result_count)
-            list_two.append(requirement_count)
+            list_data.insert(0, date4)
+            list_one.insert(0, result_count)
+            list_two.insert(0, requirement_count)
         elif ma == 2:
             result_count = map[ma][0].objects.filter(state=1, insert_time__gt=date5, insert_time__lt=date4).count()
             requirement_count = map[ma][1].objects.filter(state=1, insert_time__gt=date5,
                                                           insert_time__lt=date4).count()
-            list_data.append(date4)
-            list_one.append(result_count)
-            list_two.append(requirement_count)
+            list_data.insert(0, date4)
+            list_one.insert(0, result_count)
+            list_two.insert(0, requirement_count)
         else:
             result_count = map[ma][0].objects.filter(state=1, account=None, insert_time__gt=date5, insert_time__lt=date4).count()
-            list_data.append(date4)
-            list_one.append(result_count)
+            list_data.insert(0, date4)
+            list_one.insert(0, result_count)
 
     return list_data, list_one, list_two
 
