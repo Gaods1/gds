@@ -74,6 +74,8 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
         step_code = 1
         substep_code = 1
 
+        creater = request.user.account_code
+
         # 建立事物机制
         with transaction.atomic():
             # 创建一个保存点
@@ -191,7 +193,31 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
                 project_substep_detail_info_data['substep_serial_state'] = 2
                 ProjectSubstepDetailInfo.objects.create(**project_substep_detail_info_data)
 
+                # 项目封面
+                cover = data.get('Cover', None)
+                if cover != None:
+                    coverImg = cover["coverImg"]
+                    if coverImg != None and coverImg != '':
+                        # 有封面
+                        logger.info('有封面')
+                        logger.info(coverImg)
+                        try:
+                            move_project_cover(project_code, step_code, substep_code, substep_serial, coverImg, creater)
+                        except Exception as e:
+                            logger.info('保存封面失败')
+
                 # 项目附件表
+                attachs = data.get('Attach', [])
+                if attachs != None and len(attachs) > 0:
+                    # 有附件
+                    logger.info('有附件')
+                    logger.info(attachs)
+                    try:
+                        move_project_attach(project_code, step_code, substep_code, substep_serial, attachs, creater)
+                    except Exception as e:
+                        logger.info('保存附件失败')
+
+
 
                 # 项目审核表
                 project_check_info_data = {}
@@ -202,7 +228,6 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
                 project_check_info_data['cstate'] = 0
                 ProjectCheckInfo.objects.create(**project_check_info_data)
 
-                # return JsonResponse({'state':0,'msg':'ok'})
 
                 transaction.savepoint_commit(save_id)
 
@@ -298,9 +323,22 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
 
         project_code = instance.project_code
 
+        # 步骤、子步骤
+        step_code = instance.project_state
+        substep_code = instance.project_sub_state
+
+        creater = request.user.account_code
+
+        # 子步骤流水
+        pssis = ProjectSubstepSerialInfo.objects.filter(project_code=project_code,step_code=step_code,substep_code=substep_code).order_by('-p_serial')
+        pssi = None
+        if pssis != None and len(pssis)>0:
+            pssi = pssis[0]
+        substep_serial = pssi.substep_serial
+
         # 修改项目的技术经济人
         broker_code = data['brokers']
-        pbi = ProjectBrokerInfo.objects.get(project_code=instance.project_code)
+        pbi = ProjectBrokerInfo.objects.get(project_code=project_code)
         pbi.broker_code = broker_code
         pbi.save()
 
@@ -339,6 +377,31 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
             major_userinfo_data['user_code'] = project_code
             major_userinfo_data['mcode'] = major
             MajorUserinfo.objects.create(**major_userinfo_data)
+
+
+        # 项目封面
+        cover = data.get('Cover', None)
+        if cover != None:
+            coverImg = cover["coverImg"]
+            if coverImg != None and coverImg != '':
+                # 有封面
+                logger.info('有封面')
+                logger.info(coverImg)
+                try:
+                    move_project_cover(project_code,step_code,substep_code,substep_serial,coverImg,creater)
+                except Exception as e:
+                    logger.info('保存封面失败')
+
+        # 项目附件表
+        attachs = data.get('Attach', [])
+        if attachs != None and len(attachs)>0:
+            # 有附件
+            logger.info('有附件')
+            logger.info(attachs)
+            try:
+                move_project_attach(project_code,step_code,substep_code,substep_serial,attachs,creater)
+            except Exception as e:
+                logger.info('保存附件失败')
 
         if getattr(instance, '_prefetched_objects_cache', None):
             instance._prefetched_objects_cache = {}
