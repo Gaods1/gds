@@ -20,7 +20,7 @@ class DeepSerarchViewSet(viewsets.ModelViewSet):
     requirement_queryset = RequirementsInfo.objects.filter(show_state__in=[1, 2])
     queryset = results_queryset
 
-    # 简历成果和需求不同的序列化器
+    # 建立成果和需求不同的序列化器
     results_serializer_class = ResultsInfoSerializer
     requirement_serializer_class = RequirementsInfoSerializer
     serializer_class = results_serializer_class
