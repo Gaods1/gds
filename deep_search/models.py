@@ -113,7 +113,6 @@ class RequirementsInfo(models.Model):
 # 成果/需求的检索关键字 *
 class KeywordsInfo(models.Model):
     serial = models.AutoField(primary_key=True)
-    key_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     key_type = models.IntegerField(blank=True, null=True)
     object_code = models.CharField(max_length=64)
     key_info = models.CharField(max_length=64, blank=True, null=True)
