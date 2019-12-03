@@ -170,23 +170,23 @@ WSGI_APPLICATION = 'python_backend.wsgi.application'
 if os.environ.get('DATABASE_DEBUG', None):
     database_setting = {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'test_PatClub',
-        'HOST': '120.77.58.203',
+        'NAME': 'patclub',
+        'HOST': '127.0.0.1',
         'PORT': 3306,
-        'USER': 'forcar',
-        'PASSWORD': 'l0092687dd'
+        'USER': 'root',
+        'PASSWORD': 'root'
 
     }
     redis_setting = {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://:l0092687dd@120.77.58.203:6379/1",
+        "LOCATION": "redis://127.0.0.1:6379/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
     }
     account_redis = {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://:l0092687dd@120.77.58.203:6379/0",
+        "LOCATION": "redis://127.0.01:6379/0",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
