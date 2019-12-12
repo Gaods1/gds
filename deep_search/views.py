@@ -20,7 +20,7 @@ class DeepSerarchViewSet(viewsets.ModelViewSet):
     requirement_queryset = RequirementsInfo.objects.filter(show_state__in=[1, 2])
     queryset = results_queryset
 
-    # 简历成果和需求不同的序列化器
+    # 建立成果和需求不同的序列化器
     results_serializer_class = ResultsInfoSerializer
     requirement_serializer_class = RequirementsInfoSerializer
     serializer_class = results_serializer_class
@@ -37,13 +37,13 @@ class DeepSerarchViewSet(viewsets.ModelViewSet):
         "2": requirement_queryset
     }
 
-    # 向量差查询类型对照表
-    vector_difference_type = {
-        "11": 1,
-        "22": 2,
-        "12": 3,
-        "21": 3
-    }
+    # # 向量差查询类型对照表
+    # vector_difference_type = {
+    #     "11": 1,
+    #     "22": 2,
+    #     "12": 3,
+    #     "21": 3
+    # }
 
     permission_classes = (permissions.AllowAny, PostOnlyPermission)
 
@@ -56,10 +56,10 @@ class DeepSerarchViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
 
         data = request.data
-        text = data.get('text', None)
-        obj_list = data.get('obj_list', None)
-        list_type = data.get('list_type', None)
-        resut_type = data.get('type',None)
+        text = data.get('text', None)  # 深度搜索文本
+        obj_list = data.get('obj_list', None)  # 深度搜索成果/需求列表（如和text同时出现优先使用list）
+        list_type = data.get('list_type', None)  # obj_list 列表类型1， 成果2 需求
+        resut_type = data.get('type',None)         # 返回结果类型 1 成果 2 需求
 
         # 确定返回类型
         self.type2queryset(resut_type)
@@ -67,87 +67,85 @@ class DeepSerarchViewSet(viewsets.ModelViewSet):
 
         # 确定是否拆解关键字, 如果obj查找相关关键字， 如果时text则分解后查找相关关键字
         if obj_list:
-            keywords = KeywordsInfo.objects.filter(object_code__in=obj_list, key_type=int(list_type))
-            key_codes = keywords.values_list('key_code',flat=True)
-            key_infos = keywords.values_list('key_info',flat=True)
+            keywords = DeepsearchkeywordsInfoOwner.objects.filter(code__in=obj_list, key_type=int(list_type))
+            key_word = keywords.values_list('key_word', flat=True)
+            # key_infos = keywords.values_list('key_info',flat=True)
             # 根据type 查找向量差为0的关键字
-            keywords_0 = KeywordsInfo.objects.filter(key_info__in=key_infos, key_type=int(resut_type)).exclude(
-                object_code__in=obj_list)
+            keywords_0 = DeepsearchkeywordsInfoOwner.objects.filter(key_word__in=key_word, key_type=int(resut_type)).exclude(
+                code__in=obj_list)
         elif text:
             # key_codes = KeywordsInfo.objects.values_list('key_code',flat=True).filter(key_info__in=get_keywords(text), key_type=int(type))
             # 根据type 查找向量差为0的关键字
-            text_keywords = get_keywords(text)
-            keywords_0 = KeywordsInfo.objects.filter(key_info__in=text_keywords[0:1], key_type=int(resut_type))
-            if not keywords_0:
-                keywords_0 = KeywordsInfo.objects.filter(key_info__in=text_keywords, key_type=int(resut_type))
-            key_codes = keywords_0.values_list('key_code',flat=True)
+            key_word = get_keywords(text)
+            keywords_0 = DeepsearchkeywordsInfoOwner.objects.filter(key_word__in=key_word, key_type=int(resut_type),
+                                                                    weight_ratio__gt=0.9)
         else:
-            key_codes = []
-        if not key_codes:
-            return Response({"detail":"暂无数据"}, status=201)
+            key_word = []
+        if not key_word:
+            return Response({"detail": "暂无数据"}, status=201)
 
         # 查找范围内的向量差
-        v_type = self.vector_difference_type.get("".join([list_type, resut_type]))
+        # v_type = self.vector_difference_type.get("".join([list_type, resut_type]))
         vector_difference_100 = VectorDifference.objects.values_list('key1', 'key2').filter(
-            Q(key1__in=key_codes) | Q(key2__in=key_codes),
-            type=v_type, vector_difference__lte=100, vector_difference__gt=0)
+            Q(key1__in=key_word) | Q(key2__in=key_word),
+            vector_difference__lte=100, vector_difference__gt=0)
         v_keywords_100 = []
         for v in vector_difference_100:
-            if v[0] in key_codes:
+            if v[0] in key_word:
                 v_keywords_100.append(v[1])
-            elif v[1] in key_codes:
+            elif v[1] in key_word:
                 v_keywords_100.append(v[0])
-        keywords_100 = KeywordsInfo.objects.filter(key_code__in=v_keywords_100)
+        keywords_100 = DeepsearchkeywordsInfoOwner.objects.filter(key_word__in=v_keywords_100)
 
         vector_difference_200 = VectorDifference.objects.values_list('key1', 'key2').filter(
-            Q(key1__in=key_codes) | Q(key2__in=key_codes),
-            type=v_type, vector_difference__lte=200, vector_difference__gt=100)
+            Q(key1__in=key_word) | Q(key2__in=key_word),
+            vector_difference__lte=200, vector_difference__gt=100)
 
         v_keywords_200 = []
         for v in vector_difference_200:
-            if v[0] in key_codes:
+            if v[0] in key_word:
                 v_keywords_200.append(v[1])
-            elif v[1] in key_codes:
+            elif v[1] in key_word:
                 v_keywords_200.append(v[0])
-        keywords_200 = KeywordsInfo.objects.filter(key_code__in=v_keywords_200)
+        keywords_200 = DeepsearchkeywordsInfoOwner.objects.filter(key_word__in=v_keywords_200)
         obj_dict = {}
         for key in keywords_0:
-            if key.object_code in obj_dict:
-                if 0 in obj_dict[key.object_code]:
-                    obj_dict[key.object_code][0] +=1
+            if key.code in obj_dict:
+                if 0 in obj_dict[key.code]:
+                    obj_dict[key.code][0] +=1
                 else:
-                    obj_dict[key.object_code][0] = 1
+                    obj_dict[key.code][0] = 1
             else:
-                obj_dict[key.object_code] = {
-                    "name": key.object_code,
+                obj_dict[key.code] = {
+                    "name": key.code,
                     0: 1,
                     100:0,
                     200:0,
                 }
 
         for key in keywords_100:
-            if key.object_code in obj_dict:
-                if 100 in obj_dict[key.object_code]:
-                    obj_dict[key.object_code][100] +=1
+            if key.code in obj_dict:
+                if 100 in obj_dict[key.code]:
+                    obj_dict[key.code][100] +=1
                 else:
-                    obj_dict[key.object_code][100] = 1
+                    obj_dict[key.code][100] = 1
             else:
-                obj_dict[key.object_code] = {
-                    "name": key.object_code,
+                obj_dict[key.code] = {
+                    "name": key.code,
                     0: 0,
                     100:1,
                     200:0
                 }
 
         for key in keywords_200:
-            if key.object_code in obj_dict:
-                if 200 in obj_dict[key.object_code]:
-                    obj_dict[key.object_code][200] +=1
+            if key.code in obj_dict:
+                if 200 in obj_dict[key.code]:
+                    obj_dict[key.code][200] +=1
                 else:
-                    obj_dict[key.object_code][200] = 1
+                    obj_dict[key.code][200] = 1
             else:
-                obj_dict[key.object_code] = {
-                    "name": key.object_code,
+                obj_dict[key.code] = {
+                    "name": key.code,
                     0: 0,
                     100: 0,
                     200: 1
