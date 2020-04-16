@@ -113,6 +113,7 @@ class RequirementsInfo(models.Model):
 # 成果/需求的检索关键字 *
 class KeywordsInfo(models.Model):
     serial = models.AutoField(primary_key=True)
+    key_code = models.CharField(unique=True, max_length=64, default=gen_uuid32)
     key_type = models.IntegerField(blank=True, null=True)
     object_code = models.CharField(max_length=64)
     key_info = models.CharField(max_length=64, blank=True, null=True)
@@ -132,35 +133,11 @@ class VectorDifference(models.Model):
     key1 = models.CharField(max_length=255)
     key2 = models.CharField(max_length=255)
     vector_difference = models.FloatField(blank=True, null=True)
+    type = models.IntegerField(default=1)
 
     class Meta:
         managed = False
         db_table = 'vector_difference'
 
 
-# 新建词库表
-class DeepsearchkeywordsInfo(models.Model):
-    serial = models.AutoField(primary_key=True)
-    key_word = models.CharField(max_length=64)
-    word_vector = models.TextField(null=True, blank=True, default=None)
-    state1 = models.IntegerField(blank=True, null=True, default=0)
-    state2 = models.IntegerField(blank=True, null=True, default=0)
-    insert_time = models.DateTimeField(blank=True, null=True, auto_now_add=True)
-
-    class Meta:
-        managed = False
-        db_table = 'deepsearch_keywordsinfo'
-
-
-# 词库关联表
-class DeepsearchkeywordsInfoOwner(models.Model):
-    serial = models.AutoField(primary_key=True)
-    key_type = models.IntegerField(blank=True, null=True, default=1)
-    code = models.CharField(max_length=64)
-    key_word = models.CharField(max_length=64)
-    weight_ratio = models.FloatField()
-    insert_time = models.DateTimeField(blank=True, null=True, auto_now_add=True)
-    class Meta:
-        managed = False
-        db_table = 'deepsearch_keywordsinfo_owner'
 

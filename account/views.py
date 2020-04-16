@@ -13,6 +13,7 @@ from misc.filter.search import ViewSearch
 from django.db import transaction
 from expert.models import *
 from projectmanagement.models import *
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from public_models.models import *
 from public_models.serializers import *
 from .utils import copy_img
@@ -197,15 +198,15 @@ class AccountViewSet(viewsets.ModelViewSet):
                 instance = self.get_object()
                 if instance.user_mobile:
                     brokers = BrokerBaseinfo.objects.values_list(
-                        'broker_code', flat=True).filter(account_code=instance.account)
+                        'broker_code', flat=True).filter(account_code=instance.account_code)
                     if brokers and ProjectBrokerInfo.objects.filter(broker_code__in=brokers):
                         raise ValueError('当前账号有技术经纪人身份且有项目正在进行中，请先为项目更换技术经纪人')
-                    conn = get_redis_connection('account_redis')
-                    token_uid = KEY_LOGIN_UID_TOKEN + kwargs.get('pk', "")
-                    token_value = conn.get(token_uid)
-                    uid_token = KEY_LOGIN_TOKEN_UID + str(token_value, encoding="utf-8")
-                    conn.delete(uid_token)
-                    conn.delete(token_uid)
+                    #conn = get_redis_connection('account_redis')
+                    #token_uid = KEY_LOGIN_UID_TOKEN + kwargs.get('pk', "")
+                    #token_value = conn.get(token_uid)
+                    #uid_token = KEY_LOGIN_TOKEN_UID + str(token_value, encoding="utf-8")
+                    #conn.delete(uid_token)
+                    #conn.delete(token_uid)
                 if instance.account:
                     AccountRoleInfo.objects.filter(account=instance.account).delete()
                 self.perform_destroy(instance)
@@ -671,6 +672,7 @@ class ParamInfoViewSet(viewsets.ModelViewSet):
     """
     queryset = ParamInfo.objects.all().order_by('-serial')
     serializer_class = ParamInfoSerializer
+    permission_classes = (IsAuthenticatedOrReadOnly,)
     filter_backends = (
         ViewSearch,
         django_filters.rest_framework.DjangoFilterBackend,
@@ -682,7 +684,6 @@ class ParamInfoViewSet(viewsets.ModelViewSet):
 
     param_model = ParamInfo
     param_associated_field = ("pparam_code", "param_code")
-
     def get_queryset(self):
         assert self.queryset is not None, (
             "'%s' should either include a `queryset` attribute, "
@@ -695,11 +696,41 @@ class ParamInfoViewSet(viewsets.ModelViewSet):
             queryset = ParamInfo.objects.filter(serial__in=[i.serial for i in raw_queryset])
         else:
             queryset = self.queryset
-
         if isinstance(queryset, QuerySet):
             # Ensure queryset is re-evaluated on each request.
             queryset = queryset.all()
         return queryset
+    def list(self, request, *args, **kwargs):
+        print(request.user,"21222")
+        print(type(request.user))
+        # queryset = self.filter_queryset(self.get_queryset())
+        if str(request.user) =='AnonymousUser':
+
+            print(request.query_params["search"])
+
+            queryset = ParamInfo.objects.filter(param_name=request.query_params["search"])
+            # res = ParamInfo.objects.get(param_name=request.query_params["search"])
+            print(queryset)
+            print(kwargs,request.data,args,request.query_params["search"])
+
+            # page = self.paginate_queryset(queryset)
+            # if page is not None:
+            #     serializer = self.get_serializer(page, many=True)
+            #     return self.get_paginated_response(serializer.data)
+            #
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+        else:
+            queryset = self.filter_queryset(self.get_queryset())
+
+            page = self.paginate_queryset(queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+
+            serializer = self.get_serializer(queryset, many=True)
+            return Response(serializer.data)
+
 
     def create(self, request, *args, **kwargs):
         data = request.data

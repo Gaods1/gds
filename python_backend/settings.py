@@ -35,11 +35,11 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'misc.pagenumber.pagenumber.MyPageNumberPagination',
     'PAGE_SIZE': 10,
 
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticated',
-        'misc.permissions.permissions.FuncPermission',
-        'misc.permissions.permissions.DontCheckRoot'
-    ),
+    #'DEFAULT_PERMISSION_CLASSES': (
+    #    'rest_framework.permissions.IsAuthenticated',
+    #    'misc.permissions.permissions.FuncPermission',
+    #    'misc.permissions.permissions.DontCheckRoot'
+   # ),
 
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
@@ -62,7 +62,7 @@ JWT_AUTH = {
     'JWT_RESPONSE_PAYLOAD_HANDLER':
         'account.utils.jwt_response_payload_handler',
 
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=30000),
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=300000),
 }
 
 AUTHENTICATION_BACKENDS = {
@@ -170,11 +170,11 @@ WSGI_APPLICATION = 'python_backend.wsgi.application'
 if os.environ.get('DATABASE_DEBUG', None):
     database_setting = {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'patclub',
+        'NAME': 'gds',
         'HOST': '127.0.0.1',
         'PORT': 3306,
         'USER': 'root',
-        'PASSWORD': 'root'
+        'PASSWORD': 'gds123456'
 
     }
     redis_setting = {
@@ -194,11 +194,11 @@ if os.environ.get('DATABASE_DEBUG', None):
 else:
     database_setting = {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'PatClub',
+        'NAME': 'dj',
         'HOST': '127.0.0.1',
         'PORT': 3306,
         'USER': 'root',
-        'PASSWORD': 'l0092687dd'
+        'PASSWORD': 'Dtcxq!2019'
     }
 
     redis_setting = {
@@ -284,7 +284,7 @@ LOGGING = {
             'formatter': 'simple'
         },
         'file': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(BASE_DIR, "logs/python_backend.log"),  # 日志文件的位置
             'maxBytes': 300 * 1024 * 1024,

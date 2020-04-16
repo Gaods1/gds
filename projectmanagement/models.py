@@ -12,7 +12,7 @@ logger = logging.getLogger('django')
 # Create your models here.
 
 
-# 项目基本信息表 *
+# 项目基本信息�?*
 class ProjectInfo(models.Model):
     pserial = models.AutoField(primary_key=True)
     project_code = models.CharField(verbose_name='项目代码', unique=True, max_length=64, blank=True, null=True)
@@ -35,7 +35,7 @@ class ProjectInfo(models.Model):
     #     # return from_code_info
     #     return None
 
-    # 项目当前子步骤
+    # 项目当前子步�?
     @property
     def substep_info(self):
         q = ProjectSubstepInfo.objects.filter(Q(project_code=self.project_code), Q(step_code=self.project_state),
@@ -46,7 +46,7 @@ class ProjectInfo(models.Model):
             substep_info = {}
         return substep_info
 
-    # 项目当前子步骤流水
+    # 项目当前子步骤流�?
     @property
     def substep_serial_info(self):
         substep_serial_info = ProjectSubstepSerialInfo.objects.filter(project_code=self.project_code,
@@ -86,7 +86,7 @@ class ProjectInfo(models.Model):
             broker_info = {}
         return broker_info
 
-    # 项目关联技术团队
+    # 项目关联技术团�?
     @property
     def team_info(self):
         q = ProjectTeamInfo.objects.filter(project_code=self.project_code)
@@ -132,7 +132,7 @@ class ProjectCheckInfo(models.Model):
     def project_info(self):
         return ProjectInfo.objects.get(project_code=self.project_code)
 
-    # 项目当前子步骤流水
+    # 项目当前子步骤流�?
     @property
     def substep_serial_info(self):
         q = ProjectSubstepSerialInfo.objects.filter(project_code=self.project_code, step_code=self.step_code,
@@ -149,7 +149,7 @@ class ProjectCheckInfo(models.Model):
         db_table = 'project_check_info'
 
 
-# 项目步骤信息表
+# 项目步骤信息�?
 class ProjectStepInfo(models.Model):
     p_serial = models.AutoField(primary_key=True)
     project_code = models.CharField(max_length=64, blank=True, null=True)
@@ -159,7 +159,7 @@ class ProjectStepInfo(models.Model):
     step_state = models.IntegerField(blank=True, null=True)
     step_msg = models.CharField(max_length=255, blank=True, null=True)
 
-    # 项目子步骤
+    # 项目子步�?
     @property
     def substep_info(self):
         q = ProjectSubstepInfo.objects.filter(project_code=self.project_code, step_code=self.step_code).order_by(
@@ -183,10 +183,10 @@ class ProjectSubstepInfo(models.Model):
     substep_state = models.IntegerField(blank=True, null=True)
     step_msg = models.CharField(max_length=255, blank=True, null=True)
 
-    # 子步骤附件 子步骤可能有很多流水(子步骤有多个操作类型) 每条流水有多个附件
+    # 子步骤附�?子步骤可能有很多流水(子步骤有多个操作类型) 每条流水有多个附�?
     @property
     def substep_file_info(self):
-        # 根据子步骤找操作类型的 最后一次流水
+        # 根据子步骤找操作类型�?最后一次流�?
         # pssi = ProjectSubstepSerialInfo.objects.filter(project_code=self.project_code,
         #                                                step_code=self.step_code,
         #                                                substep_code=self.substep_code)
@@ -280,6 +280,7 @@ class ProjectSubstepDetailInfo(models.Model):
     # 不定长字段暂时没有加
     # ...
     step_msg = models.CharField(max_length=255, blank=True, null=True)
+    tf04 = models.DateTimeField()
 
     class Meta:
         managed = False
@@ -309,7 +310,7 @@ class ProjectSubstepFileInfo(models.Model):
 
     @property
     def file_url(self):
-        # 从参数表获取URL并拼接  现在没有数据 以后可以优化直接传递对象参数
+        # 从参数表获取URL并拼�? 现在没有数据 以后可以优化直接传递对象参�?
         return getFileUrl(self.p_serial)
 
     class Meta:
@@ -317,7 +318,7 @@ class ProjectSubstepFileInfo(models.Model):
         db_table = 'project_substep_file_info'
 
 
-# 有交叉引用问题，暂时只能放在这里了
+# 有交叉引用问题，暂时只能放在这里�?
 def getFileUrl(p_serial):
     from public_models.models import ParamInfo
     absolute_path = ParamInfo.objects.get(param_code=1).param_value
@@ -342,7 +343,7 @@ def getFileUrl(p_serial):
     return url + psfi.filename
 
 
-# 项目与成果/需求信息表 *
+# 项目与成�?需求信息表 *
 class ProjectRrInfo(models.Model):
     p_serial = models.AutoField(primary_key=True)
     project_code = models.CharField(max_length=64, blank=True, null=True)
@@ -384,7 +385,7 @@ class ProjectRrInfo(models.Model):
         unique_together = (('project_code', 'rr_type', 'rr_code'),)
 
 
-# 项目经纪人信息表（项目与经纪人关联表） *
+# 项目经纪人信息表（项目与经纪人关联表�?*
 class ProjectBrokerInfo(models.Model):
     p_serial = models.AutoField(primary_key=True)
     project_code = models.CharField(max_length=64, blank=True, null=True)
@@ -410,7 +411,7 @@ class ProjectBrokerInfo(models.Model):
         unique_together = (('project_code', 'broker_code'),)
 
 
-# 项目领域专家信息表 *
+# 项目领域专家信息�?*
 class ProjectExpertInfo(models.Model):
     pserial = models.AutoField(primary_key=True)
     project_code = models.CharField(max_length=64, blank=True, null=True)
@@ -435,7 +436,7 @@ class ProjectExpertInfo(models.Model):
         unique_together = (('project_code', 'expert_code'),)
 
 
-# 项目与团队信息表（项目与技术团队关联表）*
+# 项目与团队信息表（项目与技术团队关联表�?
 class ProjectTeamInfo(models.Model):
     p_serial = models.AutoField(primary_key=True)
     project_code = models.CharField(max_length=64, blank=True, null=True)
@@ -495,7 +496,7 @@ class ReqMatchBrokerInfo(models.Model):
         db_table = 'req_match_broker_info'
 
 
-# 立项匹配需求、成果来源信息
+# 立项匹配需求、成果来源信�?
 class ReqMatchRrInfo(models.Model):
     serial = models.AutoField(primary_key=True)
     rm_code = models.CharField(max_length=32, blank=True, null=True)

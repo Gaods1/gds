@@ -816,7 +816,7 @@ class ActivityLotteryViewSet(viewsets.ModelViewSet):
         serial_list = [instance.serial]
         del_serial = serial_list + data
 
-        res = ActivityLottery.objects.filter(serial__in=del_serial).update(state=2)
+        res = ActivityLottery.objects.filter(serial__in=del_serial).delete()
         if res:
             return Response("删除成功")
         else:

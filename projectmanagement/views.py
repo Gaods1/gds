@@ -15,6 +15,9 @@ import re
 import sys
 import random
 
+import datetime
+from concurrent.futures.thread import ThreadPoolExecutor
+
 from .serializers import *
 from django.db import connection, transaction
 from account.models import Deptinfo, AccountInfo
@@ -302,12 +305,13 @@ class ProjectInfoViewSet(viewsets.ModelViewSet):
 
         # 获取我所在的机构下的项目
         queryset = getProjectByDept(self, request)
-
+        print(list(queryset))
         page = self.paginate_queryset(queryset)
         if 'page_size' in request.query_params and request.query_params['page_size'] == 'max':
             page = None
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
+            serializer = self.get_serializer(queryset, many=True)
+            print(serializer.data)
             return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(queryset, many=True)
@@ -612,6 +616,72 @@ def getCheckInfo(self, request, step_code, substep_code):
     return self.get_paginated_response(serializer.data)
 
 
+
+
+#前台计时器
+#def get_time(project_code):
+#    obj = ProjectSubstepDetailInfo.objects.get(project_code=project_code)
+#    obj2 = ProjectSubstepInfo.objects.get(project_code=project_code)
+#    def b(time):
+#        time_now = time.strftime('%Y.%m.%d %H:%M:%S ')
+#        time_now2 = datetime.datetime.strptime(time_now, '%Y.%m.%d %H:%M:%S ')
+#        return time_now2
+#    while 1:
+#        if obj.tf04 != None:
+#            if b(datetime.datetime.now())>= b(obj.tf04):
+#                obj.substep_code = 3
+#                obj.substep_serial_type = 4
+#                obj.substep_serial_state = 1
+#                obj2.substep_state = 0
+#                obj.save()
+#                obj2.save()
+#                break
+
+
+def get_time(project_code,psdi,pj):
+
+    '''
+    :param psdi: 当前处理的 project_substep_detail_info 表中对象
+    :param pj: 当前处理的 project_info 表中对象
+    :return: None
+    '''
+
+    # 处理时间格式函数
+    def b(time):
+        # 数据库读取的是DateTime格式  -- time
+
+        # 将time转换成 年-月-日 时-分-秒 格式 （类型：字符串）
+        time_now = time.strftime('%Y.%m.%d %H:%M:%S ')
+        # 将转换后的字符串转为DateTime格式否则无法进行比较
+        time_now2 = datetime.datetime.strptime(time_now, '%Y.%m.%d %H:%M:%S ')
+        # 返回所需格式的时间
+        return time_now2
+
+    # 数据库tf04时间 单独获取 不进入循环以免资源浪费
+    tf_time = b(psdi.tf04)
+
+    while 1:
+        print(3)
+        if psdi.tf04 != None:
+            # 如果当前时间大于等于数据库时间
+            if b(datetime.datetime.now()) >= tf_time:
+                # 更改数值
+                obj= ProjectSubstepDetailInfo.objects.filter(project_code=project_code).order_by("-submit_time")[0]
+                obj.substep_code = 3
+                obj.substep_serial_type = 4
+                obj.substep_serial_state = 1
+                pj.project_sub_state = 3
+                pj.state = 0
+                # 数据提交
+                obj.save()
+                pj.save()
+                # 跳出循环
+                break
+
+
+
+
+
 def upCheckinfo(self, request):
     data = request.data
     cstate = data['cstate']  # 1:审核通过 -1:审核不通过
@@ -829,12 +899,24 @@ def upCheckinfo(self, request):
                             if cstate == 1:
                                 message_content = message_content_pass.format(type, project.project_name)
                             else:
+                                #ob = ProjectInfo.objects.get(project_code=data["project_code"])
+                                #ob.state = 0
+                                #ob.save()
                                 message_content = message_content_unpass.format(type, project.project_name)
                         elif step_code == 3 and substep_code == 1 and substep_serial_type == 1:
                             message_title = '项目上传标书审核通知'
                             type = '项目上传标书'
                             if cstate == 1:
                                 message_content = message_content_pass.format(type, project.project_name)
+                                ob = ProjectInfo.objects.get(project_code=data["project_code"])
+                                ob.state = 0
+                                ob.project_sub_state = 2
+                                ob.save()
+                                #ProjectSubstepInfo.objects.create(project_code=project_code,step_code=3,substep_code=2,substep_state=0)
+                                #pool = ThreadPoolExecutor(1)
+                                #pool.submit(get_time,project_code,psdi,project)
+                                #ProjectSubstepDetailInfo.objects.create(project_code=project_code,substep_serial=int(substep_serial)+1,submit_time=datetime.datetime.strptime(datetime.datetime.now().strftime('%Y.%m.%d %H:%M:%S '), '%Y.%m.%d %H:%M:%S '),step_code=3,substep_code=2,submit_user=psdi.submit_user,substep_serial_type=1,substep_serial_state=3)
+                                #ProjectSubstepSerialInfo.objects.create(project_code=project_code,step_code=3,substep_serial=int(substep_serial)+1,substep_code=2,submit_time=datetime.datetime.strptime(datetime.datetime.now().strftime('%Y.%m.%d %H:%M:%S '), '%Y.%m.%d %H:%M:%S '),substep_serial_state=3,substep_serial_type=1)
                             else:
                                 message_content = message_content_unpass.format(type, project.project_name)
                         elif step_code == 4 and substep_code == 2 and substep_serial_type == 1:
@@ -887,12 +969,14 @@ def upCheckinfo(self, request):
                             "Accept": "application/json"
                         }
                         # 测试时先不发
-                        requests.post(sms_url, data=sms_data, headers=headers)
-                        sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
+                        #requests.post(sms_url, data=sms_data, headers=headers)
+                        #sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
                         # sms_ret = 1
+
                         # 保存短信发送记录
-                        if int(sms_ret) == 1:
-                            Message.objects.bulk_create(message_list)
+                        #if int(sms_ret) == 1:
+                            #Message.objects.bulk_create(message_list)
+                        Message.objects.bulk_create(message_list)
 
             transaction.savepoint_commit(save_id)
         except Exception as e:
@@ -915,7 +999,6 @@ def upCheckinfo(self, request):
         # except Exception as e:
         #     fail_msg = "审核失败%s" % str(e)
         #     return JsonResponse({"state": 0, "msg": fail_msg})
-
     return JsonResponse({"state": 1, "msg": "审核成功"})
 
 
@@ -942,6 +1025,7 @@ class ProjectCommonCheckInfoViewSet(mixins.UpdateModelMixin, mixins.ListModelMix
         if step_code == None or substep_code == None:
             queryset = []
             page = self.paginate_queryset(queryset)  # 不能省略
+
             serializer = self.get_serializer(queryset, many=True)
             return self.get_paginated_response(serializer.data)
 
@@ -1060,7 +1144,23 @@ class ProjectStepInfoViewSet(viewsets.ModelViewSet):
     ordering_fields = ("project_code", "step_code")
     filter_fields = ("project_code", "step_code")
     search_fields = ("project_code", "step_code")
+    def list(self, request, *args, **kwargs):
 
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+           
+            for i in serializer.data:
+                for j in i["substep_info"]:
+                    if j["etime"] ==None:
+                        j["etime"] = ""
+
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 class ProjectRrInfoViewSet(viewsets.ModelViewSet):
     '''项目需求/成果信息'''
@@ -1351,12 +1451,13 @@ def sendsms(self, request, phone, cstate, title, account_code, type, message_tit
             "Accept": "application/json"
         }
         # 测试时先不发
-        requests.post(sms_url, data=sms_data, headers=headers)
-        sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
+        #requests.post(sms_url, data=sms_data, headers=headers)
+        #sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
         # sms_ret = 1
         # 保存短信发送记录
-        if int(sms_ret) == 1:
-            Message.objects.bulk_create(message_list)
+        #if int(sms_ret) == 1:
+            #Message.objects.bulk_create(message_list)
+        Message.objects.bulk_create(message_list)
 
 
 def get_current_brokers(self, request):

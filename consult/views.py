@@ -17,7 +17,7 @@ from django.http import HttpResponse,JsonResponse
 from public_models.utils import move_attachment,move_single,get_detcode_str,get_dept_codes
 from django.db.models.query import QuerySet
 import re
-
+import datetime
 
 # Create your views here.
 
@@ -221,10 +221,10 @@ class ConsultInfoViewSet(viewsets.ModelViewSet):
                                     "Accept": "application/json"
                                 }
                                 # requests.post(sms_url, data=sms_data, headers=headers)
-                                sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
+                                #sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
                                 # 7 保存短信发送记录
-                                if int(sms_ret) == 1:
-                                    Message.objects.bulk_create(message_list)
+                                #if int(sms_ret) == 1:
+                                 #   Message.objects.bulk_create(message_list)
 
                     #添加给征询发布者发送通知消息
                     if check_state == 1:
@@ -410,23 +410,23 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
                             "Accept": "application/json"
                         }
                         # requests.post(sms_url, data=sms_data, headers=headers)
-                        sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
+                        #sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
                         # 7 保存短信发送记录
-                        if int(sms_ret) == 1:
-                            message_list = [Message(message_title='征询回复审核未通过',
-                                                  message_content='您在'+reply_info.consult_title+'回复的内容审核未通过，请登陆平台查看修改',
-                                                  account_code=reply_info.account_code,
-                                                  state=0,
-                                                  send_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                                                  sender=request.user.account,
-                                                  sms=1,
-                                                  sms_state=1,
-                                                  sms_phone=user_mobile,
-                                                  email=0,
-                                                  email_state=0,
-                                                  email_account='',
-                                                  type=1)]
-                            Message.objects.bulk_create(message_list)
+                        #if int(sms_ret) == 1:
+                        message_list = [Message(message_title='征询回复审核未通过',
+                                              message_content='您在'+reply_info.consult_title+'回复的内容审核未通过，请登陆平台查看修改',
+                                              account_code=reply_info.account_code,
+                                              state=0,
+                                              send_time=time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                                              sender=request.user.account,
+                                              sms=1,
+                                              sms_state=1,
+                                              sms_phone=user_mobile,
+                                              email=0,
+                                              email_state=0,
+                                              email_account='',
+                                              type=1)]
+                        Message.objects.bulk_create(message_list)
             except Exception as e:
                 fail_msg = "审核失败%s" % str(e)
                 return JsonResponse({"state" : 0, "msg" : fail_msg})
@@ -435,6 +435,8 @@ class ConsultReplyInfoViewSet(viewsets.ModelViewSet):
         else:
             partial = kwargs.pop('partial', False)
             instance = self.get_object()
+            instance.reply_time= datetime.datetime.strptime(datetime.datetime.now().strftime('%Y.%m.%d %H:%M:%S '), '%Y.%m.%d %H:%M:%S ')
+            instance.save()
             serializer = self.get_serializer(instance, data=request.data, partial=partial)
             serializer.is_valid(raise_exception=True)
             self.perform_update(serializer)

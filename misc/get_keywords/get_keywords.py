@@ -3,56 +3,46 @@ import requests
 from datetime import datetime
 from public_models.models import Systematic_info
 
-import json
-
-from tencentcloud.common import credential
-from tencentcloud.common.profile.client_profile import ClientProfile
-from tencentcloud.common.profile.http_profile import HttpProfile
-from tencentcloud.common.exception.tencent_cloud_sdk_exception import TencentCloudSDKException
-from tencentcloud.nlp.v20190408 import nlp_client, models
-
-
 KEYWORDS_URL = 'http://api.bosonnlp.com/keywords/analysis'
 
 
 def get_token(group):
     try:
         systema = Systematic_info.objects.filter(group=group, state=1).order_by('serial').first()
-        secretid = json.loads(systema.value).get('secretid', None)
-        secretkey = json.loads(systema.value).get('secretkey', None)
+        token = json.loads(systema.value).get('token', None)
         name = systema.name
-        return secretid, secretkey
+        return token, name
     except Exception as e:
         return None, None
 
 
-def transfer_url(params):
-    secretid, secretkey = get_token('deep')
-    if not secretid:
-        return None
-    httpProfile = HttpProfile()
-    httpProfile.endpoint = "nlp.tencentcloudapi.com"
+def update_systematic(name):
+    Systematic_info.objects.filter(name=name).update(state=0)
 
-    clientProfile = ClientProfile()
-    clientProfile.httpProfile = httpProfile
 
-    req = models.KeywordsExtractionRequest()
-
-    cred = credential.Credential(secretid, secretkey)
-    client = nlp_client.NlpClient(cred, "ap-guangzhou", clientProfile)
-    req.from_json_string(params)
-    resp = client.KeywordsExtraction(req)
-    return resp.to_json_string()
+def transfer_url(text):
+    token, name = get_token('deep')
+    if not token:
+        return [], None
+    params = {'top_k': 10}
+    data = json.dumps(text)
+    headers = {
+        'X-Token': token,
+        'Content-Type': 'application/json'
+    }
+    resp = requests.post(KEYWORDS_URL, headers=headers, params=params, data=data.encode('utf-8'))
+    return resp, name
 
 
 def get_keywords(text):
-    params = {}
-    params['Text'] = text
-    params = json.dumps(params)
-    resp= transfer_url(params)
+    resp, name = transfer_url(text)
     if resp:
-        resp = json.loads(resp).get("Keywords")
-    keywords = [i['Word'] for i in resp if i["Score"] >= 0.8]
+        resp = resp.json()
+    if not isinstance(resp, list):
+        update_systematic(name)
+        resp, name = transfer_url(text)
+        resp = resp.json()
+    keywords = [i[1] for i in resp if i[0] >= 0.5]
     if not keywords:
-        keywords = [i['Word'] for i in resp][0:2]
+        keywords = [i[1] for i in resp][0:2]
     return keywords

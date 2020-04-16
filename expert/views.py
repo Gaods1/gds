@@ -460,7 +460,7 @@ class ExpertApplyViewSet(viewsets.ModelViewSet):
                             state=apply_state, iab_time=datetime.datetime.now())
 
                     # 发送信息
-                    send_msg(expert.expert_mobile, '领域专家', apply_state, expert.account_code, request.user.account)
+                    #send_msg(expert.expert_mobile, '领域专家', apply_state, expert.account_code, request.user.account)
                 # 当申请状态为删除时
                 elif apply_type in [3]:
                     pass
@@ -938,8 +938,8 @@ class BrokerApplyViewSet(viewsets.ModelViewSet):
                         )
 
                     # 发送信息
-                    send_msg(baseinfo.broker_mobile, '技术经理人',
-                             apply_state, baseinfo.account_code, request.user.account)
+                    #send_msg(baseinfo.broker_mobile, '技术经理人',
+                             #apply_state, baseinfo.account_code, request.user.account)
                 # 当申请状态为删除时
                 elif apply_type in [3]:
                     pass
@@ -1386,7 +1386,7 @@ class CollectorApplyViewSet(viewsets.ModelViewSet):
                             state=apply_state, iab_time=datetime.datetime.now())
 
                     # 发送信息
-                    send_msg(baseinfo.collector_mobile, '采集员', apply_state, baseinfo.account_code, request.user.account)
+                    #send_msg(baseinfo.collector_mobile, '采集员', apply_state, baseinfo.account_code, request.user.account)
                 # 当申请状态为删除时
                 elif apply_type in [3]:
                     pass
@@ -1876,7 +1876,7 @@ class ResultsOwnerApplyViewSet(viewsets.ModelViewSet):
                                                                  identity_code=IdentityInfo.objects.get(identity_name='result_personal_owner').identity_code).update(state=apply_state, iab_time=datetime.datetime.now())
 
                     # 发送信息
-                    send_msg(baseinfo.owner_mobile, '成果持有人', apply_state, baseinfo.account_code, request.user.account)
+                    #send_msg(baseinfo.owner_mobile, '成果持有人', apply_state, baseinfo.account_code, request.user.account)
                 # 当申请状态为删除时
                 elif apply_type in [3]:
                     pass
@@ -2478,8 +2478,8 @@ class ResultsOwnereApplyViewSet(viewsets.ModelViewSet):
                                                                  identity_code=IdentityInfo.objects.get(identity_name='result_enterprise_owner').identity_code).update(state=apply_state, iab_time=datetime.datetime.now())
 
                     # 发送信息
-                    t1 = threading.Thread(target=send_msg, args=(baseinfo.owner_mobile, '成果持有企业', apply_state, baseinfo.account_code, request.user.account))
-                    t1.start()
+                    #t1 = threading.Thread(target=send_msg, args=(baseinfo.owner_mobile, '成果持有企业', apply_state, baseinfo.account_code, request.user.account))
+                    #t1.start()
                 # 当申请状态为删除时
                 elif apply_type in [3]:
                     pass
@@ -2969,7 +2969,7 @@ class RequirementOwnerApplyViewSet(viewsets.ModelViewSet):
 
 
                     # 发送信息
-                    send_msg(baseinfo.owner_mobile, '需求持有人', apply_state, baseinfo.account_code, request.user.account)
+                    #send_msg(baseinfo.owner_mobile, '需求持有人', apply_state, baseinfo.account_code, request.user.account)
                 # 当申请状态为删除时
                 elif apply_type in [3]:
                     pass
@@ -3579,8 +3579,8 @@ class RequirementOwnereApplyViewSet(viewsets.ModelViewSet):
                                                                           iab_time=datetime.datetime.now())
 
                     # 发送信息
-                    t1 = threading.Thread(target=send_msg, args=(baseinfo.owner_mobile, '需求持有企业', apply_state, baseinfo.account_code, request.user.account))
-                    t1.start()
+                    #t1 = threading.Thread(target=send_msg, args=(baseinfo.owner_mobile, '需求持有企业', apply_state, baseinfo.account_code, request.user.account))
+                    #t1.start()
                 # 当申请状态为删除时
                 elif apply_type in [3]:
                     pass   # TODO：解除身份时的逻辑
@@ -4116,6 +4116,7 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
         """
         try:
             with transaction.atomic():
+
                 apply_team_baseinfo = self.get_object()
                 if apply_team_baseinfo.state != 1:
                     raise ValueError('该信息已被审核')
@@ -4125,12 +4126,16 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                 # 1 (apply_type:新增或更新或禁权)team_apply_history表
                 TeamApplyHistory.objects.filter(serial=apply_team_baseinfo.serial).update(state=check_state)
                 if apply_team_baseinfo.apply_type == 1 or apply_team_baseinfo.apply_type ==2:
+
                     if check_state == 2: #审核通过 baseinfo.state = 1
+                        print("通过")
                         baseinfo_state = 1
                     elif check_state == 3: #审核未通过 baseinfo.state=2
                         baseinfo_state = 2
                 else:
+
                     if check_state == 2: #审核通过删除
+
                         baseinfo_state = 3
                     elif check_state == 3: #审核未通过 不允许删除
                         baseinfo_state = apply_team_baseinfo.team_baseinfo.state
@@ -4153,9 +4158,11 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                 ).update(state=baseinfo_state, ecode=ecode)
 
                 # 申请类型新增或修改时 更新account_info表dept_code
+                print(request.data.get('dept_code'))
+                print(apply_team_baseinfo.team_baseinfo.dept_code)
                 if request.data.get('dept_code') and check_state == 2  and not apply_team_baseinfo.team_baseinfo.dept_code:
                     AccountInfo.objects.filter(account_code=apply_team_baseinfo.team_baseinfo.account_code).update(dept_code=request.data.get('dept_code'))
-
+                    print(111111111111111111111111)
                 # 3 新增tema_check_history表记录
                 team_checkinfo_data = {
                     'apply_code': apply_team_baseinfo.apply_code,
@@ -4176,7 +4183,7 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                 #更新前台角色授权状态(审核通过未通过都更新)
                 IdentityAuthorizationInfo.objects.filter(account_code=apply_team_baseinfo.team_baseinfo.account_code,
                                                          identity_code=IdentityInfo.objects.get(identity_name='team').identity_code).update(state=check_state, iab_time=datetime.datetime.now())
-
+                print(111111242343254364536)
                 # 5 发送短信通知
                 account_info = AccountInfo.objects.get(account_code=apply_team_baseinfo.team_baseinfo.account_code)
                 account_mobile = account_info.user_mobile
@@ -4187,30 +4194,33 @@ class TeamApplyViewSet(viewsets.ModelViewSet):
                 sms_data = {
                     'name': '技术团队'
                 }
+
                 headers = {
                     "Content-Type": "application/x-www-form-urlencoded",
                     "Accept": "application/json"
                 }
-                sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
+
+                #sms_ret = eval(requests.post(sms_url, data=sms_data, headers=headers).text)['ret']
                 # 6 保存短信记录
-                if int(sms_ret) == 1:
-                    if check_state == 2:
-                        message_content = "您认证的身份信息技术团队审核未通过。请登录平台查看。"
-                    else:
-                        message_content = "您认证的身份信息技术团队审核已通过。修改身份信息需重新审核，请谨慎修改。"
-                    message_data = {'message_title':'技术团队认证信息审核结果通知',
-                                            'message_content':message_content,
-                                            'account_code':apply_team_baseinfo.team_baseinfo.account_code,
-                                            'state': 0,
-                                            'send_time':time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                                            'sender':request.user.account,
-                                            'sms':1,
-                                            'sms_state':1,
-                                            'sms_phone':account_mobile,
-                                            'email':0,
-                                            'email_state':0,
-                                            'email_account':''}
-                    Message.objects.create(**message_data)
+
+                # if int(sms_ret) == 1:
+                if check_state == 2:
+                    message_content = "您认证的身份信息技术团队审核未通过。请登录平台查看。"
+                else:
+                    message_content = "您认证的身份信息技术团队审核已通过。修改身份信息需重新审核，请谨慎修改。"
+                message_data = {'message_title':'技术团队认证信息审核结果通知',
+                                        'message_content':message_content,
+                                        'account_code':apply_team_baseinfo.team_baseinfo.account_code,
+                                        'state': 0,
+                                        'send_time':time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
+                                        'sender':request.user.account,
+                                        'sms':1,
+                                        'sms_state':1,
+                                        'sms_phone':account_mobile,
+                                        'email':0,
+                                        'email_state':0,
+                                        'email_account':''}
+                Message.objects.create(**message_data)
         except Exception as e:
             return Response({"detail":"审核失败：%s" % str(e)}, status=400)
 
