@@ -1,1 +1,0 @@
-alter table attachment_fileinfo modify `file_format` int(10) default null comment '文件格式:0文本(txt,doc,docx,xls,xlsx,pdf);1图片(gif,png,jpg,jpeg,bmp);2ppt(ppt,pptx);3压缩包(zip,rar,gzip,tar,bzip);4音频(mp3);5视频(mp4,rmvb,avi,3gp,mkv)';
