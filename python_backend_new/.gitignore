@@ -1,0 +1,104 @@
+.*
+!.gitignore
+!.gitkeep
+*~
+*.swp
+*.swo
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+uwsgi.ini
+uwsgi.log
+uwsgi.pid
+*.ttc
+
+# Database
+*.db
+db.sqlite3
+
+
+
+newras.bashrc
+
+filecache/caches/
+
+static/login/demo/
+
+/datakeeper
+/depot
+/dxuser
+/filecache
+/jsutil
+/mapdata
+/tastypie
+/cssutil
+
+/system
+/datasets
+/wrasmods
+/init.d
+/nwp_model
+/nwp_model_data
+/system/
+/datasets/
+/wrasmods/
+/init.d/
+/nwp_model/
+/nwp_model_data/
+/setting
+/setting/
+
+node_modules
+
+*.dev.js
+*.dev.css
+*.dev.css.map
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+# C extensions
+*.so
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+# PyInstaller
+# Usually these files are written by a python script from a template
+# before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml
+# Translations
+*.mo
+*.pot
+# Django stuff:
+*.log
+# Sphinx documentation
+docs/_build/
+# PyBuilder
+target/
+
